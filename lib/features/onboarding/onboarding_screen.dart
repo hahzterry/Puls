@@ -127,9 +127,9 @@ class _PulsWordmark extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: PulsColors.blue.withOpacity(0.14),
+            color: PulsColors.blue.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: PulsColors.blue.withOpacity(0.6)),
+            border: Border.all(color: PulsColors.blue.withValues(alpha: 0.6)),
           ),
           child: const Icon(Icons.show_chart_rounded, color: PulsColors.blue),
         ),
@@ -163,7 +163,7 @@ class _OnboardingPage extends StatelessWidget {
             border: Border.all(color: PulsColors.border),
             boxShadow: [
               BoxShadow(
-                color: PulsColors.blue.withOpacity(0.24),
+                color: PulsColors.blue.withValues(alpha: 0.24),
                 blurRadius: 34,
                 offset: const Offset(0, 18),
               ),

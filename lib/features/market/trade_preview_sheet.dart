@@ -98,9 +98,9 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                       vertical: 7,
                     ),
                     decoration: BoxDecoration(
-                      color: sideColor.withOpacity(0.12),
+                      color: sideColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: sideColor.withOpacity(0.5)),
+                      border: Border.all(color: sideColor.withValues(alpha: 0.5)),
                     ),
                     child: Text(
                       sideLabel.toUpperCase(),
@@ -160,9 +160,9 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: PulsColors.amber.withOpacity(0.10),
+                  color: PulsColors.amber.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: PulsColors.amber.withOpacity(0.35)),
+                  border: Border.all(color: PulsColors.amber.withValues(alpha: 0.35)),
                 ),
                 child: const Text(
                   'Demo only. This prototype does not place real trades or move money.',

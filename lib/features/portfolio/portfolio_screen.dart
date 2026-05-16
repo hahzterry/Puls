@@ -139,9 +139,9 @@ class _PositionCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
                   decoration: BoxDecoration(
-                    color: sideColor.withOpacity(0.12),
+                    color: sideColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: sideColor.withOpacity(0.4)),
+                    border: Border.all(color: sideColor.withValues(alpha: 0.4)),
                   ),
                   child: Text(
                     sideLabel,

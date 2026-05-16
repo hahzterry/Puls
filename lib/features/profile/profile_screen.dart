@@ -14,9 +14,9 @@ class ProfileScreen extends StatelessWidget {
         children: [
           const _ProfileHeader(),
           const SizedBox(height: 16),
-          _SettingsGroup(
+          const _SettingsGroup(
             title: 'Account',
-            children: const [
+            children: [
               _SettingsRow(
                 icon: Icons.verified_user_outlined,
                 title: 'Demo mode',
@@ -30,9 +30,9 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _SettingsGroup(
+          const _SettingsGroup(
             title: 'Preferences',
-            children: const [
+            children: [
               _SettingsRow(
                 icon: Icons.dark_mode_outlined,
                 title: 'Theme',
@@ -54,9 +54,9 @@ class ProfileScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: PulsColors.amber.withOpacity(0.10),
+              color: PulsColors.amber.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: PulsColors.amber.withOpacity(0.35)),
+              border: Border.all(color: PulsColors.amber.withValues(alpha: 0.35)),
             ),
             child: const Text(
               'Puls is a UI prototype. It does not support real accounts, deposits, withdrawals, or trades.',
@@ -87,9 +87,9 @@ class _ProfileHeader extends StatelessWidget {
             width: 58,
             height: 58,
             decoration: BoxDecoration(
-              color: PulsColors.blue.withOpacity(0.14),
+              color: PulsColors.blue.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: PulsColors.blue.withOpacity(0.45)),
+              border: Border.all(color: PulsColors.blue.withValues(alpha: 0.45)),
             ),
             child: const Icon(Icons.person_rounded, color: PulsColors.blue, size: 30),
           ),

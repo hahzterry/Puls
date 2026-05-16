@@ -72,7 +72,7 @@ class _AlertsPanel extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: PulsColors.blue.withOpacity(0.13),
+              color: PulsColors.blue.withValues(alpha: 0.13),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.notifications_active_rounded, color: PulsColors.blue),

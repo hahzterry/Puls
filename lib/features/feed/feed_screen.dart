@@ -72,9 +72,9 @@ class _FeedHeader extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: PulsColors.blue.withOpacity(0.14),
+              color: PulsColors.blue.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: PulsColors.blue.withOpacity(0.5)),
+              border: Border.all(color: PulsColors.blue.withValues(alpha: 0.5)),
             ),
             child: const Icon(
               Icons.show_chart_rounded,

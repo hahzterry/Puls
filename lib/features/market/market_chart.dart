@@ -39,7 +39,7 @@ class _MarketChartPainter extends CustomPainter {
     }
 
     final gridPaint = Paint()
-      ..color = PulsColors.border.withOpacity(0.55)
+      ..color = PulsColors.border.withValues(alpha: 0.55)
       ..strokeWidth = 1;
     for (var i = 1; i < 4; i++) {
       final y = size.height * i / 4;
@@ -72,7 +72,7 @@ class _MarketChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [color.withOpacity(0.24), color.withOpacity(0.00)],
+        colors: [color.withValues(alpha: 0.24), color.withValues(alpha: 0)],
       ).createShader(Offset.zero & size);
     canvas.drawPath(fillPath, fillPaint);
 
@@ -89,7 +89,7 @@ class _MarketChartPainter extends CustomPainter {
       last,
       8,
       Paint()
-        ..color = color.withOpacity(0.18)
+        ..color = color.withValues(alpha: 0.18)
         ..style = PaintingStyle.fill,
     );
     canvas.drawCircle(last, 5, Paint()..color = color);

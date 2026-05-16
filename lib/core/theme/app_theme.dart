@@ -44,8 +44,8 @@ class PulsTheme {
         unselectedItemColor: PulsColors.muted,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: PulsColors.panel.withOpacity(0.96),
-        indicatorColor: PulsColors.blue.withOpacity(0.18),
+        backgroundColor: PulsColors.panel.withValues(alpha: 0.96),
+        indicatorColor: PulsColors.blue.withValues(alpha: 0.18),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             color: states.contains(WidgetState.selected)

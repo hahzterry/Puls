@@ -361,7 +361,7 @@ class _CommentRow extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 15,
-            backgroundColor: color.withOpacity(0.16),
+            backgroundColor: color.withValues(alpha: 0.16),
             child: Text(
               comment.author.isEmpty ? '?' : comment.author[0],
               style: TextStyle(color: color, fontWeight: FontWeight.w900),

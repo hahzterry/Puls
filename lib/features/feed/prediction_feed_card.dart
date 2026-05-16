@@ -31,7 +31,7 @@ class PredictionFeedCard extends StatelessWidget {
         border: Border.all(color: PulsColors.border),
         boxShadow: [
           BoxShadow(
-            color: PulsColors.blue.withOpacity(0.10),
+            color: PulsColors.blue.withValues(alpha: 0.10),
             blurRadius: 32,
             offset: const Offset(0, 18),
           ),
@@ -50,7 +50,7 @@ class PredictionFeedCard extends StatelessWidget {
                     colors: [
                       PulsColors.panelElevated,
                       PulsColors.panel,
-                      PulsColors.ink.withOpacity(0.96),
+                      PulsColors.ink.withValues(alpha: 0.96),
                     ],
                   ),
                 ),
@@ -222,9 +222,9 @@ class _SideButton extends StatelessWidget {
       child: FilledButton(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: color.withOpacity(0.16),
+          backgroundColor: color.withValues(alpha: 0.16),
           foregroundColor: color,
-          side: BorderSide(color: color.withOpacity(0.66)),
+          side: BorderSide(color: color.withValues(alpha: 0.66)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         child: Column(
@@ -258,9 +258,9 @@ class _Signal extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.35)),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
