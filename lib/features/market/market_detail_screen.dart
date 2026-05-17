@@ -16,7 +16,9 @@ class MarketDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
     final market = appState.marketById(marketId);
-    final trendColor = market.trendIsPositive ? PulsColors.green : PulsColors.coral;
+    final trendColor =
+        market.trendIsPositive ? PulsColors.green : PulsColors.coral;
+    final tokens = context.puls;
 
     return Scaffold(
       appBar: AppBar(
@@ -30,7 +32,7 @@ class MarketDetailScreen extends StatelessWidget {
                   : Icons.bookmark_border_rounded,
               color: appState.isWatchlisted(market.id)
                   ? PulsColors.amber
-                  : PulsColors.muted,
+                  : tokens.muted,
             ),
           ),
         ],
@@ -45,7 +47,8 @@ class MarketDetailScreen extends StatelessWidget {
               children: market.tags.map((tag) => _Tag(label: tag)).toList(),
             ),
             const SizedBox(height: 16),
-            Text(market.question, style: Theme.of(context).textTheme.headlineMedium),
+            Text(market.question,
+                style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 12),
             Text(market.context, style: Theme.of(context).textTheme.bodyLarge),
             const SizedBox(height: 18),
@@ -69,7 +72,8 @@ class MarketDetailScreen extends StatelessWidget {
               title: 'Market updates',
               child: Column(
                 children: market.news
-                    .map((item) => _NewsRow(source: item.source, title: item.title, age: item.age))
+                    .map((item) => _NewsRow(
+                        source: item.source, title: item.title, age: item.age))
                     .toList(),
               ),
             ),
@@ -130,12 +134,13 @@ class _PricePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: PulsColors.panelSoft,
+        color: tokens.panelSoft,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: PulsColors.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         children: [
@@ -146,7 +151,7 @@ class _PricePanel extends StatelessWidget {
                 price: TradeMath.formatPrice(market.yesPrice),
                 color: PulsColors.green,
               ),
-              Container(width: 1, height: 42, color: PulsColors.border),
+              Container(width: 1, height: 42, color: tokens.border),
               _PriceCell(
                 label: 'No',
                 price: TradeMath.formatPrice(market.noPrice),
@@ -221,7 +226,7 @@ class _StatsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return GridView.count(
       crossAxisCount: 2,
-      childAspectRatio: 2.45,
+      childAspectRatio: 2.05,
       mainAxisSpacing: 10,
       crossAxisSpacing: 10,
       shrinkWrap: true,
@@ -249,12 +254,13 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: PulsColors.panelSoft,
+        color: tokens.panelSoft,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: PulsColors.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,12 +288,13 @@ class _StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: PulsColors.panel,
+        color: tokens.panel,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: PulsColors.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,8 +304,8 @@ class _StatTile extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(
-              color: PulsColors.text,
+            style: TextStyle(
+              color: tokens.text,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -334,7 +341,8 @@ class _NewsRow extends StatelessWidget {
               children: [
                 Text(title, style: Theme.of(context).textTheme.bodyLarge),
                 const SizedBox(height: 3),
-                Text('$source - $age', style: Theme.of(context).textTheme.bodyMedium),
+                Text('$source - $age',
+                    style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
           ),
@@ -372,9 +380,11 @@ class _CommentRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(comment.author, style: Theme.of(context).textTheme.titleMedium),
+                Text(comment.author,
+                    style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 3),
-                Text(comment.text, style: Theme.of(context).textTheme.bodyMedium),
+                Text(comment.text,
+                    style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
           ),
@@ -399,13 +409,14 @@ class _TradeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return SizedBox(
       height: 52,
       child: FilledButton(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
           backgroundColor: color,
-          foregroundColor: PulsColors.ink,
+          foregroundColor: tokens.ink,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         child: Text('$label $price'),
@@ -421,17 +432,18 @@ class _Tag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: PulsColors.panelSoft,
+        color: tokens.panelSoft,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: PulsColors.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: PulsColors.muted,
+        style: TextStyle(
+          color: tokens.muted,
           fontSize: 12,
           fontWeight: FontWeight.w700,
         ),

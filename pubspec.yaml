@@ -7,8 +7,13 @@ environment:
   sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
+  fl_chart: ^1.2.0
+  flex_color_scheme: ^8.4.0
   flutter:
     sdk: flutter
+  flutter_animate: ^4.5.2
+  flutter_card_swiper: ^7.2.0
+  shadcn_flutter: ^0.0.52
 
 dev_dependencies:
   flutter_test:

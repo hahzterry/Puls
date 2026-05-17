@@ -32,7 +32,9 @@ class _PulsAppState extends State<PulsApp> {
           child: MaterialApp(
             title: 'Puls',
             debugShowCheckedModeBanner: false,
-            theme: PulsTheme.dark(),
+            theme: PulsTheme.light(),
+            darkTheme: PulsTheme.dark(),
+            themeMode: _state.themeMode,
             home: _state.onboardingComplete
                 ? const PulsShell()
                 : const OnboardingScreen(),

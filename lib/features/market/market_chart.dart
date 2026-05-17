@@ -1,5 +1,4 @@
-import 'dart:math' as math;
-
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -16,87 +15,49 @@ class MarketChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
+    final spots = values
+        .asMap()
+        .entries
+        .map((entry) => FlSpot(entry.key.toDouble(), entry.value))
+        .toList();
+
     return SizedBox(
       height: 150,
       width: double.infinity,
-      child: CustomPaint(
-        painter: _MarketChartPainter(values: values, color: color),
+      child: LineChart(
+        LineChartData(
+          minY: 0,
+          maxY: 1,
+          gridData: FlGridData(
+            drawVerticalLine: false,
+            horizontalInterval: 0.25,
+            getDrawingHorizontalLine: (_) => FlLine(
+              color: tokens.border.withValues(alpha: 0.55),
+              strokeWidth: 1,
+            ),
+          ),
+          titlesData: const FlTitlesData(show: false),
+          borderData: FlBorderData(show: false),
+          lineTouchData: const LineTouchData(enabled: false),
+          lineBarsData: [
+            LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              preventCurveOverShooting: true,
+              color: color,
+              barWidth: 3,
+              dotData: const FlDotData(show: false),
+              belowBarData: BarAreaData(
+                show: true,
+                color: color.withValues(alpha: 0.16),
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
       ),
     );
-  }
-}
-
-class _MarketChartPainter extends CustomPainter {
-  const _MarketChartPainter({required this.values, required this.color});
-
-  final List<double> values;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (values.length < 2) {
-      return;
-    }
-
-    final gridPaint = Paint()
-      ..color = PulsColors.border.withValues(alpha: 0.55)
-      ..strokeWidth = 1;
-    for (var i = 1; i < 4; i++) {
-      final y = size.height * i / 4;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
-    final minValue = values.reduce(math.min);
-    final maxValue = values.reduce(math.max);
-    final range = math.max(0.01, maxValue - minValue);
-
-    Offset pointFor(int index, double value) {
-      final x = size.width * index / (values.length - 1);
-      final normalized = (value - minValue) / range;
-      final y = size.height - normalized * size.height;
-      return Offset(x, y);
-    }
-
-    final path = Path()..moveTo(0, pointFor(0, values.first).dy);
-    for (var i = 1; i < values.length; i++) {
-      final point = pointFor(i, values[i]);
-      path.lineTo(point.dx, point.dy);
-    }
-
-    final fillPath = Path.from(path)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-
-    final fillPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [color.withValues(alpha: 0.24), color.withValues(alpha: 0)],
-      ).createShader(Offset.zero & size);
-    canvas.drawPath(fillPath, fillPaint);
-
-    final linePaint = Paint()
-      ..color = color
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(path, linePaint);
-
-    final last = pointFor(values.length - 1, values.last);
-    canvas.drawCircle(
-      last,
-      8,
-      Paint()
-        ..color = color.withValues(alpha: 0.18)
-        ..style = PaintingStyle.fill,
-    );
-    canvas.drawCircle(last, 5, Paint()..color = color);
-  }
-
-  @override
-  bool shouldRepaint(covariant _MarketChartPainter oldDelegate) {
-    return oldDelegate.values != values || oldDelegate.color != color;
   }
 }

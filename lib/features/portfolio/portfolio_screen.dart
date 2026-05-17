@@ -18,7 +18,8 @@ class PortfolioScreen extends StatelessWidget {
       0,
       (sum, position) => sum + position.marketValue,
     );
-    final totalPnl = positions.fold<double>(0, (sum, position) => sum + position.pnl);
+    final totalPnl =
+        positions.fold<double>(0, (sum, position) => sum + position.pnl);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Portfolio')),
@@ -31,7 +32,8 @@ class PortfolioScreen extends StatelessWidget {
             children: [
               Text('Positions', style: Theme.of(context).textTheme.titleLarge),
               const Spacer(),
-              Text('${positions.length} open', style: Theme.of(context).textTheme.bodyMedium),
+              Text('${positions.length} open',
+                  style: Theme.of(context).textTheme.bodyMedium),
             ],
           ),
           const SizedBox(height: 12),
@@ -69,18 +71,20 @@ class _PortfolioHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     final pnlColor = totalPnl >= 0 ? PulsColors.green : PulsColors.coral;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: PulsColors.panel,
+        color: tokens.panel,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: PulsColors.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Demo portfolio value', style: Theme.of(context).textTheme.bodyMedium),
+          Text('Demo portfolio value',
+              style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 8),
           Text(
             '\$${totalValue.toStringAsFixed(2)}',
@@ -116,6 +120,7 @@ class _PositionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     final sideColor =
         position.side == MarketSide.yes ? PulsColors.green : PulsColors.coral;
     final pnlColor = position.pnl >= 0 ? PulsColors.green : PulsColors.coral;
@@ -127,9 +132,9 @@ class _PositionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: PulsColors.panelSoft,
+          color: tokens.panelSoft,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: PulsColors.border),
+          border: Border.all(color: tokens.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,7 +142,8 @@ class _PositionCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
                   decoration: BoxDecoration(
                     color: sideColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
@@ -154,12 +160,14 @@ class _PositionCard extends StatelessWidget {
                 const Spacer(),
                 Text(
                   '${position.pnl >= 0 ? '+' : ''}\$${position.pnl.toStringAsFixed(2)}',
-                  style: TextStyle(color: pnlColor, fontWeight: FontWeight.w900),
+                  style:
+                      TextStyle(color: pnlColor, fontWeight: FontWeight.w900),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            Text(position.question, style: Theme.of(context).textTheme.titleMedium),
+            Text(position.question,
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -192,6 +200,7 @@ class _PositionMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,8 +209,8 @@ class _PositionMetric extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             value,
-            style: const TextStyle(
-              color: PulsColors.text,
+            style: TextStyle(
+              color: tokens.text,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -216,18 +225,20 @@ class _EmptyPortfolio extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: PulsColors.panelSoft,
+        color: tokens.panelSoft,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: PulsColors.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         children: [
-          const Icon(Icons.account_balance_wallet_outlined, color: PulsColors.muted),
+          Icon(Icons.account_balance_wallet_outlined, color: tokens.muted),
           const SizedBox(height: 8),
-          Text('No demo positions yet', style: Theme.of(context).textTheme.titleMedium),
+          Text('No demo positions yet',
+              style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
             'Choose Yes or No from the feed to add one.',

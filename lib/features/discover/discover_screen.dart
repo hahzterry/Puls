@@ -22,7 +22,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     final appState = PulsStateScope.of(context);
     final categories = ['All', ...appState.categories];
     final markets = appState.markets.where((market) {
-      final matchesCategory = _category == 'All' || market.category == _category;
+      final matchesCategory =
+          _category == 'All' || market.category == _category;
       final matchesQuery =
           market.question.toLowerCase().contains(_query.toLowerCase()) ||
               market.context.toLowerCase().contains(_query.toLowerCase());
@@ -70,9 +71,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           const SizedBox(height: 18),
           Row(
             children: [
-              Text('Trending now', style: Theme.of(context).textTheme.titleLarge),
+              Text('Trending now',
+                  style: Theme.of(context).textTheme.titleLarge),
               const Spacer(),
-              Text('${markets.length} markets', style: Theme.of(context).textTheme.bodyMedium),
+              Text('${markets.length} markets',
+                  style: Theme.of(context).textTheme.bodyMedium),
             ],
           ),
           const SizedBox(height: 12),
@@ -117,7 +120,9 @@ class _MarketListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trendColor = market.trendIsPositive ? PulsColors.green : PulsColors.coral;
+    final tokens = context.puls;
+    final trendColor =
+        market.trendIsPositive ? PulsColors.green : PulsColors.coral;
 
     return InkWell(
       onTap: onTap,
@@ -125,9 +130,9 @@ class _MarketListCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: PulsColors.panelSoft,
+          color: tokens.panelSoft,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: PulsColors.border),
+          border: Border.all(color: tokens.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,12 +155,13 @@ class _MarketListCard extends StatelessWidget {
                     isWatchlisted
                         ? Icons.bookmark_rounded
                         : Icons.bookmark_border_rounded,
-                    color: isWatchlisted ? PulsColors.amber : PulsColors.muted,
+                    color: isWatchlisted ? PulsColors.amber : tokens.muted,
                   ),
                 ),
               ],
             ),
-            Text(market.question, style: Theme.of(context).textTheme.titleMedium),
+            Text(market.question,
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -173,7 +179,8 @@ class _MarketListCard extends StatelessWidget {
                 const Spacer(),
                 Text(
                   '${market.trendIsPositive ? '+' : ''}${TradeMath.formatPercent(market.trend)}',
-                  style: TextStyle(color: trendColor, fontWeight: FontWeight.w800),
+                  style:
+                      TextStyle(color: trendColor, fontWeight: FontWeight.w800),
                 ),
               ],
             ),
@@ -206,7 +213,8 @@ class _MiniPrice extends StatelessWidget {
       ),
       child: Text(
         '$label $price',
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w800),
+        style:
+            TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w800),
       ),
     );
   }
@@ -217,18 +225,20 @@ class _EmptyDiscover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: PulsColors.panelSoft,
+        color: tokens.panelSoft,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: PulsColors.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         children: [
-          const Icon(Icons.search_off_rounded, color: PulsColors.muted),
+          Icon(Icons.search_off_rounded, color: tokens.muted),
           const SizedBox(height: 8),
-          Text('No markets found', style: Theme.of(context).textTheme.titleMedium),
+          Text('No markets found',
+              style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
             'Try another search or category.',

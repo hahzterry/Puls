@@ -61,7 +61,7 @@ class _PulsShellState extends State<PulsShell> {
           ),
         ],
       ),
-      backgroundColor: PulsColors.ink,
+      backgroundColor: context.puls.ink,
     );
   }
 }

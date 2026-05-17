@@ -183,8 +183,7 @@ class MockMarketRepository {
           id: 'eth-etf-may',
           question: 'Will ETH ETF net flows beat BTC this month?',
           category: 'Crypto',
-          context:
-              'ETH products saw two strong inflow days while BTC cooled.',
+          context: 'ETH products saw two strong inflow days while BTC cooled.',
           yesPrice: 0.44,
           noPrice: 0.56,
           volume: '\$7.4M',

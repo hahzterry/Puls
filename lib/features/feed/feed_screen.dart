@@ -64,6 +64,7 @@ class _FeedHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 4),
       child: Row(
@@ -97,9 +98,9 @@ class _FeedHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: PulsColors.panelSoft,
+              color: tokens.panelSoft,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: PulsColors.border),
+              border: Border.all(color: tokens.border),
             ),
             child: const Text(
               'DEMO',

@@ -44,6 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
+    final tokens = context.puls;
 
     return Scaffold(
       body: SafeArea(
@@ -74,9 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     height: 8,
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
-                      color: _index == index
-                          ? PulsColors.blue
-                          : PulsColors.border,
+                      color: _index == index ? PulsColors.blue : tokens.border,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -150,6 +149,7 @@ class _OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -158,9 +158,9 @@ class _OnboardingPage extends StatelessWidget {
           width: 78,
           height: 78,
           decoration: BoxDecoration(
-            color: PulsColors.panelElevated,
+            color: tokens.panelElevated,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: PulsColors.border),
+            border: Border.all(color: tokens.border),
             boxShadow: [
               BoxShadow(
                 color: PulsColors.blue.withValues(alpha: 0.24),

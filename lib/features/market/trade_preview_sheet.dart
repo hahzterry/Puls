@@ -51,6 +51,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
   @override
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
+    final tokens = context.puls;
     final sideColor =
         widget.side == MarketSide.yes ? PulsColors.green : PulsColors.coral;
     final sideLabel = widget.side == MarketSide.yes ? 'Yes' : 'No';
@@ -69,9 +70,9 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
       ),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: PulsColors.panel,
+          color: tokens.panel,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: PulsColors.border),
+          border: Border.all(color: tokens.border),
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
@@ -84,7 +85,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: PulsColors.border,
+                    color: tokens.border,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -100,7 +101,8 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                     decoration: BoxDecoration(
                       color: sideColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: sideColor.withValues(alpha: 0.5)),
+                      border:
+                          Border.all(color: sideColor.withValues(alpha: 0.5)),
                     ),
                     child: Text(
                       sideLabel.toUpperCase(),
@@ -120,7 +122,8 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                 ],
               ),
               const SizedBox(height: 12),
-              Text(widget.market.question, style: Theme.of(context).textTheme.bodyLarge),
+              Text(widget.market.question,
+                  style: Theme.of(context).textTheme.bodyLarge),
               const SizedBox(height: 18),
               TextField(
                 controller: _controller,
@@ -152,9 +155,14 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
               ),
               const SizedBox(height: 18),
               _PreviewRow(label: 'Price', value: TradeMath.formatPrice(price)),
-              _PreviewRow(label: 'Estimated shares', value: payout.toStringAsFixed(2)),
-              _PreviewRow(label: 'Max payout if correct', value: '\$${payout.toStringAsFixed(2)}'),
-              _PreviewRow(label: 'Estimated profit', value: '\$${profit.toStringAsFixed(2)}'),
+              _PreviewRow(
+                  label: 'Estimated shares', value: payout.toStringAsFixed(2)),
+              _PreviewRow(
+                  label: 'Max payout if correct',
+                  value: '\$${payout.toStringAsFixed(2)}'),
+              _PreviewRow(
+                  label: 'Estimated profit',
+                  value: '\$${profit.toStringAsFixed(2)}'),
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
@@ -162,7 +170,8 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                 decoration: BoxDecoration(
                   color: PulsColors.amber.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: PulsColors.amber.withValues(alpha: 0.35)),
+                  border: Border.all(
+                      color: PulsColors.amber.withValues(alpha: 0.35)),
                 ),
                 child: const Text(
                   'Demo only. This prototype does not place real trades or move money.',
@@ -216,6 +225,7 @@ class _PreviewRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -224,8 +234,8 @@ class _PreviewRow extends StatelessWidget {
           const Spacer(),
           Text(
             value,
-            style: const TextStyle(
-              color: PulsColors.text,
+            style: TextStyle(
+              color: tokens.text,
               fontWeight: FontWeight.w800,
             ),
           ),

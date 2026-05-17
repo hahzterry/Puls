@@ -25,6 +25,8 @@ void main() {
       ),
     );
 
+    await tester.pumpAndSettle();
+
     expect(find.text(market.question), findsOneWidget);
     expect(find.text('YES'), findsOneWidget);
     expect(find.text('NO'), findsOneWidget);

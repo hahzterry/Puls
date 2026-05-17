@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import '../core/utils/trade_math.dart';
 import '../data/mock/mock_market_repository.dart';
@@ -19,6 +19,7 @@ class PulsAppState extends ChangeNotifier {
   final List<Position> _positions;
 
   bool onboardingComplete = false;
+  ThemeMode themeMode = ThemeMode.dark;
 
   List<Position> get positions => List.unmodifiable(_positions);
   List<String> get watchlistIds => List.unmodifiable(_watchlistIds);
@@ -38,6 +39,16 @@ class PulsAppState extends ChangeNotifier {
 
   void completeOnboarding() {
     onboardingComplete = true;
+    notifyListeners();
+  }
+
+  void setThemeMode(ThemeMode value) {
+    themeMode = value;
+    notifyListeners();
+  }
+
+  void toggleThemeMode() {
+    themeMode = themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
     notifyListeners();
   }
 

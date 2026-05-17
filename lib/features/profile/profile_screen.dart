@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -7,6 +8,9 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = PulsStateScope.of(context);
+    final isDark = appState.themeMode == ThemeMode.dark;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: ListView(
@@ -30,20 +34,26 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const _SettingsGroup(
+          _SettingsGroup(
             title: 'Preferences',
             children: [
               _SettingsRow(
-                icon: Icons.dark_mode_outlined,
+                icon: isDark
+                    ? Icons.dark_mode_outlined
+                    : Icons.light_mode_outlined,
                 title: 'Theme',
-                subtitle: 'Premium dark',
+                subtitle: isDark ? 'Premium dark' : 'Clean light',
+                trailing: Switch(
+                  value: isDark,
+                  onChanged: (_) => appState.toggleThemeMode(),
+                ),
               ),
-              _SettingsRow(
+              const _SettingsRow(
                 icon: Icons.notifications_none_rounded,
                 title: 'Alerts',
                 subtitle: 'Price moves and deadlines',
               ),
-              _SettingsRow(
+              const _SettingsRow(
                 icon: Icons.speed_rounded,
                 title: 'Feed speed',
                 subtitle: 'Fast swipe discovery',
@@ -56,7 +66,8 @@ class ProfileScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: PulsColors.amber.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: PulsColors.amber.withValues(alpha: 0.35)),
+              border:
+                  Border.all(color: PulsColors.amber.withValues(alpha: 0.35)),
             ),
             child: const Text(
               'Puls is a UI prototype. It does not support real accounts, deposits, withdrawals, or trades.',
@@ -74,12 +85,13 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: PulsColors.panel,
+        color: tokens.panel,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: PulsColors.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Row(
         children: [
@@ -89,16 +101,19 @@ class _ProfileHeader extends StatelessWidget {
             decoration: BoxDecoration(
               color: PulsColors.blue.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: PulsColors.blue.withValues(alpha: 0.45)),
+              border:
+                  Border.all(color: PulsColors.blue.withValues(alpha: 0.45)),
             ),
-            child: const Icon(Icons.person_rounded, color: PulsColors.blue, size: 30),
+            child: const Icon(Icons.person_rounded,
+                color: PulsColors.blue, size: 30),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Puls Demo Trader', style: Theme.of(context).textTheme.titleLarge),
+                Text('Puls Demo Trader',
+                    style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 4),
                 Text(
                   '@puls_demo',
@@ -121,12 +136,13 @@ class _SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: PulsColors.panelSoft,
+        color: tokens.panelSoft,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: PulsColors.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,14 +161,17 @@ class _SettingsRow extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.trailing,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.puls;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 9),
       child: Row(
@@ -161,11 +180,11 @@ class _SettingsRow extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: PulsColors.panel,
+              color: tokens.panel,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: PulsColors.border),
+              border: Border.all(color: tokens.border),
             ),
-            child: Icon(icon, color: PulsColors.muted, size: 20),
+            child: Icon(icon, color: tokens.muted, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -178,7 +197,7 @@ class _SettingsRow extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, color: PulsColors.muted),
+          trailing ?? Icon(Icons.chevron_right_rounded, color: tokens.muted),
         ],
       ),
     );
