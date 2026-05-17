@@ -1,3 +1,4 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/puls_app_state.dart';
@@ -12,74 +13,117 @@ class WatchlistScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
+    final t = context.puls;
     final markets = appState.watchlistMarkets;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Watchlist')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 22),
-        children: [
-          const _AlertsPanel(),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Text('Saved markets',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const Spacer(),
-              Text('${markets.length} saved',
-                  style: Theme.of(context).textTheme.bodyMedium),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (markets.isEmpty)
-            const _EmptyWatchlist()
-          else
-            ...markets.map((market) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _WatchCard(
-                  market: market,
-                  onRemove: () => appState.toggleWatchlist(market.id),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => MarketDetailScreen(marketId: market.id),
+      backgroundColor: t.bg,
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FadeInDown(
+                      duration: const Duration(milliseconds: 400),
+                      child: Text('Watchlist',
+                          style: Theme.of(context).textTheme.displaySmall),
+                    ),
+                    const SizedBox(height: 20),
+                    FadeInUp(
+                      delay: const Duration(milliseconds: 80),
+                      duration: const Duration(milliseconds: 400),
+                      child: _AlertsBanner(t: t),
+                    ),
+                    const SizedBox(height: 24),
+                    FadeIn(
+                      delay: const Duration(milliseconds: 160),
+                      child: Row(
+                        children: [
+                          Text('Saved markets',
+                              style: Theme.of(context).textTheme.titleLarge),
+                          const Spacer(),
+                          Text('${markets.length} saved',
+                              style: Theme.of(context).textTheme.bodyMedium),
+                        ],
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ),
-              );
-            }),
-        ],
+              ),
+            ),
+            if (markets.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: FadeIn(
+                    delay: const Duration(milliseconds: 200),
+                    child: _EmptyState(t: t),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                sliver: SliverList.builder(
+                  itemCount: markets.length,
+                  itemBuilder: (context, i) => FadeInUp(
+                    delay: Duration(milliseconds: 200 + i * 60),
+                    duration: const Duration(milliseconds: 350),
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _WatchCard(
+                        market: markets[i],
+                        t: t,
+                        onRemove: () =>
+                            appState.toggleWatchlist(markets[i].id),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => MarketDetailScreen(
+                                marketId: markets[i].id),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _AlertsPanel extends StatelessWidget {
-  const _AlertsPanel();
+class _AlertsBanner extends StatelessWidget {
+  const _AlertsBanner({required this.t});
+  final PulsThemeColors t;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.puls;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: tokens.panel,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: tokens.border),
+        color: t.brandSubtle,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: t.brand.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: PulsColors.blue.withValues(alpha: 0.13),
-              borderRadius: BorderRadius.circular(8),
+              color: t.brand,
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.notifications_active_rounded,
-                color: PulsColors.blue),
+            child: const Icon(Icons.notifications_rounded,
+                color: Colors.white, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -88,9 +132,9 @@ class _AlertsPanel extends StatelessWidget {
               children: [
                 Text('3 mock alerts armed',
                     style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
-                  'Price movement and deadline alerts are simulated.',
+                  'Price moves and deadlines are simulated.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
@@ -105,28 +149,37 @@ class _AlertsPanel extends StatelessWidget {
 class _WatchCard extends StatelessWidget {
   const _WatchCard({
     required this.market,
+    required this.t,
     required this.onRemove,
     required this.onTap,
   });
 
   final Market market;
+  final PulsThemeColors t;
   final VoidCallback onRemove;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.puls;
-    final trendColor =
-        market.trendIsPositive ? PulsColors.green : PulsColors.coral;
-    return InkWell(
+    final trendPositive = market.trendIsPositive;
+    final trendColor = trendPositive ? PulsColors.green : PulsColors.red;
+    final trendBg = trendPositive ? PulsColors.greenLight : PulsColors.redLight;
+
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: tokens.panelSoft,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: tokens.border),
+          color: t.surfaceRaised,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: t.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,23 +189,44 @@ class _WatchCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(market.question,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
+                      style: Theme.of(context).textTheme.titleMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
-                      Text(
-                        'Yes ${TradeMath.formatPrice(market.yesPrice)}',
-                        style: const TextStyle(
-                          color: PulsColors.green,
-                          fontWeight: FontWeight.w800,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: PulsColors.greenLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'Yes ${TradeMath.formatPrice(market.yesPrice)}',
+                          style: const TextStyle(
+                            color: PulsColors.green,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        '${market.trendIsPositive ? '+' : ''}${TradeMath.formatPercent(market.trend)}',
-                        style: TextStyle(
-                          color: trendColor,
-                          fontWeight: FontWeight.w800,
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: trendBg,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${trendPositive ? '+' : ''}${TradeMath.formatPercent(market.trend)}',
+                          style: TextStyle(
+                            color: trendColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
@@ -160,10 +234,19 @@ class _WatchCard extends StatelessWidget {
                 ],
               ),
             ),
-            IconButton(
-              onPressed: onRemove,
-              icon: const Icon(Icons.bookmark_remove_rounded,
-                  color: PulsColors.amber),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: onRemove,
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: PulsColors.amberLight,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.bookmark_remove_rounded,
+                    color: PulsColors.amber, size: 16),
+              ),
             ),
           ],
         ),
@@ -172,29 +255,30 @@ class _WatchCard extends StatelessWidget {
   }
 }
 
-class _EmptyWatchlist extends StatelessWidget {
-  const _EmptyWatchlist();
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.t});
+  final PulsThemeColors t;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.puls;
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: tokens.panelSoft,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: tokens.border),
+        color: t.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: t.border),
       ),
       child: Column(
         children: [
-          Icon(Icons.bookmark_border_rounded, color: tokens.muted),
-          const SizedBox(height: 8),
+          Icon(Icons.bookmark_rounded, color: t.textSubtle, size: 32),
+          const SizedBox(height: 12),
           Text('No saved markets',
               style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             'Tap the bookmark on any market to watch it.',
             style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
           ),
         ],
       ),

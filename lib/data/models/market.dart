@@ -17,6 +17,7 @@ class Market {
     required this.history,
     required this.comments,
     required this.news,
+    this.imageUrl = '',
   });
 
   final String id;
@@ -34,6 +35,7 @@ class Market {
   final List<double> history;
   final List<MarketComment> comments;
   final List<MarketNews> news;
+  final String imageUrl;
 
   bool get trendIsPositive => trend >= 0;
 }

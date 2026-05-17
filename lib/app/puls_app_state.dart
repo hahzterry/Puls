@@ -4,51 +4,92 @@ import '../core/utils/trade_math.dart';
 import '../data/mock/mock_market_repository.dart';
 import '../data/models/market.dart';
 import '../data/models/position.dart';
+import '../data/polymarket/polymarket_repository.dart';
+
+enum FeedStatus { loading, loaded, error }
 
 class PulsAppState extends ChangeNotifier {
-  PulsAppState({required this.repository})
-      : markets = repository.markets,
-        categories = repository.categories,
-        _watchlistIds = repository.initialWatchlistIds.toSet(),
-        _positions = List<Position>.from(repository.initialPositions);
+  PulsAppState({required this.mockRepo}) {
+    _positions = List<Position>.from(mockRepo.initialPositions);
+    _watchlistIds = mockRepo.initialWatchlistIds.toSet();
+    _loadMarkets();
+  }
 
-  final MockMarketRepository repository;
-  final List<Market> markets;
-  final List<String> categories;
-  final Set<String> _watchlistIds;
-  final List<Position> _positions;
+  final MockMarketRepository mockRepo;
+  final _polymarket = PolymarketRepository();
+
+  List<Market> _markets = [];
+  List<Position> _positions = [];
+  Set<String> _watchlistIds = {};
+
+  FeedStatus feedStatus = FeedStatus.loading;
+  String? feedError;
 
   bool onboardingComplete = false;
-  ThemeMode themeMode = ThemeMode.dark;
+  ThemeMode themeMode = ThemeMode.light;
+  bool fastBuyEnabled = false;
+  double fastBuyAmount = 1.0;
 
+  List<Market> get markets => List.unmodifiable(_markets);
   List<Position> get positions => List.unmodifiable(_positions);
   List<String> get watchlistIds => List.unmodifiable(_watchlistIds);
 
-  List<Market> get feedMarkets =>
-      markets.where((market) => market.isFeatured).toList(growable: false);
-
-  List<Market> get watchlistMarkets => markets
-      .where((market) => _watchlistIds.contains(market.id))
-      .toList(growable: false);
-
-  Market marketById(String id) {
-    return markets.firstWhere((market) => market.id == id);
+  List<String> get categories {
+    final cats = _markets.map((m) => m.category).toSet().toList();
+    cats.sort();
+    return cats;
   }
 
+  List<Market> get feedMarkets {
+    final tradedIds = _positions.map((p) => p.marketId).toSet();
+    final fresh = _markets.where((m) => !tradedIds.contains(m.id)).toList();
+    // If all traded (unlikely), show all
+    return fresh.isNotEmpty ? fresh : _markets;
+  }
+
+  List<Market> get watchlistMarkets =>
+      _markets.where((m) => _watchlistIds.contains(m.id)).toList();
+
+  Market marketById(String id) =>
+      _markets.firstWhere((m) => m.id == id);
+
   bool isWatchlisted(String marketId) => _watchlistIds.contains(marketId);
+
+  Future<void> _loadMarkets() async {
+    feedStatus = FeedStatus.loading;
+    notifyListeners();
+    try {
+      debugPrint('[Puls] Fetching Polymarket markets…');
+      _markets = await _polymarket.fetchMarkets(limit: 100);
+      debugPrint('[Puls] Loaded ${_markets.length} markets');
+      feedStatus = FeedStatus.loaded;
+    } catch (e, st) {
+      debugPrint('[Puls] Fetch error: $e\n$st');
+      feedError = e.toString();
+      feedStatus = FeedStatus.error;
+    }
+    notifyListeners();
+  }
+
+  Future<void> refresh() => _loadMarkets();
 
   void completeOnboarding() {
     onboardingComplete = true;
     notifyListeners();
   }
 
-  void setThemeMode(ThemeMode value) {
-    themeMode = value;
+  void toggleThemeMode() {
+    themeMode = themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
     notifyListeners();
   }
 
-  void toggleThemeMode() {
-    themeMode = themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+  void toggleFastBuy() {
+    fastBuyEnabled = !fastBuyEnabled;
+    notifyListeners();
+  }
+
+  void setFastBuyAmount(double amount) {
+    fastBuyAmount = amount;
     notifyListeners();
   }
 
@@ -79,7 +120,6 @@ class PulsAppState extends ChangeNotifier {
       shares: shares,
       openedAt: DateTime.now(),
     );
-
     _positions.insert(0, position);
     notifyListeners();
     return position;
@@ -94,8 +134,9 @@ class PulsStateScope extends InheritedNotifier<PulsAppState> {
   });
 
   static PulsAppState of(BuildContext context) {
-    final scope = context.dependOnInheritedWidgetOfExactType<PulsStateScope>();
-    assert(scope != null, 'PulsStateScope was not found in the widget tree.');
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<PulsStateScope>();
+    assert(scope != null, 'PulsStateScope not found');
     return scope!.notifier!;
   }
 }

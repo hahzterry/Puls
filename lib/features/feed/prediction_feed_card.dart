@@ -28,274 +28,259 @@ class PredictionFeedCard extends StatefulWidget {
 class _PredictionFeedCardState extends State<PredictionFeedCard> {
   double _dragX = 0;
 
-  void _resetDrag() {
-    if (!mounted) {
-      return;
-    }
-    setState(() => _dragX = 0);
+  void _reset() {
+    if (mounted) setState(() => _dragX = 0);
   }
 
-  void _commitSwipe(MarketSide side) {
-    _resetDrag();
+  void _commit(MarketSide side) {
+    _reset();
     widget.onChoose(side);
   }
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.puls;
+    final t = context.puls;
     final market = widget.market;
-    final trendColor =
-        market.trendIsPositive ? PulsColors.green : PulsColors.coral;
-    final swipeProgress = (_dragX.abs() / 140).clamp(0.0, 1.0);
-    final swipeSide = _dragX >= 0 ? MarketSide.yes : MarketSide.no;
+    final progress = (_dragX.abs() / 140).clamp(0.0, 1.0);
+    final side = _dragX >= 0 ? MarketSide.yes : MarketSide.no;
+    final swipeColor = side == MarketSide.yes ? PulsColors.green : PulsColors.red;
+    final hasImage = market.imageUrl.isNotEmpty;
 
-    final card = GestureDetector(
+    return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onHorizontalDragUpdate: (details) {
-        setState(() => _dragX = (_dragX + details.delta.dx).clamp(-180, 180));
-      },
-      onHorizontalDragEnd: (details) {
-        final velocity = details.primaryVelocity ?? 0;
-        if (_dragX > 82 || velocity > 700) {
-          _commitSwipe(MarketSide.yes);
-        } else if (_dragX < -82 || velocity < -700) {
-          _commitSwipe(MarketSide.no);
+      onHorizontalDragUpdate: (d) =>
+          setState(() => _dragX = (_dragX + d.delta.dx).clamp(-180.0, 180.0)),
+      onHorizontalDragEnd: (d) {
+        final v = d.primaryVelocity ?? 0;
+        if (_dragX > 82 || v > 700) {
+          _commit(MarketSide.yes);
+        } else if (_dragX < -82 || v < -700) {
+          _commit(MarketSide.no);
         } else {
-          _resetDrag();
+          _reset();
         }
       },
-      onHorizontalDragCancel: _resetDrag,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 170),
-        curve: Curves.easeOutCubic,
-        child: Transform.translate(
-          offset: Offset(_dragX, 0),
-          child: Transform.rotate(
-            angle: _dragX / 1800,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: tokens.panel,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: tokens.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: (_dragX == 0
-                            ? PulsColors.blue
-                            : swipeSide == MarketSide.yes
-                                ? PulsColors.green
-                                : PulsColors.coral)
-                        .withValues(alpha: 0.10 + swipeProgress * 0.18),
-                    blurRadius: 32,
-                    offset: const Offset(0, 18),
-                  ),
-                ],
+      onHorizontalDragCancel: _reset,
+      child: Transform.translate(
+        offset: Offset(_dragX, 0),
+        child: Transform.rotate(
+          angle: _dragX / 2400,
+          child: Container(
+            decoration: BoxDecoration(
+              color: t.surfaceRaised,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: progress > 0.1
+                    ? swipeColor.withValues(alpha: progress * 0.5)
+                    : t.border,
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Swipe tint overlay
+                if (progress > 0)
+                  Positioned.fill(
+                    child: AnimatedOpacity(
+                      opacity: progress * 0.08,
+                      duration: const Duration(milliseconds: 60),
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              tokens.panelElevated,
-                              tokens.panel,
-                              tokens.ink.withValues(alpha: 0.96),
-                            ],
-                          ),
+                          color: swipeColor,
+                          borderRadius: BorderRadius.circular(20),
                         ),
                       ),
                     ),
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: _SwipeCue(
-                          progress: swipeProgress,
-                          side: swipeSide,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              _Tag(label: market.category),
-                              const SizedBox(width: 8),
-                              _Tag(label: market.volume),
-                              const Spacer(),
-                              IconButton(
-                                onPressed: widget.onWatchlist,
-                                tooltip: widget.isWatchlisted
-                                    ? 'Remove watch'
-                                    : 'Add watch',
-                                icon: Icon(
-                                  widget.isWatchlisted
-                                      ? Icons.bookmark_rounded
-                                      : Icons.bookmark_border_rounded,
-                                  color: widget.isWatchlisted
-                                      ? PulsColors.amber
-                                      : tokens.muted,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                          Text(
-                            market.question,
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          const SizedBox(height: 14),
-                          Text(
-                            market.context,
-                            style:
-                                Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: tokens.muted,
+                  ),
+                // Card content
+                Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top row: tags + swipe badge + bookmark
+                      Row(
+                              children: [
+                                _Tag(label: market.category, t: t),
+                                const SizedBox(width: 8),
+                                _Tag(label: market.volume, t: t),
+                                const Spacer(),
+                                if (progress > 0.2)
+                                  AnimatedOpacity(
+                                    opacity: ((progress - 0.2) / 0.8)
+                                        .clamp(0, 1),
+                                    duration:
+                                        const Duration(milliseconds: 80),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: swipeColor,
+                                        borderRadius:
+                                            BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        side == MarketSide.yes
+                                            ? 'YES'
+                                            : 'NO',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 12,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
                                     ),
-                          ),
-                          const SizedBox(height: 18),
-                          _OddsBar(market: market),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              _Signal(
-                                icon: Icons.trending_up_rounded,
-                                label:
-                                    '${market.trendIsPositive ? '+' : ''}${TradeMath.formatPercent(market.trend)}',
-                                color: trendColor,
-                              ),
-                              const SizedBox(width: 10),
-                              _Signal(
-                                icon: Icons.water_drop_outlined,
-                                label: 'Liq ${market.liquidity}',
-                                color: PulsColors.cyan,
-                              ),
-                              const Spacer(),
-                              TextButton.icon(
-                                onPressed: widget.onDetails,
-                                icon: const Icon(Icons.open_in_new_rounded,
-                                    size: 18),
-                                label: const Text('Details'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _SideButton(
-                                  label: 'YES',
-                                  price: TradeMath.formatPrice(market.yesPrice),
-                                  color: PulsColors.green,
-                                  onPressed: () =>
-                                      widget.onChoose(MarketSide.yes),
+                                  ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: widget.onWatchlist,
+                                  child: Icon(
+                                    Icons.bookmark_rounded,
+                                    size: 20,
+                                    color: widget.isWatchlisted
+                                        ? PulsColors.amber
+                                        : t.textSubtle,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _SideButton(
-                                  label: 'NO',
-                                  price: TradeMath.formatPrice(market.noPrice),
-                                  color: PulsColors.coral,
-                                  onPressed: () =>
-                                      widget.onChoose(MarketSide.no),
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
+                      // Image inside card
+                      if (hasImage) ...[
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.network(
+                            market.imageUrl,
+                            height: 140,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                           ),
-                          const SizedBox(height: 8),
-                          Center(
-                            child: Text(
-                              'Swipe right for Yes, left for No',
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      // Question
+                            Text(
+                              market.question,
                               style: Theme.of(context)
                                   .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(fontSize: 12),
+                                  .headlineMedium,
+                              maxLines: hasImage ? 2 : 3,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    return card.animate().fadeIn(duration: 220.ms, curve: Curves.easeOut).scale(
-          begin: const Offset(0.98, 0.98),
-          duration: 220.ms,
-          curve: Curves.easeOutCubic,
-        );
-  }
-}
-
-class _SwipeCue extends StatelessWidget {
-  const _SwipeCue({required this.progress, required this.side});
-
-  final double progress;
-  final MarketSide side;
-
-  @override
-  Widget build(BuildContext context) {
-    if (progress == 0) {
-      return const SizedBox.shrink();
-    }
-
-    final isYes = side == MarketSide.yes;
-    final color = isYes ? PulsColors.green : PulsColors.coral;
-    final alignment = isYes ? Alignment.centerLeft : Alignment.centerRight;
-    final label = isYes ? 'YES' : 'NO';
-
-    return AnimatedOpacity(
-      opacity: progress,
-      duration: const Duration(milliseconds: 80),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08 * progress),
-        ),
-        child: Align(
-          alignment: alignment,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Transform.rotate(
-              angle: isYes ? -0.16 : 0.16,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color),
-                ),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0,
+                            if (!hasImage && market.context.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                market.context,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(height: 1.5),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                            const SizedBox(height: 14),
+                            // Odds bar
+                            _OddsBar(market: market),
+                            const SizedBox(height: 14),
+                            // Stats + details
+                            Row(
+                              children: [
+                                _Stat(
+                                  icon: Icons.trending_up_rounded,
+                                  label:
+                                      '${market.trendIsPositive ? '+' : ''}${TradeMath.formatPercent(market.trend)}',
+                                  color: market.trendIsPositive
+                                      ? PulsColors.green
+                                      : PulsColors.red,
+                                ),
+                                const SizedBox(width: 8),
+                                _Stat(
+                                  icon: Icons.water_drop_outlined,
+                                  label: market.liquidity,
+                                  color: t.textMuted,
+                                ),
+                                const Spacer(),
+                                GestureDetector(
+                                  onTap: widget.onDetails,
+                                  child: Row(
+                                    children: [
+                                      Text('Details',
+                                          style: TextStyle(
+                                              color: t.brand,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600)),
+                                      const SizedBox(width: 2),
+                                      Icon(Icons.arrow_forward_rounded,
+                                          size: 14, color: t.brand),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            // YES / NO buttons
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _SideBtn(
+                                    label: 'YES',
+                                    price: TradeMath.formatPrice(
+                                        market.yesPrice),
+                                    bg: PulsColors.greenLight,
+                                    fg: PulsColors.green,
+                                    onPressed: () =>
+                                        widget.onChoose(MarketSide.yes),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _SideBtn(
+                                    label: 'NO',
+                                    price: TradeMath.formatPrice(
+                                        market.noPrice),
+                                    bg: PulsColors.redLight,
+                                    fg: PulsColors.red,
+                                    onPressed: () =>
+                                        widget.onChoose(MarketSide.no),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Center(
+                              child: Text(
+                                'Swipe right for Yes · left for No',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall,
+                              ),
+                            ),
+                    ],
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
       ),
-    );
+    )
+        .animate()
+        .fadeIn(duration: 200.ms)
+        .slideY(begin: 0.04, duration: 200.ms, curve: Curves.easeOut);
   }
 }
 
 class _OddsBar extends StatelessWidget {
   const _OddsBar({required this.market});
-
   final Market market;
 
   @override
@@ -304,37 +289,33 @@ class _OddsBar extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(
-              'Yes ${TradeMath.formatPrice(market.yesPrice)}',
-              style: const TextStyle(
-                color: PulsColors.green,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+            Text('Yes ${TradeMath.formatPrice(market.yesPrice)}',
+                style: const TextStyle(
+                    color: PulsColors.green,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13)),
             const Spacer(),
-            Text(
-              'No ${TradeMath.formatPrice(market.noPrice)}',
-              style: const TextStyle(
-                color: PulsColors.coral,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+            Text('No ${TradeMath.formatPrice(market.noPrice)}',
+                style: const TextStyle(
+                    color: PulsColors.red,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13)),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(4),
           child: SizedBox(
-            height: 10,
+            height: 5,
             child: Row(
               children: [
                 Expanded(
                   flex: (market.yesPrice * 100).round(),
-                  child: Container(color: PulsColors.green),
+                  child: const ColoredBox(color: PulsColors.green),
                 ),
                 Expanded(
                   flex: (market.noPrice * 100).round(),
-                  child: Container(color: PulsColors.coral),
+                  child: const ColoredBox(color: PulsColors.red),
                 ),
               ],
             ),
@@ -345,39 +326,44 @@ class _OddsBar extends StatelessWidget {
   }
 }
 
-class _SideButton extends StatelessWidget {
-  const _SideButton({
+class _SideBtn extends StatelessWidget {
+  const _SideBtn({
     required this.label,
     required this.price,
-    required this.color,
+    required this.bg,
+    required this.fg,
     required this.onPressed,
   });
-
   final String label;
   final String price;
-  final Color color;
+  final Color bg;
+  final Color fg;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 58,
-      child: FilledButton(
+      height: 54,
+      child: TextButton(
         onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: color.withValues(alpha: 0.16),
-          foregroundColor: color,
-          side: BorderSide(color: color.withValues(alpha: 0.66)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        style: TextButton.styleFrom(
+          backgroundColor: bg,
+          foregroundColor: fg,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12)),
+          padding: EdgeInsets.zero,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
-            ),
-            Text(price, style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(label,
+                style: TextStyle(
+                    fontWeight: FontWeight.w800, fontSize: 14, color: fg)),
+            Text(price,
+                style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                    color: fg.withValues(alpha: 0.8))),
           ],
         ),
       ),
@@ -385,68 +371,48 @@ class _SideButton extends StatelessWidget {
   }
 }
 
-class _Signal extends StatelessWidget {
-  const _Signal({
+class _Stat extends StatelessWidget {
+  const _Stat({
     required this.icon,
     required this.label,
     required this.color,
   });
-
   final IconData icon;
   final String label;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 15, color: color),
-          const SizedBox(width: 5),
-          Text(
-            label,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(label,
             style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
+                color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      ],
     );
   }
 }
 
 class _Tag extends StatelessWidget {
-  const _Tag({required this.label});
-
+  const _Tag({required this.label, required this.t});
   final String label;
+  final PulsThemeColors t;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.puls;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: tokens.panelSoft,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: tokens.border),
+        color: t.surface,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: t.border),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: tokens.muted,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+      child: Text(label,
+          style: TextStyle(
+              color: t.textMuted, fontSize: 11, fontWeight: FontWeight.w500)),
     );
   }
 }

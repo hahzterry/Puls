@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../app/puls_app.dart';
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
+import '../wallet/tx_status_sheet.dart';
 
 Future<void> showTradePreviewSheet({
   required BuildContext context,
@@ -33,60 +35,62 @@ class TradePreviewSheet extends StatefulWidget {
 }
 
 class _TradePreviewSheetState extends State<TradePreviewSheet> {
-  late final TextEditingController _controller;
+  late final TextEditingController _ctrl;
   double _amount = 50;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: _amount.toStringAsFixed(0));
+    _ctrl = TextEditingController(text: _amount.toStringAsFixed(0));
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
-    final tokens = context.puls;
-    final sideColor =
-        widget.side == MarketSide.yes ? PulsColors.green : PulsColors.coral;
-    final sideLabel = widget.side == MarketSide.yes ? 'Yes' : 'No';
-    final price = widget.side == MarketSide.yes
-        ? widget.market.yesPrice
-        : widget.market.noPrice;
+    final walletService = WalletServiceScope.of(context);
+    final ws = walletService.state;
+    final t = context.puls;
+    final isYes = widget.side == MarketSide.yes;
+    final sideBg = isYes ? PulsColors.greenLight : PulsColors.redLight;
+    final sideFg = isYes ? PulsColors.green : PulsColors.red;
+    final sideLabel = isYes ? 'YES' : 'NO';
+    final price = isYes ? widget.market.yesPrice : widget.market.noPrice;
     final payout = TradeMath.estimatedPayout(amount: _amount, price: price);
     final profit = TradeMath.estimatedProfit(amount: _amount, price: price);
-    final canSubmit = _amount > 0;
+    final hasRealWallet = ws.userId != null && ws.hasWallet;
 
     return Padding(
       padding: EdgeInsets.only(
-        left: 12,
-        right: 12,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 12,
+        left: 16,
+        right: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
       ),
-      child: DecoratedBox(
+      child: Container(
         decoration: BoxDecoration(
-          color: tokens.panel,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: tokens.border),
+          color: t.surfaceRaised,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: t.border),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Handle
               Center(
                 child: Container(
-                  width: 40,
+                  width: 32,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: tokens.border,
-                    borderRadius: BorderRadius.circular(8),
+                    color: t.border,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
@@ -95,118 +99,209 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 7,
-                    ),
+                        horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: sideColor.withValues(alpha: 0.12),
+                      color: sideBg,
                       borderRadius: BorderRadius.circular(8),
-                      border:
-                          Border.all(color: sideColor.withValues(alpha: 0.5)),
                     ),
-                    child: Text(
-                      sideLabel.toUpperCase(),
-                      style: TextStyle(
-                        color: sideColor,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
+                    child: Text(sideLabel,
+                        style: TextStyle(
+                            color: sideFg,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12)),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      'Demo trade preview',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
+                    child: Text('Demo trade preview',
+                        style: Theme.of(context).textTheme.titleLarge),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Text(widget.market.question,
-                  style: Theme.of(context).textTheme.bodyLarge),
+              const SizedBox(height: 8),
+              Text(
+                widget.market.question,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(height: 1.4),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
               const SizedBox(height: 18),
               TextField(
-                controller: _controller,
+                controller: _ctrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
+                style: TextStyle(color: t.text),
+                decoration: InputDecoration(
                   labelText: 'Mock amount',
+                  labelStyle: TextStyle(color: t.textMuted),
                   prefixText: '\$',
+                  prefixStyle: TextStyle(color: t.text),
                 ),
-                onChanged: (value) {
-                  setState(() => _amount = double.tryParse(value) ?? 0);
-                },
+                onChanged: (v) =>
+                    setState(() => _amount = double.tryParse(v) ?? 0),
               ),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [25, 50, 100, 250].map((amount) {
-                  return ChoiceChip(
-                    label: Text('\$$amount'),
-                    selected: _amount == amount,
-                    onSelected: (_) {
-                      setState(() {
-                        _amount = amount.toDouble();
-                        _controller.text = amount.toString();
-                      });
-                    },
+              Row(
+                children: [25, 50, 100, 250].map((amt) {
+                  final sel = _amount == amt;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => setState(() {
+                        _amount = amt.toDouble();
+                        _ctrl.text = amt.toString();
+                      }),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: sel ? sideBg : t.surface,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: sel ? sideFg : t.border),
+                        ),
+                        child: Text('\$$amt',
+                            style: TextStyle(
+                                color: sel ? sideFg : t.textMuted,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13)),
+                      ),
+                    ),
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 18),
-              _PreviewRow(label: 'Price', value: TradeMath.formatPrice(price)),
-              _PreviewRow(
-                  label: 'Estimated shares', value: payout.toStringAsFixed(2)),
-              _PreviewRow(
-                  label: 'Max payout if correct',
-                  value: '\$${payout.toStringAsFixed(2)}'),
-              _PreviewRow(
-                  label: 'Estimated profit',
-                  value: '\$${profit.toStringAsFixed(2)}'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: t.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: t.border),
+                ),
+                child: Column(
+                  children: [
+                    _PreviewRow(
+                        label: 'Price',
+                        value: TradeMath.formatPrice(price),
+                        t: t),
+                    _PreviewRow(
+                        label: 'Est. shares',
+                        value: payout.toStringAsFixed(2),
+                        t: t),
+                    _PreviewRow(
+                        label: 'Max payout',
+                        value: '\$${payout.toStringAsFixed(2)}',
+                        t: t),
+                    _PreviewRow(
+                        label: 'Est. profit',
+                        value: '\$${profit.toStringAsFixed(2)}',
+                        t: t,
+                        isLast: true),
+                  ],
+                ),
+              ),
               const SizedBox(height: 12),
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: PulsColors.amber.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                      color: PulsColors.amber.withValues(alpha: 0.35)),
+                  color: hasRealWallet
+                      ? PulsColors.greenLight
+                      : PulsColors.amberLight,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  'Demo only. This prototype does not place real trades or move money.',
-                  style: TextStyle(color: PulsColors.amber, fontSize: 12),
+                child: Row(
+                  children: [
+                    Icon(
+                      hasRealWallet
+                          ? Icons.check_circle_outline_rounded
+                          : Icons.info_outline_rounded,
+                      color: hasRealWallet ? PulsColors.green : PulsColors.amber,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        hasRealWallet
+                            ? 'Real USDC trade on Arc Testnet · Balance: \$${ws.usdcBalance}'
+                            : 'Demo only — connect wallet in Profile for real trades.',
+                        style: TextStyle(
+                          color: hasRealWallet
+                              ? PulsColors.green
+                              : PulsColors.amber,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 height: 52,
-                child: FilledButton(
-                  onPressed: canSubmit
-                      ? () {
-                          appState.addDemoPosition(
-                            market: widget.market,
-                            side: widget.side,
-                            amount: _amount,
-                          );
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Added demo $sideLabel position to portfolio.',
+                child: TextButton(
+                  onPressed: _amount > 0
+                      ? () async {
+                          if (hasRealWallet) {
+                            // Real USDC trade via Circle developer-controlled wallet
+                            try {
+                              final result = await walletService.buyPosition(
+                                isYes: isYes,
+                                usdcAmount: _amount,
+                                question: widget.market.question,
+                              );
+                              if (!context.mounted) return;
+                              Navigator.of(context).pop();
+                              TxStatusSheet.show(
+                                context,
+                                txId: result['txId'] as String,
+                                side: isYes ? 'YES' : 'NO',
+                                amount: _amount,
+                              );
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(e.toString().contains('Insufficient')
+                                        ? e.toString().replaceFirst('Exception: ', '')
+                                        : 'Trade failed: $e'),
+                                    duration: const Duration(seconds: 5),
+                                  ),
+                                );
+                              }
+                            }
+                          } else {
+                            // Demo trade
+                            appState.addDemoPosition(
+                              market: widget.market,
+                              side: widget.side,
+                              amount: _amount,
+                            );
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Added demo ${isYes ? 'Yes' : 'No'} position.'),
                               ),
-                            ),
-                          );
+                            );
+                          }
                         }
                       : null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: PulsColors.blue,
+                  style: TextButton.styleFrom(
+                    backgroundColor: _amount > 0 ? sideFg : t.border,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                        borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Confirm demo trade'),
+                  child: Text(
+                    hasRealWallet ? 'Buy $sideLabel with USDC' : 'Confirm demo trade',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15),
+                  ),
                 ),
               ),
             ],
@@ -218,27 +313,30 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
 }
 
 class _PreviewRow extends StatelessWidget {
-  const _PreviewRow({required this.label, required this.value});
-
+  const _PreviewRow({
+    required this.label,
+    required this.value,
+    required this.t,
+    this.isLast = false,
+  });
   final String label;
   final String value;
+  final PulsThemeColors t;
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.puls;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
       child: Row(
         children: [
           Text(label, style: Theme.of(context).textTheme.bodyMedium),
           const Spacer(),
-          Text(
-            value,
-            style: TextStyle(
-              color: tokens.text,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+          Text(value,
+              style: TextStyle(
+                  color: t.text,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13)),
         ],
       ),
     );

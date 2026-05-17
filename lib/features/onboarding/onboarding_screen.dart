@@ -1,4 +1,6 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
@@ -11,183 +13,242 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _controller = PageController();
+  final _ctrl = PageController();
   int _index = 0;
 
+  // Free Lottie animations from lottiefiles.com (CDN URLs)
   static const _slides = [
-    _OnboardingSlide(
-      title: 'Predict the pulse of everything.',
-      body:
-          'Swipe through live questions, read the market, and choose Yes or No in seconds.',
-      icon: Icons.bolt_rounded,
+    _Slide(
+      lottieUrl:
+          'https://assets10.lottiefiles.com/packages/lf20_jcikwtux.json',
+      eyebrow: 'PREDICTION MARKETS',
+      title: 'Predict the pulse\nof everything.',
+      body: 'Swipe through live questions, read the market, and choose Yes or No in seconds.',
     ),
-    _OnboardingSlide(
-      title: 'Fast feed. Deep markets.',
-      body:
-          'Start with a TikTok-style prediction stream, then open full odds, charts, and context.',
-      icon: Icons.auto_graph_rounded,
+    _Slide(
+      lottieUrl:
+          'https://assets9.lottiefiles.com/packages/lf20_qp1q7mct.json',
+      eyebrow: 'DEEP MARKETS',
+      title: 'Fast feed.\nDeep markets.',
+      body: 'Start with a TikTok-style prediction stream, then open full odds, charts, and context.',
     ),
-    _OnboardingSlide(
-      title: 'Demo only. Built to explore.',
-      body:
-          'Puls uses mock data in this prototype. No wallet, no deposits, and no real trades.',
-      icon: Icons.verified_user_rounded,
+    _Slide(
+      lottieUrl:
+          'https://assets4.lottiefiles.com/packages/lf20_ysas4vcp.json',
+      eyebrow: 'PROTOTYPE',
+      title: 'Demo only.\nBuilt to explore.',
+      body: 'Puls uses mock data. No wallet, no deposits, and no real trades.',
     ),
   ];
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
-    final tokens = context.puls;
+    final t = context.puls;
+    final isLast = _index == _slides.length - 1;
 
     return Scaffold(
+      backgroundColor: t.bg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _PulsWordmark(),
-              const SizedBox(height: 28),
-              Expanded(
-                child: PageView.builder(
-                  controller: _controller,
-                  itemCount: _slides.length,
-                  onPageChanged: (value) => setState(() => _index = value),
-                  itemBuilder: (context, index) {
-                    final slide = _slides[index];
-                    return _OnboardingPage(slide: slide);
-                  },
-                ),
-              ),
-              Row(
-                children: List.generate(
-                  _slides.length,
-                  (index) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    width: _index == index ? 28 : 8,
-                    height: 8,
-                    margin: const EdgeInsets.only(right: 8),
+        child: Column(
+          children: [
+            // Top wordmark
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
-                      color: _index == index ? PulsColors.blue : tokens.border,
-                      borderRadius: BorderRadius.circular(8),
+                      color: t.brandSubtle,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset(
+                      'assets/logo.png',
+                      fit: BoxFit.cover,
                     ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Text('Puls',
+                      style: Theme.of(context).textTheme.titleLarge),
+                ],
               ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: FilledButton(
-                  onPressed: () {
-                    if (_index < _slides.length - 1) {
-                      _controller.nextPage(
-                        duration: const Duration(milliseconds: 260),
-                        curve: Curves.easeOut,
-                      );
-                    } else {
-                      appState.completeOnboarding();
-                    }
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: PulsColors.blue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+            ),
+            // Pages
+            Expanded(
+              child: PageView.builder(
+                controller: _ctrl,
+                itemCount: _slides.length,
+                onPageChanged: (v) => setState(() => _index = v),
+                itemBuilder: (context, i) =>
+                    _SlidePage(slide: _slides[i], t: t),
+              ),
+            ),
+            // Bottom controls
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+              child: Column(
+                children: [
+                  // Dots
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      _slides.length,
+                      (i) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 240),
+                        width: _index == i ? 20 : 6,
+                        height: 6,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        decoration: BoxDecoration(
+                          color: _index == i ? t.brand : t.border,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
                     ),
                   ),
-                  child: Text(
-                    _index == _slides.length - 1 ? 'Enter Puls' : 'Continue',
+                  const SizedBox(height: 24),
+                  // CTA
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: FilledButton(
+                      onPressed: () {
+                        if (!isLast) {
+                          _ctrl.nextPage(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOut,
+                          );
+                        } else {
+                          appState.completeOnboarding();
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: t.brand,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: Text(
+                        isLast ? 'Enter Puls' : 'Continue',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  if (!isLast) ...[
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: appState.completeOnboarding,
+                      child: Text('Skip',
+                          style: TextStyle(
+                              color: t.textSubtle, fontSize: 13)),
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _PulsWordmark extends StatelessWidget {
-  const _PulsWordmark();
+class _SlidePage extends StatelessWidget {
+  const _SlidePage({required this.slide, required this.t});
+  final _Slide slide;
+  final PulsThemeColors t;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: PulsColors.blue.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: PulsColors.blue.withValues(alpha: 0.6)),
-          ),
-          child: const Icon(Icons.show_chart_rounded, color: PulsColors.blue),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          'Puls',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-      ],
-    );
-  }
-}
-
-class _OnboardingPage extends StatelessWidget {
-  const _OnboardingPage({required this.slide});
-
-  final _OnboardingSlide slide;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.puls;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          width: 78,
-          height: 78,
-          decoration: BoxDecoration(
-            color: tokens.panelElevated,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: tokens.border),
-            boxShadow: [
-              BoxShadow(
-                color: PulsColors.blue.withValues(alpha: 0.24),
-                blurRadius: 34,
-                offset: const Offset(0, 18),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          const SizedBox(height: 16),
+          // Lottie animation
+          Expanded(
+            flex: 5,
+            child: FadeIn(
+              duration: const Duration(milliseconds: 500),
+              child: Lottie.network(
+                slide.lottieUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => Icon(
+                  Icons.auto_graph_rounded,
+                  size: 80,
+                  color: t.brand,
+                ),
               ),
-            ],
+            ),
           ),
-          child: Icon(slide.icon, color: PulsColors.cyan, size: 34),
-        ),
-        const SizedBox(height: 34),
-        Text(slide.title, style: Theme.of(context).textTheme.displaySmall),
-        const SizedBox(height: 16),
-        Text(slide.body, style: Theme.of(context).textTheme.bodyLarge),
-      ],
+          const SizedBox(height: 24),
+          // Text content
+          Expanded(
+            flex: 4,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FadeInUp(
+                  duration: const Duration(milliseconds: 400),
+                  child: Text(
+                    slide.eyebrow,
+                    style: TextStyle(
+                      color: t.brand,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                FadeInUp(
+                  delay: const Duration(milliseconds: 60),
+                  duration: const Duration(milliseconds: 400),
+                  child: Text(
+                    slide.title,
+                    style: Theme.of(context).textTheme.displaySmall,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                FadeInUp(
+                  delay: const Duration(milliseconds: 120),
+                  duration: const Duration(milliseconds: 400),
+                  child: Text(
+                    slide.body,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(color: t.textMuted, height: 1.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _OnboardingSlide {
-  const _OnboardingSlide({
+class _Slide {
+  const _Slide({
+    required this.lottieUrl,
+    required this.eyebrow,
     required this.title,
     required this.body,
-    required this.icon,
   });
-
+  final String lottieUrl;
+  final String eyebrow;
   final String title;
   final String body;
-  final IconData icon;
 }

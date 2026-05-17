@@ -1,212 +1,270 @@
-import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 
+// ── Semantic palette ──────────────────────────────────────────────────────────
 class PulsColors {
-  static const blue = Color(0xFF2F80FF);
-  static const cyan = Color(0xFF24D1C7);
-  static const green = Color(0xFF19C37D);
-  static const coral = Color(0xFFFF5F6D);
-  static const amber = Color(0xFFFFC857);
+  // Brand
+  static const indigo = Color(0xFF4F46E5);
+  static const indigoLight = Color(0xFFEEF2FF);
+  static const indigoDark = Color(0xFF3730A3);
+
+  // Semantic
+  static const green = Color(0xFF16A34A);
+  static const greenLight = Color(0xFFDCFCE7);
+  static const red = Color(0xFFDC2626);
+  static const redLight = Color(0xFFFEE2E2);
+  static const amber = Color(0xFFD97706);
+  static const amberLight = Color(0xFFFEF3C7);
+
+  // Neutrals (warm gray)
+  static const gray50 = Color(0xFFFAFAFA);
+  static const gray100 = Color(0xFFF4F4F5);
+  static const gray200 = Color(0xFFE4E4E7);
+  static const gray300 = Color(0xFFD4D4D8);
+  static const gray400 = Color(0xFFA1A1AA);
+  static const gray500 = Color(0xFF71717A);
+  static const gray700 = Color(0xFF3F3F46);
+  static const gray900 = Color(0xFF18181B);
+
+  // Dark mode equivalents
+  static const dark50 = Color(0xFF09090B);
+  static const dark100 = Color(0xFF18181B);
+  static const dark200 = Color(0xFF27272A);
+  static const dark300 = Color(0xFF3F3F46);
+  static const dark400 = Color(0xFF52525B);
+  static const dark500 = Color(0xFF71717A);
+  static const dark600 = Color(0xFFA1A1AA);
+  static const dark900 = Color(0xFFFAFAFA);
 }
 
+// ── Theme extension ───────────────────────────────────────────────────────────
 @immutable
 class PulsThemeColors extends ThemeExtension<PulsThemeColors> {
   const PulsThemeColors({
-    required this.ink,
-    required this.panel,
-    required this.panelSoft,
-    required this.panelElevated,
+    required this.bg,
+    required this.surface,
+    required this.surfaceRaised,
     required this.border,
+    required this.borderStrong,
     required this.text,
-    required this.muted,
+    required this.textMuted,
+    required this.textSubtle,
+    required this.brand,
+    required this.brandSubtle,
   });
 
-  final Color ink;
-  final Color panel;
-  final Color panelSoft;
-  final Color panelElevated;
+  final Color bg;
+  final Color surface;
+  final Color surfaceRaised;
   final Color border;
+  final Color borderStrong;
   final Color text;
-  final Color muted;
+  final Color textMuted;
+  final Color textSubtle;
+  final Color brand;
+  final Color brandSubtle;
 
   @override
   PulsThemeColors copyWith({
-    Color? ink,
-    Color? panel,
-    Color? panelSoft,
-    Color? panelElevated,
-    Color? border,
-    Color? text,
-    Color? muted,
-  }) {
-    return PulsThemeColors(
-      ink: ink ?? this.ink,
-      panel: panel ?? this.panel,
-      panelSoft: panelSoft ?? this.panelSoft,
-      panelElevated: panelElevated ?? this.panelElevated,
-      border: border ?? this.border,
-      text: text ?? this.text,
-      muted: muted ?? this.muted,
-    );
-  }
+    Color? bg, Color? surface, Color? surfaceRaised,
+    Color? border, Color? borderStrong,
+    Color? text, Color? textMuted, Color? textSubtle,
+    Color? brand, Color? brandSubtle,
+  }) => PulsThemeColors(
+    bg: bg ?? this.bg,
+    surface: surface ?? this.surface,
+    surfaceRaised: surfaceRaised ?? this.surfaceRaised,
+    border: border ?? this.border,
+    borderStrong: borderStrong ?? this.borderStrong,
+    text: text ?? this.text,
+    textMuted: textMuted ?? this.textMuted,
+    textSubtle: textSubtle ?? this.textSubtle,
+    brand: brand ?? this.brand,
+    brandSubtle: brandSubtle ?? this.brandSubtle,
+  );
 
   @override
   PulsThemeColors lerp(ThemeExtension<PulsThemeColors>? other, double t) {
-    if (other is! PulsThemeColors) {
-      return this;
-    }
-
+    if (other is! PulsThemeColors) return this;
     return PulsThemeColors(
-      ink: Color.lerp(ink, other.ink, t)!,
-      panel: Color.lerp(panel, other.panel, t)!,
-      panelSoft: Color.lerp(panelSoft, other.panelSoft, t)!,
-      panelElevated: Color.lerp(panelElevated, other.panelElevated, t)!,
+      bg: Color.lerp(bg, other.bg, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
+      surfaceRaised: Color.lerp(surfaceRaised, other.surfaceRaised, t)!,
       border: Color.lerp(border, other.border, t)!,
+      borderStrong: Color.lerp(borderStrong, other.borderStrong, t)!,
       text: Color.lerp(text, other.text, t)!,
-      muted: Color.lerp(muted, other.muted, t)!,
+      textMuted: Color.lerp(textMuted, other.textMuted, t)!,
+      textSubtle: Color.lerp(textSubtle, other.textSubtle, t)!,
+      brand: Color.lerp(brand, other.brand, t)!,
+      brandSubtle: Color.lerp(brandSubtle, other.brandSubtle, t)!,
     );
   }
 }
 
 extension PulsThemeX on BuildContext {
-  PulsThemeColors get puls {
-    return Theme.of(this).extension<PulsThemeColors>()!;
-  }
+  PulsThemeColors get puls => Theme.of(this).extension<PulsThemeColors>()!;
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
 }
 
+// ── Theme builder ─────────────────────────────────────────────────────────────
 class PulsTheme {
-  static const _darkTokens = PulsThemeColors(
-    ink: Color(0xFF05070A),
-    panel: Color(0xFF0B1118),
-    panelSoft: Color(0xFF101923),
-    panelElevated: Color(0xFF151F2B),
-    border: Color(0xFF253241),
-    text: Color(0xFFF5F8FB),
-    muted: Color(0xFF8A97A6),
+  static const _light = PulsThemeColors(
+    bg: Color(0xFFFFFFFF),
+    surface: Color(0xFFFAFAFA),
+    surfaceRaised: Color(0xFFFFFFFF),
+    border: Color(0xFFE4E4E7),
+    borderStrong: Color(0xFFD4D4D8),
+    text: Color(0xFF18181B),
+    textMuted: Color(0xFF52525B),
+    textSubtle: Color(0xFFA1A1AA),
+    brand: Color(0xFF4F46E5),
+    brandSubtle: Color(0xFFEEF2FF),
   );
 
-  static const _lightTokens = PulsThemeColors(
-    ink: Color(0xFFF5F7FB),
-    panel: Color(0xFFFFFFFF),
-    panelSoft: Color(0xFFF0F4F9),
-    panelElevated: Color(0xFFE8EFF8),
-    border: Color(0xFFD5DEEA),
-    text: Color(0xFF09111F),
-    muted: Color(0xFF607086),
+  static const _dark = PulsThemeColors(
+    bg: Color(0xFF09090B),
+    surface: Color(0xFF18181B),
+    surfaceRaised: Color(0xFF27272A),
+    border: Color(0xFF27272A),
+    borderStrong: Color(0xFF3F3F46),
+    text: Color(0xFFFAFAFA),
+    textMuted: Color(0xFFA1A1AA),
+    textSubtle: Color(0xFF71717A),
+    brand: Color(0xFF818CF8),
+    brandSubtle: Color(0xFF1E1B4B),
   );
 
-  static ThemeData dark() {
-    return _build(
-      FlexThemeData.dark(
-        scheme: FlexScheme.blue,
-        useMaterial3: true,
-        subThemesData: const FlexSubThemesData(defaultRadius: 8),
-        fontFamily: 'Roboto',
-      ),
-      _darkTokens,
-    );
-  }
+  static ThemeData light() => _build(Brightness.light, _light);
+  static ThemeData dark() => _build(Brightness.dark, _dark);
 
-  static ThemeData light() {
-    return _build(
-      FlexThemeData.light(
-        scheme: FlexScheme.blue,
-        useMaterial3: true,
-        subThemesData: const FlexSubThemesData(defaultRadius: 8),
-        fontFamily: 'Roboto',
-      ),
-      _lightTokens,
-    );
-  }
-
-  static ThemeData _build(ThemeData base, PulsThemeColors tokens) {
-    return base.copyWith(
-      scaffoldBackgroundColor: tokens.ink,
-      extensions: <ThemeExtension<dynamic>>[tokens],
-      appBarTheme: AppBarThemeData(
-        backgroundColor: tokens.ink,
-        foregroundColor: tokens.text,
+  static ThemeData _build(Brightness brightness, PulsThemeColors t) {
+    final isLight = brightness == Brightness.light;
+    return ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      scaffoldBackgroundColor: t.bg,
+      extensions: [t],
+      fontFamily: 'Roboto',
+      appBarTheme: AppBarTheme(
+        backgroundColor: t.bg,
+        foregroundColor: t.text,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
-      ),
-      navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: tokens.panel.withValues(alpha: 0.96),
-        indicatorColor: PulsColors.blue.withValues(alpha: 0.18),
-        labelTextStyle: WidgetStateProperty.resolveWith(
-          (states) => TextStyle(
-            color: states.contains(WidgetState.selected)
-                ? tokens.text
-                : tokens.muted,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
+        titleTextStyle: TextStyle(
+          color: t.text,
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.2,
         ),
+        iconTheme: IconThemeData(color: t.text, size: 22),
       ),
       cardTheme: CardThemeData(
-        color: tokens.panelSoft,
+        color: t.surfaceRaised,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(color: tokens.border),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: t.border),
         ),
+        margin: EdgeInsets.zero,
       ),
-      dividerTheme: DividerThemeData(color: tokens.border, thickness: 1),
-      inputDecorationTheme: InputDecorationThemeData(
+      dividerTheme: DividerThemeData(color: t.border, thickness: 1, space: 1),
+      inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: tokens.panelSoft,
+        fillColor: t.surface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: tokens.border),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: t.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: tokens.border),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: t.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: PulsColors.blue),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: t.brand, width: 1.5),
         ),
-        hintStyle: TextStyle(color: tokens.muted),
+        hintStyle: TextStyle(color: t.textSubtle, fontSize: 14),
+        labelStyle: TextStyle(color: t.textMuted),
+        prefixStyle: TextStyle(color: t.text),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: t.bg,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        elevation: 0,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: t.surfaceRaised,
+        contentTextStyle: TextStyle(color: t.text),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        behavior: SnackBarBehavior.floating,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: t.surfaceRaised,
+        surfaceTintColor: Colors.transparent,
+      ),
+      colorScheme: ColorScheme(
+        brightness: brightness,
+        primary: t.brand,
+        onPrimary: Colors.white,
+        secondary: t.brand,
+        onSecondary: Colors.white,
+        surface: t.surface,
+        onSurface: t.text,
+        surfaceContainerHighest: t.surfaceRaised,
+        error: PulsColors.red,
+        onError: Colors.white,
       ),
       textTheme: TextTheme(
         displaySmall: TextStyle(
-          color: tokens.text,
-          fontSize: 34,
-          fontWeight: FontWeight.w800,
-          height: 1.02,
+          color: t.text, fontSize: 30, fontWeight: FontWeight.w700,
+          height: 1.1, letterSpacing: -0.8,
         ),
         headlineMedium: TextStyle(
-          color: tokens.text,
-          fontSize: 25,
-          fontWeight: FontWeight.w800,
-          height: 1.08,
+          color: t.text, fontSize: 22, fontWeight: FontWeight.w700,
+          height: 1.2, letterSpacing: -0.4,
         ),
         titleLarge: TextStyle(
-          color: tokens.text,
-          fontSize: 20,
-          fontWeight: FontWeight.w800,
+          color: t.text, fontSize: 18, fontWeight: FontWeight.w600,
+          letterSpacing: -0.2,
         ),
         titleMedium: TextStyle(
-          color: tokens.text,
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
+          color: t.text, fontSize: 15, fontWeight: FontWeight.w600,
         ),
         bodyLarge: TextStyle(
-          color: tokens.text,
-          fontSize: 15,
-          height: 1.35,
+          color: t.text, fontSize: 15, height: 1.5,
         ),
         bodyMedium: TextStyle(
-          color: tokens.muted,
-          fontSize: 13,
-          height: 1.35,
+          color: t.textMuted, fontSize: 13, height: 1.5,
         ),
         labelLarge: TextStyle(
-          color: tokens.text,
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
+          color: t.text, fontSize: 14, fontWeight: FontWeight.w600,
+        ),
+        labelSmall: TextStyle(
+          color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w500,
+          letterSpacing: 0.4,
         ),
       ),
+      // Soft shadow for cards
+      shadowColor: isLight
+          ? Colors.black.withValues(alpha: 0.06)
+          : Colors.black.withValues(alpha: 0.4),
     );
   }
 }
+
+// ── Shared card decoration ────────────────────────────────────────────────────
+BoxDecoration cardDecoration(PulsThemeColors t, {double radius = 16}) =>
+    BoxDecoration(
+      color: t.surfaceRaised,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: t.border),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.04),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    );

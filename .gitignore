@@ -17,3 +17,19 @@ android/app/release
 
 .idea/
 .vscode/
+
+.agents/
+test/
+docs/
+backend/
+
+node_modules/
+
+# Secrets - never commit
+lib/core/secrets.dart
+
+deploy_vps.py
+fix_crlf.py
+fix_deploy.py
+redeploy.py
+test_vps.py

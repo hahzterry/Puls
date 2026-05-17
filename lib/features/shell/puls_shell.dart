@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../discover/discover_screen.dart';
 import '../feed/feed_screen.dart';
 import '../portfolio/portfolio_screen.dart';
 import '../profile/profile_screen.dart';
-import '../watchlist/watchlist_screen.dart';
+import '../../features/home/home_screen.dart';
 
 class PulsShell extends StatefulWidget {
   const PulsShell({super.key});
@@ -20,48 +22,150 @@ class _PulsShellState extends State<PulsShell> {
   static const _pages = [
     FeedScreen(),
     DiscoverScreen(),
+    HomeScreen(),
     PortfolioScreen(),
-    WatchlistScreen(),
     ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: _index, children: _pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        height: 68,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dynamic_feed_outlined),
-            selectedIcon: Icon(Icons.dynamic_feed_rounded),
-            label: 'Feed',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.travel_explore_outlined),
-            selectedIcon: Icon(Icons.travel_explore_rounded),
-            label: 'Discover',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-            label: 'Portfolio',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.notifications_none_rounded),
-            selectedIcon: Icon(Icons.notifications_rounded),
-            label: 'Watch',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
-        ],
+    final t = context.puls;
+    final isLight = !context.isDark;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isLight
+          ? SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent)
+          : SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
+      child: Scaffold(
+        backgroundColor: t.bg,
+        extendBody: true,
+        body: IndexedStack(index: _index, children: _pages),
+        bottomNavigationBar: _DynamicIslandNav(
+          index: _index,
+          t: t,
+          isDark: !isLight,
+          onTap: (i) {
+          if (i == _index && i == 0) {
+            // Tapping Feed tab while already on Feed → refresh
+            PulsStateScope.of(context).refresh();
+          }
+          setState(() => _index = i);
+        },
+        ),
       ),
-      backgroundColor: context.puls.ink,
     );
   }
+}
+
+class _DynamicIslandNav extends StatelessWidget {
+  const _DynamicIslandNav({
+    required this.index,
+    required this.t,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  final int index;
+  final PulsThemeColors t;
+  final bool isDark;
+  final ValueChanged<int> onTap;
+
+  static const _items = [
+    _Item(Icons.bolt_rounded, 'Feed'),
+    _Item(Icons.explore_rounded, 'Discover'),
+    _Item(Icons.play_circle_rounded, 'Home'),
+    _Item(Icons.bar_chart_rounded, 'Portfolio'),
+    _Item(Icons.person_rounded, 'Profile'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = isDark
+        ? const Color(0xFF1C1C1E)
+        : const Color(0xFFFFFFFF);
+    final shadow = isDark
+        ? Colors.black.withValues(alpha: 0.5)
+        : Colors.black.withValues(alpha: 0.12);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+        child: Container(
+          height: 64,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: shadow,
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: shadow.withValues(alpha: 0.06),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: List.generate(_items.length, (i) {
+              final item = _items[i];
+              final selected = i == index;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => onTap(i),
+                  behavior: HitTestBehavior.opaque,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected ? t.brand : Colors.transparent,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AnimatedScale(
+                          scale: selected ? 1.1 : 1.0,
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOutCubic,
+                          child: Icon(
+                            item.icon,
+                            size: 20,
+                            color: selected
+                                ? Colors.white
+                                : (isDark ? Colors.white54 : Colors.black38),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        AnimatedDefaultTextStyle(
+                          duration: const Duration(milliseconds: 220),
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                            color: selected
+                                ? Colors.white
+                                : (isDark ? Colors.white38 : Colors.black26),
+                          ),
+                          child: Text(item.label),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Item {
+  const _Item(this.icon, this.label);
+  final IconData icon;
+  final String label;
 }

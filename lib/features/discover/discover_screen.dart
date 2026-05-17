@@ -1,3 +1,4 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/puls_app_state.dart';
@@ -20,167 +21,298 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
+    final t = context.puls;
     final categories = ['All', ...appState.categories];
-    final markets = appState.markets.where((market) {
-      final matchesCategory =
-          _category == 'All' || market.category == _category;
-      final matchesQuery =
-          market.question.toLowerCase().contains(_query.toLowerCase()) ||
-              market.context.toLowerCase().contains(_query.toLowerCase());
-      return matchesCategory && matchesQuery;
+    final markets = appState.markets.where((m) {
+      final matchCat = _category == 'All' || m.category == _category;
+      final matchQ = m.question.toLowerCase().contains(_query.toLowerCase()) ||
+          m.context.toLowerCase().contains(_query.toLowerCase());
+      return matchCat && matchQ;
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Discover'),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.tune_rounded),
-            tooltip: 'Filters',
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 22),
-        children: [
-          TextField(
-            decoration: const InputDecoration(
-              hintText: 'Search markets',
-              prefixIcon: Icon(Icons.search_rounded),
-            ),
-            onChanged: (value) => setState(() => _query = value),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            height: 38,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                return ChoiceChip(
-                  label: Text(category),
-                  selected: _category == category,
-                  onSelected: (_) => setState(() => _category = category),
-                );
-              },
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemCount: categories.length,
-            ),
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Text('Trending now',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const Spacer(),
-              Text('${markets.length} markets',
-                  style: Theme.of(context).textTheme.bodyMedium),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (markets.isEmpty)
-            const _EmptyDiscover()
-          else
-            ...markets.map((market) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _MarketListCard(
-                  market: market,
-                  isWatchlisted: appState.isWatchlisted(market.id),
-                  onWatchlist: () => appState.toggleWatchlist(market.id),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => MarketDetailScreen(marketId: market.id),
+      backgroundColor: t.bg,
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FadeInDown(
+                      duration: const Duration(milliseconds: 400),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: t.brandSubtle,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Image.asset(
+                              'assets/logo.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Text('Discover',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .displaySmall),
+                          const Spacer(),
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: t.surface,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: t.border),
+                            ),
+                            child: Icon(Icons.tune_rounded,
+                                color: t.textMuted, size: 17),
+                          ),
+                        ],
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 16),
+                    FadeIn(
+                      delay: const Duration(milliseconds: 80),
+                      child: TextField(
+                        style: TextStyle(color: t.text, fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: 'Search markets…',
+                          prefixIcon: Icon(Icons.search_rounded,
+                              color: t.textSubtle, size: 18),
+                        ),
+                        onChanged: (v) => setState(() => _query = v),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    FadeIn(
+                      delay: const Duration(milliseconds: 120),
+                      child: SizedBox(
+                        height: 34,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: categories.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 8),
+                          itemBuilder: (context, i) {
+                            final cat = categories[i];
+                            final sel = _category == cat;
+                            return GestureDetector(
+                              onTap: () =>
+                                  setState(() => _category = cat),
+                              child: AnimatedContainer(
+                                duration:
+                                    const Duration(milliseconds: 180),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: sel ? t.brand : t.surface,
+                                  borderRadius:
+                                      BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: sel
+                                        ? t.brand
+                                        : t.border,
+                                  ),
+                                ),
+                                child: Text(
+                                  cat,
+                                  style: TextStyle(
+                                    color: sel
+                                        ? Colors.white
+                                        : t.textMuted,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FadeIn(
+                      delay: const Duration(milliseconds: 160),
+                      child: Row(
+                        children: [
+                          Text('Trending now',
+                              style:
+                                  Theme.of(context).textTheme.titleLarge),
+                          const Spacer(),
+                          Text('${markets.length} markets',
+                              style:
+                                  Theme.of(context).textTheme.bodyMedium),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ),
-              );
-            }),
-        ],
+              ),
+            ),
+            if (markets.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _EmptyState(t: t),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                sliver: SliverList.builder(
+                  itemCount: markets.length,
+                  itemBuilder: (context, i) => FadeInUp(
+                    delay: Duration(milliseconds: 200 + i * 50),
+                    duration: const Duration(milliseconds: 350),
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _MarketCard(
+                        market: markets[i],
+                        t: t,
+                        isWatchlisted:
+                            appState.isWatchlisted(markets[i].id),
+                        onWatchlist: () =>
+                            appState.toggleWatchlist(markets[i].id),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => MarketDetailScreen(
+                                marketId: markets[i].id),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _MarketListCard extends StatelessWidget {
-  const _MarketListCard({
+class _MarketCard extends StatelessWidget {
+  const _MarketCard({
     required this.market,
+    required this.t,
     required this.isWatchlisted,
     required this.onWatchlist,
     required this.onTap,
   });
 
   final Market market;
+  final PulsThemeColors t;
   final bool isWatchlisted;
   final VoidCallback onWatchlist;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.puls;
-    final trendColor =
-        market.trendIsPositive ? PulsColors.green : PulsColors.coral;
+    final trendPositive = market.trendIsPositive;
+    final trendColor = trendPositive ? PulsColors.green : PulsColors.red;
+    final trendBg =
+        trendPositive ? PulsColors.greenLight : PulsColors.redLight;
 
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: tokens.panelSoft,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: tokens.border),
+          color: t.surfaceRaised,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: t.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Text(
-                  market.category,
-                  style: const TextStyle(
-                    color: PulsColors.blue,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: t.brandSubtle,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    market.category,
+                    style: TextStyle(
+                      color: t.brand,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 const Spacer(),
-                IconButton(
-                  onPressed: onWatchlist,
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(
+                GestureDetector(
+                  onTap: onWatchlist,
+                  child: Icon(
                     isWatchlisted
                         ? Icons.bookmark_rounded
-                        : Icons.bookmark_border_rounded,
-                    color: isWatchlisted ? PulsColors.amber : tokens.muted,
+                        : Icons.bookmark_rounded,
+                    size: 18,
+                    color: isWatchlisted
+                        ? PulsColors.amber
+                        : t.textSubtle,
                   ),
                 ),
               ],
             ),
-            Text(market.question,
-                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 10),
+            Text(market.question,
+                style: Theme.of(context).textTheme.titleMedium,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
             Row(
               children: [
-                _MiniPrice(
+                _PricePill(
                   label: 'Yes',
                   price: TradeMath.formatPrice(market.yesPrice),
-                  color: PulsColors.green,
+                  bg: PulsColors.greenLight,
+                  fg: PulsColors.green,
                 ),
                 const SizedBox(width: 8),
-                _MiniPrice(
+                _PricePill(
                   label: 'No',
                   price: TradeMath.formatPrice(market.noPrice),
-                  color: PulsColors.coral,
+                  bg: PulsColors.redLight,
+                  fg: PulsColors.red,
                 ),
                 const Spacer(),
-                Text(
-                  '${market.trendIsPositive ? '+' : ''}${TradeMath.formatPercent(market.trend)}',
-                  style:
-                      TextStyle(color: trendColor, fontWeight: FontWeight.w800),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: trendBg,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '${trendPositive ? '+' : ''}${TradeMath.formatPercent(market.trend)}',
+                    style: TextStyle(
+                      color: trendColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -191,59 +323,58 @@ class _MarketListCard extends StatelessWidget {
   }
 }
 
-class _MiniPrice extends StatelessWidget {
-  const _MiniPrice({
+class _PricePill extends StatelessWidget {
+  const _PricePill({
     required this.label,
     required this.price,
-    required this.color,
+    required this.bg,
+    required this.fg,
   });
-
   final String label;
   final String price;
-  final Color color;
+  final Color bg;
+  final Color fg;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         '$label $price',
-        style:
-            TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w800),
+        style: TextStyle(
+            color: fg, fontSize: 12, fontWeight: FontWeight.w600),
       ),
     );
   }
 }
 
-class _EmptyDiscover extends StatelessWidget {
-  const _EmptyDiscover();
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.t});
+  final PulsThemeColors t;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.puls;
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: tokens.panelSoft,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: tokens.border),
+        color: t.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: t.border),
       ),
       child: Column(
         children: [
-          Icon(Icons.search_off_rounded, color: tokens.muted),
-          const SizedBox(height: 8),
+          Icon(Icons.search_off_rounded, color: t.textSubtle, size: 32),
+          const SizedBox(height: 12),
           Text('No markets found',
               style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Text(
-            'Try another search or category.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          const SizedBox(height: 6),
+          Text('Try another search or category.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center),
         ],
       ),
     );
