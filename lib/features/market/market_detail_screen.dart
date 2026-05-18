@@ -1,24 +1,111 @@
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/image_util.dart';
 import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
-import 'market_chart.dart';
+import '../../data/polymarket/price_history_service.dart';
+import '../shell/web_layout.dart';
 import 'trade_preview_sheet.dart';
 
-class MarketDetailScreen extends StatelessWidget {
+class MarketDetailScreen extends StatefulWidget {
   const MarketDetailScreen({required this.marketId, super.key});
-
   final String marketId;
+
+  @override
+  State<MarketDetailScreen> createState() => _MarketDetailScreenState();
+}
+
+class _MarketDetailScreenState extends State<MarketDetailScreen> {
+  List<double> _history = [];
+  bool _historyLoading = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final market = PulsStateScope.of(context).marketById(widget.marketId);
+    PriceHistoryService.fetch(market.clobTokenId).then((h) {
+      if (mounted) setState(() { _history = h; _historyLoading = false; });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
-    final market = appState.marketById(marketId);
+    final market = appState.marketById(widget.marketId);
     final t = context.puls;
     final trendPositive = market.trendIsPositive;
     final trendColor = trendPositive ? PulsColors.green : PulsColors.red;
+
+    final body = ListView(
+      padding: EdgeInsets.fromLTRB(20, 8, 20, kIsWeb ? 40 : 110),
+      children: [
+        // ── Hero image ──────────────────────────────────────────────────
+        if (market.imageUrl.isNotEmpty) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: networkImage(market.imageUrl, height: 180, fit: BoxFit.cover),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // ── Category chip ────────────────────────────────────────────────
+        Wrap(
+          spacing: 6,
+          children: [
+            _Chip(label: market.category, t: t),
+            if (market.isFeatured) _Chip(label: '⭐ Featured', t: t, highlight: true),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // ── Question ─────────────────────────────────────────────────────
+        Text(market.question, style: Theme.of(context).textTheme.headlineMedium),
+        if (market.context.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(market.context,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: t.textMuted),
+              maxLines: 4, overflow: TextOverflow.ellipsis),
+        ],
+        const SizedBox(height: 20),
+
+        // ── Probability panel ────────────────────────────────────────────
+        _ProbabilityPanel(market: market, t: t),
+        const SizedBox(height: 14),
+
+        // ── Price chart ──────────────────────────────────────────────────
+        _ChartSection(
+          history: _history,
+          loading: _historyLoading,
+          trendColor: trendColor,
+          trendPositive: trendPositive,
+          trend: market.trend,
+          t: t,
+        ),
+        const SizedBox(height: 14),
+
+        // ── Stats grid ───────────────────────────────────────────────────
+        _StatsGrid(market: market, t: t),
+        const SizedBox(height: 14),
+
+        // ── Bid / Ask ────────────────────────────────────────────────────
+        if (market.bestBid > 0 || market.bestAsk > 0) ...[
+          _BidAskPanel(market: market, t: t),
+          const SizedBox(height: 14),
+        ],
+
+        // ── Resolution date ──────────────────────────────────────────────
+        _InfoRow(
+          icon: Icons.calendar_today_rounded,
+          label: 'Resolves',
+          value: _fmtDate(market.deadline),
+          t: t,
+        ),
+      ],
+    );
 
     return Scaffold(
       backgroundColor: t.bg,
@@ -31,106 +118,14 @@ class MarketDetailScreen extends StatelessWidget {
         title: const Text('Market'),
         actions: [
           IconButton(
-            icon: Icon(
-              appState.isWatchlisted(market.id)
-                  ? Icons.bookmark_rounded
-                  : Icons.bookmark_rounded,
-              size: 20,
-              color: appState.isWatchlisted(market.id)
-                  ? PulsColors.amber
-                  : t.textSubtle,
-            ),
+            icon: Icon(Icons.bookmark_rounded, size: 20,
+              color: appState.isWatchlisted(market.id) ? PulsColors.amber : t.textSubtle),
             onPressed: () => appState.toggleWatchlist(market.id),
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
-        children: [
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: market.tags
-                .map((tag) => _Tag(label: tag, t: t))
-                .toList(),
-          ),
-          const SizedBox(height: 16),
-          Text(market.question,
-              style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 10),
-          Text(market.context,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.copyWith(color: t.textMuted)),
-          const SizedBox(height: 20),
-          _PricePanel(market: market, t: t),
-          const SizedBox(height: 14),
-          _Section(
-            title: 'Probability',
-            t: t,
-            trailing: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: trendPositive
-                    ? PulsColors.greenLight
-                    : PulsColors.redLight,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                '${trendPositive ? '+' : ''}${TradeMath.formatPercent(market.trend)}',
-                style: TextStyle(
-                  color: trendColor,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            child: MarketChart(values: market.history, color: trendColor),
-          ),
-          const SizedBox(height: 14),
-          GridView.count(
-            crossAxisCount: 2,
-            childAspectRatio: 2.2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _StatTile(label: 'Volume', value: market.volume, t: t),
-              _StatTile(label: 'Liquidity', value: market.liquidity, t: t),
-              _StatTile(label: 'Category', value: market.category, t: t),
-              _StatTile(
-                  label: 'Deadline',
-                  value: _fmtDate(market.deadline),
-                  t: t),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _Section(
-            title: 'Market updates',
-            t: t,
-            child: Column(
-              children: market.news
-                  .map((n) => _NewsRow(
-                      source: n.source, title: n.title, age: n.age, t: t))
-                  .toList(),
-            ),
-          ),
-          const SizedBox(height: 14),
-          _Section(
-            title: 'Comments',
-            t: t,
-            child: Column(
-              children: market.comments
-                  .map((c) => _CommentRow(comment: c, t: t))
-                  .toList(),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
+      body: kIsWeb ? WebLayout(maxWidth: 760, child: body) : body,
+      bottomNavigationBar: kIsWeb ? null : SafeArea(
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
           decoration: BoxDecoration(
@@ -139,33 +134,17 @@ class MarketDetailScreen extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Expanded(
-                child: _TradeBtn(
-                  label: 'Buy Yes',
-                  price: TradeMath.formatPrice(market.yesPrice),
-                  bg: PulsColors.greenLight,
-                  fg: PulsColors.green,
-                  onPressed: () => showTradePreviewSheet(
-                    context: context,
-                    market: market,
-                    side: MarketSide.yes,
-                  ),
-                ),
-              ),
+              Expanded(child: _TradeBtn(
+                label: 'Buy YES', price: TradeMath.formatPrice(market.yesPrice),
+                bg: PulsColors.greenLight, fg: PulsColors.green,
+                onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.yes),
+              )),
               const SizedBox(width: 12),
-              Expanded(
-                child: _TradeBtn(
-                  label: 'Buy No',
-                  price: TradeMath.formatPrice(market.noPrice),
-                  bg: PulsColors.redLight,
-                  fg: PulsColors.red,
-                  onPressed: () => showTradePreviewSheet(
-                    context: context,
-                    market: market,
-                    side: MarketSide.no,
-                  ),
-                ),
-              ),
+              Expanded(child: _TradeBtn(
+                label: 'Buy NO', price: TradeMath.formatPrice(market.noPrice),
+                bg: PulsColors.redLight, fg: PulsColors.red,
+                onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.no),
+              )),
             ],
           ),
         ),
@@ -174,13 +153,16 @@ class MarketDetailScreen extends StatelessWidget {
   }
 }
 
-class _PricePanel extends StatelessWidget {
-  const _PricePanel({required this.market, required this.t});
+// ── Probability panel ─────────────────────────────────────────────────────────
+class _ProbabilityPanel extends StatelessWidget {
+  const _ProbabilityPanel({required this.market, required this.t});
   final Market market;
   final PulsThemeColors t;
 
   @override
   Widget build(BuildContext context) {
+    final yesPct = (market.yesPrice * 100).round();
+    final noPct = 100 - yesPct;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -192,84 +174,108 @@ class _PricePanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              _PriceCell(
-                  label: 'Yes',
-                  price: TradeMath.formatPrice(market.yesPrice),
-                  color: PulsColors.green),
-              Container(width: 1, height: 44, color: t.border),
-              _PriceCell(
-                  label: 'No',
-                  price: TradeMath.formatPrice(market.noPrice),
-                  color: PulsColors.red),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('YES', style: TextStyle(color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text('$yesPct%', style: const TextStyle(color: PulsColors.green, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1)),
+                    Text(TradeMath.formatPrice(market.yesPrice), style: TextStyle(color: t.textMuted, fontSize: 12)),
+                  ],
+                ),
+              ),
+              Container(width: 1, height: 56, color: t.border),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('NO', style: TextStyle(color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 2),
+                      Text('$noPct%', style: const TextStyle(color: PulsColors.red, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1)),
+                      Text(TradeMath.formatPrice(market.noPrice), style: TextStyle(color: t.textMuted, fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+              if (!kIsWeb) ...[
+                const SizedBox(width: 12),
+                Column(
+                  children: [
+                    _TradeBtn(
+                      label: 'YES', price: TradeMath.formatPrice(market.yesPrice),
+                      bg: PulsColors.greenLight, fg: PulsColors.green,
+                      onPressed: () => showTradePreviewSheet(
+                        context: context, market: market, side: MarketSide.yes),
+                    ),
+                    const SizedBox(height: 6),
+                    _TradeBtn(
+                      label: 'NO', price: TradeMath.formatPrice(market.noPrice),
+                      bg: PulsColors.redLight, fg: PulsColors.red,
+                      onPressed: () => showTradePreviewSheet(
+                        context: context, market: market, side: MarketSide.no),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+          // Split bar
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(6),
             child: SizedBox(
-              height: 5,
+              height: 8,
               child: Row(
                 children: [
-                  Expanded(
-                    flex: (market.yesPrice * 100).round(),
-                    child: const ColoredBox(color: PulsColors.green),
-                  ),
-                  Expanded(
-                    flex: (market.noPrice * 100).round(),
-                    child: const ColoredBox(color: PulsColors.red),
-                  ),
+                  Expanded(flex: yesPct, child: const ColoredBox(color: PulsColors.green)),
+                  Expanded(flex: noPct, child: const ColoredBox(color: PulsColors.red)),
                 ],
               ),
             ),
           ),
+          if (kIsWeb) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(child: _TradeBtn(
+                  label: 'Buy YES', price: TradeMath.formatPrice(market.yesPrice),
+                  bg: PulsColors.greenLight, fg: PulsColors.green,
+                  onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.yes),
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: _TradeBtn(
+                  label: 'Buy NO', price: TradeMath.formatPrice(market.noPrice),
+                  bg: PulsColors.redLight, fg: PulsColors.red,
+                  onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.no),
+                )),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _PriceCell extends StatelessWidget {
-  const _PriceCell(
-      {required this.label, required this.price, required this.color});
-  final String label;
-  final String price;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label,
-                style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 4),
-            Text(price,
-                style: TextStyle(
-                    color: color,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Section extends StatelessWidget {
-  const _Section({
-    required this.title,
+// ── Chart section ─────────────────────────────────────────────────────────────
+class _ChartSection extends StatelessWidget {
+  const _ChartSection({
+    required this.history,
+    required this.loading,
+    required this.trendColor,
+    required this.trendPositive,
+    required this.trend,
     required this.t,
-    required this.child,
-    this.trailing,
   });
-  final String title;
+  final List<double> history;
+  final bool loading;
+  final Color trendColor;
+  final bool trendPositive;
+  final double trend;
   final PulsThemeColors t;
-  final Widget child;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -285,23 +291,295 @@ class _Section extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(title,
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text('Price History', style: Theme.of(context).textTheme.titleMedium),
               const Spacer(),
-              if (trailing != null) trailing!,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: trendPositive ? PulsColors.greenLight : PulsColors.redLight,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${trendPositive ? '+' : ''}${TradeMath.formatPercent(trend)} 24h',
+                  style: TextStyle(color: trendColor, fontWeight: FontWeight.w700, fontSize: 12),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
-          child,
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 140,
+            child: loading
+                ? Center(child: CircularProgressIndicator(color: t.brand, strokeWidth: 2))
+                : history.length >= 2
+                    ? _FullChart(prices: history, color: trendColor)
+                    : Center(child: Text('No chart data available',
+                        style: TextStyle(color: t.textSubtle, fontSize: 13))),
+          ),
+          if (history.length >= 2) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('${(history.first * 100).toStringAsFixed(0)}¢ open',
+                    style: TextStyle(color: t.textSubtle, fontSize: 11)),
+                Text('${(history.last * 100).toStringAsFixed(0)}¢ now',
+                    style: TextStyle(color: trendColor, fontSize: 11, fontWeight: FontWeight.w700)),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
+class _FullChart extends StatelessWidget {
+  const _FullChart({required this.prices, required this.color});
+  final List<double> prices;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final spots = prices.asMap().entries
+        .map((e) => FlSpot(e.key.toDouble(), e.value))
+        .toList();
+    final minY = prices.reduce((a, b) => a < b ? a : b);
+    final maxY = prices.reduce((a, b) => a > b ? a : b);
+    final pad = (maxY - minY) < 0.01 ? 0.05 : (maxY - minY) * 0.15;
+
+    return LineChart(
+      LineChartData(
+        minY: (minY - pad).clamp(0, 1),
+        maxY: (maxY + pad).clamp(0, 1),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 0.25,
+          getDrawingHorizontalLine: (_) => FlLine(
+            color: Colors.grey.withValues(alpha: 0.1),
+            strokeWidth: 1,
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 32,
+              interval: 0.25,
+              getTitlesWidget: (v, _) => Text(
+                '${(v * 100).toStringAsFixed(0)}¢',
+                style: TextStyle(color: Colors.grey.withValues(alpha: 0.5), fontSize: 9),
+              ),
+            ),
+          ),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (spots) => spots.map((s) => LineTooltipItem(
+              '${(s.y * 100).toStringAsFixed(0)}¢',
+              TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
+            )).toList(),
+          ),
+        ),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            curveSmoothness: 0.25,
+            color: color,
+            barWidth: 2.5,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.0)],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Stats grid ────────────────────────────────────────────────────────────────
+class _StatsGrid extends StatelessWidget {
+  const _StatsGrid({required this.market, required this.t});
+  final Market market;
+  final PulsThemeColors t;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      ('Volume', market.volume),
+      ('24h Volume', _fmt(market.volume24hr)),
+      ('Liquidity', market.liquidity),
+      ('Category', market.category),
+    ];
+    return GridView.count(
+      crossAxisCount: 2,
+      childAspectRatio: 2.4,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      children: items.map((e) => _StatTile(label: e.$1, value: e.$2, t: t)).toList(),
+    );
+  }
+
+  String _fmt(double v) {
+    if (v <= 0) return '—';
+    if (v >= 1e6) return '\$${(v / 1e6).toStringAsFixed(1)}M';
+    if (v >= 1e3) return '\$${(v / 1e3).toStringAsFixed(0)}K';
+    return '\$${v.toStringAsFixed(0)}';
+  }
+}
+
+// ── Bid/Ask panel ─────────────────────────────────────────────────────────────
+class _BidAskPanel extends StatelessWidget {
+  const _BidAskPanel({required this.market, required this.t});
+  final Market market;
+  final PulsThemeColors t;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: t.surfaceRaised,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: t.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Order Book', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _OrderCell(label: 'Best Bid', value: '${(market.bestBid * 100).toStringAsFixed(0)}¢', color: PulsColors.green, t: t)),
+              const SizedBox(width: 10),
+              Expanded(child: _OrderCell(label: 'Best Ask', value: '${(market.bestAsk * 100).toStringAsFixed(0)}¢', color: PulsColors.red, t: t)),
+              const SizedBox(width: 10),
+              Expanded(child: _OrderCell(label: 'Spread', value: '${(market.spread * 100).toStringAsFixed(0)}¢', color: t.textMuted, t: t)),
+            ],
+          ),
+          if (market.competitive > 0) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Text('Market depth', style: TextStyle(color: t.textSubtle, fontSize: 11)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: SizedBox(
+                      height: 4,
+                      child: LinearProgressIndicator(
+                        value: market.competitive.clamp(0.0, 1.0),
+                        backgroundColor: t.border,
+                        valueColor: AlwaysStoppedAnimation(t.brand),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text('${(market.competitive * 100).toStringAsFixed(0)}%',
+                    style: TextStyle(color: t.brand, fontSize: 11, fontWeight: FontWeight.w700)),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _OrderCell extends StatelessWidget {
+  const _OrderCell({required this.label, required this.value, required this.color, required this.t});
+  final String label;
+  final String value;
+  final Color color;
+  final PulsThemeColors t;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(color: t.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: t.border)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(color: t.textSubtle, fontSize: 10, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 2),
+          Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Info row ──────────────────────────────────────────────────────────────────
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.icon, required this.label, required this.value, required this.t});
+  final IconData icon;
+  final String label;
+  final String value;
+  final PulsThemeColors t;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: t.surfaceRaised,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: t.border),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: t.textSubtle),
+          const SizedBox(width: 10),
+          Text(label, style: TextStyle(color: t.textMuted, fontSize: 13)),
+          const Spacer(),
+          Text(value, style: TextStyle(color: t.text, fontSize: 13, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Shared widgets ────────────────────────────────────────────────────────────
+class _Chip extends StatelessWidget {
+  const _Chip({required this.label, required this.t, this.highlight = false});
+  final String label;
+  final PulsThemeColors t;
+  final bool highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: highlight ? t.brandSubtle : t.surface,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: highlight ? t.brand : t.border),
+      ),
+      child: Text(label,
+          style: TextStyle(color: highlight ? t.brand : t.textMuted, fontSize: 11, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
 class _StatTile extends StatelessWidget {
-  const _StatTile(
-      {required this.label, required this.value, required this.t});
+  const _StatTile({required this.label, required this.value, required this.t});
   final String label;
   final String value;
   final PulsThemeColors t;
@@ -321,104 +599,7 @@ class _StatTile extends StatelessWidget {
         children: [
           Text(label, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 3),
-          Text(value,
-              style: TextStyle(
-                  color: t.text,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13)),
-        ],
-      ),
-    );
-  }
-}
-
-class _NewsRow extends StatelessWidget {
-  const _NewsRow({
-    required this.source,
-    required this.title,
-    required this.age,
-    required this.t,
-  });
-  final String source;
-  final String title;
-  final String age;
-  final PulsThemeColors t;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: t.brandSubtle,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(Icons.article_outlined, color: t.brand, size: 14),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: Theme.of(context).textTheme.bodyLarge),
-                const SizedBox(height: 2),
-                Text('$source · $age',
-                    style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CommentRow extends StatelessWidget {
-  const _CommentRow({required this.comment, required this.t});
-  final MarketComment comment;
-  final PulsThemeColors t;
-
-  @override
-  Widget build(BuildContext context) {
-    final isYes = comment.sentiment == MarketSide.yes;
-    final color = isYes ? PulsColors.green : PulsColors.red;
-    final bg = isYes ? PulsColors.greenLight : PulsColors.redLight;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 15,
-            backgroundColor: bg,
-            child: Text(
-              comment.author.isEmpty ? '?' : comment.author[0],
-              style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(comment.author,
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 2),
-                Text(comment.text,
-                    style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
+          Text(value, style: TextStyle(color: t.text, fontWeight: FontWeight.w700, fontSize: 13)),
         ],
       ),
     );
@@ -426,13 +607,7 @@ class _CommentRow extends StatelessWidget {
 }
 
 class _TradeBtn extends StatelessWidget {
-  const _TradeBtn({
-    required this.label,
-    required this.price,
-    required this.bg,
-    required this.fg,
-    required this.onPressed,
-  });
+  const _TradeBtn({required this.label, required this.price, required this.bg, required this.fg, required this.onPressed});
   final String label;
   final String price;
   final Color bg;
@@ -442,50 +617,22 @@ class _TradeBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 50,
+      height: 48,
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: fg,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: Text('$label $price',
-            style: TextStyle(
-                color: fg, fontWeight: FontWeight.w700, fontSize: 14)),
+            style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 14)),
       ),
-    );
-  }
-}
-
-class _Tag extends StatelessWidget {
-  const _Tag({required this.label, required this.t});
-  final String label;
-  final PulsThemeColors t;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: t.border),
-      ),
-      child: Text(label,
-          style: TextStyle(
-              color: t.textMuted,
-              fontSize: 11,
-              fontWeight: FontWeight.w500)),
     );
   }
 }
 
 String _fmtDate(DateTime v) {
-  const m = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-  return '${m[v.month - 1]} ${v.day}';
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return '${m[v.month - 1]} ${v.day}, ${v.year}';
 }

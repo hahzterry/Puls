@@ -18,6 +18,14 @@ class Market {
     required this.comments,
     required this.news,
     this.imageUrl = '',
+    this.volume24hr = 0,
+    this.lastTradePrice = 0,
+    this.bestBid = 0,
+    this.bestAsk = 0,
+    this.spread = 0,
+    this.clobTokenId = '',
+    this.liquidityNum = 0,
+    this.competitive = 0,
   });
 
   final String id;
@@ -36,6 +44,14 @@ class Market {
   final List<MarketComment> comments;
   final List<MarketNews> news;
   final String imageUrl;
+  final double volume24hr;
+  final double lastTradePrice;
+  final double bestBid;
+  final double bestAsk;
+  final double spread;
+  final String clobTokenId;
+  final double liquidityNum;
+  final double competitive;
 
   bool get trendIsPositive => trend >= 0;
 }

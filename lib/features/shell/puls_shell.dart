@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -8,15 +9,26 @@ import '../feed/feed_screen.dart';
 import '../portfolio/portfolio_screen.dart';
 import '../profile/profile_screen.dart';
 import '../../features/home/home_screen.dart';
+import 'web_shell.dart';
 
-class PulsShell extends StatefulWidget {
+class PulsShell extends StatelessWidget {
   const PulsShell({super.key});
 
   @override
-  State<PulsShell> createState() => _PulsShellState();
+  Widget build(BuildContext context) {
+    if (kIsWeb) return const WebShell();
+    return const _MobileShell();
+  }
 }
 
-class _PulsShellState extends State<PulsShell> {
+class _MobileShell extends StatefulWidget {
+  const _MobileShell();
+
+  @override
+  State<_MobileShell> createState() => _PulsShellState();
+}
+
+class _PulsShellState extends State<_MobileShell> {
   int _index = 0;
 
   static const _pages = [

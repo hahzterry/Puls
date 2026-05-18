@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
@@ -7,12 +8,14 @@ import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_videos.dart';
 import '../../data/models/mock_video.dart';
 import '../market/market_detail_screen.dart';
+import '../shell/web_layout.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) return const _WebHomeScreen();
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
@@ -22,8 +25,160 @@ class HomeScreen extends StatelessWidget {
         body: PageView.builder(
           scrollDirection: Axis.vertical,
           itemCount: mockVideos.length,
-          itemBuilder: (context, i) => _VideoPage(video: mockVideos[i], autoPlay: i == 0),
+          itemBuilder: (context, i) =>
+              _VideoPage(video: mockVideos[i], autoPlay: i == 0),
         ),
+      ),
+    );
+  }
+}
+
+class _WebHomeScreen extends StatelessWidget {
+  const _WebHomeScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return Scaffold(
+      backgroundColor: t.bg,
+      body: WebLayout(
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                child: Row(
+                  children: [
+                    Text('Home',
+                        style: Theme.of(context).textTheme.displaySmall),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: PulsColors.amberLight,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'DEMO VIDEOS',
+                        style: TextStyle(
+                          color: PulsColors.amber,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+              sliver: SliverGrid.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                  childAspectRatio: 0.75,
+                ),
+                itemCount: mockVideos.length,
+                itemBuilder: (context, i) =>
+                    _WebVideoCard(video: mockVideos[i], t: t),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WebVideoCard extends StatelessWidget {
+  const _WebVideoCard({required this.video, required this.t});
+  final MockVideo video;
+  final PulsThemeColors t;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: t.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Placeholder gradient background
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  t.brand.withValues(alpha: 0.3),
+                  Colors.black,
+                ],
+              ),
+            ),
+          ),
+          Center(
+            child: Icon(Icons.play_circle_outline_rounded,
+                color: Colors.white.withValues(alpha: 0.4), size: 48),
+          ),
+          // Bottom info
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 12,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  video.username,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  video.caption,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 11,
+                    height: 1.3,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: t.brand.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    video.linkedMarketQuestion,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -40,7 +195,7 @@ class _VideoPage extends StatefulWidget {
 }
 
 class _VideoPageState extends State<_VideoPage> {
-  late VideoPlayerController _ctrl;
+  VideoPlayerController? _ctrl;
   bool _ready = false;
   bool _showComments = false;
   bool _liked = false;
@@ -48,6 +203,10 @@ class _VideoPageState extends State<_VideoPage> {
   @override
   void initState() {
     super.initState();
+    if (kIsWeb) {
+      // Asset videos are not supported on web — show static fallback
+      return;
+    }
     _ctrl = (widget.video.isAsset
             ? VideoPlayerController.asset(widget.video.videoUrl)
             : VideoPlayerController.networkUrl(Uri.parse(widget.video.videoUrl)))
@@ -64,7 +223,7 @@ class _VideoPageState extends State<_VideoPage> {
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _ctrl?.dispose();
     super.dispose();
   }
 
@@ -107,7 +266,7 @@ class _VideoPageState extends State<_VideoPage> {
           setState(() => _showComments = false);
         } else if (_ready) {
           setState(() {
-            _ctrl.value.isPlaying ? _ctrl.pause() : _ctrl.play();
+            _ctrl!.value.isPlaying ? _ctrl!.pause() : _ctrl!.play();
           });
         }
       },
@@ -122,24 +281,27 @@ class _VideoPageState extends State<_VideoPage> {
             if (_ready)
               Center(
                 child: AspectRatio(
-                  aspectRatio: _ctrl.value.aspectRatio,
-                  child: VideoPlayer(_ctrl),
+                  aspectRatio: _ctrl!.value.aspectRatio,
+                  child: VideoPlayer(_ctrl!),
                 ),
               )
             else
               Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2),
-                    const SizedBox(height: 12),
-                    Text('Loading video…',
-                        style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 13)),
-                  ],
-                ),
+                child: kIsWeb
+                    ? Icon(Icons.play_circle_outline_rounded,
+                        color: Colors.white.withValues(alpha: 0.3), size: 72)
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2),
+                          const SizedBox(height: 12),
+                          Text('Loading video…',
+                              style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                  fontSize: 13)),
+                        ],
+                      ),
               ),
 
             // ── Gradient overlays ────────────────────────────────────────────
@@ -186,7 +348,7 @@ class _VideoPageState extends State<_VideoPage> {
             ),
 
             // ── Pause indicator ──────────────────────────────────────────────
-            if (_ready && !_ctrl.value.isPlaying && !_showComments)
+            if (_ready && !(_ctrl?.value.isPlaying ?? false) && !_showComments)
               IgnorePointer(
                 child: Center(
                   child: Container(

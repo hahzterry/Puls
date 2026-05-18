@@ -48,15 +48,7 @@ class PolymarketRepository {
           .toList();
       if (prices.length < 2) return null;
 
-      String category = 'General';
-      final events = j['events'] as List<dynamic>?;
-      if (events != null && events.isNotEmpty) {
-        final ev = events.first as Map<String, dynamic>;
-        final tags = ev['tags'] as List<dynamic>?;
-        if (tags != null && tags.isNotEmpty) {
-          category = (tags.first as Map)['label'] as String? ?? 'General';
-        }
-      }
+      String category = _inferCategory(j);
 
       final volNum = (j['volumeNum'] as num?)?.toDouble() ??
           double.tryParse(j['volume']?.toString() ?? '0') ?? 0;
@@ -85,15 +77,110 @@ class PolymarketRepository {
         comments: const [],
         news: const [],
         imageUrl: j['image'] as String? ?? '',
+        volume24hr: (j['volume24hr'] as num?)?.toDouble() ?? 0,
+        lastTradePrice: (j['lastTradePrice'] as num?)?.toDouble() ?? prices[0],
+        bestBid: (j['bestBid'] as num?)?.toDouble() ?? 0,
+        bestAsk: (j['bestAsk'] as num?)?.toDouble() ?? 0,
+        spread: (j['spread'] as num?)?.toDouble() ?? 0,
+        clobTokenId: _firstClobToken(j['clobTokenIds']),
+        liquidityNum: liqNum,
+        competitive: (j['competitive'] as num?)?.toDouble() ?? 0,
       );
     } catch (_) {
       return null;
     }
   }
 
+  String _inferCategory(Map<String, dynamic> j) {
+    // 1. Try tags inside events (sometimes present)
+    final events = j['events'] as List<dynamic>?;
+    if (events != null && events.isNotEmpty) {
+      final ev = events.first as Map<String, dynamic>;
+      final tags = ev['tags'] as List<dynamic>?;
+      if (tags != null && tags.isNotEmpty) {
+        final label = (tags.first as Map)['label'] as String?;
+        if (label != null && label.isNotEmpty) return label;
+      }
+      // 2. Use seriesSlug to infer category
+      final series = ev['series'];
+      String? slug;
+      if (series is List && series.isNotEmpty) {
+        slug = (series.first as Map)['slug'] as String?;
+      } else if (series is Map) {
+        slug = series['slug'] as String?;
+      }
+      if (slug != null) {
+        if (slug.contains('nba') || slug.contains('nfl') || slug.contains('nhl') ||
+            slug.contains('mlb') || slug.contains('soccer') || slug.contains('football') ||
+            slug.contains('basketball') || slug.contains('tennis') || slug.contains('golf') ||
+            slug.contains('ufc') || slug.contains('boxing') || slug.contains('cricket') ||
+            slug.contains('counter-strike') || slug.contains('esport') || slug.contains('dota') ||
+            slug.contains('league-of-legends') || slug.contains('valorant')) {
+          return _slugToCategory(slug);
+        }
+      }
+      // 3. Use event title keywords
+      final title = (ev['title'] as String? ?? '').toLowerCase();
+      return _titleToCategory(title);
+    }
+    // 4. Fall back to market question keywords
+    final q = (j['question'] as String? ?? '').toLowerCase();
+    return _titleToCategory(q);
+  }
+
+  String _slugToCategory(String slug) {
+    if (slug.contains('counter-strike') || slug.contains('esport') ||
+        slug.contains('dota') || slug.contains('valorant') || slug.contains('league-of-legends')) { return 'Esports'; }
+    if (slug.contains('nba') || slug.contains('basketball')) { return 'Basketball'; }
+    if (slug.contains('nfl') || slug.contains('football')) { return 'Football'; }
+    if (slug.contains('nhl') || slug.contains('hockey')) { return 'Hockey'; }
+    if (slug.contains('mlb') || slug.contains('baseball')) { return 'Baseball'; }
+    if (slug.contains('soccer')) { return 'Soccer'; }
+    if (slug.contains('tennis')) { return 'Tennis'; }
+    if (slug.contains('golf')) { return 'Golf'; }
+    if (slug.contains('ufc') || slug.contains('boxing') || slug.contains('mma')) { return 'Combat Sports'; }
+    if (slug.contains('cricket')) { return 'Cricket'; }
+    return 'Sports';
+  }
+
+  String _titleToCategory(String text) {
+    if (text.contains('bitcoin') || text.contains('crypto') || text.contains('eth') ||
+        text.contains('btc') || text.contains('solana') || text.contains('token') ||
+        text.contains('defi') || text.contains('nft')) { return 'Crypto'; }
+    if (text.contains('election') || text.contains('president') || text.contains('senate') ||
+        text.contains('congress') || text.contains('vote') || text.contains('trump') ||
+        text.contains('democrat') || text.contains('republican') || text.contains('poll')) { return 'Politics'; }
+    if (text.contains('stock') || text.contains('ipo') || text.contains('market cap') ||
+        text.contains('nasdaq') || text.contains('s&p') || text.contains('fed') ||
+        text.contains('interest rate') || text.contains('gdp') || text.contains('inflation')) { return 'Finance'; }
+    if (text.contains('ai') || text.contains('openai') || text.contains('gpt') ||
+        text.contains('spacex') || text.contains('tesla') || text.contains('apple') ||
+        text.contains('google') || text.contains('microsoft') || text.contains('tech')) { return 'Tech'; }
+    if (text.contains('oil') || text.contains('gold') || text.contains('silver') ||
+        text.contains('commodity') || text.contains('crude') || text.contains('gas')) { return 'Commodities'; }
+    if (text.contains('nba') || text.contains('nfl') || text.contains('soccer') ||
+        text.contains('tennis') || text.contains('golf') || text.contains('ufc') ||
+        text.contains('cricket') || text.contains('counter-strike') || text.contains('esport')) { return 'Sports'; }
+    if (text.contains('oscar') || text.contains('grammy') || text.contains('movie') ||
+        text.contains('show') || text.contains('celebrity') || text.contains('music')) { return 'Entertainment'; }
+    if (text.contains('climate') || text.contains('weather') || text.contains('hurricane') ||
+        text.contains('earthquake') || text.contains('science')) { return 'Science'; }
+    return 'General';
+  }
+
   String _fmt(double v) {
     if (v >= 1e6) return '\$${(v / 1e6).toStringAsFixed(1)}M';
     if (v >= 1e3) return '\$${(v / 1e3).toStringAsFixed(0)}K';
     return '\$${v.toStringAsFixed(0)}';
+  }
+
+  String _firstClobToken(dynamic raw) {
+    if (raw == null) return '';
+    try {
+      final list = json.decode(raw.toString()) as List;
+      return list.isNotEmpty ? list.first.toString() : '';
+    } catch (_) {
+      return '';
+    }
   }
 }

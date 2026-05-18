@@ -1,9 +1,11 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
+import '../../data/polymarket/price_history_service.dart';
 
 class PredictionFeedCard extends StatefulWidget {
   const PredictionFeedCard({
@@ -27,6 +29,15 @@ class PredictionFeedCard extends StatefulWidget {
 
 class _PredictionFeedCardState extends State<PredictionFeedCard> {
   double _dragX = 0;
+  List<double> _sparkline = [];
+
+  @override
+  void initState() {
+    super.initState();
+    PriceHistoryService.fetch(widget.market.clobTokenId).then((prices) {
+      if (mounted) setState(() => _sparkline = prices);
+    });
+  }
 
   void _reset() {
     if (mounted) setState(() => _dragX = 0);
@@ -103,6 +114,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
                   padding: const EdgeInsets.all(18),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       // Top row: tags + swipe badge + bookmark
                       Row(
@@ -151,20 +163,8 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
                                 ),
                               ],
                             ),
-                      // Image inside card
-                      if (hasImage) ...[
-                        const SizedBox(height: 12),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            market.imageUrl,
-                            height: 140,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                          ),
-                        ),
-                      ],
+                      // Image inside card — hidden to keep card compact
+                      const SizedBox(height: 4),
                       const SizedBox(height: 12),
                       // Question
                             Text(
@@ -187,28 +187,56 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 8),
                             // Odds bar
                             _OddsBar(market: market),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 8),
+                            // Sparkline — always 48px, shows shimmer while loading
+                            SizedBox(
+                              height: 48,
+                              child: _sparkline.length >= 2
+                                  ? _CardSparkline(
+                                      prices: _sparkline,
+                                      isUp: _sparkline.last >= _sparkline.first,
+                                    )
+                                  : DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(6),
+                                        color: context.puls.surface,
+                                      ),
+                                    ),
+                            ),
+                            const SizedBox(height: 8),
                             // Stats + details
                             Row(
                               children: [
                                 _Stat(
                                   icon: Icons.trending_up_rounded,
-                                  label:
-                                      '${market.trendIsPositive ? '+' : ''}${TradeMath.formatPercent(market.trend)}',
-                                  color: market.trendIsPositive
-                                      ? PulsColors.green
-                                      : PulsColors.red,
+                                  label: '${market.trendIsPositive ? '+' : ''}${TradeMath.formatPercent(market.trend)}',
+                                  color: market.trendIsPositive ? PulsColors.green : PulsColors.red,
                                 ),
                                 const SizedBox(width: 8),
-                                _Stat(
-                                  icon: Icons.water_drop_outlined,
-                                  label: market.liquidity,
-                                  color: t.textMuted,
-                                ),
-                                const Spacer(),
+                                if (market.volume24hr > 0)
+                                  _Stat(
+                                    icon: Icons.bar_chart_rounded,
+                                    label: _fmtVol(market.volume24hr),
+                                    color: t.textMuted,
+                                  )
+                                else
+                                  _Stat(
+                                    icon: Icons.water_drop_outlined,
+                                    label: market.liquidity,
+                                    color: t.textMuted,
+                                  ),
+                                if (market.spread > 0) ...[
+                                  const SizedBox(width: 8),
+                                  _Stat(
+                                    icon: Icons.compare_arrows_rounded,
+                                    label: 'Spread ${(market.spread * 100).toStringAsFixed(0)}¢',
+                                    color: t.textMuted,
+                                  ),
+                                ],
+                                const SizedBox(width: 8),
                                 GestureDetector(
                                   onTap: widget.onDetails,
                                   child: Row(
@@ -226,7 +254,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 10),
                             // YES / NO buttons
                             Row(
                               children: [
@@ -276,6 +304,64 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
         .animate()
         .fadeIn(duration: 200.ms)
         .slideY(begin: 0.04, duration: 200.ms, curve: Curves.easeOut);
+  }
+
+  String _fmtVol(double v) {
+    if (v >= 1e6) return '\$${(v / 1e6).toStringAsFixed(1)}M';
+    if (v >= 1e3) return '\$${(v / 1e3).toStringAsFixed(0)}K';
+    return '\$${v.toStringAsFixed(0)}';
+  }
+}
+
+class _CardSparkline extends StatelessWidget {
+  const _CardSparkline({required this.prices, required this.isUp});
+  final List<double> prices;
+  final bool isUp;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isUp ? PulsColors.green : PulsColors.red;
+    final spots = prices.asMap().entries
+        .map((e) => FlSpot(e.key.toDouble(), e.value))
+        .toList();
+    final minY = prices.reduce((a, b) => a < b ? a : b);
+    final maxY = prices.reduce((a, b) => a > b ? a : b);
+    final pad = (maxY - minY) < 0.01 ? 0.05 : (maxY - minY) * 0.2;
+
+    return SizedBox(
+      height: 48,
+      child: LineChart(
+        LineChartData(
+          minY: (minY - pad).clamp(0, 1),
+          maxY: (maxY + pad).clamp(0, 1),
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          titlesData: const FlTitlesData(show: false),
+          lineTouchData: const LineTouchData(enabled: false),
+          lineBarsData: [
+            LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              curveSmoothness: 0.3,
+              color: color,
+              barWidth: 2,
+              dotData: const FlDotData(show: false),
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    color.withValues(alpha: 0.2),
+                    color.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
@@ -52,6 +53,176 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final appState = PulsStateScope.of(context);
     final t = context.puls;
     final isLast = _index == _slides.length - 1;
+
+    if (kIsWeb) {
+      return Scaffold(
+        backgroundColor: t.bg,
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 900),
+            child: Row(
+              children: [
+                // Left: branding panel
+                Expanded(
+                  child: Container(
+                    color: t.brand,
+                    padding: const EdgeInsets.all(48),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Image.asset('assets/logo.png',
+                                  fit: BoxFit.cover),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Puls',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 48),
+                        FadeInLeft(
+                          key: ValueKey(_index),
+                          duration: const Duration(milliseconds: 400),
+                          child: Lottie.network(
+                            _slides[_index].lottieUrl,
+                            height: 220,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.auto_graph_rounded,
+                              size: 80,
+                              color: Colors.white.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        Text(
+                          _slides[_index].eyebrow,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          _slides[_index].title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            height: 1.2,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _slides[_index].body,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 14,
+                            height: 1.6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Right: controls panel
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(48),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Get started',
+                            style: Theme.of(context).textTheme.displaySmall),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Predict the pulse of everything on Arc Testnet.',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyLarge
+                              ?.copyWith(color: t.textMuted),
+                        ),
+                        const SizedBox(height: 40),
+                        // Step dots
+                        Row(
+                          children: List.generate(
+                            _slides.length,
+                            (i) => AnimatedContainer(
+                              duration: const Duration(milliseconds: 240),
+                              width: _index == i ? 24 : 8,
+                              height: 8,
+                              margin:
+                                  const EdgeInsets.only(right: 6),
+                              decoration: BoxDecoration(
+                                color: _index == i ? t.brand : t.border,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: FilledButton(
+                            onPressed: () {
+                              if (!isLast) {
+                                setState(() => _index++);
+                              } else {
+                                appState.completeOnboarding();
+                              }
+                            },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: t.brand,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: Text(
+                              isLast ? 'Enter Puls' : 'Continue',
+                              style: const TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                        if (!isLast) ...[
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: appState.completeOnboarding,
+                            child: Text('Skip',
+                                style: TextStyle(
+                                    color: t.textSubtle, fontSize: 13)),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: t.bg,

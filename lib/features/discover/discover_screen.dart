@@ -1,4 +1,5 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/puls_app_state.dart';
@@ -6,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
 import '../market/market_detail_screen.dart';
+import '../shell/web_layout.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -30,172 +32,187 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       return matchCat && matchQ;
     }).toList();
 
+    final header = SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FadeInDown(
+              duration: const Duration(milliseconds: 400),
+              child: Row(
+                children: [
+                  if (!kIsWeb) ...[
+                    Container(
+                      width: 32,
+                      height: 32,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color: t.brandSubtle,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.asset('assets/logo.png', fit: BoxFit.cover),
+                    ),
+                  ],
+                  Text('Discover',
+                      style: Theme.of(context).textTheme.displaySmall),
+                  const Spacer(),
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: t.surface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: t.border),
+                    ),
+                    child: Icon(Icons.tune_rounded, color: t.textMuted, size: 17),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            FadeIn(
+              delay: const Duration(milliseconds: 80),
+              child: TextField(
+                style: TextStyle(color: t.text, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Search markets…',
+                  prefixIcon: Icon(Icons.search_rounded,
+                      color: t.textSubtle, size: 18),
+                ),
+                onChanged: (v) => setState(() => _query = v),
+              ),
+            ),
+            const SizedBox(height: 14),
+            FadeIn(
+              delay: const Duration(milliseconds: 120),
+              child: SizedBox(
+                height: 34,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: categories.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, i) {
+                    final cat = categories[i];
+                    final sel = _category == cat;
+                    return GestureDetector(
+                      onTap: () => setState(() => _category = cat),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: sel ? t.brand : t.surface,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: sel ? t.brand : t.border),
+                        ),
+                        child: Text(
+                          cat,
+                          style: TextStyle(
+                            color: sel ? Colors.white : t.textMuted,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            FadeIn(
+              delay: const Duration(milliseconds: 160),
+              child: Row(
+                children: [
+                  Text('Trending now',
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const Spacer(),
+                  Text('${markets.length} markets',
+                      style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+
+    final emptySliver = SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: _EmptyState(t: t),
+      ),
+    );
+
+    final listSliver = SliverPadding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+      sliver: SliverList.builder(
+        itemCount: markets.length,
+        itemBuilder: (context, i) => FadeInUp(
+          delay: Duration(milliseconds: 200 + i * 50),
+          duration: const Duration(milliseconds: 350),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _MarketCard(
+              market: markets[i],
+              t: t,
+              isWatchlisted: appState.isWatchlisted(markets[i].id),
+              onWatchlist: () => appState.toggleWatchlist(markets[i].id),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      MarketDetailScreen(marketId: markets[i].id),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final gridSliver = SliverPadding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+      sliver: SliverGrid.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          childAspectRatio: 1.6,
+        ),
+        itemCount: markets.length,
+        itemBuilder: (context, i) => _MarketCard(
+          market: markets[i],
+          t: t,
+          isWatchlisted: appState.isWatchlisted(markets[i].id),
+          onWatchlist: () => appState.toggleWatchlist(markets[i].id),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => MarketDetailScreen(marketId: markets[i].id),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final scrollView = CustomScrollView(
+      slivers: [
+        header,
+        if (markets.isEmpty)
+          emptySliver
+        else
+          kIsWeb ? gridSliver : listSliver,
+      ],
+    );
+
     return Scaffold(
       backgroundColor: t.bg,
       body: SafeArea(
         bottom: false,
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    FadeInDown(
-                      duration: const Duration(milliseconds: 400),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            margin: const EdgeInsets.only(right: 12),
-                            decoration: BoxDecoration(
-                              color: t.brandSubtle,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: Image.asset(
-                              'assets/logo.png',
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Text('Discover',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .displaySmall),
-                          const Spacer(),
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: t.surface,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: t.border),
-                            ),
-                            child: Icon(Icons.tune_rounded,
-                                color: t.textMuted, size: 17),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FadeIn(
-                      delay: const Duration(milliseconds: 80),
-                      child: TextField(
-                        style: TextStyle(color: t.text, fontSize: 14),
-                        decoration: InputDecoration(
-                          hintText: 'Search markets…',
-                          prefixIcon: Icon(Icons.search_rounded,
-                              color: t.textSubtle, size: 18),
-                        ),
-                        onChanged: (v) => setState(() => _query = v),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    FadeIn(
-                      delay: const Duration(milliseconds: 120),
-                      child: SizedBox(
-                        height: 34,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: categories.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: 8),
-                          itemBuilder: (context, i) {
-                            final cat = categories[i];
-                            final sel = _category == cat;
-                            return GestureDetector(
-                              onTap: () =>
-                                  setState(() => _category = cat),
-                              child: AnimatedContainer(
-                                duration:
-                                    const Duration(milliseconds: 180),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 7),
-                                decoration: BoxDecoration(
-                                  color: sel ? t.brand : t.surface,
-                                  borderRadius:
-                                      BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: sel
-                                        ? t.brand
-                                        : t.border,
-                                  ),
-                                ),
-                                child: Text(
-                                  cat,
-                                  style: TextStyle(
-                                    color: sel
-                                        ? Colors.white
-                                        : t.textMuted,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    FadeIn(
-                      delay: const Duration(milliseconds: 160),
-                      child: Row(
-                        children: [
-                          Text('Trending now',
-                              style:
-                                  Theme.of(context).textTheme.titleLarge),
-                          const Spacer(),
-                          Text('${markets.length} markets',
-                              style:
-                                  Theme.of(context).textTheme.bodyMedium),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                ),
-              ),
-            ),
-            if (markets.isEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _EmptyState(t: t),
-                ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                sliver: SliverList.builder(
-                  itemCount: markets.length,
-                  itemBuilder: (context, i) => FadeInUp(
-                    delay: Duration(milliseconds: 200 + i * 50),
-                    duration: const Duration(milliseconds: 350),
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _MarketCard(
-                        market: markets[i],
-                        t: t,
-                        isWatchlisted:
-                            appState.isWatchlisted(markets[i].id),
-                        onWatchlist: () =>
-                            appState.toggleWatchlist(markets[i].id),
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => MarketDetailScreen(
-                                marketId: markets[i].id),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
+        child: kIsWeb ? WebLayout(child: scrollView) : scrollView,
       ),
     );
   }

@@ -251,6 +251,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                                 isYes: isYes,
                                 usdcAmount: _amount,
                                 question: widget.market.question,
+                                entryPrice: isYes ? widget.market.yesPrice : widget.market.noPrice,
                               );
                               if (!context.mounted) return;
                               Navigator.of(context).pop();
