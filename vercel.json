@@ -1,0 +1,5 @@
+{
+  "buildCommand": "git clone https://github.com/flutter/flutter.git --depth 1 -b stable flutter && echo \"const supabaseUrl = '$SUPABASE_URL';\\nconst supabaseAnonKey = '$SUPABASE_ANON_KEY';\" > lib/core/secrets.dart && flutter/bin/flutter build web --release",
+  "outputDirectory": "build/web",
+  "installCommand": "echo 'skip'"
+}
