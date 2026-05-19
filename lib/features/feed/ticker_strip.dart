@@ -39,8 +39,8 @@ class _WebTickerStripState extends State<WebTickerStrip>
     if (markets.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      height: 36,
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      height: 44,
+      margin: EdgeInsets.zero,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(10),

@@ -8,7 +8,6 @@ import '../../core/utils/image_util.dart';
 import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
 import '../../data/polymarket/price_history_service.dart';
-import '../shell/web_layout.dart';
 import 'trade_preview_sheet.dart';
 
 class MarketDetailScreen extends StatefulWidget {
@@ -108,9 +107,9 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
     );
 
     return Scaffold(
-      backgroundColor: t.bg,
+      backgroundColor: kIsWeb ? Colors.transparent : t.bg,
       appBar: AppBar(
-        backgroundColor: t.bg,
+        backgroundColor: kIsWeb ? Colors.transparent : t.bg,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, size: 20, color: t.text),
           onPressed: () => Navigator.of(context).pop(),
@@ -124,7 +123,7 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
           ),
         ],
       ),
-      body: kIsWeb ? WebLayout(maxWidth: 760, child: body) : body,
+      body: kIsWeb ? body : body,
       bottomNavigationBar: kIsWeb ? null : SafeArea(
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
@@ -308,7 +307,7 @@ class _ChartSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: 140,
+            height: kIsWeb ? 240 : 140,
             child: loading
                 ? Center(child: CircularProgressIndicator(color: t.brand, strokeWidth: 2))
                 : history.length >= 2
@@ -405,6 +404,8 @@ class _FullChart extends StatelessWidget {
           ),
         ],
       ),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeOutCubic,
     );
   }
 }

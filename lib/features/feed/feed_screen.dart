@@ -12,7 +12,6 @@ import '../../data/models/market.dart';
 import '../../data/polymarket/price_history_service.dart';
 import '../market/market_detail_screen.dart';
 import '../market/trade_preview_sheet.dart';
-import '../shell/web_layout.dart';
 import 'prediction_feed_card.dart';
 import 'ticker_strip.dart';
 
@@ -28,14 +27,19 @@ class FeedScreen extends StatelessWidget {
     if (kIsWeb && !isMobileWeb) {
       return Scaffold(
         backgroundColor: Colors.transparent,
-        body: WebLayout(
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(child: _FeedHeader(t: t)),
-              SliverToBoxAdapter(child: WebTickerStrip()),
-              _WebFeedBody(appState: appState, t: t),
-            ],
-          ),
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _FeedHeader(t: t)),
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: WebTickerStrip(),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            _WebFeedBody(appState: appState, t: t),
+          ],
         ),
       );
     }
@@ -466,7 +470,7 @@ class _WebFeedBody extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
           sliver: SliverGrid.builder(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+              crossAxisCount: 3,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
               childAspectRatio: 0.62,
@@ -861,6 +865,8 @@ class _Sparkline extends StatelessWidget {
           ),
         ],
       ),
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
     );
   }
 }
