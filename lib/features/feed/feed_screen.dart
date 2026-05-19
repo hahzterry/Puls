@@ -473,7 +473,7 @@ class _WebFeedBody extends StatelessWidget {
               crossAxisCount: 3,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
-              childAspectRatio: 0.62,
+              childAspectRatio: 0.85,
             ),
             itemCount: markets.length,
             itemBuilder: (context, i) {

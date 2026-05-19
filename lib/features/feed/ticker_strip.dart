@@ -20,7 +20,7 @@ class _WebTickerStripState extends State<WebTickerStrip>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 40),
+      duration: const Duration(seconds: 120),
     )..repeat();
     _ctrl.addListener(_scroll);
   }
