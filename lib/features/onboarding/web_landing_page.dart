@@ -4,17 +4,18 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/puls_app_state.dart';
 
-// ── Brand palette (matches app theme) ────────────────────────────────────────
-const _bg = Color(0xFF09090B);
-const _surface = Color(0xFF18181B);
-const _surfaceRaised = Color(0xFF27272A);
-const _border = Color(0xFF3F3F46);
+// ── Light palette — white bg, indigo brand ────────────────────────────────────
+const _bg = Color(0xFFFFFFFF);
+const _surface = Color(0xFFF4F4F5);
+const _surfaceRaised = Color(0xFFFFFFFF);
+const _border = Color(0xFFE4E4E7);
 const _brand = Color(0xFF4F46E5);
-const _brandSubtle = Color(0xFF1E1B4B);
-const _white = Color(0xFFFAFAFA);
-const _muted = Color(0xFFA1A1AA);
-const _subtle = Color(0xFF71717A);
+const _brandSubtle = Color(0xFFEEF2FF);
+const _white = Color(0xFF18181B);       // text on light bg
+const _muted = Color(0xFF52525B);
+const _subtle = Color(0xFFA1A1AA);
 const _green = Color(0xFF16A34A);
+const _onBrand = Color(0xFFFFFFFF);     // text on brand bg
 
 class WebLandingPage extends StatefulWidget {
   const WebLandingPage({super.key});
@@ -69,10 +70,11 @@ class _Navbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
     return Container(
+      color: _bg,
       padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 18),
       decoration: BoxDecoration(
-        color: _bg.withValues(alpha: 0.9),
-        border: Border(bottom: BorderSide(color: _border.withValues(alpha: 0.5))),
+        color: _bg,
+        border: Border(bottom: BorderSide(color: _border)),
       ),
       child: Row(
         children: [
@@ -150,20 +152,16 @@ class _HeroSection extends StatelessWidget {
       height: h,
       child: Stack(
         children: [
-          // Radial glow behind hero
-          Positioned(
-            top: h * 0.1, left: 0, right: 0,
-            child: Center(
-              child: Container(
-                width: 600, height: 400,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: _brand.withValues(alpha: 0.15),
-                      blurRadius: 200,
-                      spreadRadius: 60,
-                    ),
+          // Subtle indigo gradient background for hero
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(0, -0.3),
+                  radius: 1.2,
+                  colors: [
+                    _brand.withValues(alpha: 0.06),
+                    _bg,
                   ],
                 ),
               ),
@@ -693,25 +691,20 @@ class _FooterSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(48),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [_brand.withValues(alpha: 0.15), _brandSubtle.withValues(alpha: 0.3)],
-              ),
+              color: _brand,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: _brand.withValues(alpha: 0.2)),
             ),
             child: Column(
               children: [
                 const Text('Ready to predict?',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: _white, fontSize: 40, fontWeight: FontWeight.w700, letterSpacing: -1)),
+                    style: TextStyle(color: _onBrand, fontSize: 40, fontWeight: FontWeight.w700, letterSpacing: -1)),
                 const SizedBox(height: 12),
-                const Text('Sign in with Google. Get a wallet. Trade in 60 seconds.',
+                Text('Sign in with Google. Get a wallet. Trade in 60 seconds.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: _muted, fontSize: 16, height: 1.6)),
+                    style: TextStyle(color: _onBrand.withValues(alpha: 0.8), fontSize: 16, height: 1.6)),
                 const SizedBox(height: 28),
-                _PrimaryButton(label: 'Launch Puls →', onTap: appState.completeOnboarding),
+                _WhiteButton(label: 'Launch Puls →', onTap: appState.completeOnboarding),
               ],
             ),
           ),
@@ -796,7 +789,7 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
             ),
             child: Text(widget.label,
                 style: TextStyle(
-                  color: _white,
+                  color: _onBrand,
                   fontSize: widget.small ? 13 : 15,
                   fontWeight: FontWeight.w600,
                 )),
@@ -845,6 +838,44 @@ class _SecondaryButtonState extends State<_SecondaryButton> {
                 fontSize: widget.small ? 13 : 15,
                 fontWeight: FontWeight.w500,
               )),
+        ),
+      ),
+    );
+  }
+}
+
+class _WhiteButton extends StatefulWidget {
+  const _WhiteButton({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_WhiteButton> createState() => _WhiteButtonState();
+}
+
+class _WhiteButtonState extends State<_WhiteButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _hovered ? 1.03 : 1.0,
+          duration: const Duration(milliseconds: 150),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+            decoration: BoxDecoration(
+              color: _onBrand,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(widget.label,
+                style: const TextStyle(color: _brand, fontSize: 15, fontWeight: FontWeight.w700)),
+          ),
         ),
       ),
     );
