@@ -28,6 +28,10 @@ node_modules/
 # Secrets - never commit
 lib/core/secrets.dart
 
+# Keystore - never commit
+android/app/*.jks
+android/app/*.keystore
+
 deploy_vps.py
 fix_crlf.py
 fix_deploy.py
