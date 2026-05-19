@@ -20,8 +20,9 @@ class FeedScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
     final t = context.puls;
+    final isMobileWeb = kIsWeb && MediaQuery.sizeOf(context).width < 600;
 
-    if (kIsWeb) {
+    if (kIsWeb && !isMobileWeb) {
       return Scaffold(
         backgroundColor: t.bg,
         body: WebLayout(

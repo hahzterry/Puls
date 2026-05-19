@@ -16,7 +16,12 @@ class PulsShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb) return const WebShell();
+    // On web: use mobile shell for narrow screens (phones/PWA), desktop shell for wide
+    if (kIsWeb) {
+      final width = MediaQuery.sizeOf(context).width;
+      if (width < 600) return const _MobileShell();
+      return const WebShell();
+    }
     return const _MobileShell();
   }
 }
