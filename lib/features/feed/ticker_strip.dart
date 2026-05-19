@@ -13,21 +13,30 @@ class WebTickerStrip extends StatefulWidget {
 class _WebTickerStripState extends State<WebTickerStrip>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
-  late final Animation<double> _anim;
+  final _scrollCtrl = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 30),
+      duration: const Duration(seconds: 40),
     )..repeat();
-    _anim = Tween<double>(begin: 0, end: 1).animate(_ctrl);
+    _ctrl.addListener(_scroll);
+  }
+
+  void _scroll() {
+    if (!_scrollCtrl.hasClients) return;
+    final max = _scrollCtrl.position.maxScrollExtent;
+    if (max <= 0) return;
+    _scrollCtrl.jumpTo(_ctrl.value * max);
   }
 
   @override
   void dispose() {
+    _ctrl.removeListener(_scroll);
     _ctrl.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -35,108 +44,70 @@ class _WebTickerStripState extends State<WebTickerStrip>
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
     final t = context.puls;
-    final markets = appState.feedMarkets.take(12).toList();
+    final markets = appState.feedMarkets.take(20).toList();
     if (markets.isEmpty) return const SizedBox.shrink();
 
+    // Duplicate for seamless loop
+    final items = [...markets, ...markets];
+
     return Container(
-      height: 44,
-      margin: EdgeInsets.zero,
+      height: 40,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: t.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: t.border),
       ),
       clipBehavior: Clip.antiAlias,
-      child: AnimatedBuilder(
-        animation: _anim,
-        builder: (context, _) {
-          return CustomPaint(
-            painter: _TickerPainter(
-              markets: markets,
-              progress: _anim.value,
-              textColor: t.text,
-              mutedColor: t.textSubtle,
+      child: ListView.separated(
+        controller: _scrollCtrl,
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: items.length,
+        separatorBuilder: (_, __) => VerticalDivider(
+          width: 1, color: t.border, indent: 10, endIndent: 10),
+        itemBuilder: (context, i) {
+          final m = items[i];
+          final isUp = m.trendIsPositive;
+          final trendColor = isUp ? PulsColors.green : PulsColors.red;
+          final yesPrice = m.yesPrice;
+          final trend = m.trend;
+          final question = m.question;
+          final shortQ = question.length > 22
+              ? '${question.substring(0, 22)}…'
+              : question;
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(shortQ,
+                    style: TextStyle(
+                      color: t.text,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    )),
+                const SizedBox(width: 8),
+                Text('YES ${(yesPrice * 100).toStringAsFixed(0)}¢',
+                    style: const TextStyle(
+                      color: Color(0xFF818CF8),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    )),
+                const SizedBox(width: 6),
+                Text(
+                  '${isUp ? '↑' : '↓'} ${(trend * 100).abs().toStringAsFixed(1)}%',
+                  style: TextStyle(
+                    color: trendColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           );
         },
       ),
     );
   }
-}
-
-class _TickerPainter extends CustomPainter {
-  _TickerPainter({
-    required this.markets,
-    required this.progress,
-    required this.textColor,
-    required this.mutedColor,
-  });
-
-  final List markets;
-  final double progress;
-  final Color textColor;
-  final Color mutedColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const itemWidth = 220.0;
-    final totalWidth = itemWidth * markets.length;
-    final offset = -(progress * totalWidth);
-
-    for (int pass = 0; pass < 2; pass++) {
-      final passOffset = offset + pass * totalWidth;
-      for (int i = 0; i < markets.length; i++) {
-        final x = passOffset + i * itemWidth;
-        if (x > size.width || x + itemWidth < 0) continue;
-        _drawItem(canvas, size, markets[i], x);
-      }
-    }
-  }
-
-  void _drawItem(Canvas canvas, Size size, dynamic market, double x) {
-    final isUp = market.trendIsPositive as bool;
-    final trendColor = isUp ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
-    final yesPrice = (market.yesPrice as double);
-    final trend = (market.trend as double);
-
-    // Question (truncated)
-    final question = (market.question as String);
-    final shortQ = question.length > 28 ? '${question.substring(0, 28)}…' : question;
-
-    final namePainter = TextPainter(
-      text: TextSpan(
-        text: shortQ,
-        style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.w500),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: 140);
-
-    final pricePainter = TextPainter(
-      text: TextSpan(
-        text: 'YES ${(yesPrice * 100).toStringAsFixed(0)}¢',
-        style: const TextStyle(color: Color(0xFF818CF8), fontSize: 11, fontWeight: FontWeight.w700),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    final trendPainter = TextPainter(
-      text: TextSpan(
-        text: '${isUp ? '↑' : '↓'} ${(trend * 100).abs().toStringAsFixed(1)}%',
-        style: TextStyle(color: trendColor, fontSize: 10, fontWeight: FontWeight.w600),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    final y = (size.height - namePainter.height) / 2;
-    namePainter.paint(canvas, Offset(x + 12, y));
-    pricePainter.paint(canvas, Offset(x + 12 + namePainter.width + 8, y));
-    trendPainter.paint(canvas, Offset(x + 12 + namePainter.width + 8 + pricePainter.width + 6, y));
-
-    // Separator dot
-    final dotPaint = Paint()..color = mutedColor.withValues(alpha: 0.3);
-    canvas.drawCircle(Offset(x + 220 - 6, size.height / 2), 2, dotPaint);
-  }
-
-  @override
-  bool shouldRepaint(_TickerPainter old) => old.progress != progress;
 }
