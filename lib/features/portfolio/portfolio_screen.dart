@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/foundation.dart';
@@ -26,11 +27,35 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   String _totalSpent = '0.00';
   bool _loading = true;
   String? _error;
+  Timer? _pollTimer;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startPollingIfNeeded() {
+    final hasPending = _positions.any((p) =>
+        p['state'] == 'INITIATED' || p['state'] == 'SENT' || p['state'] == 'QUEUED');
+    if (hasPending && _pollTimer == null) {
+      _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+        await _load();
+        // Stop polling once all resolved
+        final stillPending = _positions.any((p) =>
+            p['state'] == 'INITIATED' || p['state'] == 'SENT' || p['state'] == 'QUEUED');
+        if (!stillPending) {
+          _pollTimer?.cancel();
+          _pollTimer = null;
+        }
+      });
+    }
   }
 
   Future<void> _load() async {
@@ -51,6 +76,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         _totalSpent = data['totalSpent'] as String? ?? '0.00';
         _loading = false;
       });
+      _startPollingIfNeeded();
     } catch (e) {
       setState(() { _error = e.toString(); _loading = false; });
     }

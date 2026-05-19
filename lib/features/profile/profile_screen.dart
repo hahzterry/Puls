@@ -583,10 +583,68 @@ class _WalletCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            'Get testnet USDC: faucet.circle.com',
-            style: TextStyle(color: t.textSubtle, fontSize: 11),
-          ),
+          // Wallet address with copy
+          if (ws.walletAddress != null && ws.walletAddress!.isNotEmpty) ...[
+            GestureDetector(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: ws.walletAddress!));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('✅ Address copied!')),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: t.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: t.border),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${ws.walletAddress!.substring(0, 8)}...${ws.walletAddress!.substring(ws.walletAddress!.length - 6)}',
+                        style: TextStyle(color: t.textMuted, fontSize: 12, fontFamily: 'monospace'),
+                      ),
+                    ),
+                    Icon(Icons.copy_rounded, size: 14, color: t.brand),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          // Faucet link — prominent when balance is 0
+          if ((double.tryParse(ws.usdcBalance) ?? 0) == 0)
+            GestureDetector(
+              onTap: () => launchUrl(Uri.parse('https://faucet.circle.com'), mode: LaunchMode.externalApplication),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: PulsColors.amberLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: PulsColors.amber.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.water_drop_rounded, size: 16, color: PulsColors.amber),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Get free testnet USDC at faucet.circle.com →',
+                        style: const TextStyle(color: PulsColors.amber, fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Text(
+              'Get testnet USDC: faucet.circle.com',
+              style: TextStyle(color: t.textSubtle, fontSize: 11),
+            ),
           const SizedBox(height: 12),
           Row(
             children: [
