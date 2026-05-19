@@ -115,12 +115,15 @@ class WalletService extends ChangeNotifier {
   Future<void> _getOrCreateWallet(String userId) async {
     try {
       final res = await _post('/api/wallet/get-or-create', {'userId': userId});
+      final address = res['address'] as String? ?? '';
       _setState(_state.copyWith(
         walletId: res['walletId'] as String,
-        walletAddress: res['address'] as String? ?? '',
+        walletAddress: address,
         usdcBalance: res['usdcBalance'] as String? ?? '0',
         isLoading: false,
       ));
+      // Immediately fetch fresh balance from chain
+      if (address.isNotEmpty) _fetchBalanceFromChain(address);
       _startPeriodicRefresh();
     } catch (e) {
       _setState(_state.copyWith(isLoading: false, error: e.toString()));
@@ -129,15 +132,47 @@ class WalletService extends ChangeNotifier {
 
   Future<void> refreshBalance() async {
     if (_state.userId == null) return;
-    // Don't set isLoading — avoids flashing 0.00 in the UI
+    // If we have the wallet address, fetch directly from blockchain — much faster
+    if (_state.walletAddress != null && _state.walletAddress!.isNotEmpty) {
+      await _fetchBalanceFromChain(_state.walletAddress!);
+      return;
+    }
+    // Fallback to backend
     try {
       final res = await _get('/api/wallet/balance', {'userId': _state.userId!});
       _setState(_state.copyWith(
         usdcBalance: res['usdcBalance'] as String? ?? _state.usdcBalance,
-        isLoading: false,
       ));
+    } catch (_) {}
+  }
+
+  /// Reads USDC balance directly from Arc Testnet via eth_call — no backend needed.
+  Future<void> _fetchBalanceFromChain(String address) async {
+    const rpc = 'https://rpc.testnet.arc.network';
+    const usdc = '0x3600000000000000000000000000000000000000';
+    // balanceOf(address) = 0x70a08231 + address padded to 32 bytes
+    final padded = address.toLowerCase().replaceFirst('0x', '').padLeft(64, '0');
+    final data = '0x70a08231$padded';
+    try {
+      final res = await http.post(
+        Uri.parse(rpc),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'jsonrpc': '2.0',
+          'method': 'eth_call',
+          'params': [{'to': usdc, 'data': data}, 'latest'],
+          'id': 1,
+        }),
+      ).timeout(const Duration(seconds: 5));
+      final result = (jsonDecode(res.body) as Map)['result'] as String?;
+      if (result != null && result.length >= 2) {
+        // USDC has 6 decimals
+        final raw = BigInt.tryParse(result.replaceFirst('0x', ''), radix: 16) ?? BigInt.zero;
+        final balance = raw / BigInt.from(1000000);
+        _setState(_state.copyWith(usdcBalance: balance.toStringAsFixed(2)));
+      }
     } catch (_) {
-      // Keep existing balance on error
+      // Silently ignore — keep existing balance
     }
   }
 
