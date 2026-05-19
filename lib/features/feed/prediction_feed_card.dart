@@ -62,7 +62,6 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
     final progress = (_dragX.abs() / 140).clamp(0.0, 1.0);
     final side = _dragX >= 0 ? MarketSide.yes : MarketSide.no;
     final swipeColor = side == MarketSide.yes ? PulsColors.green : PulsColors.red;
-    final hasImage = market.imageUrl.isNotEmpty;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -170,30 +169,67 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
                                 ),
                               ],
                             ),
-                      // Image inside card — hidden to keep card compact
-                      const SizedBox(height: 4),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       // Question
-                            Text(
-                              market.question,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium,
-                              maxLines: hasImage ? 2 : 3,
-                              overflow: TextOverflow.ellipsis,
+                      Text(
+                        market.question,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 10),
+                      // Topic Image
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: t.border.withValues(alpha: 0.5)),
+                          ),
+                          child: Image.network(
+                            market.imageUrl.isNotEmpty ? market.imageUrl : _getTopicImage(market.category, market.id),
+                            height: 130,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, progress) {
+                              if (progress == null) return child;
+                              return Container(
+                                height: 130,
+                                color: t.surface,
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 1.5),
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              height: 130,
+                              color: t.surface,
+                              child: Icon(Icons.image_outlined, color: t.textSubtle),
                             ),
-                            if (!hasImage && market.context.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                market.context,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(height: 1.5),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      if (market.context.isNotEmpty) ...[
+                        Text(
+                          market.context,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontSize: 12,
+                            color: t.textMuted,
+                            height: 1.4,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                             const SizedBox(height: 8),
                             // Odds bar
                             _OddsBar(market: market),
@@ -508,4 +544,37 @@ class _Tag extends StatelessWidget {
               color: t.textMuted, fontSize: 11, fontWeight: FontWeight.w500)),
     );
   }
+}
+
+String _getTopicImage(String category, String id) {
+  final cat = category.toLowerCase();
+  if (cat.contains('politics') || cat.contains('election') || cat.contains('vote')) {
+    return 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?w=600&auto=format&fit=crop&q=60';
+  }
+  if (cat.contains('crypto') || cat.contains('bitcoin') || cat.contains('ethereum') || cat.contains('solana')) {
+    return 'https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=600&auto=format&fit=crop&q=60';
+  }
+  if (cat.contains('finance') || cat.contains('macro') || cat.contains('fed') || cat.contains('rate') || cat.contains('stock')) {
+    return 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=600&auto=format&fit=crop&q=60';
+  }
+  if (cat.contains('tech') || cat.contains('ai') || cat.contains('openai') || cat.contains('gpt')) {
+    return 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&auto=format&fit=crop&q=60';
+  }
+  if (cat.contains('sports') || cat.contains('football') || cat.contains('basketball') || cat.contains('soccer')) {
+    return 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=600&auto=format&fit=crop&q=60';
+  }
+  if (cat.contains('entertainment') || cat.contains('culture') || cat.contains('movie') || cat.contains('film') || cat.contains('show')) {
+    return 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&auto=format&fit=crop&q=60';
+  }
+  if (cat.contains('science') || cat.contains('climate') || cat.contains('weather')) {
+    return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&auto=format&fit=crop&q=60';
+  }
+  final idx = id.hashCode.abs() % 4;
+  final fallbacks = [
+    'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&auto=format&fit=crop&q=60',
+    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=60',
+    'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=600&auto=format&fit=crop&q=60',
+    'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&auto=format&fit=crop&q=60',
+  ];
+  return fallbacks[idx];
 }

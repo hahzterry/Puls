@@ -92,9 +92,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     _FastBuySection(appState: appState, t: t),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     _Section(
                       title: 'Arc Testnet Operations',
                       t: t,
@@ -134,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     _Section(
                       title: 'Platform Architecture',
                       t: t,
@@ -218,13 +218,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           FadeInUp(
             delay: const Duration(milliseconds: 120),
             duration: const Duration(milliseconds: 350),
             child: _FastBuySection(appState: appState, t: t),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           FadeInUp(
             delay: const Duration(milliseconds: 140),
             duration: const Duration(milliseconds: 350),
@@ -268,7 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           FadeInUp(
             delay: const Duration(milliseconds: 160),
             duration: const Duration(milliseconds: 350),
@@ -279,7 +279,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _Row(
                   icon: Icons.layers_rounded,
                   title: 'Built on Arc',
-                  subtitle: 'USDC-native gas · L1 L2 ecosystem',
+                  subtitle: 'USDC-native gas · L1 ecosystem',
                   t: t,
                   onTap: () => launchUrl(
                     Uri.parse('https://arc.network'),
@@ -325,6 +325,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
+// ── Glassmorphic card container ───────────────────────────────────────────────
+class GlassCard extends StatefulWidget {
+  const GlassCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(20),
+    this.border,
+    this.gradient,
+    this.onTap,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final BoxBorder? border;
+  final Gradient? gradient;
+  final VoidCallback? onTap;
+
+  @override
+  State<GlassCard> createState() => _GlassCardState();
+}
+
+class _GlassCardState extends State<GlassCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    final defaultBorder = Border.all(
+      color: _isHovered
+          ? t.brand.withValues(alpha: 0.6)
+          : t.border.withValues(alpha: 0.4),
+      width: _isHovered ? 1.5 : 1.0,
+    );
+
+    Widget container = AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      padding: widget.padding,
+      decoration: BoxDecoration(
+        color: _isHovered 
+            ? t.surfaceRaised.withValues(alpha: 0.8) 
+            : t.surfaceRaised.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(20),
+        border: widget.border ?? defaultBorder,
+        gradient: widget.gradient,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: _isHovered ? 0.08 : 0.03),
+            blurRadius: _isHovered ? 20 : 12,
+            offset: const Offset(0, 4),
+          ),
+          if (_isHovered)
+            BoxShadow(
+              color: t.brand.withValues(alpha: 0.05),
+              blurRadius: 15,
+              spreadRadius: 1,
+            ),
+        ],
+      ),
+      child: widget.child,
+    );
+
+    if (widget.onTap != null) {
+      return MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: container,
+        ),
+      );
+    }
+    return container;
+  }
+}
+
+// ── Profile details ──────────────────────────────────────────────────────────
 class _ProfileCard extends StatelessWidget {
   const _ProfileCard({required this.t, this.supaUser});
   final PulsThemeColors t;
@@ -335,65 +412,70 @@ class _ProfileCard extends StatelessWidget {
     final name = (supaUser?.userMetadata?['full_name']
             ?? supaUser?.userMetadata?['name']
             ?? 'Puls Trader') as String;
-    final email = (supaUser?.email ?? '@puls_demo') as String;
+    final email = (supaUser?.email ?? 'trader@puls.arc') as String;
     final avatarUrl = supaUser?.userMetadata?['avatar_url'] as String?;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: t.surfaceRaised,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: t.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return GlassCard(
+      padding: const EdgeInsets.all(24),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: avatarUrl != null
-                ? Image.network(avatarUrl, width: 56, height: 56, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _fallback(name))
-                : _fallback(name),
+          // Avatar with premium gradient border
+          Container(
+            padding: const EdgeInsets.all(2.5),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [t.brand, Colors.cyan, t.brand.withValues(alpha: 0.3)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: avatarUrl != null
+                  ? Image.network(avatarUrl, width: 60, height: 60, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _fallback(name))
+                  : _fallback(name),
+            ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: TextStyle(color: t.text, fontSize: 16, fontWeight: FontWeight.w800)),
+                Text(name, style: TextStyle(color: t.text, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
                 const SizedBox(height: 4),
-                Text(email, style: TextStyle(color: t.textMuted, fontSize: 13)),
+                Text(email, style: TextStyle(color: t.textMuted, fontSize: 13, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
+          const SizedBox(width: 12),
           supaUser != null
               ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                       color: PulsColors.greenLight,
-                      borderRadius: BorderRadius.circular(6)),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: PulsColors.green.withValues(alpha: 0.2)),
+                  ),
                   child: const Text('Connected',
                       style: TextStyle(
                           color: PulsColors.green,
                           fontSize: 10,
-                          fontWeight: FontWeight.bold)),
+                          fontWeight: FontWeight.w800)),
                 )
               : Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                      color: PulsColors.amberLight,
-                      borderRadius: BorderRadius.circular(6)),
-                  child: const Text('DEMO',
+                      color: PulsColors.indigoLight,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: PulsColors.indigo.withValues(alpha: 0.2)),
+                  ),
+                  child: const Text('DEMO MODE',
                       style: TextStyle(
-                          color: PulsColors.amber,
+                          color: PulsColors.indigo,
                           fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
                           letterSpacing: 0.5)),
                 ),
         ],
@@ -402,19 +484,20 @@ class _ProfileCard extends StatelessWidget {
   }
 
   Widget _fallback(String name) => Container(
-        width: 56,
-        height: 56,
+        width: 60,
+        height: 60,
         decoration: BoxDecoration(
-            color: t.brandSubtle, borderRadius: BorderRadius.circular(12)),
+            color: t.brandSubtle, borderRadius: BorderRadius.circular(14)),
         child: Center(
           child: Text(
             name.isNotEmpty ? name[0].toUpperCase() : 'P',
-            style: TextStyle(color: t.brand, fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(color: t.brand, fontSize: 24, fontWeight: FontWeight.w900),
           ),
         ),
       );
 }
 
+// ── Settings Sections ────────────────────────────────────────────────────────
 class _Section extends StatelessWidget {
   const _Section({
     required this.title,
@@ -427,38 +510,48 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: t.surfaceRaised,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: t.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return GlassCard(
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title.toUpperCase(),
-              style: TextStyle(
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: t.brand,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title.toUpperCase(),
+                style: TextStyle(
                   color: t.textSubtle,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.0)),
-          const SizedBox(height: 8),
-          ...children,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: children.length,
+            separatorBuilder: (_, __) => Divider(color: t.border.withValues(alpha: 0.5), height: 1),
+            itemBuilder: (context, i) => children[i],
+          ),
         ],
       ),
     );
   }
 }
 
-class _Row extends StatelessWidget {
+class _Row extends StatefulWidget {
   const _Row({
     required this.icon,
     required this.title,
@@ -475,45 +568,87 @@ class _Row extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
+  State<_Row> createState() => _RowState();
+}
+
+class _RowState extends State<_Row> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: t.surface,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: t.border),
+    final t = widget.t;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            color: _hovered ? t.surface.withValues(alpha: 0.3) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _hovered ? t.brandSubtle : t.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: _hovered ? t.brand.withValues(alpha: 0.3) : t.border,
+                  ),
+                ),
+                child: Icon(
+                  widget.icon,
+                  color: _hovered ? t.brand : t.textMuted,
+                  size: 18,
+                ),
               ),
-              child: Icon(icon, color: t.textMuted, size: 16),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: TextStyle(color: t.text, fontSize: 14, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: TextStyle(color: t.textMuted, fontSize: 12)),
-                ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.title,
+                      style: TextStyle(
+                        color: t.text,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.subtitle,
+                      style: TextStyle(
+                        color: t.textMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            trailing ??
-                Icon(Icons.chevron_right_rounded,
-                    color: onTap != null ? t.textSubtle : Colors.transparent, size: 16),
-          ],
+              widget.trailing ??
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: widget.onTap != null ? t.textSubtle : Colors.transparent,
+                    size: 18,
+                  ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
+// ── Wallet card ──────────────────────────────────────────────────────────────
 class _WalletCard extends StatelessWidget {
   const _WalletCard({
     required this.ws,
@@ -529,15 +664,19 @@ class _WalletCard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (ws.userId == null) {
       return Container(
-        padding: const EdgeInsets.all(22),
+        padding: const EdgeInsets.all(26),
         decoration: BoxDecoration(
-          color: t.brand,
-          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: [t.brand, const Color(0xFF673AB7), t.brand.withValues(alpha: 0.8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: t.brand.withValues(alpha: 0.25),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              color: t.brand.withValues(alpha: 0.35),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
@@ -545,56 +684,76 @@ class _WalletCard extends StatelessWidget {
         child: Stack(
           children: [
             Positioned(
-              right: -30,
-              top: -30,
+              right: -40,
+              top: -40,
               child: CircleAvatar(
-                radius: 70,
-                backgroundColor: Colors.white.withValues(alpha: 0.05),
+                radius: 90,
+                backgroundColor: Colors.white.withValues(alpha: 0.06),
+              ),
+            ),
+            Positioned(
+              left: -30,
+              bottom: -30,
+              child: CircleAvatar(
+                radius: 60,
+                backgroundColor: Colors.black.withValues(alpha: 0.05),
               ),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    const Icon(Icons.bolt_rounded, color: Colors.white, size: 24),
+                    const SizedBox(width: 8),
+                    Text(
+                      'PULS PLATINUM WALLET',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.5),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
                 const Text(
-                  'Onchain Trading Wallet',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
+                  'Onchain Trading Account',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: -0.5),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Text(
-                  'Create an automated secure USDC trading account on Arc Testnet',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, height: 1.3),
+                  'Instantly setup a secure non-custodial wallet on Arc L1 with one-click Google connection.',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, height: 1.4),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
-                  height: 44,
+                  height: 48,
                   child: ElevatedButton(
                     onPressed: ws.isLoading ? null : wallet.signInWithGoogle,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: t.brand,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 4,
+                      shadowColor: Colors.black.withValues(alpha: 0.15),
                     ),
                     child: ws.isLoading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2.5, color: t.brand),
                           )
                         : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.login_rounded, size: 16),
+                              Icon(Icons.login_rounded, size: 18),
                               SizedBox(width: 8),
-                              Text('Connect Google Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text('Connect Google Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                             ],
                           ),
                   ),
                 ),
                 if (ws.error != null) ...[
-                  const SizedBox(height: 10),
-                  Text(ws.error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                  const SizedBox(height: 12),
+                  Text(ws.error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
                 ],
               ],
             ),
@@ -603,42 +762,34 @@ class _WalletCard extends StatelessWidget {
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: t.surfaceRaised,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: t.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return GlassCard(
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: t.brandSubtle,
-                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    colors: [t.brand, Colors.cyan],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Center(
-                  child: Icon(Icons.account_balance_wallet_rounded, color: t.brand, size: 18),
+                child: const Center(
+                  child: Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Arc Testnet Wallet', style: TextStyle(color: t.text, fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text('Arc Testnet Wallet', style: TextStyle(color: t.text, fontWeight: FontWeight.w800, fontSize: 15, letterSpacing: -0.3)),
                     if (ws.walletAddress != null && ws.walletAddress!.isNotEmpty)
                       GestureDetector(
                         onTap: () {
@@ -652,7 +803,7 @@ class _WalletCard extends StatelessWidget {
                           children: [
                             Text(
                               '${ws.walletAddress!.substring(0, 6)}...${ws.walletAddress!.substring(ws.walletAddress!.length - 4)}',
-                              style: TextStyle(color: t.textMuted, fontSize: 12, decoration: TextDecoration.underline),
+                              style: TextStyle(color: t.textMuted, fontSize: 12, decoration: TextDecoration.underline, fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(width: 4),
                             Icon(Icons.copy_rounded, size: 12, color: t.textSubtle),
@@ -662,43 +813,68 @@ class _WalletCard extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                onPressed: ws.isLoading ? null : wallet.refreshBalance,
-                icon: ws.isLoading
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : Icon(Icons.refresh_rounded, color: t.textMuted, size: 20),
+              Container(
+                decoration: BoxDecoration(
+                  color: t.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: t.border),
+                ),
+                child: IconButton(
+                  onPressed: ws.isLoading ? null : wallet.refreshBalance,
+                  icon: ws.isLoading
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Icon(Icons.refresh_rounded, color: t.textMuted, size: 18),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 24),
           Row(
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('USDC Balance', style: TextStyle(color: t.textMuted, fontSize: 12)),
-                  const SizedBox(height: 2),
-                  Text(
-                    '\$${double.tryParse(ws.usdcBalance)?.toStringAsFixed(2) ?? ws.usdcBalance} USDC',
-                    style: TextStyle(color: t.text, fontWeight: FontWeight.w900, fontSize: 24, letterSpacing: -0.5),
+                  Text('USDC Balance', style: TextStyle(color: t.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '\$${double.tryParse(ws.usdcBalance)?.toStringAsFixed(2) ?? ws.usdcBalance}',
+                        style: TextStyle(color: t.text, fontWeight: FontWeight.w900, fontSize: 32, letterSpacing: -1.0),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'USDC',
+                        style: TextStyle(color: t.textMuted, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                    ],
                   ),
                 ],
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: PulsColors.greenLight,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: PulsColors.green.withValues(alpha: 0.2)),
                 ),
-                child: const Text(
-                  'Arc L1 Testnet',
-                  style: TextStyle(color: PulsColors.green, fontSize: 10, fontWeight: FontWeight.bold),
+                child: const Row(
+                  children: [
+                    CircleAvatar(radius: 3, backgroundColor: PulsColors.green),
+                    SizedBox(width: 6),
+                    Text(
+                      'Arc L1 Testnet',
+                      style: TextStyle(color: PulsColors.green, fontSize: 10, fontWeight: FontWeight.w800),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           if (ws.walletAddress != null && ws.walletAddress!.isNotEmpty) ...[
             GestureDetector(
               onTap: () {
@@ -708,18 +884,18 @@ class _WalletCard extends StatelessWidget {
                 );
               },
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                  color: t.surface,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: t.border),
+                  color: t.surface.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: t.border.withValues(alpha: 0.8)),
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
                         ws.walletAddress!,
-                        style: TextStyle(color: t.textMuted, fontSize: 11, fontFamily: 'monospace'),
+                        style: TextStyle(color: t.textMuted, fontSize: 12, fontFamily: 'monospace', fontWeight: FontWeight.w500),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -729,27 +905,36 @@ class _WalletCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
           ],
           if ((double.tryParse(ws.usdcBalance) ?? 0) == 0)
             GestureDetector(
               onTap: () => launchUrl(Uri.parse('https://faucet.circle.com'), mode: LaunchMode.externalApplication),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: PulsColors.amberLight,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: PulsColors.amber.withValues(alpha: 0.3)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.water_drop_rounded, size: 16, color: PulsColors.amber),
-                    SizedBox(width: 8),
+                    Icon(Icons.water_drop_rounded, size: 18, color: PulsColors.amber),
+                    SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        'Wallet is empty. Click here to get free gas + testnet USDC from faucet.circle.com →',
-                        style: TextStyle(color: PulsColors.amber, fontSize: 12, fontWeight: FontWeight.bold, height: 1.3),
+                      child: RichText(
+                        text: TextSpan(
+                          style: TextStyle(color: PulsColors.amber, fontSize: 12, height: 1.4),
+                          children: [
+                            TextSpan(text: 'Wallet empty. Get free gas + testnet USDC from ', style: TextStyle(fontWeight: FontWeight.w600)),
+                            TextSpan(
+                              text: 'faucet.circle.com',
+                              style: TextStyle(fontWeight: FontWeight.w900, decoration: TextDecoration.underline, color: Colors.amber),
+                            ),
+                            TextSpan(text: ' →'),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -759,31 +944,48 @@ class _WalletCard extends StatelessWidget {
           else
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: t.surface,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: t.border),
+                color: t.surface.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: t.border.withValues(alpha: 0.6)),
               ),
-              child: Text(
-                'Top up gas / USDC anytime at faucet.circle.com (select Arc Testnet network)',
-                style: TextStyle(color: t.textSubtle, fontSize: 11, height: 1.3),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, size: 16, color: t.textSubtle),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Top up gas / USDC anytime at faucet.circle.com (select Arc Testnet network)',
+                      style: TextStyle(color: t.textSubtle, fontSize: 11, height: 1.4, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
               ),
             ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Row(
             children: [
               TextButton.icon(
                 onPressed: () => _showWalletInfo(context, ws, wallet, t),
-                icon: Icon(Icons.info_outline_rounded, size: 14, color: t.brand),
-                label: Text('Diagnostic Info', style: TextStyle(color: t.brand, fontSize: 12, fontWeight: FontWeight.bold)),
-                style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
+                icon: Icon(Icons.analytics_outlined, size: 14, color: t.brand),
+                label: Text('Diagnostic Info', style: TextStyle(color: t.brand, fontSize: 12, fontWeight: FontWeight.w800)),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  backgroundColor: t.brandSubtle,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
               ),
               const Spacer(),
-              TextButton(
+              TextButton.icon(
                 onPressed: wallet.signOut,
-                style: TextButton.styleFrom(foregroundColor: PulsColors.red, padding: EdgeInsets.zero, minimumSize: Size.zero),
-                child: const Text('Disconnect Wallet', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.logout_rounded, size: 14, color: PulsColors.red),
+                label: const Text('Disconnect', style: TextStyle(color: PulsColors.red, fontSize: 12, fontWeight: FontWeight.w800)),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  backgroundColor: PulsColors.redLight,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
               ),
             ],
           ),
@@ -892,6 +1094,7 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
+// ── Fast buy console ──────────────────────────────────────────────────────────
 class _FastBuySection extends StatelessWidget {
   const _FastBuySection({required this.appState, required this.t});
   final PulsAppState appState;
@@ -901,46 +1104,45 @@ class _FastBuySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: t.surfaceRaised,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: appState.fastBuyEnabled
-              ? t.brand.withValues(alpha: 0.4)
-              : t.border,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    return GlassCard(
+      border: Border.all(
+        color: appState.fastBuyEnabled
+            ? t.brand.withValues(alpha: 0.5)
+            : t.border.withValues(alpha: 0.4),
+        width: appState.fastBuyEnabled ? 1.5 : 1.0,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: appState.fastBuyEnabled
                       ? t.brand
                       : t.surface,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: t.border),
+                  boxShadow: appState.fastBuyEnabled
+                      ? [
+                          BoxShadow(
+                            color: t.brand.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          )
+                        ]
+                      : null,
                 ),
                 child: Icon(
                   Icons.bolt_rounded,
                   color: appState.fastBuyEnabled ? Colors.white : t.textMuted,
-                  size: 18,
+                  size: 20,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -952,7 +1154,7 @@ class _FastBuySection extends StatelessWidget {
                       appState.fastBuyEnabled
                           ? 'Swipe to trade instantly · \$${appState.fastBuyAmount.toStringAsFixed(appState.fastBuyAmount % 1 == 0 ? 0 : 1)} USDC'
                           : 'Skip confirmations & trade with swipe actions',
-                      style: TextStyle(color: t.textMuted, fontSize: 12),
+                      style: TextStyle(color: t.textMuted, fontSize: 12, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -965,14 +1167,14 @@ class _FastBuySection extends StatelessWidget {
             ],
           ),
           if (appState.fastBuyEnabled) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 18),
             Text('Auto-buy Amount limit',
                 style: TextStyle(
                     color: t.textMuted,
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.5)),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Row(
               children: _amounts.map((amt) {
                 final selected = appState.fastBuyAmount == amt;
@@ -991,6 +1193,15 @@ class _FastBuySection extends StatelessWidget {
                         border: Border.all(
                           color: selected ? t.brand : t.border,
                         ),
+                        boxShadow: selected
+                            ? [
+                                BoxShadow(
+                                  color: t.brand.withValues(alpha: 0.2),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]
+                            : null,
                       ),
                       child: Text(
                         '\$${amt.toStringAsFixed(amt % 1 == 0 ? 0 : 1)}',
@@ -1005,24 +1216,26 @@ class _FastBuySection extends StatelessWidget {
                 );
               }).toList(),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: t.brandSubtle,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: t.brand.withValues(alpha: 0.15)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.swipe_rounded, color: t.brand, size: 14),
-                  const SizedBox(width: 6),
+                  Icon(Icons.swipe_rounded, color: t.brand, size: 16),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Swipe Right = Buy YES · Swipe Left = Buy NO (Instantly executes)',
                       style: TextStyle(
                           color: t.brand,
                           fontSize: 11,
-                          fontWeight: FontWeight.w600),
+                          fontWeight: FontWeight.w700,
+                          height: 1.3),
                     ),
                   ),
                 ],

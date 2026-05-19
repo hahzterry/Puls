@@ -1,13 +1,12 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/puls_app.dart';
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
-import '../../data/mock/mock_videos.dart';
 import '../../data/models/market.dart';
-import '../../core/utils/trade_math.dart';
-import '../home/web_video_player.dart';
 import '../market/market_detail_screen.dart';
 import '../market/trade_preview_sheet.dart';
 import 'prediction_feed_card.dart';
@@ -57,35 +56,77 @@ class FeedScreen extends StatelessWidget {
   }
 }
 
-class _FeedBody extends StatefulWidget {
+class _FeedBody extends StatelessWidget {
   const _FeedBody({required this.appState, required this.t});
   final PulsAppState appState;
   final PulsThemeColors t;
 
-  @override
-  State<_FeedBody> createState() => _FeedBodyState();
-}
-
-class _FeedBodyState extends State<_FeedBody> {
-  final _pageCtrl = PageController();
-
-  @override
-  void dispose() {
-    _pageCtrl.dispose();
-    super.dispose();
+  void _openDetails(BuildContext context, Market market) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+          builder: (_) => MarketDetailScreen(marketId: market.id)),
+    );
   }
 
-  void _nextPage() {
-    _pageCtrl.nextPage(
-      duration: const Duration(milliseconds: 320),
-      curve: Curves.easeOutCubic,
+  Future<void> _fastBuy(
+    BuildContext context,
+    PulsAppState appState,
+    Market market,
+    MarketSide side,
+  ) async {
+    final walletService = WalletServiceScope.of(context);
+    final ws = walletService.state;
+
+    if (ws.userId == null || !ws.hasWallet) {
+      _showToast(context, '⚡ Connect wallet first', isError: true);
+      return;
+    }
+
+    final isYes = side == MarketSide.yes;
+    final amount = appState.fastBuyAmount;
+    final label = isYes ? 'YES' : 'NO';
+
+    _showToast(context, '⚡ Buying $label \$${amount.toStringAsFixed(amount % 1 == 0 ? 0 : 1)}…');
+
+    try {
+      await walletService.buyPosition(
+        isYes: isYes,
+        usdcAmount: amount,
+        question: market.question,
+        entryPrice: isYes ? market.yesPrice : market.noPrice,
+      );
+      if (context.mounted) {
+        _showToast(
+          context,
+          '✅ $label bought · \$${amount.toStringAsFixed(amount % 1 == 0 ? 0 : 1)} USDC',
+          isSuccess: true,
+        );
+        walletService.refreshBalance();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        final msg = e.toString().contains('Insufficient')
+            ? '❌ Insufficient USDC'
+            : '❌ Trade failed';
+        _showToast(context, msg, isError: true);
+      }
+    }
+  }
+
+  void _showToast(BuildContext context, String message,
+      {bool isSuccess = false, bool isError = false}) {
+    final t = context.puls;
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (_) => _TopToast(
+          message: message, isSuccess: isSuccess, isError: isError, t: t),
     );
+    overlay.insert(entry);
+    Future.delayed(const Duration(milliseconds: 2500), entry.remove);
   }
 
   @override
   Widget build(BuildContext context) {
-    final appState = widget.appState;
-    final t = widget.t;
     switch (appState.feedStatus) {
       case FeedStatus.loading:
         return Center(
@@ -151,115 +192,34 @@ class _FeedBodyState extends State<_FeedBody> {
         return RefreshIndicator(
           color: t.brand,
           onRefresh: appState.refresh,
-          child: PageView.builder(
-            controller: _pageCtrl,
-            scrollDirection: Axis.vertical,
-            itemCount: markets.length,
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
             itemBuilder: (context, index) {
-              final market = markets[index];
-              return SingleChildScrollView(
-                physics: const NeverScrollableScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: MediaQuery.of(context).size.height -
-                        MediaQuery.of(context).padding.top - 140,
-                  ),
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 80),
-                      child: PredictionFeedCard(
+              final market = markets[index % markets.length];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: PredictionFeedCard(
+                  market: market,
+                  isWatchlisted: appState.isWatchlisted(market.id),
+                  onWatchlist: () => appState.toggleWatchlist(market.id),
+                  onDetails: () => _openDetails(context, market),
+                  onChoose: (side) {
+                    if (appState.fastBuyEnabled) {
+                      _fastBuy(context, appState, market, side);
+                    } else {
+                      showTradePreviewSheet(
+                        context: context,
                         market: market,
-                        isWatchlisted: appState.isWatchlisted(market.id),
-                        onWatchlist: () => appState.toggleWatchlist(market.id),
-                        onDetails: () => _openDetails(context, market),
-                        onChoose: (side) {
-                          if (appState.fastBuyEnabled) {
-                            _fastBuy(context, appState, market, side,
-                                onDone: _nextPage);
-                          } else {
-                            showTradePreviewSheet(
-                              context: context,
-                              market: market,
-                              side: side,
-                            );
-                          }
-                        },
-                      ),
-                    ),
-                  ),
+                        side: side,
+                      );
+                    }
+                  },
                 ),
               );
             },
           ),
         );
     }
-  }
-
-  void _openDetails(BuildContext context, Market market) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-          builder: (_) => MarketDetailScreen(marketId: market.id)),
-    );
-  }
-
-  Future<void> _fastBuy(
-    BuildContext context,
-    PulsAppState appState,
-    Market market,
-    MarketSide side, {
-    VoidCallback? onDone,
-  }) async {
-    final walletService = WalletServiceScope.of(context);
-    final ws = walletService.state;
-
-    if (ws.userId == null || !ws.hasWallet) {
-      _showToast(context, '⚡ Connect wallet first', isError: true);
-      return;
-    }
-
-    final isYes = side == MarketSide.yes;
-    final amount = appState.fastBuyAmount;
-    final label = isYes ? 'YES' : 'NO';
-
-    // Advance to next card immediately — don't wait for trade
-    onDone?.call();
-    _showToast(context, '⚡ Buying $label \$${amount.toStringAsFixed(amount % 1 == 0 ? 0 : 1)}…');
-
-    try {
-      await walletService.buyPosition(
-        isYes: isYes,
-        usdcAmount: amount,
-        question: market.question,
-        entryPrice: isYes ? market.yesPrice : market.noPrice,
-      );
-      if (context.mounted) {
-        _showToast(
-          context,
-          '✅ $label bought · \$${amount.toStringAsFixed(amount % 1 == 0 ? 0 : 1)} USDC',
-          isSuccess: true,
-        );
-        walletService.refreshBalance();
-      }
-    } catch (e) {
-      if (context.mounted) {
-        final msg = e.toString().contains('Insufficient')
-            ? '❌ Insufficient USDC'
-            : '❌ Trade failed';
-        _showToast(context, msg, isError: true);
-      }
-    }
-  }
-
-  void _showToast(BuildContext context, String message,
-      {bool isSuccess = false, bool isError = false}) {
-    final t = context.puls;
-    final overlay = Overlay.of(context);
-    final entry = OverlayEntry(
-      builder: (_) => _TopToast(
-          message: message, isSuccess: isSuccess, isError: isError, t: t),
-    );
-    overlay.insert(entry);
-    Future.delayed(const Duration(milliseconds: 2500), entry.remove);
   }
 }
 
@@ -413,7 +373,7 @@ class _TopToastState extends State<_TopToast>
   }
 }
 
-// ── Web grid feed ─────────────────────────────────────────────────────────────
+// ── Web Grid Feed ─────────────────────────────────────────────────────────────
 class _WebFeedBody extends StatefulWidget {
   const _WebFeedBody({required this.appState, required this.t});
   final PulsAppState appState;
@@ -424,447 +384,421 @@ class _WebFeedBody extends StatefulWidget {
 }
 
 class _WebFeedBodyState extends State<_WebFeedBody> {
-  int _currentIndex = 0;
+  String? _selectedCategory;
+  late final Timer _activityTimer;
+  final List<_BetActivity> _activities = [];
 
   @override
-  Widget build(BuildContext context) {
-    final t = widget.t;
-    final appState = widget.appState;
-    if (mockVideos.isEmpty) {
-      return Center(
-        child: Text('No videos available',
-            style: TextStyle(color: t.textMuted, fontSize: 14)),
-      );
-    }
+  void initState() {
+    super.initState();
+    // Populate initial activities
+    _activities.addAll([
+      _BetActivity(username: '0x8f2d…e11a', action: 'bought', question: 'Will Donald Trump launch a new token in 2026?', amount: 520, time: 'Just now', isYes: true),
+      _BetActivity(username: 'arbitrum_whale', action: 'bought', question: 'Will BTC exceed \$100k in 2026?', amount: 2500, time: '1m ago', isYes: true),
+      _BetActivity(username: '0x4c99…88b2', action: 'bought', question: 'Will the Fed cut interest rates in June?', amount: 150, time: '3m ago', isYes: false),
+      _BetActivity(username: 'puls_trader_9', action: 'bought', question: 'Will OpenAI announce GPT-5 before July?', amount: 800, time: '5m ago', isYes: true),
+      _BetActivity(username: 'degen_king', action: 'bought', question: 'Will Champions League final go to penalties?', amount: 4300, time: '8m ago', isYes: false),
+    ]);
 
-    final video = mockVideos[_currentIndex];
+    // Timer to add new bet activities
+    _activityTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (!mounted) return;
+      final markets = widget.appState.feedMarkets;
+      if (markets.isEmpty) return;
 
-    // Find linked market
-    final market = appState.markets.firstWhere(
-      (m) => m.id == video.linkedMarketId,
-      orElse: () => Market(
-        id: video.linkedMarketId,
-        question: video.linkedMarketQuestion,
-        category: 'Sports',
-        context: video.caption,
-        yesPrice: video.linkedMarketYesPrice,
-        noPrice: (1.0 - video.linkedMarketYesPrice).clamp(0.01, 0.99),
-        volume: '\$24.5K',
-        liquidity: '\$1.8K',
-        deadline: DateTime.now().add(const Duration(days: 30)),
-        imageUrl: '',
-        clobTokenId: '',
-        volume24hr: 1200,
-        spread: 0.02,
-        bestBid: video.linkedMarketYesPrice - 0.01,
-        bestAsk: video.linkedMarketYesPrice,
-        isFeatured: false,
-        tags: const [],
-        history: const [],
-        comments: const [],
-        news: const [],
-        trend: 0.0,
-      ),
-    );
+      final random = Random();
+      final market = markets[random.nextInt(markets.length)];
+      final usernames = ['solana_maxi', '0x12a9…cd45', 'crypto_ninja', 'betting_dave', 'pulse_master', '0x7e51…33b9', 'whale_watcher', 'trade_lord'];
+      final user = usernames[random.nextInt(usernames.length)];
+      final isYes = random.nextBool();
+      final amount = (random.nextInt(90) + 10) * 50.0; // multiples of 50 between 500 and 5000
 
-    final yesPct = (market.yesPrice * 100).round();
-    final noPct = 100 - yesPct;
+      setState(() {
+        _activities.insert(0, _BetActivity(
+          username: user,
+          action: 'bought',
+          question: market.question,
+          amount: amount,
+          time: 'Just now',
+          isYes: isYes,
+        ));
+        if (_activities.length > 20) {
+          _activities.removeLast();
+        }
+      });
+    });
+  }
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      decoration: BoxDecoration(
-        color: t.surfaceRaised,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: t.border, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Row(
-        children: [
-          // Left Pane: Video Player (TikTok-style)
-          Expanded(
-            flex: 5,
-            child: Container(
-              color: Colors.black,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Positioned.fill(
-                    child: buildWebVideoPlayer(video.videoUrl) ?? const SizedBox(),
-                  ),
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.75),
-                          ],
-                          stops: const [0.65, 1.0],
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Video Details Overlay
-                  Positioned(
-                    left: 20,
-                    bottom: 20,
-                    right: 80,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 18,
-                              backgroundColor: t.brandSubtle,
-                              child: Text(
-                                video.username.isNotEmpty ? video.username.substring(1, 3).toUpperCase() : 'PL',
-                                style: TextStyle(color: t.brand, fontSize: 11, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              video.username,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          video.caption,
-                          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.45),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Sidebar controls (Likes, Views, Next/Prev)
-                  Positioned(
-                    right: 16,
-                    bottom: 30,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _SidebarActionBtn(
-                          icon: Icons.keyboard_arrow_up_rounded,
-                          label: 'Prev',
-                          onTap: _currentIndex > 0
-                              ? () => setState(() => _currentIndex--)
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        _SidebarActionBtn(
-                          icon: Icons.keyboard_arrow_down_rounded,
-                          label: 'Next',
-                          onTap: _currentIndex < mockVideos.length - 1
-                              ? () => setState(() => _currentIndex++)
-                              : null,
-                        ),
-                        const SizedBox(height: 24),
-                        _SidebarActionBtn(
-                          icon: Icons.favorite_rounded,
-                          label: _fmt(video.likes),
-                          color: PulsColors.red,
-                        ),
-                        const SizedBox(height: 16),
-                        _SidebarActionBtn(
-                          icon: Icons.visibility_rounded,
-                          label: _fmt(video.views),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Container(width: 1.5, color: t.border),
-          // Right Pane: Trading console & Social Comments
-          Expanded(
-            flex: 6,
-            child: Container(
-              color: t.surface,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: t.brandSubtle,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                market.category.toUpperCase(),
-                                style: TextStyle(color: t.brand, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8),
-                              ),
-                            ),
-                            const Spacer(),
-                            IconButton(
-                              icon: Icon(
-                                Icons.bookmark_rounded,
-                                color: appState.isWatchlisted(market.id) ? PulsColors.amber : t.textSubtle,
-                              ),
-                              onPressed: () => appState.toggleWatchlist(market.id),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.open_in_new_rounded, color: t.textSubtle, size: 20),
-                              onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => MarketDetailScreen(marketId: market.id),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          market.question,
-                          style: TextStyle(color: t.text, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: t.surfaceRaised,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: t.border),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('YES PROBABILITY', style: TextStyle(color: PulsColors.green, fontSize: 10, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  Text('$yesPct%', style: const TextStyle(color: PulsColors.green, fontSize: 32, fontWeight: FontWeight.w900)),
-                                ],
-                              ),
-                              const Spacer(),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  const Text('NO PROBABILITY', style: TextStyle(color: PulsColors.red, fontSize: 10, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  Text('$noPct%', style: const TextStyle(color: PulsColors.red, fontSize: 32, fontWeight: FontWeight.w900)),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: SizedBox(
-                              height: 6,
-                              child: Row(
-                                children: [
-                                  Expanded(flex: yesPct, child: const ColoredBox(color: PulsColors.green)),
-                                  Expanded(flex: noPct, child: const ColoredBox(color: PulsColors.red)),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextButton(
-                                  onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.yes),
-                                  style: TextButton.styleFrom(
-                                    backgroundColor: PulsColors.greenLight,
-                                    foregroundColor: PulsColors.green,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                  ),
-                                  child: Text('Buy YES ${TradeMath.formatPrice(market.yesPrice)}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: TextButton(
-                                  onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.no),
-                                  style: TextButton.styleFrom(
-                                    backgroundColor: PulsColors.redLight,
-                                    foregroundColor: PulsColors.red,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                  ),
-                                  child: Text('Buy NO ${TradeMath.formatPrice(market.noPrice)}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-                          child: Text(
-                            'Comments (${video.comments.length})',
-                            style: TextStyle(color: t.text, fontSize: 15, fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                        Expanded(
-                          child: ListView.separated(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                            itemCount: video.comments.length,
-                            separatorBuilder: (_, __) => Divider(color: t.border, height: 20),
-                            itemBuilder: (context, i) {
-                              final comment = video.comments[i];
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 12,
-                                        backgroundColor: t.brandSubtle,
-                                        child: Text(
-                                          comment.avatar,
-                                          style: TextStyle(color: t.brand, fontSize: 9, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        comment.username,
-                                        style: TextStyle(color: t.textMuted, fontSize: 12, fontWeight: FontWeight.bold),
-                                      ),
-                                      const Spacer(),
-                                      Icon(Icons.favorite_outline_rounded, size: 12, color: t.textSubtle),
-                                      const SizedBox(width: 3),
-                                      Text(_fmt(comment.likes), style: TextStyle(color: t.textSubtle, fontSize: 11)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 32),
-                                    child: Text(
-                                      comment.text,
-                                      style: TextStyle(color: t.text, fontSize: 13, height: 1.4),
-                                    ),
-                                  ),
-                                  if (comment.reply != null) ...[
-                                    const SizedBox(height: 8),
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 32),
-                                      child: Row(
-                                        children: [
-                                          CircleAvatar(
-                                            radius: 10,
-                                            backgroundColor: PulsColors.greenLight,
-                                            child: Text(
-                                              comment.reply!.avatar,
-                                              style: const TextStyle(color: PulsColors.green, fontSize: 8, fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            comment.reply!.username,
-                                            style: TextStyle(color: t.textMuted, fontSize: 11, fontWeight: FontWeight.bold),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 64),
-                                      child: Text(
-                                        comment.reply!.text,
-                                        style: TextStyle(color: t.text, fontSize: 12, height: 1.4),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+  @override
+  void dispose() {
+    _activityTimer.cancel();
+    super.dispose();
+  }
+
+  void _openDetails(BuildContext context, Market market) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+          builder: (_) => MarketDetailScreen(marketId: market.id)),
     );
   }
-}
 
-class _SidebarActionBtn extends StatelessWidget {
-  const _SidebarActionBtn({
-    required this.icon,
-    required this.label,
-    this.color,
-    this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final Color? color;
-  final VoidCallback? onTap;
+  Future<void> _fastBuy(
+    BuildContext context,
+    PulsAppState appState,
+    Market market,
+    MarketSide side,
+  ) async {
+    final walletService = WalletServiceScope.of(context);
+    final ws = walletService.state;
 
-  @override
-  Widget build(BuildContext context) {
-    final disabled = onTap == null && (label == 'Prev' || label == 'Next');
-    return GestureDetector(
-      onTap: onTap,
-      child: Opacity(
-        opacity: disabled ? 0.35 : 1.0,
-        child: Column(
+    if (ws.userId == null || !ws.hasWallet) {
+      _showToast(context, '⚡ Connect wallet first', isError: true);
+      return;
+    }
+
+    final isYes = side == MarketSide.yes;
+    final amount = appState.fastBuyAmount;
+    final label = isYes ? 'YES' : 'NO';
+
+    _showToast(context, '⚡ Buying $label \$${amount.toStringAsFixed(amount % 1 == 0 ? 0 : 1)}…');
+
+    try {
+      await walletService.buyPosition(
+        isYes: isYes,
+        usdcAmount: amount,
+        question: market.question,
+        entryPrice: isYes ? market.yesPrice : market.noPrice,
+      );
+      if (context.mounted) {
+        _showToast(
+          context,
+          '✅ $label bought · \$${amount.toStringAsFixed(amount % 1 == 0 ? 0 : 1)} USDC',
+          isSuccess: true,
+        );
+        walletService.refreshBalance();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        final msg = e.toString().contains('Insufficient')
+            ? '❌ Insufficient USDC'
+            : '❌ Trade failed';
+        _showToast(context, msg, isError: true);
+      }
+    }
+  }
+
+  void _showToast(BuildContext context, String message,
+      {bool isSuccess = false, bool isError = false}) {
+    final t = context.puls;
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (_) => _TopToast(
+          message: message, isSuccess: isSuccess, isError: isError, t: t),
+    );
+    overlay.insert(entry);
+    Future.delayed(const Duration(milliseconds: 2500), entry.remove);
+  }
+
+  Widget _buildCategoryRow(String label, String? category, int count) {
+    final t = widget.t;
+    final selected = _selectedCategory == category;
+    return InkWell(
+      onTap: () => setState(() => _selectedCategory = category),
+      borderRadius: BorderRadius.circular(8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? t.brandSubtle : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.black45,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white24),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: selected ? t.brand : t.text,
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              child: Icon(icon, color: color ?? Colors.white, size: 20),
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: selected ? t.brand.withValues(alpha: 0.2) : t.border,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                count.toString(),
+                style: TextStyle(
+                  color: selected ? t.brand : t.textMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.t;
+    final appState = widget.appState;
+    final allMarkets = appState.feedMarkets;
+
+    // Filter markets by category
+    final filteredMarkets = _selectedCategory == null
+        ? allMarkets
+        : allMarkets.where((m) => m.category == _selectedCategory).toList();
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left Column: Category Panel
+        SizedBox(
+          width: 250,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 20, right: 10),
+            child: Card(
+              color: t.surfaceRaised,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: t.border),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CATEGORIES',
+                      style: TextStyle(
+                        color: t.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          _buildCategoryRow('All Markets', null, allMarkets.length),
+                          const Divider(height: 16),
+                          ...appState.categories.map((cat) {
+                            final count = allMarkets.where((m) => m.category == cat).length;
+                            return _buildCategoryRow(cat, cat, count);
+                          }),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Center Column: Endless scroll feed
+        Expanded(
+          flex: 6,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: filteredMarkets.isEmpty
+                ? Center(
+                    child: Text(
+                      'No predictions in this category.',
+                      style: TextStyle(color: t.textMuted),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: 1000, // Large number to act as infinite
+                    itemBuilder: (context, index) {
+                      final market = filteredMarkets[index % filteredMarkets.length];
+                      return Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 600),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 20),
+                            child: PredictionFeedCard(
+                              market: market,
+                              isWatchlisted: appState.isWatchlisted(market.id),
+                              onWatchlist: () => appState.toggleWatchlist(market.id),
+                              onDetails: () => _openDetails(context, market),
+                              onChoose: (side) {
+                                if (appState.fastBuyEnabled) {
+                                  _fastBuy(context, appState, market, side);
+                                } else {
+                                  showTradePreviewSheet(
+                                    context: context,
+                                    market: market,
+                                    side: side,
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ),
+
+        // Right Column: Recent Betting Activity
+        SizedBox(
+          width: 320,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 10, right: 20),
+            child: Card(
+              color: t.surfaceRaised,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: t.border),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: PulsColors.green,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'LIVE BETTING FEED',
+                          style: TextStyle(
+                            color: t.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: _activities.length,
+                        separatorBuilder: (_, __) => Divider(color: t.border, height: 16),
+                        itemBuilder: (context, i) {
+                          final act = _activities[i];
+                          final sideColor = act.isYes ? PulsColors.green : PulsColors.red;
+                          final sideText = act.isYes ? 'YES' : 'NO';
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    act.username,
+                                    style: TextStyle(
+                                      color: t.brand,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    act.action,
+                                    style: TextStyle(
+                                      color: t.textSubtle,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    act.time,
+                                    style: TextStyle(
+                                      color: t.textSubtle,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                act.question,
+                                style: TextStyle(
+                                  color: t.text,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: sideColor.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      sideText,
+                                      style: TextStyle(
+                                        color: sideColor,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '\$${act.amount.toStringAsFixed(0)} USDC',
+                                    style: TextStyle(
+                                      color: t.text,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-String _fmt(int n) {
-  if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
-  if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
-  return n.toString();
+class _BetActivity {
+  _BetActivity({
+    required this.username,
+    required this.action,
+    required this.question,
+    required this.amount,
+    required this.time,
+    required this.isYes,
+  });
+  final String username;
+  final String action;
+  final String question;
+  final double amount;
+  final String time;
+  final bool isYes;
 }
