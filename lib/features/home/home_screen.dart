@@ -214,7 +214,7 @@ class _VideoPageState extends State<_VideoPage> {
       ..initialize().then((_) {
         if (mounted) {
           setState(() => _ready = true);
-          // Don't autoplay — wait for user to tap or page to become visible
+          _ctrl!.play(); // Autoplay when ready
         }
       }).catchError((_) {
         if (mounted) setState(() => _ready = false);
