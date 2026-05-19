@@ -9,6 +9,7 @@ import '../../data/mock/mock_videos.dart';
 import '../../data/models/mock_video.dart';
 import '../market/market_detail_screen.dart';
 import '../shell/web_layout.dart';
+import 'web_video_player.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -276,7 +277,11 @@ class _VideoPageState extends State<_VideoPage> {
           children: [
             // ── Video ───────────────────────────────────────────────────────
             const ColoredBox(color: Colors.black),
-            if (_ready)
+            if (kIsWeb)
+              buildWebVideoPlayer(widget.video.videoUrl) ??
+                  Icon(Icons.play_circle_outline_rounded,
+                      color: Colors.white.withValues(alpha: 0.3), size: 72)
+            else if (_ready)
               Center(
                 child: AspectRatio(
                   aspectRatio: _ctrl!.value.aspectRatio,
@@ -285,14 +290,11 @@ class _VideoPageState extends State<_VideoPage> {
               )
             else
               Center(
-                child: kIsWeb
-                    ? Icon(Icons.play_circle_outline_rounded,
-                        color: Colors.white.withValues(alpha: 0.3), size: 72)
-                    : Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2),
+                child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2),
                           const SizedBox(height: 12),
                           Text('Loading video…',
                               style: TextStyle(
