@@ -20,6 +20,8 @@ dependencies:
   webview_flutter: ^4.10.0
   url_launcher: ^6.3.2
   web: ^1.1.1
+  haptic_kit: ^1.0.0
+  picons: ^3.0.1
 
 dev_dependencies:
   flutter_test:

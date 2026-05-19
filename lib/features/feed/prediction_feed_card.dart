@@ -1,6 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:haptic_kit/haptic_kit.dart';
+import 'package:picons/picons.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/trade_math.dart';
@@ -45,6 +47,11 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
 
   void _commit(MarketSide side) {
     _reset();
+    if (side == MarketSide.yes) {
+      Haptics.impact(HapticImpactStyle.light);
+    } else {
+      Haptics.impact(HapticImpactStyle.medium);
+    }
     widget.onChoose(side);
   }
 
@@ -211,27 +218,27 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
                             Row(
                               children: [
                                 _Stat(
-                                  icon: Icons.trending_up_rounded,
+                                  icon: Picons.trendUp,
                                   label: '${market.trendIsPositive ? '+' : ''}${TradeMath.formatPercent(market.trend)}',
                                   color: market.trendIsPositive ? PulsColors.green : PulsColors.red,
                                 ),
                                 const SizedBox(width: 8),
                                 if (market.volume24hr > 0)
                                   _Stat(
-                                    icon: Icons.bar_chart_rounded,
+                                    icon: Picons.chartBar,
                                     label: _fmtVol(market.volume24hr),
                                     color: t.textMuted,
                                   )
                                 else
                                   _Stat(
-                                    icon: Icons.water_drop_outlined,
+                                    icon: Picons.drop,
                                     label: market.liquidity,
                                     color: t.textMuted,
                                   ),
                                 if (market.spread > 0) ...[
                                   const SizedBox(width: 8),
                                   _Stat(
-                                    icon: Icons.compare_arrows_rounded,
+                                    icon: Picons.arrowsLeftRight,
                                     label: 'Spread ${(market.spread * 100).toStringAsFixed(0)}¢',
                                     color: t.textMuted,
                                   ),
@@ -463,7 +470,7 @@ class _Stat extends StatelessWidget {
     required this.label,
     required this.color,
   });
-  final IconData icon;
+  final PiconData icon;
   final String label;
   final Color color;
 
@@ -472,7 +479,7 @@ class _Stat extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: color),
+        Picon(icon, size: 14, color: color),
         const SizedBox(width: 4),
         Text(label,
             style: TextStyle(

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:picons/picons.dart';
 
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
@@ -87,12 +88,12 @@ class _DynamicIslandNav extends StatelessWidget {
   final bool isDark;
   final ValueChanged<int> onTap;
 
-  static const _items = [
-    _Item(Icons.bolt_rounded, 'Feed'),
-    _Item(Icons.explore_rounded, 'Discover'),
-    _Item(Icons.play_circle_rounded, 'Home'),
-    _Item(Icons.bar_chart_rounded, 'Portfolio'),
-    _Item(Icons.person_rounded, 'Profile'),
+  static final _items = [
+    _Item(Picons.lightning, 'Feed'),
+    _Item(Picons.compass, 'Discover'),
+    _Item(Picons.playCircle, 'Home'),
+    _Item(Picons.chartBar, 'Portfolio'),
+    _Item(Picons.userCircle, 'Profile'),
   ];
 
   @override
@@ -148,7 +149,7 @@ class _DynamicIslandNav extends StatelessWidget {
                           scale: selected ? 1.1 : 1.0,
                           duration: const Duration(milliseconds: 220),
                           curve: Curves.easeOutCubic,
-                          child: Icon(
+                          child: Picon(
                             item.icon,
                             size: 20,
                             color: selected
@@ -182,7 +183,7 @@ class _DynamicIslandNav extends StatelessWidget {
 }
 
 class _Item {
-  const _Item(this.icon, this.label);
-  final IconData icon;
+  _Item(this.icon, this.label);
+  final PiconData icon;
   final String label;
 }

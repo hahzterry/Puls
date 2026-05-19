@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:haptic_kit/haptic_kit.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/theme/app_theme.dart';
@@ -78,10 +79,12 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
 
         if (state == 'COMPLETE') {
           if (mounted) setState(() { _status = TxStatus.complete; _txHash = txHash; });
+          Haptics.notification(HapticNotificationStyle.success);
           _timer?.cancel();
           return;
         } else if (state == 'FAILED' || state == 'DENIED' || state == 'CANCELLED') {
           if (mounted) setState(() => _status = TxStatus.failed);
+          Haptics.notification(HapticNotificationStyle.error);
           _timer?.cancel();
           return;
         }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:picons/picons.dart';
 
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
@@ -26,12 +27,12 @@ class _WebShellState extends State<WebShell> {
     ProfileScreen(),
   ];
 
-  static const _items = [
-    _NavItem(Icons.bolt_rounded, 'Feed'),
-    _NavItem(Icons.explore_rounded, 'Discover'),
-    _NavItem(Icons.play_circle_rounded, 'Home'),
-    _NavItem(Icons.bar_chart_rounded, 'Portfolio'),
-    _NavItem(Icons.person_rounded, 'Profile'),
+  static final _items = [
+    _NavItem(Picons.lightning, 'Feed'),
+    _NavItem(Picons.compass, 'Discover'),
+    _NavItem(Picons.playCircle, 'Home'),
+    _NavItem(Picons.chartBar, 'Portfolio'),
+    _NavItem(Picons.userCircle, 'Profile'),
   ];
 
   @override
@@ -146,7 +147,7 @@ class _Sidebar extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              Icon(
+                              Picon(
                                 item.icon,
                                 size: 18,
                                 color: selected ? t.brand : t.textMuted,
@@ -223,7 +224,7 @@ class _Sidebar extends StatelessWidget {
 }
 
 class _NavItem {
-  const _NavItem(this.icon, this.label);
-  final IconData icon;
+  _NavItem(this.icon, this.label);
+  final PiconData icon;
   final String label;
 }
