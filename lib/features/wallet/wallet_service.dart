@@ -81,11 +81,17 @@ class WalletService extends ChangeNotifier {
   Future<void> signInWithGoogle() async {
     _setState(_state.copyWith(isLoading: true, error: null));
     try {
+      // On web, redirectTo must be the current app URL (not localhost)
+      String? redirectTo;
+      if (kIsWeb) {
+        // Use the current page origin so it works on any deployment
+        redirectTo = Uri.base.origin;
+      } else {
+        redirectTo = 'io.supabase.puls://login-callback';
+      }
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: kIsWeb
-            ? null // Supabase uses the current page URL on web
-            : 'io.supabase.puls://login-callback',
+        redirectTo: redirectTo,
       );
     } catch (e) {
       _setState(_state.copyWith(isLoading: false, error: e.toString()));
