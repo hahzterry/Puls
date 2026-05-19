@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
@@ -44,7 +45,8 @@ class _PulsAppState extends State<PulsApp> {
               debugShowCheckedModeBanner: false,
               theme: PulsTheme.light(),
               darkTheme: PulsTheme.dark(),
-              themeMode: _state.themeMode,
+              // Web always dark — matches the glassmorphism design
+              themeMode: kIsWeb ? ThemeMode.dark : _state.themeMode,
               home: _state.onboardingComplete
                   ? const PulsShell()
                   : const OnboardingScreen(),

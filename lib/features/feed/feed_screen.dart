@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +14,7 @@ import '../market/market_detail_screen.dart';
 import '../market/trade_preview_sheet.dart';
 import '../shell/web_layout.dart';
 import 'prediction_feed_card.dart';
+import 'ticker_strip.dart';
 
 class FeedScreen extends StatelessWidget {
   const FeedScreen({super.key});
@@ -24,11 +27,12 @@ class FeedScreen extends StatelessWidget {
 
     if (kIsWeb && !isMobileWeb) {
       return Scaffold(
-        backgroundColor: t.bg,
+        backgroundColor: Colors.transparent,
         body: WebLayout(
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(child: _FeedHeader(t: t)),
+              SliverToBoxAdapter(child: WebTickerStrip()),
               _WebFeedBody(appState: appState, t: t),
             ],
           ),
@@ -534,7 +538,6 @@ class _WebMarketCardState extends State<_WebMarketCard> {
   Widget build(BuildContext context) {
     final market = widget.market;
     final t = widget.t;
-    final isDark = context.isDark;
     final yesLabel = '${(market.yesPrice * 100).toStringAsFixed(0)}¢';
     final noLabel = '${(market.noPrice * 100).toStringAsFixed(0)}¢';
 
@@ -555,22 +558,40 @@ class _WebMarketCardState extends State<_WebMarketCard> {
           curve: Curves.easeOutCubic,
           transform: Matrix4.translationValues(0, _hovered ? -4.0 : 0.0, 0),
           decoration: BoxDecoration(
-            color: t.surfaceRaised,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: _hovered ? t.brand.withValues(alpha: 0.4) : t.border,
+              color: _hovered
+                  ? const Color(0xFF4F46E5).withValues(alpha: 0.5)
+                  : Colors.white.withValues(alpha: 0.08),
             ),
             boxShadow: [
               BoxShadow(
                 color: _hovered
-                    ? t.brand.withValues(alpha: 0.15)
-                    : Colors.black.withValues(alpha: isDark ? 0.3 : 0.07),
-                blurRadius: _hovered ? 24 : 8,
+                    ? const Color(0xFF4F46E5).withValues(alpha: 0.2)
+                    : Colors.black.withValues(alpha: 0.3),
+                blurRadius: _hovered ? 32 : 12,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
           clipBehavior: Clip.antiAlias,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: _hovered
+                    ? Colors.white.withValues(alpha: 0.07)
+                    : Colors.white.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.06),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -783,6 +804,8 @@ class _WebMarketCardState extends State<_WebMarketCard> {
           ),
         ),
       ),
+    ),   // closes BackdropFilter child Container
+    ),   // closes BackdropFilter
     );
   }
 

@@ -41,27 +41,46 @@ class _WebShellState extends State<WebShell> {
     final isDark = context.isDark;
 
     return Scaffold(
-      backgroundColor: t.bg,
-      body: Row(
+      backgroundColor: const Color(0xFF09090B),
+      body: Stack(
         children: [
-          // ── Sidebar ──────────────────────────────────────────────────────
-          _Sidebar(
-            index: _index,
-            items: _items,
-            t: t,
-            isDark: isDark,
-            onTap: (i) {
-              if (i == _index && i == 0) {
-                PulsStateScope.of(context).refresh();
-              }
-              setState(() => _index = i);
-            },
+          // ── Gradient background ──────────────────────────────────────────
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(0, -0.6),
+                  radius: 1.4,
+                  colors: [Color(0x40312E81), Color(0xFF09090B)],
+                  stops: [0.0, 0.7],
+                ),
+              ),
+            ),
           ),
-          // ── Divider ──────────────────────────────────────────────────────
-          VerticalDivider(width: 1, color: t.border),
-          // ── Content ──────────────────────────────────────────────────────
-          Expanded(
-            child: IndexedStack(index: _index, children: _pages),
+          // ── Dot grid overlay ─────────────────────────────────────────────
+          Positioned.fill(
+            child: CustomPaint(painter: _DotGridPainter()),
+          ),
+          // ── Shell layout ─────────────────────────────────────────────────
+          Row(
+            children: [
+              _Sidebar(
+                index: _index,
+                items: _items,
+                t: t,
+                isDark: isDark,
+                onTap: (i) {
+                  if (i == _index && i == 0) {
+                    PulsStateScope.of(context).refresh();
+                  }
+                  setState(() => _index = i);
+                },
+              ),
+              VerticalDivider(width: 1, color: t.border.withValues(alpha: 0.4)),
+              Expanded(
+                child: IndexedStack(index: _index, children: _pages),
+              ),
+            ],
           ),
         ],
       ),
@@ -227,4 +246,22 @@ class _NavItem {
   _NavItem(this.icon, this.label);
   final PiconData icon;
   final String label;
+}
+
+class _DotGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0x0AFFFFFF)
+      ..strokeWidth = 1;
+    const spacing = 32.0;
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 1, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DotGridPainter old) => false;
 }
