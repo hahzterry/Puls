@@ -132,17 +132,27 @@ class WalletService extends ChangeNotifier {
 
   Future<void> refreshBalance() async {
     if (_state.userId == null) return;
-    // If we have the wallet address, fetch directly from blockchain — much faster
     if (_state.walletAddress != null && _state.walletAddress!.isNotEmpty) {
       await _fetchBalanceFromChain(_state.walletAddress!);
       return;
     }
-    // Fallback to backend
+    // No address yet — reload wallet info from backend
+    await reloadWallet();
+  }
+
+  /// Re-fetches wallet info from backend (address + balance).
+  Future<void> reloadWallet() async {
+    if (_state.userId == null) return;
     try {
-      final res = await _get('/api/wallet/balance', {'userId': _state.userId!});
+      final res = await _post('/api/wallet/get-or-create', {'userId': _state.userId!});
+      final address = res['address'] as String? ?? '';
       _setState(_state.copyWith(
+        walletId: res['walletId'] as String? ?? _state.walletId,
+        walletAddress: address.isNotEmpty ? address : _state.walletAddress,
         usdcBalance: res['usdcBalance'] as String? ?? _state.usdcBalance,
+        isLoading: false,
       ));
+      if (address.isNotEmpty) _fetchBalanceFromChain(address);
     } catch (_) {}
   }
 

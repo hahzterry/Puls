@@ -23,9 +23,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Supabase.instance.client.auth.onAuthStateChange.listen((_) {
       if (mounted) setState(() {});
     });
-    // Auto-refresh balance when screen loads
+    // Refresh balance when screen loads — use postFrameCallback to ensure context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      WalletServiceScope.of(context).refreshBalance();
+      final wallet = WalletServiceScope.of(context);
+      wallet.refreshBalance();
+      // Also re-fetch wallet info if address is missing
+      if (wallet.state.userId != null && (wallet.state.walletAddress == null || wallet.state.walletAddress!.isEmpty)) {
+        wallet.reloadWallet();
+      }
     });
   }
 
