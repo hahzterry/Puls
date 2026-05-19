@@ -15,7 +15,10 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb) return const _WebHomeScreen();
+    // Desktop web → static grid, mobile web/PWA → real video feed
+    if (kIsWeb && MediaQuery.sizeOf(context).width >= 600) {
+      return const _WebHomeScreen();
+    }
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
         statusBarColor: Colors.transparent,
@@ -203,10 +206,6 @@ class _VideoPageState extends State<_VideoPage> {
   @override
   void initState() {
     super.initState();
-    if (kIsWeb) {
-      // Asset videos are not supported on web — show static fallback
-      return;
-    }
     _ctrl = (widget.video.isAsset
             ? VideoPlayerController.asset(widget.video.videoUrl)
             : VideoPlayerController.networkUrl(Uri.parse(widget.video.videoUrl)))
@@ -214,7 +213,6 @@ class _VideoPageState extends State<_VideoPage> {
       ..initialize().then((_) {
         if (mounted) {
           setState(() => _ready = true);
-          _ctrl!.play(); // Autoplay when ready
         }
       }).catchError((_) {
         if (mounted) setState(() => _ready = false);
