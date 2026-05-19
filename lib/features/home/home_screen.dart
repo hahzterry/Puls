@@ -1,14 +1,20 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../app/puls_app.dart';
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/trade_math.dart';
 import '../../data/mock/mock_videos.dart';
+import '../../data/models/market.dart';
 import '../../data/models/mock_video.dart';
 import '../market/market_detail_screen.dart';
+import '../market/trade_preview_sheet.dart';
 import '../shell/web_layout.dart';
+import '../wallet/wallet_service.dart';
 import 'web_video_player.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -42,147 +48,644 @@ class _WebHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = PulsStateScope.of(context);
+    final wallet = WalletServiceScope.of(context);
+    final ws = wallet.state;
     final t = context.puls;
-    return Scaffold(
-      backgroundColor: t.bg,
-      body: WebLayout(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                child: Row(
-                  children: [
-                    Text('Home',
-                        style: Theme.of(context).textTheme.displaySmall),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: PulsColors.amberLight,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'DEMO VIDEOS',
-                        style: TextStyle(
-                          color: PulsColors.amber,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    final size = MediaQuery.sizeOf(context);
+
+    // Find the main contract market or pick first featured, or fallback to mock
+    final featuredMarket = appState.markets.firstWhere(
+      (m) => m.isFeatured,
+      orElse: () => appState.markets.isNotEmpty
+          ? appState.markets.first
+          : Market(
+              id: '0xca048d69BaA38C6364d3E107c2b389BB8D1320dB',
+              question: 'Will Donald Trump launch a new token in 2026?',
+              category: 'Crypto',
+              context: 'Resolves to YES if Donald Trump officially launches a new token on-chain in 2026.',
+              yesPrice: 0.62,
+              noPrice: 0.38,
+              volume: '\$2.4M',
+              liquidity: '\$120K',
+              deadline: DateTime.now().add(const Duration(days: 90)),
+              trend: 8.5,
+              imageUrl: '',
+              clobTokenId: '',
+              volume24hr: 82000,
+              spread: 0.01,
+              bestBid: 0.61,
+              bestAsk: 0.62,
+              isFeatured: false,
+              tags: const [],
+              history: const [],
+              comments: const [],
+              news: const [],
             ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-              sliver: SliverGrid.builder(
+    );
+
+    final trendingMarkets = appState.markets
+        .where((m) => m.id != featuredMarket.id)
+        .take(6)
+        .toList();
+
+    final bodyContent = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left Column (70%)
+        Expanded(
+          flex: 7,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _FeaturedHeroBanner(market: featuredMarket, t: t),
+              const SizedBox(height: 28),
+              Row(
+                children: [
+                  Text('Trending Predictions',
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => PulsStateScope.of(context).refresh(),
+                    icon: Icon(Icons.refresh_rounded, size: 16, color: t.brand),
+                    label: Text('Refresh', style: TextStyle(color: t.brand, fontSize: 13, fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 14,
                   mainAxisSpacing: 14,
-                  childAspectRatio: 0.75,
+                  childAspectRatio: 1.45,
                 ),
-                itemCount: mockVideos.length,
-                itemBuilder: (context, i) =>
-                    _WebVideoCard(video: mockVideos[i], t: t),
+                itemCount: trendingMarkets.length,
+                itemBuilder: (context, i) => _WebTrendingCard(market: trendingMarkets[i], t: t),
               ),
-            ),
-          ],
+            ],
+          ),
+        ),
+        const SizedBox(width: 24),
+        // Right Column (30%)
+        Expanded(
+          flex: 3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _WebWalletBox(ws: ws, wallet: wallet, t: t),
+              const SizedBox(height: 28),
+              Text('Live Video Feed',
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 14),
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: mockVideos.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, i) => _WebSidebarVideoCard(video: mockVideos[i], t: t),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    return Scaffold(
+      backgroundColor: t.bg,
+      body: WebLayout(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: size.width < 900
+              ? Column(
+                  children: [
+                    _FeaturedHeroBanner(market: featuredMarket, t: t),
+                    const SizedBox(height: 24),
+                    _WebWalletBox(ws: ws, wallet: wallet, t: t),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Text('Trending Predictions',
+                            style: Theme.of(context).textTheme.titleLarge),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: size.width > 600 ? 2 : 1,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: size.width > 600 ? 1.45 : 1.6,
+                      ),
+                      itemCount: trendingMarkets.length,
+                      itemBuilder: (context, i) => _WebTrendingCard(market: trendingMarkets[i], t: t),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Text('Live Video Feed',
+                            style: Theme.of(context).textTheme.titleLarge),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 150,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: mockVideos.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (context, i) => SizedBox(
+                          width: 200,
+                          child: _WebSidebarVideoCard(video: mockVideos[i], t: t),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : bodyContent,
         ),
       ),
     );
   }
 }
 
-class _WebVideoCard extends StatelessWidget {
-  const _WebVideoCard({required this.video, required this.t});
-  final MockVideo video;
+class _FeaturedHeroBanner extends StatelessWidget {
+  const _FeaturedHeroBanner({required this.market, required this.t});
+  final Market market;
   final PulsThemeColors t;
 
   @override
   Widget build(BuildContext context) {
+    final yesPct = (market.yesPrice * 100).round();
+    final noPct = 100 - yesPct;
+
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: t.border),
+        color: t.surfaceRaised,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: t.border, width: 1.5),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            t.surfaceRaised,
+            t.brand.withValues(alpha: 0.05),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: t.brand.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Placeholder gradient background
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  t.brand.withValues(alpha: 0.3),
-                  Colors.black,
-                ],
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: t.brandSubtle,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'FEATURED MARKET',
+                  style: TextStyle(
+                      color: t.brand,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1),
+                ),
+              ),
+              const Spacer(),
+              Icon(Icons.trending_up_rounded, color: PulsColors.green, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                'Volume: ${market.volume}',
+                style: TextStyle(color: t.textSubtle, fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => MarketDetailScreen(marketId: market.id),
+              ),
+            ),
+            child: Text(
+              market.question,
+              style: TextStyle(
+                color: t.text,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
               ),
             ),
           ),
-          Center(
-            child: Icon(Icons.play_circle_outline_rounded,
-                color: Colors.white.withValues(alpha: 0.4), size: 48),
+          const SizedBox(height: 8),
+          Text(
+            market.context,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: t.textMuted, fontSize: 13, height: 1.5),
           ),
-          // Bottom info
-          Positioned(
-            left: 12,
-            right: 12,
-            bottom: 12,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  video.username,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _TradingPillButton(
+                  label: 'Buy YES',
+                  pct: '$yesPct%',
+                  price: TradeMath.formatPrice(market.yesPrice),
+                  color: PulsColors.green,
+                  bg: PulsColors.greenLight,
+                  onPressed: () => showTradePreviewSheet(
+                      context: context, market: market, side: MarketSide.yes),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  video.caption,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 11,
-                    height: 1.3,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _TradingPillButton(
+                  label: 'Buy NO',
+                  pct: '$noPct%',
+                  price: TradeMath.formatPrice(market.noPrice),
+                  color: PulsColors.red,
+                  bg: PulsColors.redLight,
+                  onPressed: () => showTradePreviewSheet(
+                      context: context, market: market, side: MarketSide.no),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WebTrendingCard extends StatefulWidget {
+  const _WebTrendingCard({required this.market, required this.t});
+  final Market market;
+  final PulsThemeColors t;
+
+  @override
+  State<_WebTrendingCard> createState() => _WebTrendingCardState();
+}
+
+class _WebTrendingCardState extends State<_WebTrendingCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.t;
+    final yesPct = (widget.market.yesPrice * 100).round();
+    final noPct = 100 - yesPct;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => MarketDetailScreen(marketId: widget.market.id),
+          ),
+        ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: _hovered ? t.surfaceRaised : t.surface.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _hovered ? t.brand.withValues(alpha: 0.4) : t.border),
+            boxShadow: _hovered
+                ? [
+                    BoxShadow(
+                      color: t.brand.withValues(alpha: 0.05),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    )
+                  ]
+                : [],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: t.brandSubtle,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      widget.market.category,
+                      style: TextStyle(color: t.brand, fontSize: 10, fontWeight: FontWeight.w700),
+                    ),
                   ),
+                  const Spacer(),
+                  Text(
+                    widget.market.volume,
+                    style: TextStyle(color: t.textSubtle, fontSize: 11),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: Text(
+                  widget.market.question,
+                  style: TextStyle(color: t.text, fontSize: 14, fontWeight: FontWeight.w700, height: 1.3),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _QuickPill(label: 'YES $yesPct%', color: PulsColors.green, bg: PulsColors.greenLight),
+                  const SizedBox(width: 6),
+                  _QuickPill(label: 'NO $noPct%', color: PulsColors.red, bg: PulsColors.redLight),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickPill extends StatelessWidget {
+  const _QuickPill({required this.label, required this.color, required this.bg});
+  final String label;
+  final Color color;
+  final Color bg;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
+class _WebWalletBox extends StatelessWidget {
+  const _WebWalletBox({required this.ws, required this.wallet, required this.t});
+  final WalletState ws;
+  final WalletService wallet;
+  final PulsThemeColors t;
+
+  @override
+  Widget build(BuildContext context) {
+    final balance = double.tryParse(ws.usdcBalance)?.toStringAsFixed(2) ?? ws.usdcBalance;
+    final isZero = (double.tryParse(ws.usdcBalance) ?? 0) == 0;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: t.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: t.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.account_balance_wallet_rounded, color: t.brand, size: 20),
+              const SizedBox(width: 8),
+              Text('Arc Wallet', style: TextStyle(color: t.text, fontSize: 15, fontWeight: FontWeight.w700)),
+              const Spacer(),
+              if (ws.walletAddress != null && ws.walletAddress!.isNotEmpty)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  width: 8, height: 8,
+                  decoration: const BoxDecoration(color: PulsColors.green, shape: BoxShape.circle),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (ws.userId == null) ...[
+            Text('Connect your wallet via the Profile tab to enable predicting on Arc Testnet.',
+                style: TextStyle(color: t.textMuted, fontSize: 12, height: 1.5)),
+          ] else ...[
+            Text('\$$balance USDC', style: TextStyle(color: t.text, fontSize: 24, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(
+              ws.walletAddress != null && ws.walletAddress!.isNotEmpty
+                  ? '${ws.walletAddress!.substring(0, 6)}...${ws.walletAddress!.substring(ws.walletAddress!.length - 4)}'
+                  : 'Generating address...',
+              style: TextStyle(color: t.textSubtle, fontSize: 11, fontFamily: 'monospace'),
+            ),
+            const SizedBox(height: 14),
+            if (isZero) ...[
+              GestureDetector(
+                onTap: () => launchUrl(Uri.parse('https://faucet.circle.com'), mode: LaunchMode.externalApplication),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: t.brand.withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(6),
+                    color: PulsColors.amberLight,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: PulsColors.amber.withValues(alpha: 0.2)),
                   ),
-                  child: Text(
-                    video.linkedMarketQuestion,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.water_drop_rounded, size: 14, color: PulsColors.amber),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Get testnet USDC faucet →',
+                          style: const TextStyle(color: PulsColors.amber, fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            ],
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _WebSidebarVideoCard extends StatefulWidget {
+  const _WebSidebarVideoCard({required this.video, required this.t});
+  final MockVideo video;
+  final PulsThemeColors t;
+
+  @override
+  State<_WebSidebarVideoCard> createState() => _WebSidebarVideoCardState();
+}
+
+class _WebSidebarVideoCardState extends State<_WebSidebarVideoCard> {
+  bool _hovered = false;
+
+  void _playVideoPopup(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: 340,
+          height: 600,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: widget.t.border, width: 1.5),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(
+                child: buildWebVideoPlayer(widget.video.videoUrl) ?? const SizedBox(),
+              ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(widget.video.username, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                      const SizedBox(height: 4),
+                      Text(widget.video.caption, style: const TextStyle(color: Colors.white70, fontSize: 11), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.t;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: () => _playVideoPopup(context),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: _hovered ? t.surfaceRaised : t.surface.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _hovered ? t.brand : t.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.play_circle_outline_rounded, color: Colors.white70, size: 22),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.video.username,
+                      style: TextStyle(color: t.text, fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.video.caption,
+                      style: TextStyle(color: t.textMuted, fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TradingPillButton extends StatelessWidget {
+  const _TradingPillButton({
+    required this.label,
+    required this.pct,
+    required this.price,
+    required this.color,
+    required this.bg,
+    required this.onPressed,
+  });
+  final String label;
+  final String pct;
+  final String price;
+  final Color color;
+  final Color bg;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 52,
+      child: TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          backgroundColor: bg,
+          foregroundColor: color,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 14)),
+            const SizedBox(width: 8),
+            Text(pct, style: TextStyle(color: color.withValues(alpha: 0.7), fontWeight: FontWeight.w600, fontSize: 12)),
+            const SizedBox(width: 4),
+            Text('($price)', style: TextStyle(color: color.withValues(alpha: 0.6), fontSize: 11)),
+          ],
+        ),
       ),
     );
   }

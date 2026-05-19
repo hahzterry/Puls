@@ -1,4 +1,5 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,6 +9,7 @@ import '../../app/puls_app.dart';
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../wallet/wallet_service.dart';
+import '../shell/web_layout.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,11 +25,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Supabase.instance.client.auth.onAuthStateChange.listen((_) {
       if (mounted) setState(() {});
     });
-    // Refresh balance when screen loads — use postFrameCallback to ensure context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final wallet = WalletServiceScope.of(context);
       wallet.refreshBalance();
-      // Also re-fetch wallet info if address is missing
       if (wallet.state.userId != null && (wallet.state.walletAddress == null || wallet.state.walletAddress!.isEmpty)) {
         wallet.reloadWallet();
       }
@@ -43,170 +43,282 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ws = wallet.state;
     final supaUser = Supabase.instance.client.auth.currentUser;
 
-    return Scaffold(
-      backgroundColor: t.bg,
-      body: SafeArea(
-        bottom: false,
-        child: RefreshIndicator(
-          color: t.brand,
-          onRefresh: wallet.refreshBalance,
-          child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+    final width = MediaQuery.sizeOf(context).width;
+    final isDesktop = kIsWeb && width >= 900;
+
+    Widget body;
+    if (isDesktop) {
+      body = Padding(
+        padding: const EdgeInsets.all(24),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            FadeInDown(
-              duration: const Duration(milliseconds: 400),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    margin: const EdgeInsets.only(right: 12),
-                    decoration: BoxDecoration(
-                      color: t.brandSubtle,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Image.asset(
-                      'assets/logo.png',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Text('Profile',
-                      style: Theme.of(context).textTheme.displaySmall),
-                ],
+            // Left Column: Profile Card + Wallet Control Panel
+            Expanded(
+              flex: 4,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ProfileCard(t: t, supaUser: supaUser),
+                    const SizedBox(height: 20),
+                    _WalletCard(ws: ws, wallet: wallet, t: t),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            // ── Wallet card ──────────────────────────────────────────────────
-            FadeInUp(
-              delay: const Duration(milliseconds: 60),
-              duration: const Duration(milliseconds: 400),
-              child: _WalletCard(ws: ws, wallet: wallet, t: t),
-            ),
-            const SizedBox(height: 16),
-            FadeInUp(
-              delay: const Duration(milliseconds: 80),
-              duration: const Duration(milliseconds: 400),
-              child: _ProfileCard(t: t, supaUser: supaUser),
-            ),
-            const SizedBox(height: 20),
-            FadeInUp(
-              delay: const Duration(milliseconds: 140),
-              duration: const Duration(milliseconds: 400),
-              child: _Section(
-                title: 'Appearance',
-                t: t,
-                children: [
-                  _Row(
-                    icon: isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-                    title: 'Dark mode',
-                    subtitle: isDark ? 'Currently dark' : 'Currently light',
-                    t: t,
-                    trailing: Switch(
-                      value: isDark,
-                      activeTrackColor: t.brand,
-                      onChanged: (_) => appState.toggleThemeMode(),
+            const SizedBox(width: 24),
+            // Right Column: Preferences, Arc Testnet details, About L1/Circle
+            Expanded(
+              flex: 5,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Section(
+                      title: 'Preferences',
+                      t: t,
+                      children: [
+                        _Row(
+                          icon: isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                          title: 'Dark mode',
+                          subtitle: isDark ? 'Currently dark' : 'Currently light',
+                          t: t,
+                          trailing: Switch(
+                            value: isDark,
+                            activeTrackColor: t.brand,
+                            onChanged: (_) => appState.toggleThemeMode(),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            FadeInUp(
-              delay: const Duration(milliseconds: 160),
-              duration: const Duration(milliseconds: 400),
-              child: _FastBuySection(appState: appState, t: t),
-            ),
-            const SizedBox(height: 12),
-            FadeInUp(
-              delay: const Duration(milliseconds: 180),
-              duration: const Duration(milliseconds: 400),
-              child: _Section(
-                title: 'Arc Testnet',
-                t: t,
-                children: [
-                  _Row(
-                    icon: Icons.water_drop_outlined,
-                    title: 'Get testnet USDC',
-                    subtitle: 'faucet.circle.com → Arc Testnet',
-                    t: t,
-                    onTap: () => launchUrl(
-                      Uri.parse('https://faucet.circle.com'),
-                      mode: LaunchMode.externalApplication,
+                    const SizedBox(height: 16),
+                    _FastBuySection(appState: appState, t: t),
+                    const SizedBox(height: 16),
+                    _Section(
+                      title: 'Arc Testnet Operations',
+                      t: t,
+                      children: [
+                        _Row(
+                          icon: Icons.water_drop_outlined,
+                          title: 'Get testnet USDC',
+                          subtitle: 'faucet.circle.com → Arc Testnet',
+                          t: t,
+                          onTap: () => launchUrl(
+                            Uri.parse('https://faucet.circle.com'),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
+                        ),
+                        _Row(
+                          icon: Icons.search_rounded,
+                          title: 'Arc Explorer',
+                          subtitle: 'testnet.arcscan.app',
+                          t: t,
+                          onTap: () => launchUrl(
+                            Uri.parse('https://testnet.arcscan.app'),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
+                        ),
+                        _Row(
+                          icon: Icons.info_outline_rounded,
+                          title: 'Market contract',
+                          subtitle: '0xca048d...20dB',
+                          t: t,
+                          onTap: () => launchUrl(
+                            Uri.parse('https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
+                        ),
+                      ],
                     ),
-                    trailing: Icon(Icons.open_in_new_rounded, size: 16, color: t.textSubtle),
-                  ),
-                  _Row(
-                    icon: Icons.search_rounded,
-                    title: 'Arc Explorer',
-                    subtitle: 'testnet.arcscan.app',
-                    t: t,
-                    onTap: () => launchUrl(
-                      Uri.parse('https://testnet.arcscan.app'),
-                      mode: LaunchMode.externalApplication,
+                    const SizedBox(height: 16),
+                    _Section(
+                      title: 'Platform Architecture',
+                      t: t,
+                      children: [
+                        _Row(
+                          icon: Icons.layers_rounded,
+                          title: 'Built on Arc L1',
+                          subtitle: 'USDC-native gas · L1 ecosystem',
+                          t: t,
+                          onTap: () => launchUrl(
+                            Uri.parse('https://arc.network'),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
+                        ),
+                        _Row(
+                          icon: Icons.account_balance_rounded,
+                          title: 'Powered by Circle SDKs',
+                          subtitle: 'Non-custodial MPC wallets · USDC rails',
+                          t: t,
+                          onTap: () => launchUrl(
+                            Uri.parse('https://circle.com'),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
+                        ),
+                        _Row(
+                          icon: Icons.show_chart_rounded,
+                          title: 'Market data',
+                          subtitle: 'Polymarket odds engine',
+                          t: t,
+                          onTap: () => launchUrl(
+                            Uri.parse('https://polymarket.com'),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
+                        ),
+                      ],
                     ),
-                    trailing: Icon(Icons.open_in_new_rounded, size: 16, color: t.textSubtle),
-                  ),
-                  _Row(
-                    icon: Icons.info_outline_rounded,
-                    title: 'Market contract',
-                    subtitle: '0xca048d...20dB',
-                    t: t,
-                    onTap: () => launchUrl(
-                      Uri.parse('https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                    trailing: Icon(Icons.open_in_new_rounded, size: 16, color: t.textSubtle),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            FadeInUp(
-              delay: const Duration(milliseconds: 220),
-              duration: const Duration(milliseconds: 400),
-              child: _Section(
-                title: 'About',
-                t: t,
-                children: [
-                  _Row(
-                    icon: Icons.layers_rounded,
-                    title: 'Built on Arc',
-                    subtitle: 'USDC-native L1 · Chain ID 5042002',
-                    t: t,
-                    onTap: () => launchUrl(
-                      Uri.parse('https://arc.network'),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                    trailing: Icon(Icons.open_in_new_rounded, size: 16, color: t.textSubtle),
-                  ),
-                  _Row(
-                    icon: Icons.account_balance_rounded,
-                    title: 'Powered by Circle',
-                    subtitle: 'MPC wallets · USDC payments',
-                    t: t,
-                    onTap: () => launchUrl(
-                      Uri.parse('https://circle.com'),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                    trailing: Icon(Icons.open_in_new_rounded, size: 16, color: t.textSubtle),
-                  ),
-                  _Row(
-                    icon: Icons.show_chart_rounded,
-                    title: 'Market data',
-                    subtitle: 'Polymarket · Real odds',
-                    t: t,
-                    onTap: () => launchUrl(
-                      Uri.parse('https://polymarket.com'),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                    trailing: Icon(Icons.open_in_new_rounded, size: 16, color: t.textSubtle),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
         ),
+      );
+    } else {
+      body = ListView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+        children: [
+          FadeInUp(
+            delay: const Duration(milliseconds: 60),
+            duration: const Duration(milliseconds: 350),
+            child: _ProfileCard(t: t, supaUser: supaUser),
+          ),
+          const SizedBox(height: 16),
+          FadeInUp(
+            delay: const Duration(milliseconds: 80),
+            duration: const Duration(milliseconds: 350),
+            child: _WalletCard(ws: ws, wallet: wallet, t: t),
+          ),
+          const SizedBox(height: 16),
+          FadeInUp(
+            delay: const Duration(milliseconds: 100),
+            duration: const Duration(milliseconds: 350),
+            child: _Section(
+              title: 'Appearance',
+              t: t,
+              children: [
+                _Row(
+                  icon: isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                  title: 'Dark mode',
+                  subtitle: isDark ? 'Currently dark' : 'Currently light',
+                  t: t,
+                  trailing: Switch(
+                    value: isDark,
+                    activeTrackColor: t.brand,
+                    onChanged: (_) => appState.toggleThemeMode(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          FadeInUp(
+            delay: const Duration(milliseconds: 120),
+            duration: const Duration(milliseconds: 350),
+            child: _FastBuySection(appState: appState, t: t),
+          ),
+          const SizedBox(height: 12),
+          FadeInUp(
+            delay: const Duration(milliseconds: 140),
+            duration: const Duration(milliseconds: 350),
+            child: _Section(
+              title: 'Arc Testnet',
+              t: t,
+              children: [
+                _Row(
+                  icon: Icons.water_drop_outlined,
+                  title: 'Get testnet USDC',
+                  subtitle: 'faucet.circle.com',
+                  t: t,
+                  onTap: () => launchUrl(
+                    Uri.parse('https://faucet.circle.com'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
+                ),
+                _Row(
+                  icon: Icons.search_rounded,
+                  title: 'Arc Explorer',
+                  subtitle: 'testnet.arcscan.app',
+                  t: t,
+                  onTap: () => launchUrl(
+                    Uri.parse('https://testnet.arcscan.app'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
+                ),
+                _Row(
+                  icon: Icons.info_outline_rounded,
+                  title: 'Market contract',
+                  subtitle: '0xca048d...20dB',
+                  t: t,
+                  onTap: () => launchUrl(
+                    Uri.parse('https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          FadeInUp(
+            delay: const Duration(milliseconds: 160),
+            duration: const Duration(milliseconds: 350),
+            child: _Section(
+              title: 'About',
+              t: t,
+              children: [
+                _Row(
+                  icon: Icons.layers_rounded,
+                  title: 'Built on Arc',
+                  subtitle: 'USDC-native gas · L1 L2 ecosystem',
+                  t: t,
+                  onTap: () => launchUrl(
+                    Uri.parse('https://arc.network'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
+                ),
+                _Row(
+                  icon: Icons.account_balance_rounded,
+                  title: 'Powered by Circle',
+                  subtitle: 'MPC wallets · USDC payments',
+                  t: t,
+                  onTap: () => launchUrl(
+                    Uri.parse('https://circle.com'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: t.bg,
+      appBar: AppBar(
+        title: Text('Profile Settings', style: TextStyle(color: t.text, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+      ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: t.brand,
+          onRefresh: wallet.refreshBalance,
+          child: isDesktop ? WebLayout(maxWidth: 1200, child: body) : body,
         ),
       ),
     );
@@ -227,15 +339,15 @@ class _ProfileCard extends StatelessWidget {
     final avatarUrl = supaUser?.userMetadata?['avatar_url'] as String?;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: t.surfaceRaised,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: t.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -243,7 +355,7 @@ class _ProfileCard extends StatelessWidget {
       child: Row(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             child: avatarUrl != null
                 ? Image.network(avatarUrl, width: 56, height: 56, fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => _fallback(name))
@@ -254,9 +366,9 @@ class _ProfileCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 3),
-                Text(email, style: Theme.of(context).textTheme.bodyMedium),
+                Text(name, style: TextStyle(color: t.text, fontSize: 16, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(email, style: TextStyle(color: t.textMuted, fontSize: 13)),
               ],
             ),
           ),
@@ -270,7 +382,7 @@ class _ProfileCard extends StatelessWidget {
                       style: TextStyle(
                           color: PulsColors.green,
                           fontSize: 10,
-                          fontWeight: FontWeight.w700)),
+                          fontWeight: FontWeight.bold)),
                 )
               : Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -281,8 +393,8 @@ class _ProfileCard extends StatelessWidget {
                       style: TextStyle(
                           color: PulsColors.amber,
                           fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8)),
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5)),
                 ),
         ],
       ),
@@ -293,11 +405,12 @@ class _ProfileCard extends StatelessWidget {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-            color: t.brandSubtle, borderRadius: BorderRadius.circular(16)),
-        clipBehavior: Clip.antiAlias,
-        child: Image.asset(
-          'assets/logo.png',
-          fit: BoxFit.cover,
+            color: t.brandSubtle, borderRadius: BorderRadius.circular(12)),
+        child: Center(
+          child: Text(
+            name.isNotEmpty ? name[0].toUpperCase() : 'P',
+            style: TextStyle(color: t.brand, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
         ),
       );
 }
@@ -315,15 +428,15 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: t.surfaceRaised,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: t.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -331,14 +444,12 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(
-                      color: t.textSubtle,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.8)),
+          Text(title.toUpperCase(),
+              style: TextStyle(
+                  color: t.textSubtle,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.0)),
           const SizedBox(height: 8),
           ...children,
         ],
@@ -365,47 +476,44 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
+      borderRadius: BorderRadius.circular(10),
       child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: t.surface,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: t.border),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: t.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: t.border),
+              ),
+              child: Icon(icon, color: t.textMuted, size: 16),
             ),
-            child: Icon(icon, color: t.textMuted, size: 17),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: Theme.of(context).textTheme.titleMedium),
-                Text(subtitle,
-                    style: Theme.of(context).textTheme.bodyMedium),
-              ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(color: t.text, fontSize: 14, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(color: t.textMuted, fontSize: 12)),
+                ],
+              ),
             ),
-          ),
-          trailing ??
-              Icon(Icons.chevron_right_rounded,
-                  color: onTap != null ? t.textSubtle : Colors.transparent, size: 16),
-        ],
+            trailing ??
+                Icon(Icons.chevron_right_rounded,
+                    color: onTap != null ? t.textSubtle : Colors.transparent, size: 16),
+          ],
+        ),
       ),
-    ),
     );
   }
 }
 
-
-// ── Wallet Card ───────────────────────────────────────────────────────────────
 class _WalletCard extends StatelessWidget {
   const _WalletCard({
     required this.ws,
@@ -421,67 +529,90 @@ class _WalletCard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (ws.userId == null) {
       return Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
           color: t.brand,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: t.brand.withValues(alpha: 0.25),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
           children: [
-            const Text(
-              'Connect Wallet',
-              style: TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Sign in with Google to get a USDC wallet on Arc Testnet',
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: ws.isLoading ? null : wallet.signInWithGoogle,
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: t.brand,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-                child: ws.isLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Continue with Google',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
+            Positioned(
+              right: -30,
+              top: -30,
+              child: CircleAvatar(
+                radius: 70,
+                backgroundColor: Colors.white.withValues(alpha: 0.05),
               ),
             ),
-            if (ws.error != null) ...[
-              const SizedBox(height: 8),
-              Text(ws.error!,
-                  style: const TextStyle(color: Colors.red, fontSize: 12)),
-            ],
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Onchain Trading Wallet',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Create an automated secure USDC trading account on Arc Testnet',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, height: 1.3),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: ws.isLoading ? null : wallet.signInWithGoogle,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: t.brand,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                    child: ws.isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          )
+                        : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.login_rounded, size: 16),
+                              SizedBox(width: 8),
+                              Text('Connect Google Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            ],
+                          ),
+                  ),
+                ),
+                if (ws.error != null) ...[
+                  const SizedBox(height: 10),
+                  Text(ws.error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                ],
+              ],
+            ),
           ],
         ),
       );
     }
 
-    // Signed in — show balance
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: t.surfaceRaised,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: t.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -492,34 +623,28 @@ class _WalletCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: t.brandSubtle,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  'assets/logo.png',
-                  fit: BoxFit.cover,
+                child: Center(
+                  child: Icon(Icons.account_balance_wallet_rounded, color: t.brand, size: 18),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Arc Testnet Wallet',
-                        style: TextStyle(
-                            color: t.text,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14)),
+                    Text('Arc Testnet Wallet', style: TextStyle(color: t.text, fontWeight: FontWeight.bold, fontSize: 14)),
                     if (ws.walletAddress != null && ws.walletAddress!.isNotEmpty)
                       GestureDetector(
                         onTap: () {
                           Clipboard.setData(ClipboardData(text: ws.walletAddress!));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Wallet address copied!')),
+                            const SnackBar(content: Text('Address copied to clipboard'), duration: Duration(seconds: 2)),
                           );
                         },
                         child: Row(
@@ -527,7 +652,7 @@ class _WalletCard extends StatelessWidget {
                           children: [
                             Text(
                               '${ws.walletAddress!.substring(0, 6)}...${ws.walletAddress!.substring(ws.walletAddress!.length - 4)}',
-                              style: TextStyle(color: t.textMuted, fontSize: 12),
+                              style: TextStyle(color: t.textMuted, fontSize: 12, decoration: TextDecoration.underline),
                             ),
                             const SizedBox(width: 4),
                             Icon(Icons.copy_rounded, size: 12, color: t.textSubtle),
@@ -537,108 +662,94 @@ class _WalletCard extends StatelessWidget {
                   ],
                 ),
               ),
-              GestureDetector(
-                onTap: ws.isLoading ? null : wallet.refreshBalance,
-                child: ws.isLoading
-                    ? SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: t.brand),
-                      )
-                    : Icon(Icons.refresh_rounded, color: t.textSubtle, size: 18),
+              IconButton(
+                onPressed: ws.isLoading ? null : wallet.refreshBalance,
+                icon: ws.isLoading
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Icon(Icons.refresh_rounded, color: t.textMuted, size: 20),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           Row(
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('USDC Balance',
-                      style: TextStyle(color: t.textMuted, fontSize: 12)),
+                  Text('USDC Balance', style: TextStyle(color: t.textMuted, fontSize: 12)),
                   const SizedBox(height: 2),
                   Text(
                     '\$${double.tryParse(ws.usdcBalance)?.toStringAsFixed(2) ?? ws.usdcBalance} USDC',
-                    style: TextStyle(
-                        color: t.text,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 22,
-                        letterSpacing: -0.5),
+                    style: TextStyle(color: t.text, fontWeight: FontWeight.w900, fontSize: 24, letterSpacing: -0.5),
                   ),
                 ],
               ),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: PulsColors.greenLight,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Text(
-                  'Arc Testnet',
-                  style: TextStyle(
-                      color: PulsColors.green,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600),
+                  'Arc L1 Testnet',
+                  style: TextStyle(color: PulsColors.green, fontSize: 10, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // Wallet address with copy
+          const SizedBox(height: 16),
           if (ws.walletAddress != null && ws.walletAddress!.isNotEmpty) ...[
             GestureDetector(
               onTap: () {
                 Clipboard.setData(ClipboardData(text: ws.walletAddress!));
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('✅ Address copied!')),
+                  const SnackBar(content: Text('Address copied to clipboard'), duration: Duration(seconds: 2)),
                 );
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: t.surface,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: t.border),
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
-                        '${ws.walletAddress!.substring(0, 8)}...${ws.walletAddress!.substring(ws.walletAddress!.length - 6)}',
-                        style: TextStyle(color: t.textMuted, fontSize: 12, fontFamily: 'monospace'),
+                        ws.walletAddress!,
+                        style: TextStyle(color: t.textMuted, fontSize: 11, fontFamily: 'monospace'),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Icon(Icons.copy_rounded, size: 14, color: t.brand),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
           ],
-          // Faucet link — prominent when balance is 0
           if ((double.tryParse(ws.usdcBalance) ?? 0) == 0)
             GestureDetector(
               onTap: () => launchUrl(Uri.parse('https://faucet.circle.com'), mode: LaunchMode.externalApplication),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: PulsColors.amberLight,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: PulsColors.amber.withValues(alpha: 0.3)),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
-                    const Icon(Icons.water_drop_rounded, size: 16, color: PulsColors.amber),
-                    const SizedBox(width: 8),
+                    Icon(Icons.water_drop_rounded, size: 16, color: PulsColors.amber),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Get free testnet USDC at faucet.circle.com →',
-                        style: const TextStyle(color: PulsColors.amber, fontSize: 12, fontWeight: FontWeight.w600),
+                        'Wallet is empty. Click here to get free gas + testnet USDC from faucet.circle.com →',
+                        style: TextStyle(color: PulsColors.amber, fontSize: 12, fontWeight: FontWeight.bold, height: 1.3),
                       ),
                     ),
                   ],
@@ -646,33 +757,33 @@ class _WalletCard extends StatelessWidget {
               ),
             )
           else
-            Text(
-              'Get testnet USDC: faucet.circle.com',
-              style: TextStyle(color: t.textSubtle, fontSize: 11),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: t.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: t.border),
+              ),
+              child: Text(
+                'Top up gas / USDC anytime at faucet.circle.com (select Arc Testnet network)',
+                style: TextStyle(color: t.textSubtle, fontSize: 11, height: 1.3),
+              ),
             ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             children: [
               TextButton.icon(
                 onPressed: () => _showWalletInfo(context, ws, wallet, t),
                 icon: Icon(Icons.info_outline_rounded, size: 14, color: t.brand),
-                label: Text('Wallet info', style: TextStyle(color: t.brand, fontSize: 12)),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+                label: Text('Diagnostic Info', style: TextStyle(color: t.brand, fontSize: 12, fontWeight: FontWeight.bold)),
+                style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
               ),
               const Spacer(),
               TextButton(
                 onPressed: wallet.signOut,
-                style: TextButton.styleFrom(
-                  foregroundColor: PulsColors.red,
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text('Sign out', style: TextStyle(fontSize: 12)),
+                style: TextButton.styleFrom(foregroundColor: PulsColors.red, padding: EdgeInsets.zero, minimumSize: Size.zero),
+                child: const Text('Disconnect Wallet', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -701,14 +812,15 @@ class _WalletCard extends StatelessWidget {
                   decoration: BoxDecoration(color: t.border, borderRadius: BorderRadius.circular(2))),
             ),
             const SizedBox(height: 20),
-            Text('Wallet Info', style: Theme.of(context).textTheme.titleLarge),
+            Text('Technical Details', style: TextStyle(color: t.text, fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 16),
-            _InfoRow('Network', 'Arc Testnet', t),
+            _InfoRow('Target Network', 'Arc Testnet L1', t),
             _InfoRow('Chain ID', '5042002', t),
-            _InfoRow('Balance', '\$${double.tryParse(ws.usdcBalance)?.toStringAsFixed(2) ?? ws.usdcBalance} USDC', t),
+            _InfoRow('Gas Fee Asset', 'USDC (Native gas)', t),
+            _InfoRow('Provider type', 'Circle Programmable Wallet (MPC)', t),
             if (ws.walletAddress != null) ...[
-              const SizedBox(height: 8),
-              Text('Address', style: TextStyle(color: t.textMuted, fontSize: 12)),
+              const SizedBox(height: 12),
+              Text('Full Wallet Hex Address', style: TextStyle(color: t.textMuted, fontSize: 12)),
               const SizedBox(height: 4),
               GestureDetector(
                 onTap: () {
@@ -737,37 +849,19 @@ class _WalletCard extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: PulsColors.amberLight,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline_rounded, color: PulsColors.amber, size: 14),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'This is a Circle MPC wallet. Private key is secured by Circle\'s infrastructure and cannot be exported.',
-                      style: const TextStyle(color: PulsColors.amber, fontSize: 11),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: TextButton(
+              height: 44,
+              child: ElevatedButton(
                 onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(
+                style: ElevatedButton.styleFrom(
                   backgroundColor: t.brand,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
                 ),
-                child: const Text('Close', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                child: const Text('Done', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -786,12 +880,12 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
           Text(label, style: TextStyle(color: t.textMuted, fontSize: 13)),
           const Spacer(),
-          Text(value, style: TextStyle(color: t.text, fontWeight: FontWeight.w600, fontSize: 13)),
+          Text(value, style: TextStyle(color: t.text, fontWeight: FontWeight.bold, fontSize: 13)),
         ],
       ),
     );
@@ -808,7 +902,7 @@ class _FastBuySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: t.surfaceRaised,
         borderRadius: BorderRadius.circular(16),
@@ -819,8 +913,8 @@ class _FastBuySection extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -831,8 +925,8 @@ class _FastBuySection extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: appState.fastBuyEnabled
                       ? t.brand
@@ -851,13 +945,14 @@ class _FastBuySection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Fast Buy',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text('Fast Buy Console',
+                        style: TextStyle(color: t.text, fontSize: 14, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 2),
                     Text(
                       appState.fastBuyEnabled
-                          ? 'Swipe to buy instantly · \$${appState.fastBuyAmount.toStringAsFixed(appState.fastBuyAmount % 1 == 0 ? 0 : 1)} USDC'
-                          : 'Swipe left/right to buy without confirmation',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                          ? 'Swipe to trade instantly · \$${appState.fastBuyAmount.toStringAsFixed(appState.fastBuyAmount % 1 == 0 ? 0 : 1)} USDC'
+                          : 'Skip confirmations & trade with swipe actions',
+                      style: TextStyle(color: t.textMuted, fontSize: 12),
                     ),
                   ],
                 ),
@@ -871,21 +966,23 @@ class _FastBuySection extends StatelessWidget {
           ),
           if (appState.fastBuyEnabled) ...[
             const SizedBox(height: 14),
-            Text('Auto-buy amount',
+            Text('Auto-buy Amount limit',
                 style: TextStyle(
                     color: t.textMuted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500)),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5)),
             const SizedBox(height: 8),
             Row(
               children: _amounts.map((amt) {
                 final selected = appState.fastBuyAmount == amt;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
+                  child: InkWell(
                     onTap: () => appState.setFastBuyAmount(amt),
+                    borderRadius: BorderRadius.circular(10),
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
+                      duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
@@ -899,7 +996,7 @@ class _FastBuySection extends StatelessWidget {
                         '\$${amt.toStringAsFixed(amt % 1 == 0 ? 0 : 1)}',
                         style: TextStyle(
                           color: selected ? Colors.white : t.textMuted,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
                       ),
@@ -908,7 +1005,7 @@ class _FastBuySection extends StatelessWidget {
                 );
               }).toList(),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -919,12 +1016,14 @@ class _FastBuySection extends StatelessWidget {
                 children: [
                   Icon(Icons.swipe_rounded, color: t.brand, size: 14),
                   const SizedBox(width: 6),
-                  Text(
-                    'Swipe right = YES · Swipe left = NO · No confirmation',
-                    style: TextStyle(
-                        color: t.brand,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500),
+                  Expanded(
+                    child: Text(
+                      'Swipe Right = Buy YES · Swipe Left = Buy NO (Instantly executes)',
+                      style: TextStyle(
+                          color: t.brand,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ],
               ),

@@ -1,21 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/puls_app_state.dart';
-
-// ── Light palette — white bg, indigo brand ────────────────────────────────────
-const _bg = Color(0xFFFFFFFF);
-const _surface = Color(0xFFF4F4F5);
-const _surfaceRaised = Color(0xFFFFFFFF);
-const _border = Color(0xFFE4E4E7);
-const _brand = Color(0xFF4F46E5);
-const _brandSubtle = Color(0xFFEEF2FF);
-const _white = Color(0xFF18181B);       // text on light bg
-const _muted = Color(0xFF52525B);
-const _subtle = Color(0xFFA1A1AA);
-const _green = Color(0xFF16A34A);
-const _onBrand = Color(0xFFFFFFFF);     // text on brand bg
+import '../../core/theme/app_theme.dart';
 
 class WebLandingPage extends StatefulWidget {
   const WebLandingPage({super.key});
@@ -44,19 +33,52 @@ class _WebLandingPageState extends State<WebLandingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
+    final isDark = context.isDark;
+
+    // Background patterns
+    final gradientGlow = isDark
+        ? const Color(0x30312E81) // Dark indigo glow
+        : const Color(0x124F46E5); // Light indigo glow
+    final dotColor = isDark
+        ? Colors.white.withValues(alpha: 0.03)
+        : Colors.black.withValues(alpha: 0.03);
+
     return Scaffold(
-      backgroundColor: _bg,
-      body: SingleChildScrollView(
-        controller: _scrollCtrl,
-        child: Column(
-          children: [
-            _HeroSection(scrollOffset: _scrollOffset),
-            const _FeaturesSection(),
-            const _HowItWorksSection(),
-            const _StatsSection(),
-            const _FooterSection(),
-          ],
-        ),
+      backgroundColor: t.bg,
+      body: Stack(
+        children: [
+          // ── Radial Glow Background ───────────────────────────────────────
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(0, -0.6),
+                  radius: 1.4,
+                  colors: [gradientGlow, t.bg],
+                  stops: const [0.0, 0.7],
+                ),
+              ),
+            ),
+          ),
+          // ── Dot Grid ────────────────────────────────────────────────────
+          Positioned.fill(
+            child: CustomPaint(painter: _DotGridPainter(color: dotColor)),
+          ),
+          // ── Content ─────────────────────────────────────────────────────
+          SingleChildScrollView(
+            controller: _scrollCtrl,
+            child: Column(
+              children: [
+                _HeroSection(scrollOffset: _scrollOffset),
+                const _FeaturesSection(),
+                const _HowItWorksSection(),
+                const _StatsSection(),
+                const _FooterSection(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -69,28 +91,51 @@ class _Navbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
+    final t = context.puls;
+    final isDark = context.isDark;
+
     return Container(
-      color: _bg,
+      color: t.bg.withValues(alpha: 0.8),
       padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 18),
       decoration: BoxDecoration(
-        color: _bg,
-        border: Border(bottom: BorderSide(color: _border)),
+        border: Border(bottom: BorderSide(color: t.border.withValues(alpha: 0.5))),
       ),
       child: Row(
         children: [
           Container(
-            width: 30, height: 30,
-            decoration: BoxDecoration(color: _brandSubtle, borderRadius: BorderRadius.circular(8)),
+            width: 32, height: 32,
+            decoration: BoxDecoration(
+              color: t.brandSubtle,
+              borderRadius: BorderRadius.circular(10),
+            ),
             clipBehavior: Clip.antiAlias,
             child: Image.asset('assets/logo.png', fit: BoxFit.cover),
           ),
-          const SizedBox(width: 10),
-          const Text('Puls',
-              style: TextStyle(color: _white, fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3)),
+          const SizedBox(width: 12),
+          Text(
+            'Puls',
+            style: TextStyle(
+              color: t.text,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
           const Spacer(),
           _NavLink('GitHub', 'https://github.com/rdmbtc/Puls'),
           const SizedBox(width: 8),
           _NavLink('Explorer', 'https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
+          const SizedBox(width: 16),
+          // Theme Toggle button
+          IconButton(
+            onPressed: appState.toggleThemeMode,
+            icon: Icon(
+              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              size: 20,
+              color: t.textMuted,
+            ),
+            tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+          ),
           const SizedBox(width: 16),
           _PrimaryButton(
             label: 'Launch App',
@@ -117,6 +162,7 @@ class _NavLinkState extends State<_NavLink> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
@@ -125,12 +171,14 @@ class _NavLinkState extends State<_NavLink> {
         onTap: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: Text(widget.label,
-              style: TextStyle(
-                color: _hovered ? _white : _muted,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-              )),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              color: _hovered ? t.brand : t.textMuted,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
       ),
     );
@@ -144,29 +192,15 @@ class _HeroSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final h = MediaQuery.sizeOf(context).height;
-    final parallaxY = -(scrollOffset * 0.25).clamp(0.0, h * 0.3);
-    final heroOpacity = (1 - scrollOffset / (h * 0.6)).clamp(0.0, 1.0);
+    final parallaxY = -(scrollOffset * 0.2).clamp(0.0, h * 0.25);
+    final heroOpacity = (1 - scrollOffset / (h * 0.5)).clamp(0.0, 1.0);
 
     return SizedBox(
       height: h,
       child: Stack(
         children: [
-          // Subtle indigo gradient background for hero
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(0, -0.3),
-                  radius: 1.2,
-                  colors: [
-                    _brand.withValues(alpha: 0.06),
-                    _bg,
-                  ],
-                ),
-              ),
-            ),
-          ),
           // Navbar
           const Positioned(top: 0, left: 0, right: 0, child: _Navbar()),
           // Hero content with parallax
@@ -179,16 +213,16 @@ class _HeroSection extends StatelessWidget {
               ),
             ),
           ),
-          // Bottom fade
+          // Bottom fade gradient
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: Container(
-              height: 200,
-              decoration: const BoxDecoration(
+              height: 180,
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [_bg, Colors.transparent],
+                  colors: [t.bg, t.bg.withValues(alpha: 0.0)],
                 ),
               ),
             ),
@@ -205,72 +239,81 @@ class _HeroContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
+    final t = context.puls;
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const SizedBox(height: 80),
-        // Badge
+        // Live on Arc badge
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: _brandSubtle,
+            color: t.brandSubtle,
             borderRadius: BorderRadius.circular(100),
-            border: Border.all(color: _brand.withValues(alpha: 0.4)),
+            border: Border.all(color: t.brand.withValues(alpha: 0.35)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 width: 6, height: 6,
-                decoration: const BoxDecoration(color: _brand, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: t.brand, shape: BoxShape.circle),
               ),
               const SizedBox(width: 8),
-              const Text('Live on Arc Testnet · Chain ID 5042002',
-                  style: TextStyle(color: _brand, fontSize: 12, fontWeight: FontWeight.w500)),
+              Text(
+                'Live on Arc Testnet · Chain ID 5042002',
+                style: TextStyle(color: t.brand, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.2),
+              ),
             ],
           ),
-        ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.2),
+        ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.15),
         const SizedBox(height: 28),
         // Title
-        const Text(
+        Text(
           'Predict Markets.\nSwipe YES or NO.\nWin USDC.',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: _white,
-            fontSize: 68,
-            fontWeight: FontWeight.w700,
-            height: 1.08,
-            letterSpacing: -2.5,
+            color: t.text,
+            fontSize: 66,
+            fontWeight: FontWeight.w900,
+            height: 1.1,
+            letterSpacing: -2.0,
           ),
-        ).animate().fadeIn(duration: 600.ms, delay: 100.ms).slideY(begin: 0.2, delay: 100.ms),
-        const SizedBox(height: 20),
+        ).animate().fadeIn(duration: 600.ms, delay: 100.ms).slideY(begin: 0.15, delay: 100.ms),
+        const SizedBox(height: 24),
         // Subtitle
-        const Text(
+        Text(
           'Real Polymarket predictions. Real USDC on-chain.\nNo ETH, no seed phrase — just Google sign-in.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: _muted, fontSize: 18, height: 1.6, fontWeight: FontWeight.w400),
-        ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.2, delay: 200.ms),
-        const SizedBox(height: 36),
-        // CTAs
+          style: TextStyle(
+            color: t.textMuted,
+            fontSize: 17,
+            height: 1.6,
+            fontWeight: FontWeight.w400,
+          ),
+        ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.15, delay: 200.ms),
+        const SizedBox(height: 38),
+        // Buttons
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _PrimaryButton(label: 'Launch App', onTap: appState.completeOnboarding)
-                .animate().fadeIn(duration: 600.ms, delay: 300.ms).slideY(begin: 0.2, delay: 300.ms),
-            const SizedBox(width: 12),
+                .animate().fadeIn(duration: 600.ms, delay: 300.ms).slideY(begin: 0.15, delay: 300.ms),
+            const SizedBox(width: 16),
             _SecondaryButton(
               label: 'View Contract ↗',
               onTap: () => launchUrl(
                 Uri.parse('https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
                 mode: LaunchMode.externalApplication,
               ),
-            ).animate().fadeIn(duration: 600.ms, delay: 350.ms).slideY(begin: 0.2, delay: 350.ms),
+            ).animate().fadeIn(duration: 600.ms, delay: 350.ms).slideY(begin: 0.15, delay: 350.ms),
           ],
         ),
-        const SizedBox(height: 48),
+        const SizedBox(height: 52),
         // Live stats strip
         _LiveStatsStrip()
-            .animate().fadeIn(duration: 600.ms, delay: 500.ms),
+            .animate().fadeIn(duration: 600.ms, delay: 450.ms),
       ],
     );
   }
@@ -279,23 +322,31 @@ class _HeroContent extends StatelessWidget {
 class _LiveStatsStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
       decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border),
+        color: t.surface.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: t.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _StatChip(icon: Icons.bolt_rounded, label: '100 Live Markets', color: _brand),
+          _StatChip(icon: Icons.bolt_rounded, label: '100 Live Markets', color: t.brand),
           _Divider(),
-          _StatChip(icon: Icons.account_balance_wallet_rounded, label: 'Circle MPC Wallets', color: _green),
+          _StatChip(icon: Icons.account_balance_wallet_rounded, label: 'Circle MPC Wallets', color: PulsColors.green),
           _Divider(),
-          _StatChip(icon: Icons.speed_rounded, label: 'Sub-second Finality', color: Color(0xFFD97706)),
+          _StatChip(icon: Icons.speed_rounded, label: 'Sub-second Finality', color: PulsColors.amber),
           _Divider(),
-          _StatChip(icon: Icons.water_drop_rounded, label: 'USDC Gas Token', color: Color(0xFF0EA5E9)),
+          _StatChip(icon: Icons.water_drop_rounded, label: 'USDC Gas Token', color: const Color(0xFF0EA5E9)),
         ],
       ),
     );
@@ -310,12 +361,16 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 15, color: color),
-        const SizedBox(width: 6),
-        Text(label, style: const TextStyle(color: _white, fontSize: 13, fontWeight: FontWeight.w500)),
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(color: t.text, fontSize: 13, fontWeight: FontWeight.w600),
+        ),
       ],
     );
   }
@@ -324,14 +379,14 @@ class _StatChip extends StatelessWidget {
 class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return Container(
       width: 1, height: 16,
       margin: const EdgeInsets.symmetric(horizontal: 20),
-      color: _border,
+      color: t.border,
     );
   }
 }
-
 
 // ── Features Section ──────────────────────────────────────────────────────────
 class _FeaturesSection extends StatelessWidget {
@@ -378,35 +433,44 @@ class _FeaturesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 96),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: _brandSubtle,
+              color: t.brandSubtle,
               borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: _brand.withValues(alpha: 0.3)),
+              border: Border.all(color: t.brand.withValues(alpha: 0.3)),
             ),
-            child: const Text('FEATURES', style: TextStyle(color: _brand, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+            child: Text(
+              'FEATURES',
+              style: TextStyle(color: t.brand, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5),
+            ),
           ),
-          const SizedBox(height: 16),
-          const Text('Everything you need to trade predictions',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: _white, fontSize: 40, fontWeight: FontWeight.w700, letterSpacing: -1, height: 1.2)),
+          const SizedBox(height: 20),
+          Text(
+            'Everything you need to trade predictions',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: t.text, fontSize: 38, fontWeight: FontWeight.w800, letterSpacing: -1, height: 1.2),
+          ),
           const SizedBox(height: 12),
-          const Text('Built on Circle\'s full-stack: MPC wallets, USDC, Arc Testnet.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: _muted, fontSize: 16, height: 1.6)),
+          Text(
+            'Built on Circle\'s full-stack: MPC wallets, USDC, Arc Testnet.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: t.textMuted, fontSize: 16, height: 1.6),
+          ),
           const SizedBox(height: 56),
           LayoutBuilder(builder: (context, constraints) {
             final cols = constraints.maxWidth > 900 ? 3 : constraints.maxWidth > 600 ? 2 : 1;
             return Wrap(
-              spacing: 16,
-              runSpacing: 16,
+              spacing: 20,
+              runSpacing: 20,
               children: _features.map((f) => SizedBox(
-                width: (constraints.maxWidth - (cols - 1) * 16) / cols,
+                width: (constraints.maxWidth - (cols - 1) * 20) / cols,
                 child: _FeatureCard(feature: f),
               )).toList(),
             );
@@ -438,34 +502,44 @@ class _FeatureCardState extends State<_FeatureCard> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final f = widget.feature;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(26),
         decoration: BoxDecoration(
-          color: _hovered ? _surfaceRaised : _surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _hovered ? f.color.withValues(alpha: 0.4) : _border),
-          boxShadow: _hovered ? [BoxShadow(color: f.color.withValues(alpha: 0.1), blurRadius: 24, offset: const Offset(0, 4))] : [],
+          color: _hovered ? t.surfaceRaised : t.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _hovered ? f.color.withValues(alpha: 0.5) : t.border),
+          boxShadow: _hovered
+              ? [BoxShadow(color: f.color.withValues(alpha: 0.12), blurRadius: 24, offset: const Offset(0, 4))]
+              : [],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 44, height: 44,
+              width: 48, height: 48,
               decoration: BoxDecoration(
                 color: f.color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(f.icon, color: f.color, size: 22),
+              child: Icon(f.icon, color: f.color, size: 24),
             ),
-            const SizedBox(height: 16),
-            Text(f.title, style: const TextStyle(color: _white, fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 18),
+            Text(
+              f.title,
+              style: TextStyle(color: t.text, fontSize: 16, fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 8),
-            Text(f.body, style: const TextStyle(color: _muted, fontSize: 14, height: 1.6)),
+            Text(
+              f.body,
+              style: TextStyle(color: t.textMuted, fontSize: 14, height: 1.6),
+            ),
           ],
         ),
       ),
@@ -487,34 +561,46 @@ class _HowItWorksSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
+
     return Container(
-      color: _surface.withValues(alpha: 0.4),
+      color: t.surface.withValues(alpha: 0.4),
       padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 96),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: _brandSubtle,
+              color: t.brandSubtle,
               borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: _brand.withValues(alpha: 0.3)),
+              border: Border.all(color: t.brand.withValues(alpha: 0.3)),
             ),
-            child: const Text('HOW IT WORKS', style: TextStyle(color: _brand, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+            child: Text(
+              'HOW IT WORKS',
+              style: TextStyle(color: t.brand, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5),
+            ),
           ),
-          const SizedBox(height: 16),
-          const Text('From zero to on-chain in 60 seconds',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: _white, fontSize: 40, fontWeight: FontWeight.w700, letterSpacing: -1, height: 1.2)),
+          const SizedBox(height: 20),
+          Text(
+            'From zero to on-chain in 60 seconds',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: t.text, fontSize: 38, fontWeight: FontWeight.w800, letterSpacing: -1, height: 1.2),
+          ),
           const SizedBox(height: 56),
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
+            constraints: const BoxConstraints(maxWidth: 760),
             child: Column(
               children: _steps.asMap().entries.map((e) {
                 final step = e.value;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 4),
-                  child: _StepRow(number: step.$1, title: step.$2, body: step.$3, color: step.$4,
-                      isLast: e.key == _steps.length - 1),
+                  child: _StepRow(
+                    number: step.$1,
+                    title: step.$2,
+                    body: step.$3,
+                    color: step.$4,
+                    isLast: e.key == _steps.length - 1,
+                  ),
                 );
               }).toList(),
             ),
@@ -526,13 +612,20 @@ class _HowItWorksSection extends StatelessWidget {
 }
 
 class _StepRow extends StatelessWidget {
-  const _StepRow({required this.number, required this.title, required this.body, required this.color, required this.isLast});
+  const _StepRow({
+    required this.number,
+    required this.title,
+    required this.body,
+    required this.color,
+    required this.isLast,
+  });
   final String number, title, body;
   final Color color;
   final bool isLast;
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -546,13 +639,21 @@ class _StepRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: color.withValues(alpha: 0.3)),
                 ),
-                child: Center(child: Text(number, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w700))),
+                child: Center(
+                  child: Text(number, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w700)),
+                ),
               ),
               if (!isLast)
-                Expanded(child: Container(width: 1, color: _border, margin: const EdgeInsets.symmetric(vertical: 4))),
+                Expanded(
+                  child: Container(
+                    width: 1.5,
+                    color: t.border,
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                  ),
+                ),
             ],
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 24),
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(bottom: isLast ? 0 : 28),
@@ -560,9 +661,15 @@ class _StepRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 10),
-                  Text(title, style: const TextStyle(color: _white, fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(
+                    title,
+                    style: TextStyle(color: t.text, fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
                   const SizedBox(height: 6),
-                  Text(body, style: const TextStyle(color: _muted, fontSize: 14, height: 1.6)),
+                  Text(
+                    body,
+                    style: TextStyle(color: t.textMuted, fontSize: 14, height: 1.6),
+                  ),
                 ],
               ),
             ),
@@ -579,72 +686,114 @@ class _StatsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 80),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 900),
+      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 88),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 960),
+          child: Column(
+            children: [
+              Text(
+                'Built on Circle\'s full stack',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: t.text, fontSize: 36, fontWeight: FontWeight.w800, letterSpacing: -1),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Real infrastructure. Real trades. Testnet.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: t.textMuted, fontSize: 16),
+              ),
+              const SizedBox(height: 48),
+              LayoutBuilder(builder: (context, constraints) {
+                final cols = constraints.maxWidth > 700 ? 4 : 2;
+                return Wrap(
+                  spacing: 20, runSpacing: 20,
+                  children: [
+                    _statCard('100+', 'Live Markets', 'From Polymarket Gamma API', t.brand, constraints, cols, t),
+                    _statCard('< 1s', 'Trade Speed', 'Arc Testnet sub-second finality', PulsColors.green, constraints, cols, t),
+                    _statCard('\$0 ETH', 'Gas Cost', 'USDC is the native gas token', PulsColors.amber, constraints, cols, t),
+                    _statCard('MPC', 'Wallet Type', 'Circle developer-controlled wallets', const Color(0xFF0EA5E9), constraints, cols, t),
+                  ],
+                );
+              }),
+              const SizedBox(height: 52),
+              // Contract address widget
+              Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: t.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: t.border),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(color: t.brandSubtle, borderRadius: BorderRadius.circular(10)),
+                      child: Icon(Icons.code_rounded, color: t.brand, size: 20),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'PulsMarket.sol — Arc Testnet',
+                            style: TextStyle(color: t.text, fontSize: 15, fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '0xca048d69BaA38C6364d3E107c2b389BB8D1320dB',
+                            style: TextStyle(color: t.textSubtle, fontSize: 12, fontFamily: 'monospace'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    _CopyButton(text: '0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
+                    const SizedBox(width: 8),
+                    _SecondaryButton(
+                      label: 'View ↗',
+                      onTap: () => launchUrl(
+                        Uri.parse('https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      small: true,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statCard(String value, String label, String sub, Color color, BoxConstraints constraints, int cols, PulsThemeColors t) {
+    return SizedBox(
+      width: (constraints.maxWidth - (cols - 1) * 20) / cols,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: t.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: t.border),
+        ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Built on Circle\'s full stack',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: _white, fontSize: 36, fontWeight: FontWeight.w700, letterSpacing: -1)),
-            const SizedBox(height: 8),
-            const Text('Real infrastructure. Real trades. Testnet.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: _muted, fontSize: 16)),
-            const SizedBox(height: 48),
-            LayoutBuilder(builder: (context, constraints) {
-              final cols = constraints.maxWidth > 700 ? 4 : 2;
-              return Wrap(
-                spacing: 16, runSpacing: 16,
-                children: [
-                  statCard('100+', 'Live Markets', 'From Polymarket Gamma API', const Color(0xFF4F46E5), constraints, cols),
-                  statCard('< 1s', 'Trade Speed', 'Arc Testnet sub-second finality', const Color(0xFF16A34A), constraints, cols),
-                  statCard('\$0 ETH', 'Gas Cost', 'USDC is the native gas token', const Color(0xFFD97706), constraints, cols),
-                  statCard('MPC', 'Wallet Type', 'Circle developer-controlled wallets', const Color(0xFF0EA5E9), constraints, cols),
-                ].toList(),
-              );
-            }),
-            const SizedBox(height: 48),
-            // Contract address
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: _surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _border),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36, height: 36,
-                    decoration: BoxDecoration(color: _brandSubtle, borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.code_rounded, color: _brand, size: 18),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('PulsMarket.sol — Arc Testnet',
-                            style: TextStyle(color: _white, fontSize: 14, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 2),
-                        Text('0xca048d69BaA38C6364d3E107c2b389BB8D1320dB',
-                            style: const TextStyle(color: _muted, fontSize: 12, fontFamily: 'monospace')),
-                      ],
-                    ),
-                  ),
-                  _SecondaryButton(
-                    label: 'View ↗',
-                    onTap: () => launchUrl(
-                      Uri.parse('https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                    small: true,
-                  ),
-                ],
-              ),
-            ),
+            Text(value, style: TextStyle(color: color, fontSize: 36, fontWeight: FontWeight.w800, letterSpacing: -1)),
+            const SizedBox(height: 6),
+            Text(label, style: TextStyle(color: t.text, fontSize: 15, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            Text(sub, style: TextStyle(color: t.textMuted, fontSize: 12, height: 1.4)),
           ],
         ),
       ),
@@ -652,28 +801,39 @@ class _StatsSection extends StatelessWidget {
   }
 }
 
-Widget statCard(String value, String label, String sub, Color color, BoxConstraints constraints, int cols) {
-  return SizedBox(
-    width: (constraints.maxWidth - (cols - 1) * 16) / cols,
-    child: Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border),
+class _CopyButton extends StatefulWidget {
+  const _CopyButton({required this.text});
+  final String text;
+
+  @override
+  State<_CopyButton> createState() => _CopyButtonState();
+}
+
+class _CopyButtonState extends State<_CopyButton> {
+  bool _copied = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return IconButton(
+      onPressed: () {
+        Clipboard.setData(ClipboardData(text: widget.text));
+        setState(() => _copied = true);
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) setState(() => _copied = false);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Address copied to clipboard!')),
+        );
+      },
+      icon: Icon(
+        _copied ? Icons.check_circle_outline_rounded : Icons.copy_rounded,
+        color: _copied ? PulsColors.green : t.brand,
+        size: 18,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(value, style: TextStyle(color: color, fontSize: 36, fontWeight: FontWeight.w700, letterSpacing: -1)),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(color: _white, fontSize: 15, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text(sub, style: const TextStyle(color: _muted, fontSize: 12, height: 1.4)),
-        ],
-      ),
-    ),
-  );
+      tooltip: 'Copy contract address',
+    );
+  }
 }
 
 // ── Footer ────────────────────────────────────────────────────────────────────
@@ -683,54 +843,88 @@ class _FooterSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
+    final t = context.puls;
+
     return Container(
-      color: _surface.withValues(alpha: 0.4),
+      color: t.surface.withValues(alpha: 0.3),
       padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 80),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(48),
-            decoration: BoxDecoration(
-              color: _brand,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Column(
-              children: [
-                const Text('Ready to predict?',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: _onBrand, fontSize: 40, fontWeight: FontWeight.w700, letterSpacing: -1)),
-                const SizedBox(height: 12),
-                Text('Sign in with Google. Get a wallet. Trade in 60 seconds.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: _onBrand.withValues(alpha: 0.8), fontSize: 16, height: 1.6)),
-                const SizedBox(height: 28),
-                _WhiteButton(label: 'Launch Puls →', onTap: appState.completeOnboarding),
-              ],
-            ),
-          ),
-          const SizedBox(height: 48),
-          Row(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 960),
+          child: Column(
             children: [
               Container(
-                width: 26, height: 26,
-                decoration: BoxDecoration(color: _brandSubtle, borderRadius: BorderRadius.circular(6)),
-                clipBehavior: Clip.antiAlias,
-                child: Image.asset('assets/logo.png', fit: BoxFit.cover),
+                width: double.infinity,
+                padding: const EdgeInsets.all(52),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [t.brand, t.brand.withValues(alpha: 0.8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: t.brand.withValues(alpha: 0.3),
+                      blurRadius: 30,
+                      offset: const Offset(0, 8),
+                    )
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Ready to predict?',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w900, letterSpacing: -1),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Sign in with Google. Get a wallet. Trade in 60 seconds.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 16, height: 1.6),
+                    ),
+                    const SizedBox(height: 32),
+                    _WhiteButton(
+                      label: 'Launch Puls →',
+                      onTap: appState.completeOnboarding,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 8),
-              const Text('Puls', style: TextStyle(color: _white, fontSize: 15, fontWeight: FontWeight.w700)),
-              const Spacer(),
-              const Text('Built on Arc Testnet · Circle MPC Wallets · Polymarket Data',
-                  style: TextStyle(color: _subtle, fontSize: 12)),
-              const Spacer(),
-              _FooterLink('GitHub', 'https://github.com/rdmbtc/Puls'),
-              const SizedBox(width: 16),
-              _FooterLink('Explorer', 'https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
-              const SizedBox(width: 16),
-              _FooterLink('Faucet', 'https://faucet.circle.com'),
+              const SizedBox(height: 60),
+              Row(
+                children: [
+                  Container(
+                    width: 26, height: 26,
+                    decoration: BoxDecoration(
+                      color: t.brandSubtle,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset('assets/logo.png', fit: BoxFit.cover),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Puls',
+                    style: TextStyle(color: t.text, fontSize: 16, fontWeight: FontWeight.w800),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Built on Arc Testnet · Circle MPC Wallets',
+                    style: TextStyle(color: t.textSubtle, fontSize: 12, fontWeight: FontWeight.w500),
+                  ),
+                  const Spacer(),
+                  _FooterLink('GitHub', 'https://github.com/rdmbtc/Puls'),
+                  const SizedBox(width: 20),
+                  _FooterLink('Explorer', 'https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
+                  const SizedBox(width: 20),
+                  _FooterLink('Faucet', 'https://faucet.circle.com'),
+                ],
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -742,11 +936,15 @@ class _FooterLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return GestureDetector(
       onTap: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        child: Text(label, style: const TextStyle(color: _muted, fontSize: 13)),
+        child: Text(
+          label,
+          style: TextStyle(color: t.textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }
@@ -768,6 +966,7 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
@@ -779,20 +978,24 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
           duration: const Duration(milliseconds: 150),
           child: Container(
             padding: EdgeInsets.symmetric(
-              horizontal: widget.small ? 16 : 28,
-              vertical: widget.small ? 9 : 14,
+              horizontal: widget.small ? 18 : 32,
+              vertical: widget.small ? 10 : 16,
             ),
             decoration: BoxDecoration(
-              color: _brand,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: _hovered ? [BoxShadow(color: _brand.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 4))] : [],
+              color: t.brand,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: _hovered
+                  ? [BoxShadow(color: t.brand.withValues(alpha: 0.35), blurRadius: 20, offset: const Offset(0, 4))]
+                  : [],
             ),
-            child: Text(widget.label,
-                style: TextStyle(
-                  color: _onBrand,
-                  fontSize: widget.small ? 13 : 15,
-                  fontWeight: FontWeight.w600,
-                )),
+            child: Text(
+              widget.label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ),
       ),
@@ -815,6 +1018,7 @@ class _SecondaryButtonState extends State<_SecondaryButton> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
@@ -824,20 +1028,22 @@ class _SecondaryButtonState extends State<_SecondaryButton> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           padding: EdgeInsets.symmetric(
-            horizontal: widget.small ? 14 : 28,
-            vertical: widget.small ? 9 : 14,
+            horizontal: widget.small ? 16 : 30,
+            vertical: widget.small ? 10 : 16,
           ),
           decoration: BoxDecoration(
-            color: _hovered ? _surfaceRaised : _surface,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _hovered ? _muted : _border),
+            color: _hovered ? t.surfaceRaised : t.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _hovered ? t.textMuted : t.border),
           ),
-          child: Text(widget.label,
-              style: TextStyle(
-                color: _hovered ? _white : _muted,
-                fontSize: widget.small ? 13 : 15,
-                fontWeight: FontWeight.w500,
-              )),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              color: _hovered ? t.text : t.textMuted,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ),
     );
@@ -858,6 +1064,7 @@ class _WhiteButtonState extends State<_WhiteButton> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
@@ -868,16 +1075,40 @@ class _WhiteButtonState extends State<_WhiteButton> {
           scale: _hovered ? 1.03 : 1.0,
           duration: const Duration(milliseconds: 150),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             decoration: BoxDecoration(
-              color: _onBrand,
-              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: _hovered
+                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 15, offset: const Offset(0, 4))]
+                  : [],
             ),
-            child: Text(widget.label,
-                style: const TextStyle(color: _brand, fontSize: 15, fontWeight: FontWeight.w700)),
+            child: Text(
+              widget.label,
+              style: TextStyle(color: t.brand, fontSize: 15, fontWeight: FontWeight.w800),
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+class _DotGridPainter extends CustomPainter {
+  const _DotGridPainter({required this.color});
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    const spacing = 32.0;
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 0.75, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DotGridPainter old) => old.color != color;
 }

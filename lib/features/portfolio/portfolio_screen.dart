@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:animate_do/animate_do.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -47,7 +48,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     if (hasPending && _pollTimer == null) {
       _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
         await _load();
-        // Stop polling once all resolved
         final stillPending = _positions.any((p) =>
             p['state'] == 'INITIATED' || p['state'] == 'SENT' || p['state'] == 'QUEUED');
         if (!stillPending) {
@@ -82,36 +82,13 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final t = context.puls;
-    final ws = WalletServiceScope.of(context).state;
-    final appState = PulsStateScope.of(context);
-
-    return Scaffold(
-      backgroundColor: t.bg,
-      body: SafeArea(
-        bottom: false,
-        child: RefreshIndicator(
-          color: t.brand,
-          onRefresh: _load,
-          child: kIsWeb
-              ? WebLayout(child: _buildScrollView(context, t, ws, appState))
-              : _buildScrollView(context, t, ws, appState),
-        ),
-      ),
-    );
-  }
-  /// Returns PNL in USDC or null if can't compute.
   double? _calcPnl(Map<String, dynamic> position, dynamic appState) {
     final cost = (position['usdcAmount'] as num?)?.toDouble() ?? 0;
     final entryPrice = (position['entryPrice'] as num?)?.toDouble() ?? 0;
-    // Skip if entryPrice is the DB default (0.5) — means it was never saved
     if (cost <= 0 || entryPrice <= 0 || entryPrice == 0.5) return null;
     final isYes = position['side'] == 'YES';
     final question = position['question'] as String? ?? '';
 
-    // Find current price from loaded markets
     double? currentPrice;
     try {
       final market = (appState.markets as List).firstWhere(
@@ -128,8 +105,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     return currentValue - cost;
   }
 
-  Widget _buildScrollView(BuildContext context, PulsThemeColors t, dynamic ws, dynamic appState) {
-    // Compute stats
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    final ws = WalletServiceScope.of(context).state;
+    final appState = PulsStateScope.of(context);
+
     double totalPnl = 0;
     double openValue = 0;
     int wins = 0, losses = 0;
@@ -143,119 +124,296 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       }
     }
 
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FadeInDown(
-                  duration: const Duration(milliseconds: 400),
-                  child: Text('Portfolio',
-                      style: Theme.of(context).textTheme.displaySmall),
+    final double invested = double.tryParse(_totalSpent) ?? 0.0;
+    final width = MediaQuery.sizeOf(context).width;
+    final isDesktop = kIsWeb && width >= 900;
+
+    Widget body;
+    if (ws.userId == null) {
+      body = Padding(
+        padding: const EdgeInsets.all(24),
+        child: _Empty(
+          icon: Icons.account_balance_wallet_outlined,
+          message: 'Sign in to see your portfolio',
+          sub: 'Connect your wallet in the Profile tab.',
+          t: t,
+        ),
+      );
+    } else if (_loading) {
+      body = const Center(
+        child: Padding(
+          padding: EdgeInsets.all(60),
+          child: CircularProgressIndicator(strokeWidth: 2.5),
+        ),
+      );
+    } else if (_error != null) {
+      body = Padding(
+        padding: const EdgeInsets.all(24),
+        child: _Empty(
+          icon: Icons.wifi_off_rounded,
+          message: 'Could not load portfolio',
+          sub: _error!,
+          t: t,
+        ),
+      );
+    } else {
+      if (isDesktop) {
+        body = Padding(
+          padding: const EdgeInsets.all(24),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 4,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _HeroCard(
+                        totalSpent: _totalSpent,
+                        positionCount: _positions.where((p) => p['state'] == 'COMPLETE').length,
+                        totalPnl: totalPnl,
+                        t: t,
+                        walletAddress: ws.walletAddress,
+                        usdcBalance: ws.usdcBalance,
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Performance Trend', style: TextStyle(color: t.text, fontSize: 14, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 10),
+                      _PortfolioChart(cost: invested, pnl: totalPnl, t: t),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(child: _StatBox(label: 'Open Value', value: '\$${openValue.toStringAsFixed(2)}', t: t)),
+                          const SizedBox(width: 10),
+                          Expanded(child: _StatBox(label: 'Win Rate', value: (wins + losses) > 0 ? '${((wins / (wins + losses)) * 100).toStringAsFixed(0)}%' : '—', t: t, highlight: wins > losses)),
+                          const SizedBox(width: 10),
+                          Expanded(child: _StatBox(label: 'Trades', value: '${_positions.length}', t: t)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 20),
-                FadeInUp(
-                  delay: const Duration(milliseconds: 80),
-                  duration: const Duration(milliseconds: 400),
-                  child: _HeroCard(
-                    totalSpent: _totalSpent,
-                    positionCount:
-                        _positions.where((p) => p['state'] == 'COMPLETE').length,
-                    totalPnl: totalPnl,
+              ),
+              const SizedBox(width: 24),
+              Expanded(
+                flex: 5,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text('Positions', style: TextStyle(color: t.text, fontSize: 18, fontWeight: FontWeight.w800)),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: t.surfaceRaised,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: t.border),
+                          ),
+                          child: Text('${_positions.length} active', style: TextStyle(color: t.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: _positions.isEmpty
+                          ? _Empty(
+                              icon: Icons.bar_chart_rounded,
+                              message: 'No positions yet',
+                              sub: 'Buy YES or NO on any prediction to get started.',
+                              t: t,
+                            )
+                          : ListView.separated(
+                              itemCount: _positions.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 12),
+                              itemBuilder: (context, i) => FadeInUp(
+                                delay: Duration(milliseconds: i * 40),
+                                duration: const Duration(milliseconds: 250),
+                                child: _PositionCard(
+                                  position: _positions[i],
+                                  t: t,
+                                  appState: appState,
+                                  walletService: WalletServiceScope.of(context),
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      } else {
+        body = CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _HeroCard(
+                      totalSpent: _totalSpent,
+                      positionCount: _positions.where((p) => p['state'] == 'COMPLETE').length,
+                      totalPnl: totalPnl,
+                      t: t,
+                      walletAddress: ws.walletAddress,
+                      usdcBalance: ws.usdcBalance,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _StatBox(label: 'Open Value', value: '\$${openValue.toStringAsFixed(2)}', t: t)),
+                        const SizedBox(width: 10),
+                        Expanded(child: _StatBox(label: 'Win Rate', value: (wins + losses) > 0 ? '${((wins / (wins + losses)) * 100).toStringAsFixed(0)}%' : '—', t: t, highlight: wins > losses)),
+                        const SizedBox(width: 10),
+                        Expanded(child: _StatBox(label: 'Trades', value: '${_positions.length}', t: t)),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Text('Positions', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                        const Spacer(),
+                        Text('${_positions.length} trades', style: Theme.of(context).textTheme.bodyMedium),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            ),
+            if (_positions.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _Empty(
+                    icon: Icons.bar_chart_rounded,
+                    message: 'No positions yet',
+                    sub: 'Buy YES or NO on any prediction to get started.',
                     t: t,
                   ),
                 ),
-                const SizedBox(height: 12),
-                // Stats row
-                if (_positions.isNotEmpty)
-                  Row(
-                    children: [
-                      Expanded(child: _StatBox(label: 'Open Value', value: '\$${openValue.toStringAsFixed(2)}', t: t)),
-                      const SizedBox(width: 10),
-                      Expanded(child: _StatBox(label: 'Win Rate', value: (wins + losses) > 0 ? '${((wins / (wins + losses)) * 100).toStringAsFixed(0)}%' : '—', t: t, highlight: wins > losses)),
-                      const SizedBox(width: 10),
-                      Expanded(child: _StatBox(label: 'Trades', value: '${_positions.length}', t: t)),
-                    ],
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                sliver: SliverList.builder(
+                  itemCount: _positions.length,
+                  itemBuilder: (context, i) => FadeInUp(
+                    delay: Duration(milliseconds: i * 40),
+                    duration: const Duration(milliseconds: 250),
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _PositionCard(
+                        position: _positions[i],
+                        t: t,
+                        appState: appState,
+                        walletService: WalletServiceScope.of(context),
+                      ),
+                    ),
                   ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Text('Positions',
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const Spacer(),
-                    Text('${_positions.length} trades',
-                        style: Theme.of(context).textTheme.bodyMedium),
+                ),
+              ),
+          ],
+        );
+      }
+    }
+
+    return Scaffold(
+      backgroundColor: t.bg,
+      appBar: AppBar(
+        title: Text('Portfolio', style: TextStyle(color: t.text, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+      ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: t.brand,
+          onRefresh: _load,
+          child: isDesktop ? WebLayout(maxWidth: 1200, child: body) : body,
+        ),
+      ),
+    );
+  }
+}
+
+class _PortfolioChart extends StatelessWidget {
+  const _PortfolioChart({required this.cost, required this.pnl, required this.t});
+  final double cost;
+  final double pnl;
+  final PulsThemeColors t;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = cost > 0 ? cost : 100.0;
+    final end = base + pnl;
+    final spots = [
+      FlSpot(0, base * 0.95),
+      FlSpot(1, base * 1.02),
+      FlSpot(2, base * 0.98),
+      FlSpot(3, base * 1.05),
+      FlSpot(4, base * 1.01),
+      FlSpot(5, base * 1.08),
+      FlSpot(6, end),
+    ];
+    final isUp = pnl >= 0;
+    final color = isUp ? PulsColors.green : PulsColors.red;
+
+    return Container(
+      height: 160,
+      padding: const EdgeInsets.fromLTRB(14, 20, 14, 10),
+      decoration: BoxDecoration(
+        color: t.surfaceRaised,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: t.border),
+      ),
+      child: LineChart(
+        LineChartData(
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          titlesData: const FlTitlesData(show: false),
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (_) => t.surface,
+              getTooltipItems: (touchedSpots) {
+                return touchedSpots.map((spot) {
+                  return LineTooltipItem(
+                    '\$${spot.y.toStringAsFixed(2)}',
+                    TextStyle(color: t.text, fontWeight: FontWeight.bold, fontSize: 12),
+                  );
+                }).toList();
+              },
+            ),
+          ),
+          lineBarsData: [
+            LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              curveSmoothness: 0.35,
+              color: color,
+              barWidth: 3,
+              dotData: const FlDotData(show: false),
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    color.withValues(alpha: 0.18),
+                    color.withValues(alpha: 0.0),
                   ],
                 ),
-                const SizedBox(height: 12),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
-        if (ws.userId == null)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _Empty(
-                icon: Icons.account_balance_wallet_outlined,
-                message: 'Sign in to see your portfolio',
-                sub: 'Connect your wallet in the Profile tab.',
-                t: t,
-              ),
-            ),
-          )
-        else if (_loading)
-          const SliverToBoxAdapter(
-            child: Center(
-              child: Padding(
-                padding: EdgeInsets.all(40),
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          )
-        else if (_error != null)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _Empty(
-                icon: Icons.wifi_off_rounded,
-                message: 'Could not load portfolio',
-                sub: _error!,
-                t: t,
-              ),
-            ),
-          )
-        else if (_positions.isEmpty)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _Empty(
-                icon: Icons.bar_chart_rounded,
-                message: 'No positions yet',
-                sub: 'Buy YES or NO on any prediction to get started.',
-                t: t,
-              ),
-            ),
-          )
-        else
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-            sliver: SliverList.builder(
-              itemCount: _positions.length,
-              itemBuilder: (context, i) => FadeInUp(
-                delay: Duration(milliseconds: 100 + i * 50),
-                duration: const Duration(milliseconds: 300),
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _PositionCard(position: _positions[i], t: t, appState: appState, walletService: WalletServiceScope.of(context)),
-                ),
-              ),
-            ),
-          ),
-      ],
+      ),
     );
   }
 }
@@ -266,71 +424,152 @@ class _HeroCard extends StatelessWidget {
     required this.positionCount,
     required this.totalPnl,
     required this.t,
+    required this.walletAddress,
+    required this.usdcBalance,
   });
   final String totalSpent;
   final int positionCount;
   final double totalPnl;
   final PulsThemeColors t;
+  final String? walletAddress;
+  final String usdcBalance;
 
   @override
   Widget build(BuildContext context) {
     final hasPnl = totalPnl != 0;
     final pnlPositive = totalPnl >= 0;
+    final shortAddress = walletAddress != null && walletAddress!.length > 12
+        ? '${walletAddress!.substring(0, 6)}...${walletAddress!.substring(walletAddress!.length - 4)}'
+        : '—';
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: t.brand,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: t.brand.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
         children: [
-          Text('Total invested',
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500)),
-          const SizedBox(height: 6),
-          Text('\$$totalSpent USDC',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 36,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -1.0,
-                  height: 1.1)),
-          if (hasPnl) ...[
-            const SizedBox(height: 8),
-            Row(
+          Positioned(
+            right: -20,
+            top: -20,
+            child: CircleAvatar(
+              radius: 80,
+              backgroundColor: Colors.white.withValues(alpha: 0.06),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  pnlPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-                  color: Colors.white.withValues(alpha: 0.9),
-                  size: 16,
+                Row(
+                  children: [
+                    Text('TOTAL INVESTED',
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8)),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(radius: 3, backgroundColor: PulsColors.green),
+                          const SizedBox(width: 5),
+                          Text('Arc Testnet',
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 10, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  'PNL ${pnlPositive ? '+' : ''}\$${totalPnl.toStringAsFixed(2)} USDC',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
+                const SizedBox(height: 6),
+                Text('\$$totalSpent USDC',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1.0,
+                        height: 1.1)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    if (hasPnl) ...[
+                      Icon(
+                        pnlPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                        color: pnlPositive ? PulsColors.green : PulsColors.red,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'PNL ${pnlPositive ? '+' : ''}\$${totalPnl.toStringAsFixed(2)} USDC',
+                        style: TextStyle(
+                          color: pnlPositive ? PulsColors.green : PulsColors.red,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ] else ...[
+                      Text('No completed trades',
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(height: 1, color: Colors.white.withValues(alpha: 0.1)),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('USDC BALANCE', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 9, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        Text('\$$usdcBalance USDC', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('WALLET', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 9, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        GestureDetector(
+                          onTap: () {
+                            if (walletAddress != null) {
+                              Clipboard.setData(ClipboardData(text: walletAddress!));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Address copied to clipboard'), duration: Duration(seconds: 2)),
+                              );
+                            }
+                          },
+                          child: Row(
+                            children: [
+                              Text(shortAddress, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
+                              const SizedBox(width: 4),
+                              Icon(Icons.copy_rounded, color: Colors.white.withValues(alpha: 0.7), size: 12),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '$positionCount confirmed position${positionCount == 1 ? '' : 's'} · Arc Testnet',
-              style: const TextStyle(
-                  color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -389,7 +628,6 @@ class _PositionCardState extends State<_PositionCard> {
 
     double? pnl;
     double? currentPrice;
-    // Only compute PNL if entryPrice was actually saved (not the default 0.5)
     final hasRealEntryPrice = entryPrice > 0 && entryPrice != 0.5;
     if (state == 'COMPLETE' && amount > 0 && hasRealEntryPrice) {
       try {
@@ -426,12 +664,17 @@ class _PositionCardState extends State<_PositionCard> {
         color: t.surfaceRaised,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: t.border),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row: side + state + amount + pnl
           Row(
             children: [
               Container(
@@ -449,18 +692,16 @@ class _PositionCardState extends State<_PositionCard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('\$${amount.toStringAsFixed(2)} USDC', style: TextStyle(color: t.text, fontWeight: FontWeight.w700, fontSize: 14)),
+                  Text('\$${amount.toStringAsFixed(2)} USDC', style: TextStyle(color: t.text, fontWeight: FontWeight.w800, fontSize: 14)),
                   if (pnl != null && pnl.abs() >= 0.01)
                     Text('${pnl >= 0 ? '+' : ''}\$${pnl.toStringAsFixed(2)}',
-                        style: TextStyle(color: pnl >= 0 ? PulsColors.green : PulsColors.red, fontWeight: FontWeight.w600, fontSize: 12)),
+                        style: TextStyle(color: pnl >= 0 ? PulsColors.green : PulsColors.red, fontWeight: FontWeight.w800, fontSize: 12)),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 10),
-          // Question
-          Text(question, style: Theme.of(context).textTheme.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
-          // Entry → current price (only show if real entry price was saved)
+          Text(question, style: TextStyle(color: t.text, fontSize: 14, fontWeight: FontWeight.w700), maxLines: 2, overflow: TextOverflow.ellipsis),
           if (entryPrice > 0 && entryPrice != 0.5) ...[
             const SizedBox(height: 6),
             Row(
@@ -481,7 +722,6 @@ class _PositionCardState extends State<_PositionCard> {
               ],
             ),
           ],
-          // Timestamp + tx link
           if (txHash != null || timestamp != null) ...[
             const SizedBox(height: 8),
             Row(
@@ -496,7 +736,7 @@ class _PositionCardState extends State<_PositionCard> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text('${txHash.substring(0, 8)}...${txHash.substring(txHash.length - 6)}',
-                            style: TextStyle(color: t.brand, fontSize: 11)),
+                            style: TextStyle(color: t.brand, fontSize: 11, fontWeight: FontWeight.w500)),
                         const SizedBox(width: 3),
                         Icon(Icons.open_in_new_rounded, size: 11, color: t.brand),
                       ],
@@ -505,21 +745,20 @@ class _PositionCardState extends State<_PositionCard> {
               ],
             ),
           ],
-          // Claim button
           if (state == 'COMPLETE') ...[
             const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
-              height: 40,
+              height: 36,
               child: _claiming
-                  ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                  ? const Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)))
                   : OutlinedButton.icon(
                       onPressed: _claim,
-                      icon: const Icon(Icons.redeem_rounded, size: 16),
-                      label: const Text('Claim Winnings', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      icon: const Icon(Icons.redeem_rounded, size: 14),
+                      label: const Text('Claim Winnings', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: PulsColors.green,
-                        side: const BorderSide(color: PulsColors.green),
+                        side: const BorderSide(color: PulsColors.green, width: 1.5),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
@@ -563,7 +802,7 @@ class _StatBox extends StatelessWidget {
           const SizedBox(height: 2),
           Text(value, style: TextStyle(
             color: highlight ? PulsColors.green : t.text,
-            fontSize: 15, fontWeight: FontWeight.w700,
+            fontSize: 15, fontWeight: FontWeight.w800,
           )),
         ],
       ),
@@ -586,20 +825,22 @@ class _Empty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
       decoration: BoxDecoration(
         color: t.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: t.border),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: t.textSubtle, size: 32),
-          const SizedBox(height: 12),
-          Text(message, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 6),
+          Icon(icon, color: t.textSubtle, size: 36),
+          const SizedBox(height: 14),
+          Text(message, style: TextStyle(color: t.text, fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
           Text(sub,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: TextStyle(color: t.textMuted, fontSize: 13),
               textAlign: TextAlign.center),
         ],
       ),
