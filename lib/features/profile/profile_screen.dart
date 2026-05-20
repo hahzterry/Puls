@@ -918,13 +918,13 @@ class _WalletCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: PulsColors.amber.withValues(alpha: 0.3)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.water_drop_rounded, size: 18, color: PulsColors.amber),
-                    SizedBox(width: 10),
+                    const Icon(Icons.water_drop_rounded, size: 18, color: PulsColors.amber),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: RichText(
-                        text: TextSpan(
+                        text: const TextSpan(
                           style: TextStyle(color: PulsColors.amber, fontSize: 12, height: 1.4),
                           children: [
                             TextSpan(text: 'Wallet empty. Get free gas + testnet USDC from ', style: TextStyle(fontWeight: FontWeight.w600)),
