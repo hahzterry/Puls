@@ -5,6 +5,7 @@ import 'package:haptic_kit/haptic_kit.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/theme/app_theme.dart';
+import 'wallet_service.dart';
 
 import '../../core/config.dart' show backendUrl;
 const _backendUrl = backendUrl;
@@ -16,24 +17,32 @@ class TxStatusSheet extends StatefulWidget {
     required this.txId,
     required this.side,
     required this.amount,
+    this.walletService,
     super.key,
   });
 
   final String txId;
   final String side; // 'YES' or 'NO'
   final double amount;
+  final WalletService? walletService;
 
   static Future<void> show(
     BuildContext context, {
     required String txId,
     required String side,
     required double amount,
+    WalletService? walletService,
   }) {
     return showModalBottomSheet(
       context: context,
       isDismissible: false,
       backgroundColor: Colors.transparent,
-      builder: (_) => TxStatusSheet(txId: txId, side: side, amount: amount),
+      builder: (_) => TxStatusSheet(
+        txId: txId,
+        side: side,
+        amount: amount,
+        walletService: walletService,
+      ),
     );
   }
 
@@ -81,6 +90,7 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
           if (mounted) setState(() { _status = TxStatus.complete; _txHash = txHash; });
           Haptics.notification(HapticNotificationStyle.success);
           _timer?.cancel();
+          widget.walletService?.refreshBalance();
           return;
         } else if (state == 'FAILED' || state == 'DENIED' || state == 'CANCELLED') {
           if (mounted) setState(() => _status = TxStatus.failed);

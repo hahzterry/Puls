@@ -50,6 +50,7 @@ class WalletService extends ChangeNotifier {
   WalletState _state = const WalletState();
   WalletState get state => _state;
   Timer? _refreshTimer;
+  final http.Client _client = http.Client();
 
   WalletService() {
     _supabase.auth.onAuthStateChange.listen((data) {
@@ -68,6 +69,7 @@ class WalletService extends ChangeNotifier {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _client.close();
     super.dispose();
   }
 
@@ -168,7 +170,7 @@ class WalletService extends ChangeNotifier {
     final padded = address.toLowerCase().replaceFirst('0x', '').padLeft(64, '0');
     final data = '0x70a08231$padded';
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse(rpc),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -209,16 +211,28 @@ class WalletService extends ChangeNotifier {
     if (_state.userId == null) throw Exception('Not signed in');
     if (!_state.hasWallet) throw Exception('No wallet');
 
-    final res = await _post('/api/trade/buy', {
-      'userId': _state.userId!,
-      'side': isYes ? 'YES' : 'NO',
-      'usdcAmount': usdcAmount.toStringAsFixed(6),
-      'question': question,
-      'entryPrice': entryPrice.toStringAsFixed(4),
-    });
+    // Optimistic balance update: subtract transaction amount immediately (1ms UI response)
+    final currentVal = double.tryParse(_state.usdcBalance) ?? 0.0;
+    final newVal = (currentVal - usdcAmount).clamp(0.0, double.infinity);
+    _setState(_state.copyWith(usdcBalance: newVal.toStringAsFixed(2)));
 
-    Future.delayed(const Duration(seconds: 3), refreshBalance);
-    return res;
+    try {
+      final res = await _post('/api/trade/buy', {
+        'userId': _state.userId!,
+        'side': isYes ? 'YES' : 'NO',
+        'usdcAmount': usdcAmount.toStringAsFixed(6),
+        'question': question,
+        'entryPrice': entryPrice.toStringAsFixed(4),
+      });
+
+      // Trigger a sync in the background immediately
+      refreshBalance();
+      return res;
+    } catch (e) {
+      // Revert optimistic update on failure by fetching real balance
+      refreshBalance();
+      rethrow;
+    }
   }
 
   Future<Map<String, dynamic>> claimWinnings() async {
@@ -238,7 +252,7 @@ class WalletService extends ChangeNotifier {
   }
 
   Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> body) async {
-    final res = await http.post(
+    final res = await _client.post(
       Uri.parse('$_backendUrl$path'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(body),
@@ -250,7 +264,7 @@ class WalletService extends ChangeNotifier {
 
   Future<Map<String, dynamic>> _get(String path, Map<String, String> params) async {
     final uri = Uri.parse('$_backendUrl$path').replace(queryParameters: params);
-    final res = await http.get(uri).timeout(const Duration(seconds: 10));
+    final res = await _client.get(uri).timeout(const Duration(seconds: 10));
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     if (res.statusCode != 200) throw Exception(data['error'] ?? 'Request failed');
     return data;

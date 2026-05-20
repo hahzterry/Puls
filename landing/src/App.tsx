@@ -212,6 +212,11 @@ function App() {
     setTradeSuccess(false);
     setTradeTxHash(null);
 
+    // Optimistic balance update for 1ms responsiveness in UI
+    const initialBal = parseFloat(walletInfo.usdcBalance);
+    const optimisticBal = Math.max(0, initialBal - amount).toFixed(2);
+    setWalletInfo(prev => prev ? { ...prev, usdcBalance: optimisticBal } : null);
+
     const price = tradingSide === 'YES' ? selectedMarket.yesPrice : selectedMarket.noPrice;
 
     try {
@@ -242,6 +247,9 @@ function App() {
             if (statusData.state === 'COMPLETE') {
               setTradeTxHash(statusData.txHash);
               setTradeSuccess(true);
+              // Trigger fast sync of real balance and portfolio instantly on completion
+              refreshBalance();
+              fetchPortfolio(userId);
               break;
             } else if (['FAILED', 'DENIED', 'CANCELLED'].includes(statusData.state)) {
               throw new Error(`Transaction state: ${statusData.state}`);
@@ -273,7 +281,7 @@ function App() {
         timestamp: new Date().toISOString()
       };
 
-      // Deduct balance locally
+      // Deduct balance locally (confirm mock balance update)
       const currentBal = parseFloat(walletInfo.usdcBalance);
       const newBal = (currentBal - amount).toFixed(2);
       localStorage.setItem(`mock_wallet_bal_${userId}`, newBal);

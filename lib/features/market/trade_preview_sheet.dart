@@ -260,6 +260,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                                 txId: result['txId'] as String,
                                 side: isYes ? 'YES' : 'NO',
                                 amount: _amount,
+                                walletService: walletService,
                               );
                             } catch (e) {
                               if (context.mounted) {
