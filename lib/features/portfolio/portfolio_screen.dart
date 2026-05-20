@@ -29,6 +29,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   bool _loading = true;
   String? _error;
   Timer? _pollTimer;
+  final http.Client _client = http.Client();
 
   @override
   void didChangeDependencies() {
@@ -39,6 +40,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _client.close();
     super.dispose();
   }
 
@@ -66,7 +68,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     }
     setState(() { _loading = true; _error = null; });
     try {
-      final res = await http.get(
+      final res = await _client.get(
         Uri.parse('$_backendUrl/api/portfolio?userId=${ws.userId}'),
       );
       final data = jsonDecode(res.body) as Map<String, dynamic>;

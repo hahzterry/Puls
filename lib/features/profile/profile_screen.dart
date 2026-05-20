@@ -27,9 +27,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final wallet = WalletServiceScope.of(context);
-      wallet.refreshBalance();
-      if (wallet.state.userId != null && (wallet.state.walletAddress == null || wallet.state.walletAddress!.isEmpty)) {
-        wallet.reloadWallet();
+      if (wallet.state.userId != null) {
+        wallet.refreshBalance();
       }
     });
   }
