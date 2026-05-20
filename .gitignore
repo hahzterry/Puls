@@ -5,7 +5,12 @@
 .pub-cache/
 .pub/
 build/
+.env
+.env/
 coverage/
+out/
+cache/
+
 
 android/.gradle/
 android/app/debug
