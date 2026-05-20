@@ -3,19 +3,14 @@ import {
   TrendingUp, 
   Coins, 
   Search, 
-  Compass, 
   Briefcase, 
-  User, 
   ExternalLink, 
   ShieldAlert, 
   Copy, 
-  Plus, 
   Check, 
   Loader2, 
   CheckCircle, 
-  Calendar, 
   ChevronRight, 
-  Info, 
   Globe, 
   RefreshCw,
   LineChart,
@@ -26,7 +21,9 @@ import {
   LogOut
 } from 'lucide-react';
 import { mockMarkets, generateMockChartData } from './mockData';
-import { Market, Position, WalletInfo } from './types';
+import type { Market, Position, WalletInfo } from './types';
+import { useAccount, useDisconnect, useReadContract, useWriteContract } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 const BACKEND_URL = 'http://localhost:3000';
 
@@ -40,6 +37,48 @@ function App() {
   const [loadingWallet, setLoadingWallet] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [customUserIdInput, setCustomUserIdInput] = useState('');
+
+  // Wagmi hooks for RainbowKit integration
+  const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
+  const { writeContractAsync } = useWriteContract();
+
+  // Read USDC balance on-chain
+  const { data: usdcBalanceRaw, refetch: refetchUsdc } = useReadContract({
+    address: '0x3600000000000000000000000000000000000000',
+    abi: [{
+      name: 'balanceOf',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [{ name: 'account', type: 'address' }],
+      outputs: [{ name: 'balance', type: 'uint256' }]
+    }],
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address,
+    }
+  });
+
+  // Read USDC allowance for PulsMarket
+  const { data: usdcAllowance, refetch: refetchAllowance } = useReadContract({
+    address: '0x3600000000000000000000000000000000000000',
+    abi: [{
+      name: 'allowance',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [
+        { name: 'owner', type: 'address' },
+        { name: 'spender', type: 'address' }
+      ],
+      outputs: [{ name: 'remaining', type: 'uint256' }]
+    }],
+    functionName: 'allowance',
+    args: address ? [address, '0x8a400B489379541701FDA77bC20406191C6A4528'] : undefined,
+    query: {
+      enabled: !!address,
+    }
+  });
   
   // Markets Data
   const [markets, setMarkets] = useState<Market[]>(mockMarkets);
@@ -78,6 +117,30 @@ function App() {
   // Chart state
   const [chartPoints, setChartPoints] = useState<{ time: string; price: number }[]>([]);
 
+  // Sync RainbowKit connected address with state
+  useEffect(() => {
+    if (isConnected && address) {
+      const ethUserId = `eth_${address}`;
+      setUserId(ethUserId);
+      const balStr = usdcBalanceRaw ? (Number(usdcBalanceRaw) / 1_000_000).toFixed(2) : '0.00';
+      setWalletInfo({
+        walletId: `rainbow_${address}`,
+        address: address,
+        usdcBalance: balStr,
+        network: 'Arc Testnet',
+        chainId: 5042002,
+        rpc: 'https://rpc.testnet.arc.network',
+        explorer: `https://testnet.arcscan.app/address/${address}`
+      });
+    } else {
+      if (userId.startsWith('eth_')) {
+        setUserId('');
+        setWalletInfo(null);
+        setPositions([]);
+      }
+    }
+  }, [address, isConnected, usdcBalanceRaw]);
+
   // Initialize Session
   useEffect(() => {
     let storedId = localStorage.getItem('puls_user_id');
@@ -85,15 +148,22 @@ function App() {
       storedId = 'puls_user_' + Math.random().toString(36).substring(2, 8);
       localStorage.setItem('puls_user_id', storedId);
     }
-    setUserId(storedId);
-    setCustomUserIdInput(storedId);
-  }, []);
+    // Only set if not already connected via Web3
+    if (!isConnected) {
+      setUserId(storedId);
+      setCustomUserIdInput(storedId);
+    }
+  }, [isConnected]);
 
   // Fetch Wallet when User ID is available
   useEffect(() => {
     if (userId) {
-      getOrCreateWallet(userId);
-      fetchPortfolio(userId);
+      if (userId.startsWith('eth_')) {
+        fetchPortfolio(userId);
+      } else {
+        getOrCreateWallet(userId);
+        fetchPortfolio(userId);
+      }
     }
   }, [userId]);
 
@@ -146,6 +216,10 @@ function App() {
 
   // API Call: Refresh Balance
   const refreshBalance = async () => {
+    if (isConnected) {
+      refetchUsdc();
+      return;
+    }
     if (!walletInfo || !userId) return;
     try {
       const res = await fetch(`${BACKEND_URL}/api/wallet/balance?userId=${userId}`);
@@ -219,6 +293,79 @@ function App() {
     setWalletInfo(prev => prev ? { ...prev, usdcBalance: optimisticBal } : null);
 
     const price = tradingSide === 'YES' ? selectedMarket.yesPrice : selectedMarket.noPrice;
+
+    if (isConnected && address) {
+      try {
+        const usdcAmountMicro = BigInt(Math.round(amount * 1_000_000));
+        
+        // 1. Check & Approve USDC if needed
+        const currentAllowance = usdcAllowance ? BigInt(usdcAllowance.toString()) : 0n;
+        if (currentAllowance < usdcAmountMicro) {
+          const MAX_ALLOWANCE = 115792089237316195423570985008687907853269984665640564039457584007913129639935n;
+          const approveTx = await writeContractAsync({
+            address: '0x3600000000000000000000000000000000000000',
+            abi: [{
+              name: 'approve',
+              type: 'function',
+              stateMutability: 'nonpayable',
+              inputs: [
+                { name: 'spender', type: 'address' },
+                { name: 'amount', type: 'uint256' }
+              ],
+              outputs: [{ name: 'success', type: 'bool' }]
+            }],
+            functionName: 'approve',
+            args: ['0x8a400B489379541701FDA77bC20406191C6A4528', MAX_ALLOWANCE]
+          });
+          await new Promise(r => setTimeout(r, 4000));
+          refetchAllowance();
+        }
+
+        // 2. Call buyYes(uint256) or buyNo(uint256)
+        const buyTx = await writeContractAsync({
+          address: '0x8a400B489379541701FDA77bC20406191C6A4528',
+          abi: [{
+            name: tradingSide === 'YES' ? 'buyYes' : 'buyNo',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [{ name: 'amount', type: 'uint256' }],
+            outputs: [{ name: 'shares', type: 'uint256' }]
+          }],
+          functionName: tradingSide === 'YES' ? 'buyYes' : 'buyNo',
+          args: [usdcAmountMicro]
+        });
+
+        setTradeTxHash(buyTx);
+        setTradeSuccess(true);
+        
+        // Save trade to database
+        await fetch(`${BACKEND_URL}/api/trade/save-external`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: `eth_${address}`,
+            side: tradingSide,
+            usdcAmount: amount.toString(),
+            entryPrice: price,
+            question: selectedMarket.question,
+            txHash: buyTx,
+            state: 'COMPLETE',
+            marketId: '0x8a400B489379541701FDA77bC20406191C6A4528'
+          })
+        }).catch(console.error);
+
+        setTimeout(() => {
+          refetchUsdc();
+          fetchPortfolio(`eth_${address}`);
+        }, 3000);
+      } catch (e: any) {
+        console.error('RainbowKit buy failed:', e);
+        setTradeError(e.message || 'On-chain transaction failed.');
+      } finally {
+        setSubmittingTrade(false);
+      }
+      return;
+    }
 
     try {
       const res = await fetch(`${BACKEND_URL}/api/trade/buy`, {
@@ -319,6 +466,56 @@ function App() {
     setTradeTxHash(null);
 
     const price = tradingSide === 'YES' ? selectedMarket.yesPrice : selectedMarket.noPrice;
+
+    if (isConnected && address) {
+      try {
+        const sharesMicro = BigInt(Math.round(amount * 1_000_000));
+        
+        // Call sellYes(uint256) or sellNo(uint256) on-chain
+        const sellTx = await writeContractAsync({
+          address: '0x8a400B489379541701FDA77bC20406191C6A4528',
+          abi: [{
+            name: tradingSide === 'YES' ? 'sellYes' : 'sellNo',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [{ name: 'shares', type: 'uint256' }],
+            outputs: [{ name: 'usdcAmount', type: 'uint256' }]
+          }],
+          functionName: tradingSide === 'YES' ? 'sellYes' : 'sellNo',
+          args: [sharesMicro]
+        });
+
+        setTradeTxHash(sellTx);
+        setTradeSuccess(true);
+
+        // Save trade to database
+        await fetch(`${BACKEND_URL}/api/trade/save-external`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: `eth_${address}`,
+            side: tradingSide,
+            usdcAmount: (-amount).toString(),
+            entryPrice: price,
+            question: selectedMarket.question,
+            txHash: sellTx,
+            state: 'COMPLETE',
+            marketId: '0x8a400B489379541701FDA77bC20406191C6A4528'
+          })
+        }).catch(console.error);
+
+        setTimeout(() => {
+          refetchUsdc();
+          fetchPortfolio(`eth_${address}`);
+        }, 3000);
+      } catch (e: any) {
+        console.error('RainbowKit sell failed:', e);
+        setTradeError(e.message || 'On-chain transaction failed.');
+      } finally {
+        setSubmittingTrade(false);
+      }
+      return;
+    }
 
     try {
       const res = await fetch(`${BACKEND_URL}/api/trade/sell`, {
@@ -566,15 +763,26 @@ function App() {
                 <span>Loading Wallet...</span>
               </div>
             ) : walletInfo?.address ? (
-              <div className="wallet-badge connected">
+              <div className="wallet-badge connected" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Coins size={16} color="#3b82f6" />
-                <span className="wallet-address">{walletInfo.address.substring(0, 6)}...{walletInfo.address.substring(38)}</span>
+                <span className="wallet-address">{walletInfo.address.substring(0, 6)}...{walletInfo.address.substring(walletInfo.address.length - 4)}</span>
                 <span className="wallet-balance">${walletInfo.usdcBalance} USDC</span>
+                {isConnected && (
+                  <button 
+                    onClick={() => disconnect()} 
+                    style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', borderRadius: '4px', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                  >
+                    Disconnect
+                  </button>
+                )}
               </div>
             ) : (
-              <button className="btn-primary" onClick={() => { setActiveTab('home'); getOrCreateWallet(userId); }}>
-                Connect Wallet
-              </button>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <ConnectButton label="Connect Wallet" />
+                <button className="btn-primary" onClick={() => { setActiveTab('home'); getOrCreateWallet(userId || 'user_' + Math.random().toString(36).substring(2, 10)); }}>
+                  Google Login
+                </button>
+              </div>
             )}
 
             {activeTab !== 'landing' && (
@@ -770,7 +978,7 @@ function App() {
                   {trendingMarkets.map((m, idx) => (
                     <div key={m.id} className="trending-item" style={{ cursor: 'pointer' }} onClick={() => setSelectedMarket(m)}>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ color: var(--text-muted), fontWeight: 700 }}>{idx + 1}</span>
+                        <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>{idx + 1}</span>
                         <span className="trending-q">{m.question}</span>
                       </div>
                       <span className="trending-pct">{Math.round(m.yesPrice * 100)}% YES</span>
@@ -830,7 +1038,7 @@ function App() {
 
             {/* Markets Grid */}
             {filteredMarkets.length === 0 ? (
-              <div className="glass-panel" style={{ padding: '60px', textAlignment: 'center', color: 'var(--text-secondary)' }}>
+              <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                 <HelpCircle size={48} style={{ margin: '0 auto 16px', display: 'block', color: 'var(--text-muted)' }} />
                 <p>No prediction markets found matching your criteria.</p>
               </div>
@@ -995,12 +1203,12 @@ function App() {
               </div>
 
               {loadingPortfolio ? (
-                <div style={{ padding: '60px', textAlignment: 'center' }}>
+                <div style={{ padding: '60px', textAlign: 'center' }}>
                   <Loader2 size={32} className="spinner" style={{ margin: '0 auto 12px', display: 'block' }} />
                   <p style={{ color: 'var(--text-secondary)' }}>Loading transactions from Arc Testnet...</p>
                 </div>
               ) : positions.length === 0 ? (
-                <div style={{ padding: '60px', textAlignment: 'center', color: 'var(--text-secondary)' }}>
+                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                   <Briefcase size={48} style={{ margin: '0 auto 16px', display: 'block', color: 'var(--text-muted)' }} />
                   <p>You have no active prediction positions. Go to Markets to make your first trade!</p>
                 </div>
@@ -1452,7 +1660,7 @@ function App() {
                 )}
 
                 {tradeError && (
-                  <div style={{ color: 'var(--no-red)', fontSize: '12px', marginTop: '10px', textAlignment: 'center', display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <div style={{ color: 'var(--no-red)', fontSize: '12px', marginTop: '10px', textAlign: 'center', display: 'flex', gap: '4px', alignItems: 'center' }}>
                     <ShieldAlert size={14} style={{ flexShrink: 0 }} />
                     <span>{tradeError}</span>
                   </div>
