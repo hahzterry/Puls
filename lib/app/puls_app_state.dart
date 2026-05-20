@@ -72,7 +72,7 @@ class PulsAppState extends ChangeNotifier {
           final data = jsonDecode(res.body) as Map<String, dynamic>;
           final deadlineSeconds = data['deadline'] as int? ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
           final liveMarket = Market(
-            id: '0xca048d69BaA38C6364d3E107c2b389BB8D1320dB', // Deployed contract address
+            id: '0x8a400B489379541701FDA77bC20406191C6A4528', // Deployed contract address
             question: data['question'] as String? ?? 'Will Bitcoin close above \$100k this quarter?',
             category: 'Crypto',
             context: 'This market is backed by a smart contract deployed on the Arc Testnet.',
