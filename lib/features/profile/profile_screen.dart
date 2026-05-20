@@ -721,7 +721,6 @@ class _WalletCard extends StatelessWidget {
                   'Instantly setup a secure non-custodial wallet on Arc L1 with one-click Google connection.',
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, height: 1.4),
                 ),
-                const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -750,6 +749,45 @@ class _WalletCard extends StatelessWidget {
                           ),
                   ),
                 ),
+                if (kIsWeb) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton(
+                      onPressed: ws.isLoading ? null : () async {
+                        try {
+                          await wallet.signInWithExternalWallet();
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Connection failed: $e')),
+                            );
+                          }
+                        }
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white, width: 1.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: ws.isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.account_balance_wallet_outlined, size: 18),
+                                SizedBox(width: 8),
+                                Text('Connect Web3 Wallet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              ],
+                            ),
+                    ),
+                  ),
+                ],
                 if (ws.error != null) ...[
                   const SizedBox(height: 12),
                   Text(ws.error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
@@ -788,7 +826,10 @@ class _WalletCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Arc Testnet Wallet', style: TextStyle(color: t.text, fontWeight: FontWeight.w800, fontSize: 15, letterSpacing: -0.3)),
+                    Text(
+                      ws.isExternalWallet ? 'Web3 Wallet (MetaMask)' : 'Arc Testnet Wallet',
+                      style: TextStyle(color: t.text, fontWeight: FontWeight.w800, fontSize: 15, letterSpacing: -0.3),
+                    ),
                     if (ws.walletAddress != null && ws.walletAddress!.isNotEmpty)
                       GestureDetector(
                         onTap: () {
@@ -1018,7 +1059,7 @@ class _WalletCard extends StatelessWidget {
             _InfoRow('Target Network', 'Arc Testnet L1', t),
             _InfoRow('Chain ID', '5042002', t),
             _InfoRow('Gas Fee Asset', 'USDC (Native gas)', t),
-            _InfoRow('Provider type', 'Circle Programmable Wallet (MPC)', t),
+            _InfoRow('Provider type', ws.isExternalWallet ? 'External Web3 Wallet (MetaMask)' : 'Circle Programmable Wallet (MPC)', t),
             if (ws.walletAddress != null) ...[
               const SizedBox(height: 12),
               Text('Full Wallet Hex Address', style: TextStyle(color: t.textMuted, fontSize: 12)),
