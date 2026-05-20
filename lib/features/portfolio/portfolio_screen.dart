@@ -89,7 +89,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   double? _calcPnl(Map<String, dynamic> position, dynamic appState) {
     final cost = (position['usdcAmount'] as num?)?.toDouble() ?? 0;
     final entryPrice = (position['entryPrice'] as num?)?.toDouble() ?? 0;
-    if (cost <= 0 || entryPrice <= 0 || entryPrice == 0.5) return null;
     final isYes = position['side'] == 'YES';
     final question = position['question'] as String? ?? '';
 
@@ -104,7 +103,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     } catch (_) {}
 
     if (currentPrice == null) return null;
-    final shares = cost / entryPrice;
+    final shares = (position['shares'] as num?)?.toDouble() ?? (entryPrice > 0 ? cost / entryPrice : 0);
     final currentValue = shares * currentPrice;
     return currentValue - cost;
   }
@@ -643,7 +642,8 @@ class _PositionCardState extends State<_PositionCard> {
               ),
         ) as Market;
         currentPrice = isYes ? matchedMarket.yesPrice : matchedMarket.noPrice;
-        pnl = (amount / (hasRealEntryPrice ? entryPrice : 0.5) * currentPrice) - amount;
+        final shares = (position['shares'] as num?)?.toDouble() ?? (amount / (hasRealEntryPrice ? entryPrice : 0.5));
+        pnl = (shares * currentPrice) - amount;
       } catch (_) {}
     }
 
@@ -783,7 +783,7 @@ class _PositionCardState extends State<_PositionCard> {
                           market: matchedMarket!,
                           side: isYes ? MarketSide.yes : MarketSide.no,
                           initialIsBuy: false,
-                          maxShares: amount / (hasRealEntryPrice ? entryPrice : 0.5),
+                          maxShares: (position['shares'] as num?)?.toDouble() ?? (amount / (hasRealEntryPrice ? entryPrice : 0.5)),
                         );
                       },
                       icon: const Icon(Icons.sell_rounded, size: 14),
