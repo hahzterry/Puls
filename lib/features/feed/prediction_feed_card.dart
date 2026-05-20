@@ -94,7 +94,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
+                  color: const Color(0xFF4F46E5).withValues(alpha: 0.06),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),

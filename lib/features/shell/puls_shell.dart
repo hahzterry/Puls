@@ -99,11 +99,11 @@ class _DynamicIslandNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = isDark
-        ? const Color(0xFF1C1C1E)
+        ? const Color(0xFF131127)
         : const Color(0xFFFFFFFF);
     final shadow = isDark
-        ? Colors.black.withValues(alpha: 0.5)
-        : Colors.black.withValues(alpha: 0.12);
+        ? const Color(0xFF4F46E5).withValues(alpha: 0.3)
+        : const Color(0xFF4F46E5).withValues(alpha: 0.08);
 
     return SafeArea(
       child: Padding(
@@ -154,7 +154,7 @@ class _DynamicIslandNav extends StatelessWidget {
                             size: 20,
                             color: selected
                                 ? Colors.white
-                                : (isDark ? Colors.white54 : Colors.black38),
+                                : (isDark ? const Color(0xFF8181AA) : const Color(0xFF9A9A94)),
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -165,7 +165,7 @@ class _DynamicIslandNav extends StatelessWidget {
                             fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
                             color: selected
                                 ? Colors.white
-                                : (isDark ? Colors.white38 : Colors.black26),
+                                : (isDark ? const Color(0xFF6565A0) : const Color(0xFFB0B0C0)),
                           ),
                           child: Text(item.label),
                         ),

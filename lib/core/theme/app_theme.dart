@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 // ── Semantic palette ──────────────────────────────────────────────────────────
 class PulsColors {
-  // Brand — editorial uses dark primary for CTAs
-  static const indigo = Color(0xFF3D5A80);
-  static const indigoLight = Color(0xFFF0EFE9);
-  static const indigoDark = Color(0xFF1A1A1A);
+  // Brand — vibrant indigo throughout
+  static const indigo = Color(0xFF4F46E5);
+  static const indigoLight = Color(0xFFEEF2FF);
+  static const indigoDark = Color(0xFF3730A3);
 
   // Semantic — muted editorial market colors
   static const green = Color(0xFF2D8A56);       // forest green (YES)
@@ -25,15 +25,15 @@ class PulsColors {
   static const gray700 = Color(0xFF3A3A3A);
   static const gray900 = Color(0xFF1A1A1A);
 
-  // Dark mode equivalents
-  static const dark50 = Color(0xFF09090B);
-  static const dark100 = Color(0xFF18181B);
-  static const dark200 = Color(0xFF27272A);
-  static const dark300 = Color(0xFF3F3F46);
-  static const dark400 = Color(0xFF52525B);
-  static const dark500 = Color(0xFF71717A);
-  static const dark600 = Color(0xFFA1A1AA);
-  static const dark900 = Color(0xFFFAFAF7);
+  // Dark mode — indigo-tinted darks
+  static const dark50 = Color(0xFF0C0A1A);       // deep indigo-black
+  static const dark100 = Color(0xFF131127);       // card surface
+  static const dark200 = Color(0xFF1E1B3A);       // raised surface / border
+  static const dark300 = Color(0xFF2E2A52);       // strong border
+  static const dark400 = Color(0xFF52527A);       // subtle text
+  static const dark500 = Color(0xFF8181AA);       // muted text
+  static const dark600 = Color(0xFFB0B0CC);       // secondary text
+  static const dark900 = Color(0xFFF5F5FF);       // primary text (slight indigo tint)
 
   // Font families
   static const fontDisplay = 'Playfair Display';
@@ -111,30 +111,32 @@ extension PulsThemeX on BuildContext {
 
 // ── Theme builder ─────────────────────────────────────────────────────────────
 class PulsTheme {
+  // ── Light: White + Indigo ──────────────────────────────────────────────
   static const _light = PulsThemeColors(
-    bg: Color(0xFFFAFAF7),        // warm off-white canvas
-    surface: Color(0xFFFFFFFF),     // pure white cards
+    bg: Color(0xFFFAFAF7),           // warm off-white canvas
+    surface: Color(0xFFFFFFFF),       // pure white cards
     surfaceRaised: Color(0xFFF5F4EF), // warm elevated
-    border: Color(0xFFEDEDEB),     // warm border
+    border: Color(0xFFEDEDEB),        // warm border
     borderStrong: Color(0xFFD8D8D4),
-    text: Color(0xFF1A1A1A),       // rich black
-    textMuted: Color(0xFF5A5A5A),  // warm gray
-    textSubtle: Color(0xFF9A9A94), // light warm gray
-    brand: Color(0xFF1A1A1A),      // editorial: dark CTAs
-    brandSubtle: Color(0xFFF0EFE9),
+    text: Color(0xFF1A1A1A),          // rich black text
+    textMuted: Color(0xFF5A5A5A),     // warm gray
+    textSubtle: Color(0xFF9A9A94),    // light warm gray
+    brand: Color(0xFF4F46E5),         // ★ vibrant indigo
+    brandSubtle: Color(0xFFEEF2FF),   // ★ light indigo wash
   );
 
+  // ── Dark: Black + Indigo ──────────────────────────────────────────────
   static const _dark = PulsThemeColors(
-    bg: Color(0xFF09090B),
-    surface: Color(0xFF18181B),
-    surfaceRaised: Color(0xFF27272A),
-    border: Color(0xFF27272A),
-    borderStrong: Color(0xFF3F3F46),
-    text: Color(0xFFFAFAFA),
-    textMuted: Color(0xFFA1A1AA),
-    textSubtle: Color(0xFF71717A),
-    brand: Color(0xFF818CF8),
-    brandSubtle: Color(0xFF1E1B4B),
+    bg: Color(0xFF0C0A1A),            // ★ deep indigo-black
+    surface: Color(0xFF131127),        // ★ indigo-tinted card
+    surfaceRaised: Color(0xFF1E1B3A),  // ★ indigo-tinted raised
+    border: Color(0xFF1E1B3A),         // ★ indigo-tinted border
+    borderStrong: Color(0xFF2E2A52),   // ★ stronger indigo border
+    text: Color(0xFFF5F5FF),           // ★ slight indigo-tinted white
+    textMuted: Color(0xFFB0B0CC),      // ★ indigo-tinted muted
+    textSubtle: Color(0xFF8181AA),     // ★ indigo-tinted subtle
+    brand: Color(0xFF818CF8),          // ★ lighter indigo for dark
+    brandSubtle: Color(0xFF1E1B4B),    // ★ deep indigo subtle
   );
 
   static ThemeData light() => _build(Brightness.light, _light);
@@ -190,7 +192,7 @@ class PulsTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: t.text, width: 1.5),
+          borderSide: BorderSide(color: t.brand, width: 1.5),
         ),
         hintStyle: TextStyle(fontFamily: bodyFont, color: t.textSubtle, fontSize: 14),
         labelStyle: TextStyle(fontFamily: bodyFont, color: t.textMuted),
@@ -214,8 +216,8 @@ class PulsTheme {
       ),
       colorScheme: ColorScheme(
         brightness: brightness,
-        primary: isLight ? const Color(0xFF1A1A1A) : const Color(0xFF818CF8),
-        onPrimary: isLight ? Colors.white : Colors.black,
+        primary: isLight ? const Color(0xFF4F46E5) : const Color(0xFF818CF8),
+        onPrimary: Colors.white,
         secondary: t.brand,
         onSecondary: Colors.white,
         surface: t.surface,
@@ -264,10 +266,10 @@ class PulsTheme {
           letterSpacing: 0.5,
         ),
       ),
-      // Soft shadow for cards
+      // Soft shadow for cards — indigo-tinted
       shadowColor: isLight
-          ? Colors.black.withValues(alpha: 0.04)
-          : Colors.black.withValues(alpha: 0.4),
+          ? const Color(0xFF4F46E5).withValues(alpha: 0.06)
+          : const Color(0xFF4F46E5).withValues(alpha: 0.3),
     );
   }
 }
@@ -280,7 +282,7 @@ BoxDecoration cardDecoration(PulsThemeColors t, {double radius = 16}) =>
       border: Border.all(color: t.border),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.04),
+          color: const Color(0xFF4F46E5).withValues(alpha: 0.05),
           blurRadius: 8,
           offset: const Offset(0, 2),
         ),

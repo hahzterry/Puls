@@ -371,7 +371,7 @@ class _GlassCardState extends State<GlassCard> {
         gradient: widget.gradient,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: _isHovered ? 0.08 : 0.03),
+            color: const Color(0xFF4F46E5).withValues(alpha: _isHovered ? 0.08 : 0.03),
             blurRadius: _isHovered ? 20 : 12,
             offset: const Offset(0, 4),
           ),
@@ -423,7 +423,7 @@ class _ProfileCard extends StatelessWidget {
             padding: const EdgeInsets.all(2.5),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [t.brand, Colors.cyan, t.brand.withValues(alpha: 0.3)],
+                colors: [t.brand, const Color(0xFF818CF8), t.brand.withValues(alpha: 0.3)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -666,7 +666,7 @@ class _WalletCard extends StatelessWidget {
         padding: const EdgeInsets.all(26),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [t.brand, const Color(0xFF673AB7), t.brand.withValues(alpha: 0.8)],
+            colors: [t.brand, const Color(0xFF3730A3), t.brand.withValues(alpha: 0.8)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -695,7 +695,7 @@ class _WalletCard extends StatelessWidget {
               bottom: -30,
               child: CircleAvatar(
                 radius: 60,
-                backgroundColor: Colors.black.withValues(alpha: 0.05),
+                backgroundColor: const Color(0xFF4F46E5).withValues(alpha: 0.05),
               ),
             ),
             Column(
@@ -731,7 +731,7 @@ class _WalletCard extends StatelessWidget {
                       foregroundColor: t.brand,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 4,
-                      shadowColor: Colors.black.withValues(alpha: 0.15),
+                      shadowColor: const Color(0xFF4F46E5).withValues(alpha: 0.12),
                     ),
                     child: ws.isLoading
                         ? SizedBox(
@@ -811,7 +811,7 @@ class _WalletCard extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [t.brand, Colors.cyan],
+                    colors: [t.brand, const Color(0xFF818CF8)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),

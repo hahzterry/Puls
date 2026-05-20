@@ -43,7 +43,7 @@ class _WebLandingPageState extends State<WebLandingPage> {
         : const Color(0x124F46E5); // Light indigo glow
     final dotColor = isDark
         ? Colors.white.withValues(alpha: 0.03)
-        : Colors.black.withValues(alpha: 0.03);
+        : const Color(0xFF4F46E5).withValues(alpha: 0.03);
 
     return Scaffold(
       backgroundColor: t.bg,
@@ -340,7 +340,7 @@ class _LiveStatsStrip extends StatelessWidget {
         border: Border.all(color: t.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: const Color(0xFF4F46E5).withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           )
@@ -737,7 +737,7 @@ class _StatsSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: t.border),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)
+                    BoxShadow(color: const Color(0xFF4F46E5).withValues(alpha: 0.03), blurRadius: 10)
                   ],
                 ),
                 child: Row(
@@ -1089,7 +1089,7 @@ class _WhiteButtonState extends State<_WhiteButton> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: _hovered
-                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 15, offset: const Offset(0, 4))]
+                  ? [BoxShadow(color: const Color(0xFF4F46E5).withValues(alpha: 0.12), blurRadius: 15, offset: const Offset(0, 4))]
                   : [],
             ),
             child: Text(

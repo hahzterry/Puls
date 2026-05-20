@@ -379,7 +379,7 @@ class _MarketCardState extends State<_MarketCard> {
               BoxShadow(
                 color: _hovered
                     ? t.brand.withValues(alpha: 0.15)
-                    : Colors.black.withValues(alpha: 0.05),
+                    : const Color(0xFF4F46E5).withValues(alpha: 0.05),
                 blurRadius: _hovered ? 24 : 10,
                 offset: const Offset(0, 4),
               ),
