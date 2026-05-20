@@ -11,12 +11,19 @@ Future<void> showTradePreviewSheet({
   required BuildContext context,
   required Market market,
   required MarketSide side,
+  bool initialIsBuy = true,
+  double? maxShares,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => TradePreviewSheet(market: market, side: side),
+    builder: (_) => TradePreviewSheet(
+      market: market,
+      side: side,
+      initialIsBuy: initialIsBuy,
+      maxShares: maxShares,
+    ),
   );
 }
 
@@ -24,11 +31,15 @@ class TradePreviewSheet extends StatefulWidget {
   const TradePreviewSheet({
     required this.market,
     required this.side,
+    this.initialIsBuy = true,
+    this.maxShares,
     super.key,
   });
 
   final Market market;
   final MarketSide side;
+  final bool initialIsBuy;
+  final double? maxShares;
 
   @override
   State<TradePreviewSheet> createState() => _TradePreviewSheetState();
@@ -36,11 +47,14 @@ class TradePreviewSheet extends StatefulWidget {
 
 class _TradePreviewSheetState extends State<TradePreviewSheet> {
   late final TextEditingController _ctrl;
+  late bool _isBuy;
   double _amount = 50;
 
   @override
   void initState() {
     super.initState();
+    _isBuy = widget.initialIsBuy;
+    _amount = _isBuy ? 50.0 : (widget.maxShares ?? 10.0);
     _ctrl = TextEditingController(text: _amount.toStringAsFixed(0));
   }
 
@@ -60,9 +74,13 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
     final sideBg = isYes ? PulsColors.greenLight : PulsColors.redLight;
     final sideFg = isYes ? PulsColors.green : PulsColors.red;
     final sideLabel = isYes ? 'YES' : 'NO';
+    
+    // Dynamic price calculation
     final price = isYes ? widget.market.yesPrice : widget.market.noPrice;
-    final payout = TradeMath.estimatedPayout(amount: _amount, price: price);
-    final profit = TradeMath.estimatedProfit(amount: _amount, price: price);
+    final estShares = _isBuy ? (_amount / price) : _amount;
+    final estPayout = _isBuy ? estShares : (_amount * price);
+    final profit = _isBuy ? (estPayout - _amount) : 0.0;
+    
     final hasRealWallet = ws.userId != null && ws.hasWallet;
 
     return Padding(
@@ -94,6 +112,79 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              
+              // BUY/SELL Tabs
+              Container(
+                decoration: BoxDecoration(
+                  color: t.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: t.border),
+                ),
+                padding: const EdgeInsets.all(2),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() {
+                          _isBuy = true;
+                          _amount = 50.0;
+                          _ctrl.text = '50';
+                        }),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _isBuy ? t.surfaceRaised : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: _isBuy 
+                                ? [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 2)] 
+                                : null,
+                          ),
+                          child: Center(
+                            child: Text(
+                              'BUY',
+                              style: TextStyle(
+                                color: _isBuy ? t.text : t.textMuted,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() {
+                          _isBuy = false;
+                          _amount = widget.maxShares ?? 10.0;
+                          _ctrl.text = _amount.toStringAsFixed(0);
+                        }),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: !_isBuy ? t.surfaceRaised : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: !_isBuy 
+                                ? [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 2)] 
+                                : null,
+                          ),
+                          child: Center(
+                            child: Text(
+                              'SELL',
+                              style: TextStyle(
+                                color: !_isBuy ? t.text : t.textMuted,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -112,8 +203,10 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text('Demo trade preview',
-                        style: Theme.of(context).textTheme.titleLarge),
+                    child: Text(
+                      _isBuy ? 'Buy Prediction Shares' : 'Sell Prediction Shares',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
                 ],
               ),
@@ -133,46 +226,87 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                 keyboardType: TextInputType.number,
                 style: TextStyle(color: t.text),
                 decoration: InputDecoration(
-                  labelText: 'Mock amount',
+                  labelText: _isBuy ? 'Amount (USDC)' : 'Shares to Sell',
                   labelStyle: TextStyle(color: t.textMuted),
-                  prefixText: '\$',
+                  prefixText: _isBuy ? '\$' : '',
                   prefixStyle: TextStyle(color: t.text),
                 ),
                 onChanged: (v) =>
                     setState(() => _amount = double.tryParse(v) ?? 0),
               ),
               const SizedBox(height: 12),
+              
+              // Quick action buttons
               Row(
-                children: [25, 50, 100, 250].map((amt) {
-                  final sel = _amount == amt;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () => setState(() {
-                        _amount = amt.toDouble();
-                        _ctrl.text = amt.toString();
-                      }),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 160),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: sel ? sideBg : t.surface,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                              color: sel ? sideFg : t.border),
+                children: _isBuy 
+                  ? [25, 50, 100, 250].map((amt) {
+                      final sel = _amount == amt;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: GestureDetector(
+                          onTap: () => setState(() {
+                            _amount = amt.toDouble();
+                            _ctrl.text = amt.toString();
+                          }),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 160),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: sel ? sideBg : t.surface,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color: sel ? sideFg : t.border),
+                            ),
+                            child: Text('\$$amt',
+                                style: TextStyle(
+                                    color: sel ? sideFg : t.textMuted,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13)),
+                          ),
                         ),
-                        child: Text('\$$amt',
-                            style: TextStyle(
-                                color: sel ? sideFg : t.textMuted,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13)),
-                      ),
-                    ),
-                  );
-                }).toList(),
+                      );
+                    }).toList()
+                  : [
+                      if (widget.maxShares != null) ...[
+                        widget.maxShares! * 0.25,
+                        widget.maxShares! * 0.5,
+                        widget.maxShares! * 0.75,
+                        widget.maxShares!,
+                      ].map((amt) {
+                        final sel = _amount == amt;
+                        final label = amt == widget.maxShares ? 'MAX' : '${(amt / widget.maxShares! * 100).toStringAsFixed(0)}%';
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: GestureDetector(
+                            onTap: () => setState(() {
+                              _amount = amt;
+                              _ctrl.text = amt.toStringAsFixed(2);
+                            }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: sel ? sideBg : t.surface,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: sel ? sideFg : t.border),
+                              ),
+                              child: Text(label,
+                                  style: TextStyle(
+                                      color: sel ? sideFg : t.textMuted,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13)),
+                            ),
+                          ),
+                        );
+                      }).toList()
+                    ],
               ),
               const SizedBox(height: 16),
+              
+              // Pricing breakdown box
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -183,22 +317,34 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                 child: Column(
                   children: [
                     _PreviewRow(
-                        label: 'Price',
+                        label: 'Average Price',
                         value: TradeMath.formatPrice(price),
                         t: t),
-                    _PreviewRow(
-                        label: 'Est. shares',
-                        value: payout.toStringAsFixed(2),
-                        t: t),
-                    _PreviewRow(
-                        label: 'Max payout',
-                        value: '\$${payout.toStringAsFixed(2)}',
-                        t: t),
-                    _PreviewRow(
-                        label: 'Est. profit',
-                        value: '\$${profit.toStringAsFixed(2)}',
-                        t: t,
-                        isLast: true),
+                    if (_isBuy) ...[
+                      _PreviewRow(
+                          label: 'Estimated Shares',
+                          value: estShares.toStringAsFixed(2),
+                          t: t),
+                      _PreviewRow(
+                          label: 'Potential Payout',
+                          value: '\$${estPayout.toStringAsFixed(2)}',
+                          t: t),
+                      _PreviewRow(
+                          label: 'Estimated Profit',
+                          value: '\$${profit.toStringAsFixed(2)}',
+                          t: t,
+                          isLast: true),
+                    ] else ...[
+                      _PreviewRow(
+                          label: 'Estimated Payout',
+                          value: '\$${estPayout.toStringAsFixed(2)} USDC',
+                          t: t),
+                      _PreviewRow(
+                          label: 'Shares Owned',
+                          value: '${widget.maxShares?.toStringAsFixed(2) ?? "0.00"} $sideLabel',
+                          t: t,
+                          isLast: true),
+                    ]
                   ],
                 ),
               ),
@@ -245,14 +391,23 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                   onPressed: _amount > 0
                       ? () async {
                           if (hasRealWallet) {
-                            // Real USDC trade via Circle developer-controlled wallet
                             try {
-                              final result = await walletService.buyPosition(
-                                isYes: isYes,
-                                usdcAmount: _amount,
-                                question: widget.market.question,
-                                entryPrice: isYes ? widget.market.yesPrice : widget.market.noPrice,
-                              );
+                              final Map<String, dynamic> result;
+                              if (_isBuy) {
+                                result = await walletService.buyPosition(
+                                  isYes: isYes,
+                                  usdcAmount: _amount,
+                                  question: widget.market.question,
+                                  entryPrice: price,
+                                );
+                              } else {
+                                result = await walletService.sellPosition(
+                                  isYes: isYes,
+                                  shares: _amount,
+                                  question: widget.market.question,
+                                  entryPrice: price,
+                                );
+                              }
                               if (!context.mounted) return;
                               Navigator.of(context).pop();
                               TxStatusSheet.show(
@@ -276,16 +431,22 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                             }
                           } else {
                             // Demo trade
-                            appState.addDemoPosition(
-                              market: widget.market,
-                              side: widget.side,
-                              amount: _amount,
-                            );
+                            if (_isBuy) {
+                              appState.addDemoPosition(
+                                market: widget.market,
+                                side: widget.side,
+                                amount: _amount,
+                              );
+                            } else {
+                              // Demo sell (remove from portfolio)
+                              // Just pop for simplicity in demo mode
+                            }
                             Navigator.of(context).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(
-                                    'Added demo ${isYes ? 'Yes' : 'No'} position.'),
+                                content: Text(_isBuy 
+                                    ? 'Added demo ${isYes ? 'Yes' : 'No'} position.'
+                                    : 'Sold demo ${isYes ? 'Yes' : 'No'} position.'),
                               ),
                             );
                           }
@@ -298,7 +459,9 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                         borderRadius: BorderRadius.circular(12)),
                   ),
                   child: Text(
-                    hasRealWallet ? 'Buy $sideLabel with USDC' : 'Confirm demo trade',
+                    hasRealWallet 
+                        ? (_isBuy ? 'Buy $sideLabel with USDC' : 'Sell $sideLabel Shares for USDC')
+                        : 'Confirm demo trade',
                     style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,

@@ -12,6 +12,8 @@ import '../../app/puls_app.dart';
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../shell/web_layout.dart';
+import '../../data/models/market.dart';
+import '../market/trade_preview_sheet.dart';
 
 import '../../core/config.dart' show backendUrl;
 const _backendUrl = backendUrl;
@@ -631,17 +633,37 @@ class _PositionCardState extends State<_PositionCard> {
     double? pnl;
     double? currentPrice;
     final hasRealEntryPrice = entryPrice > 0 && entryPrice != 0.5;
-    if (state == 'COMPLETE' && amount > 0 && hasRealEntryPrice) {
+    Market? matchedMarket;
+
+    if (state == 'COMPLETE' && amount > 0) {
       try {
-        final market = (widget.appState.markets as List).firstWhere(
+        matchedMarket = (widget.appState.markets as List).firstWhere(
           (m) => (m.question as String).toLowerCase().contains(
                 question.toLowerCase().split(' ').take(5).join(' '),
               ),
-        );
-        currentPrice = isYes ? market.yesPrice as double : market.noPrice as double;
-        pnl = (amount / entryPrice * currentPrice) - amount;
+        ) as Market;
+        currentPrice = isYes ? matchedMarket.yesPrice : matchedMarket.noPrice;
+        pnl = (amount / (hasRealEntryPrice ? entryPrice : 0.5) * currentPrice) - amount;
       } catch (_) {}
     }
+
+    matchedMarket ??= Market(
+      id: '0xca048d69BaA38C6364d3E107c2b389BB8D1320dB',
+      question: question,
+      category: 'Crypto',
+      context: '',
+      yesPrice: 0.5,
+      noPrice: 0.5,
+      volume: '\$20',
+      liquidity: '\$20',
+      deadline: DateTime.now().add(const Duration(days: 30)),
+      trend: 0.0,
+      isFeatured: false,
+      tags: const [],
+      history: const [],
+      comments: const [],
+      news: const [],
+    );
 
     Color stateColor;
     String stateLabel;
@@ -749,21 +771,50 @@ class _PositionCardState extends State<_PositionCard> {
           ],
           if (state == 'COMPLETE') ...[
             const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              height: 36,
-              child: _claiming
-                  ? const Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)))
-                  : OutlinedButton.icon(
-                      onPressed: _claim,
-                      icon: const Icon(Icons.redeem_rounded, size: 14),
-                      label: const Text('Claim Winnings', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 36,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        showTradePreviewSheet(
+                          context: context,
+                          market: matchedMarket!,
+                          side: isYes ? MarketSide.yes : MarketSide.no,
+                          initialIsBuy: false,
+                          maxShares: amount / (hasRealEntryPrice ? entryPrice : 0.5),
+                        );
+                      },
+                      icon: const Icon(Icons.sell_rounded, size: 14),
+                      label: const Text('Sell Position', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: PulsColors.green,
-                        side: const BorderSide(color: PulsColors.green, width: 1.5),
+                        foregroundColor: t.brand,
+                        side: BorderSide(color: t.brand, width: 1.5),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: 36,
+                    child: _claiming
+                        ? const Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)))
+                        : OutlinedButton.icon(
+                            onPressed: _claim,
+                            icon: const Icon(Icons.redeem_rounded, size: 14),
+                            label: const Text('Claim Winnings', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: PulsColors.green,
+                              side: const BorderSide(color: PulsColors.green, width: 1.5),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                  ),
+                ),
+              ],
             ),
           ],
         ],

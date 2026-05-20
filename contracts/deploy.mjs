@@ -24,6 +24,7 @@ const ABI = [
     { name: '_usdc', type: 'address' },
     { name: '_question', type: 'string' },
     { name: '_deadline', type: 'uint256' },
+    { name: '_initialLiquidity', type: 'uint256' },
   ], stateMutability: 'nonpayable' },
   { type: 'function', name: 'buyYes', inputs: [{ name: 'amount', type: 'uint256' }], stateMutability: 'nonpayable' },
   { type: 'function', name: 'buyNo',  inputs: [{ name: 'amount', type: 'uint256' }], stateMutability: 'nonpayable' },
@@ -34,8 +35,8 @@ const ABI = [
     { name: '_deadline', type: 'uint256' },
     { name: '_resolved', type: 'bool' },
     { name: '_outcome', type: 'bool' },
-    { name: '_totalYes', type: 'uint256' },
-    { name: '_totalNo', type: 'uint256' },
+    { name: '_poolYes', type: 'uint256' },
+    { name: '_poolNo', type: 'uint256' }
   ], stateMutability: 'view' },
 ];
 
@@ -56,6 +57,7 @@ async function deploy() {
 
   const question = process.env.MARKET_QUESTION || 'Will Bitcoin close above $100k this quarter?';
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 3600);
+  const initialLiquidity = 10000000n; // 10 USDC initial liquidity
 
   console.log(`Deploying from: ${account.address}`);
   console.log(`Question: ${question}`);
@@ -64,7 +66,7 @@ async function deploy() {
   const hash = await walletClient.deployContract({
     abi: ABI,
     bytecode: BYTECODE.startsWith('0x') ? BYTECODE : `0x${BYTECODE}`,
-    args: [USDC, question, deadline],
+    args: [USDC, question, deadline, initialLiquidity],
   });
 
   console.log(`Tx: ${hash}`);

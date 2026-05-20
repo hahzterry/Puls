@@ -235,6 +235,40 @@ class WalletService extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> sellPosition({
+    required bool isYes,
+    required double shares,
+    required String question,
+    double entryPrice = 0.5,
+  }) async {
+    if (_state.userId == null) throw Exception('Not signed in');
+    if (!_state.hasWallet) throw Exception('No wallet');
+
+    // Optimistic balance update: estimate payout based on entryPrice (1ms UI update)
+    final currentVal = double.tryParse(_state.usdcBalance) ?? 0.0;
+    final estimatedPayout = shares * entryPrice;
+    final newVal = currentVal + estimatedPayout;
+    _setState(_state.copyWith(usdcBalance: newVal.toStringAsFixed(2)));
+
+    try {
+      final res = await _post('/api/trade/sell', {
+        'userId': _state.userId!,
+        'side': isYes ? 'YES' : 'NO',
+        'shares': shares.toStringAsFixed(6),
+        'question': question,
+        'entryPrice': entryPrice.toStringAsFixed(4),
+      });
+
+      // Trigger a sync in the background immediately
+      refreshBalance();
+      return res;
+    } catch (e) {
+      // Revert optimistic update on failure by fetching real balance
+      refreshBalance();
+      rethrow;
+    }
+  }
+
   Future<Map<String, dynamic>> claimWinnings() async {
     if (_state.userId == null) throw Exception('Not signed in');
     final res = await _post('/api/trade/claim', {'userId': _state.userId!});
