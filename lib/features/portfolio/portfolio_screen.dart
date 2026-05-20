@@ -239,6 +239,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                                   t: t,
                                   appState: appState,
                                   walletService: WalletServiceScope.of(context),
+                                  onRefresh: _load,
                                 ),
                               ),
                             ),
@@ -316,6 +317,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                         t: t,
                         appState: appState,
                         walletService: WalletServiceScope.of(context),
+                        onRefresh: _load,
                       ),
                     ),
                   ),
@@ -582,11 +584,18 @@ class _HeroCard extends StatelessWidget {
 }
 
 class _PositionCard extends StatefulWidget {
-  const _PositionCard({required this.position, required this.t, required this.appState, required this.walletService});
+  const _PositionCard({
+    required this.position,
+    required this.t,
+    required this.appState,
+    required this.walletService,
+    this.onRefresh,
+  });
   final Map<String, dynamic> position;
   final PulsThemeColors t;
   final dynamic appState;
   final dynamic walletService;
+  final VoidCallback? onRefresh;
 
   @override
   State<_PositionCard> createState() => _PositionCardState();
@@ -784,7 +793,7 @@ class _PositionCardState extends State<_PositionCard> {
                           side: isYes ? MarketSide.yes : MarketSide.no,
                           initialIsBuy: false,
                           maxShares: (position['shares'] as num?)?.toDouble() ?? (amount / (hasRealEntryPrice ? entryPrice : 0.5)),
-                        );
+                        ).then((_) => widget.onRefresh?.call());
                       },
                       icon: const Icon(Icons.sell_rounded, size: 14),
                       label: const Text('Sell Position', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
