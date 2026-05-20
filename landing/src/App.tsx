@@ -24,6 +24,7 @@ import { mockMarkets, generateMockChartData } from './mockData';
 import type { Market, Position, WalletInfo } from './types';
 import { useAccount, useDisconnect, useReadContract, useWriteContract } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { supabase } from './supabaseClient';
 
 const BACKEND_URL = 'http://localhost:3000';
 
@@ -141,7 +142,48 @@ function App() {
     }
   }, [address, isConnected, usdcBalanceRaw]);
 
-  // Initialize Session
+  // Fetch real market info from backend
+  const fetchMarketInfo = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/market/info`);
+      if (res.ok) {
+        const data = await res.json();
+        setMarkets(prev => prev.map(m => {
+          if (m.isContract) {
+            return {
+              ...m,
+              question: data.question,
+              yesPrice: data.yesPrice,
+              noPrice: data.noPrice,
+              poolVolume: data.totalVolume,
+              resolved: data.resolved,
+              outcome: data.outcome
+            };
+          }
+          return m;
+        }));
+        
+        setSelectedMarket(prev => {
+          if (prev && prev.isContract) {
+            return {
+              ...prev,
+              question: data.question,
+              yesPrice: data.yesPrice,
+              noPrice: data.noPrice,
+              poolVolume: data.totalVolume,
+              resolved: data.resolved,
+              outcome: data.outcome
+            };
+          }
+          return prev;
+        });
+      }
+    } catch(e) {
+      console.warn("Could not fetch market info:", e);
+    }
+  };
+
+  // Initialize Session and Supabase Realtime
   useEffect(() => {
     let storedId = localStorage.getItem('puls_user_id');
     if (!storedId) {
@@ -153,6 +195,21 @@ function App() {
       setUserId(storedId);
       setCustomUserIdInput(storedId);
     }
+
+    // Initial fetch
+    fetchMarketInfo();
+
+    // Supabase Realtime Listener for trades table
+    const channel = supabase.channel('public:trades')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trades' }, payload => {
+        console.log('Realtime trade update received:', payload);
+        fetchMarketInfo(); // Refetch market info when any trade happens
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [isConnected]);
 
   // Fetch Wallet when User ID is available
@@ -770,7 +827,7 @@ function App() {
                 {isConnected && (
                   <button 
                     onClick={() => disconnect()} 
-                    style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', borderRadius: '4px', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                    style={{ background: 'var(--no-bg)', border: '1px solid var(--no-border)', color: 'var(--no-red)', borderRadius: '4px', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
                   >
                     Disconnect
                   </button>
@@ -810,77 +867,77 @@ function App() {
               <div className="hero-glow-2"></div>
               
               <div className="landing-badge">
-                <Zap size={14} style={{ marginRight: '4px' }} />
-                Prediction Markets on Arc Testnet
+                <Zap size={12} style={{ marginRight: '2px' }} />
+                Prediction Markets · Arc Testnet
               </div>
               
               <h1 className="hero-title">
-                The Ultimate Web3<br />Prediction Market Clone
+                Trade on the<br />Future of Everything
               </h1>
               
               <p className="hero-subtitle">
-                Trade real world event outcomes instantly. Gas abstraction using native USDC on Circle MPC developer wallets. Sub-second finality.
+                An on-chain prediction market powered by USDC. No gas tokens needed. Sub-second finality. Elegant, instant trading.
               </p>
               
               <div className="hero-buttons">
-                <button className="btn-primary" style={{ padding: '14px 28px', fontSize: '16px' }} onClick={() => setActiveTab('home')}>
-                  Launch Trading App <ArrowRight size={18} />
+                <button className="btn-primary" style={{ padding: '12px 28px', fontSize: '14px' }} onClick={() => setActiveTab('home')}>
+                  Start Trading <ArrowRight size={16} />
                 </button>
-                <a href="https://faucet.circle.com" target="_blank" className="btn-secondary" style={{ padding: '14px 28px', fontSize: '16px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                  Visit Circle Faucet <ExternalLink size={16} />
+                <a href="https://faucet.circle.com" target="_blank" className="btn-secondary" style={{ padding: '12px 28px', fontSize: '14px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  Get Testnet USDC <ExternalLink size={14} />
                 </a>
               </div>
 
               <div className="landing-stats">
                 <div className="glass-panel stat-card">
                   <div className="stat-num">$1.4M+</div>
-                  <div className="stat-label">Total Volume Traded</div>
+                  <div className="stat-label">Volume Traded</div>
                 </div>
                 <div className="glass-panel stat-card">
                   <div className="stat-num">&lt; 500ms</div>
-                  <div className="stat-label">On-chain Settlement Finality</div>
+                  <div className="stat-label">Settlement Finality</div>
                 </div>
                 <div className="glass-panel stat-card">
                   <div className="stat-num">100%</div>
-                  <div className="stat-label">Gas Abstracted in USDC</div>
+                  <div className="stat-label">Gas in USDC</div>
                 </div>
               </div>
             </section>
 
             <section className="features-section">
               <div className="section-header">
-                <h2 className="section-title">Why Puls Beats The Rest</h2>
-                <p className="section-subtitle">Leveraging stablecoins and advanced Layer 1 technology for trading</p>
+                <h2 className="section-title">Built Different</h2>
+                <p className="section-subtitle">The infrastructure that makes frictionless prediction markets possible</p>
               </div>
 
               <div className="features-grid">
                 <div className="glass-panel feature-card">
                   <div className="feature-icon-wrapper">
-                    <Coins size={24} />
+                    <Coins size={20} />
                   </div>
-                  <h3 className="feature-title">USDC Natively For Gas</h3>
+                  <h3 className="feature-title">Native USDC Gas</h3>
                   <p className="feature-desc">
-                    Built on Arc. Forget buying Ethereum or SOL just to pay gas. Pay transaction costs natively in USDC with 6 decimals.
+                    No ETH required. Transaction fees are paid in USDC — the stablecoin you already hold.
                   </p>
                 </div>
 
                 <div className="glass-panel feature-card">
                   <div className="feature-icon-wrapper">
-                    <Lock size={24} />
+                    <Lock size={20} />
                   </div>
-                  <h3 className="feature-title">Circle MPC Security</h3>
+                  <h3 className="feature-title">MPC Wallets</h3>
                   <p className="feature-desc">
-                    High security non-custodial and developer controlled wallets. Sign in, get a wallet set up in milliseconds, and export whenever you want.
+                    Circle's non-custodial wallets. Sign up, get a wallet instantly, export your keys whenever.
                   </p>
                 </div>
 
                 <div className="glass-panel feature-card">
                   <div className="feature-icon-wrapper">
-                    <Zap size={24} />
+                    <Zap size={20} />
                   </div>
-                  <h3 className="feature-title">Sub-Second Execution</h3>
+                  <h3 className="feature-title">Instant Finality</h3>
                   <p className="feature-desc">
-                    Arc Testnet features instant confirmation. Swap, bridge, or claim prediction prizes in the blink of an eye.
+                    Sub-second settlement on Arc. Your trades confirm before you blink.
                   </p>
                 </div>
               </div>
@@ -924,13 +981,13 @@ function App() {
               </div>
 
               {/* Feed Preview Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: 700 }}>Trending Prediction Markets</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 600, letterSpacing: '-0.3px' }}>Markets</h3>
                 <button 
-                  style={{ color: '#6366f1', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center' }}
+                  style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500, display: 'flex', alignItems: 'center' }}
                   onClick={() => setActiveTab('feed')}
                 >
-                  View all markets <ChevronRight size={16} />
+                  View all <ChevronRight size={14} />
                 </button>
               </div>
 
@@ -942,8 +999,8 @@ function App() {
                       <img src={market.image} alt={market.question} className="market-img" />
                       <div style={{ flexGrow: 1 }}>
                         <div className="market-meta-row">
-                          <span style={{ color: '#a855f7', fontWeight: 600 }}>{market.category}</span>
-                          <span>Vol: ${(market.totalVolume).toLocaleString()}</span>
+                          <span style={{ color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '10px' }}>{market.category}</span>
+                          <span>${(market.totalVolume).toLocaleString()} vol</span>
                         </div>
                         <h4 className="market-title">{market.question}</h4>
                       </div>
@@ -972,7 +1029,7 @@ function App() {
               {/* Leaderboard Widget */}
               <div className="glass-panel sidebar-widget">
                 <h4 className="widget-title">
-                  <TrendingUp size={16} color="#6366f1" /> Trending Right Now
+                  <TrendingUp size={14} /> Trending
                 </h4>
                 <div className="trending-list">
                   {trendingMarkets.map((m, idx) => (
@@ -988,15 +1045,15 @@ function App() {
               </div>
 
               {/* Arc Testnet Widget */}
-              <div className="glass-panel sidebar-widget" style={{ borderLeft: '3px solid #06b6d4' }}>
+              <div className="glass-panel sidebar-widget" style={{ borderLeft: '2px solid var(--text-primary)' }}>
                 <h4 className="widget-title">
-                  <Globe size={16} color="#06b6d4" /> Arc Network Info
+                  <Globe size={14} /> Arc Network
                 </h4>
                 <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <p style={{ color: 'var(--text-secondary)' }}>
                     All contracts reside on Arc Testnet. USDC is utilized directly as the native gas token.
                   </p>
-                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '6px', fontSize: '12px' }}>
+                  <div style={{ background: 'var(--bg-inset)', padding: '10px', borderRadius: '6px', fontSize: '12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <span style={{ color: 'var(--text-muted)' }}>Chain ID:</span>
                       <strong>5042002 (hex: 0x4CEF52)</strong>
@@ -1019,8 +1076,8 @@ function App() {
         {activeTab === 'feed' && (
           <div style={{ padding: '24px 0 60px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 800 }}>Explore Prediction Markets</h2>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{filteredMarkets.length} active markets found</span>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 700, letterSpacing: '-0.5px' }}>Explore Markets</h2>
+              <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{filteredMarkets.length} markets</span>
             </div>
 
             {/* Categories filter bar */}
@@ -1050,11 +1107,11 @@ function App() {
                       <img src={market.image} alt={market.question} className="market-img" />
                       <div style={{ flexGrow: 1 }}>
                         <div className="market-meta-row">
-                          <span style={{ color: market.isContract ? '#06b6d4' : '#a855f7', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            {market.isContract && <Zap size={12} />}
-                            {market.category} {market.isContract && '(Live Chain)'}
+                          <span style={{ color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {market.isContract && <Zap size={10} />}
+                            {market.category} {market.isContract && '· Live'}
                           </span>
-                          <span>Vol: ${(market.totalVolume).toLocaleString()}</span>
+                          <span>${(market.totalVolume).toLocaleString()} vol</span>
                         </div>
                         <h4 className="market-title">{market.question}</h4>
                       </div>
@@ -1083,7 +1140,7 @@ function App() {
         {/* VIEW: DISCOVER (CATEGORIES & SEARCH) */}
         {activeTab === 'discover' && (
           <div style={{ padding: '24px 0 60px' }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 800, marginBottom: '24px' }}>Discover Trending Topics</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 700, marginBottom: '24px', letterSpacing: '-0.5px' }}>Discover</h2>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '40px' }}>
               {[
@@ -1099,16 +1156,16 @@ function App() {
                   style={{ overflow: 'hidden', cursor: 'pointer', height: '160px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', position: 'relative' }}
                   onClick={() => { setSelectedCategory(cat.name); setActiveTab('feed'); }}
                 >
-                  <img src={cat.img} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0, opacity: 0.35, zIndex: 0 }} />
-                  <div style={{ zIndex: 1, padding: '16px', background: 'linear-gradient(to top, rgba(6,8,15,1), rgba(6,8,15,0) 80%)' }}>
-                    <h4 style={{ fontWeight: 700, fontSize: '16px', color: cat.color }}>{cat.name}</h4>
-                    <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>{cat.desc}</p>
+                  <img src={cat.img} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0, opacity: 0.2, zIndex: 0 }} />
+                  <div style={{ zIndex: 1, padding: '16px', background: 'linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0) 85%)' }}>
+                    <h4 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '15px', color: 'var(--text-primary)' }}>{cat.name}</h4>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{cat.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px' }}>Curated Markets Playlist</h3>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 600, marginBottom: '16px', letterSpacing: '-0.3px' }}>Curated</h3>
             <div className="markets-grid">
               {markets.slice(4).map(market => (
                 <div key={market.id} className="glass-panel glass-panel-interactive market-card" onClick={() => setSelectedMarket(market)}>
@@ -1116,8 +1173,8 @@ function App() {
                     <img src={market.image} alt={market.question} className="market-img" />
                     <div style={{ flexGrow: 1 }}>
                       <div className="market-meta-row">
-                        <span style={{ color: '#ec4899', fontWeight: 600 }}>{market.category}</span>
-                        <span>Vol: ${(market.totalVolume).toLocaleString()}</span>
+                        <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{market.category}</span>
+                        <span style={{ fontSize: '11px' }}>${(market.totalVolume).toLocaleString()} vol</span>
                       </div>
                       <h4 className="market-title">{market.question}</h4>
                     </div>
@@ -1126,8 +1183,8 @@ function App() {
                     <span className="market-vol" style={{ color: 'var(--text-muted)' }}>
                       Deadline: {new Date(market.deadline * 1000).toLocaleDateString()}
                     </span>
-                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center' }}>
-                      Trade now <ChevronRight size={14} />
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 500, fontSize: '13px', display: 'flex', alignItems: 'center' }}>
+                      Trade <ChevronRight size={14} />
                     </span>
                   </div>
                 </div>
@@ -1146,12 +1203,12 @@ function App() {
               </div>
 
               <div style={{ display: 'flex', gap: '16px' }}>
-                <div className="glass-panel portfolio-value-card" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                <div className="glass-panel portfolio-value-card" style={{ background: 'var(--bg-elevated)' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Total Spent</div>
                   <div className="portfolio-value-num">${totalSpent.toFixed(2)} USDC</div>
                 </div>
 
-                <div className="glass-panel portfolio-value-card" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                <div className="glass-panel portfolio-value-card" style={{ background: 'var(--bg-elevated)' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Circle Wallet Bal</div>
                   <div className="portfolio-value-num" style={{ color: 'var(--yes-green)' }}>${walletInfo?.usdcBalance || '0.00'} USDC</div>
                 </div>
@@ -1428,15 +1485,15 @@ function App() {
       </main>
 
       {/* FOOTER */}
-      <footer style={{ borderTop: '1px solid var(--border-light)', padding: '30px 0', marginTop: '60px', background: 'rgba(6, 8, 15, 0.5)' }}>
-        <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
-          <div>© 2026 Puls Prediction Inc. Powered by Circle MPC Wallets.</div>
+      <footer style={{ borderTop: '1px solid var(--border-light)', padding: '28px 0', marginTop: '60px' }}>
+        <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--text-muted)' }}>
+          <div>© 2026 Puls · Powered by Circle</div>
           <div style={{ display: 'flex', gap: '20px' }}>
             <a href="https://arc.network" target="_blank" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              Arc Chain <ExternalLink size={12} />
+              Arc <ExternalLink size={10} />
             </a>
             <a href="https://faucet.circle.com" target="_blank" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              USDC Faucet <ExternalLink size={12} />
+              Faucet <ExternalLink size={10} />
             </a>
           </div>
         </div>
@@ -1448,18 +1505,18 @@ function App() {
           <div className="glass-panel modal-content" onClick={(e) => e.stopPropagation()}>
             {/* Modal Left: Market Info & Chart */}
             <div className="modal-left">
-              <span style={{ color: '#a855f7', fontWeight: 600, fontSize: '12px', textTransform: 'uppercase' }}>{selectedMarket.category}</span>
+              <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '10.5px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{selectedMarket.category}</span>
               <h3 className="modal-title" style={{ marginTop: '8px' }}>{selectedMarket.question}</h3>
               <p className="modal-desc">{selectedMarket.description}</p>
               
               {/* Mini Price History Chart */}
               <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <LineChart size={14} color="#6366f1" /> Historical Pricing Odds (30d)
+                  <span style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
+                    <LineChart size={13} /> Price History (30d)
                   </span>
-                  <span style={{ fontSize: '13px', color: 'var(--yes-green)' }}>
-                    +{(Math.random() * 12 + 2).toFixed(1)}% this week
+                  <span style={{ fontSize: '12px', color: 'var(--yes-green)', fontWeight: 500 }}>
+                    +{(Math.random() * 12 + 2).toFixed(1)}%
                   </span>
                 </div>
                 
@@ -1490,7 +1547,7 @@ function App() {
             <div className="modal-right">
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '2px', borderRadius: '6px' }}>
+                  <div style={{ display: 'flex', gap: '8px', background: 'var(--bg-inset)', padding: '2px', borderRadius: '6px' }}>
                     <button
                       style={{
                         padding: '4px 12px',
@@ -1499,8 +1556,8 @@ function App() {
                         fontWeight: 700,
                         border: 'none',
                         cursor: 'pointer',
-                        background: tradeTab === 'BUY' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                        color: tradeTab === 'BUY' ? 'var(--text)' : 'var(--text-muted)'
+                        background: tradeTab === 'BUY' ? 'var(--bg-inset)' : 'transparent',
+                        color: tradeTab === 'BUY' ? 'var(--text-primary)' : 'var(--text-muted)'
                       }}
                       onClick={() => { setTradeTab('BUY'); setTradeError(null); }}
                     >
@@ -1514,8 +1571,8 @@ function App() {
                         fontWeight: 700,
                         border: 'none',
                         cursor: 'pointer',
-                        background: tradeTab === 'SELL' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                        color: tradeTab === 'SELL' ? 'var(--text)' : 'var(--text-muted)'
+                        background: tradeTab === 'SELL' ? 'var(--bg-inset)' : 'transparent',
+                        color: tradeTab === 'SELL' ? 'var(--text-primary)' : 'var(--text-muted)'
                       }}
                       onClick={() => { setTradeTab('SELL'); setTradeError(null); }}
                     >
@@ -1588,7 +1645,7 @@ function App() {
                           {(parseFloat(tradeAmount || '0') / (tradingSide === 'YES' ? selectedMarket.yesPrice : selectedMarket.noPrice)).toFixed(2)}
                         </span>
                       </div>
-                      <div className="potential-row" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px', marginTop: '4px' }}>
+                      <div className="potential-row" style={{ borderTop: '1px solid var(--border-light)', paddingTop: '8px', marginTop: '4px' }}>
                         <span style={{ fontWeight: 600 }}>Potential Payout</span>
                         <span className="potential-val win">
                           ${(parseFloat(tradeAmount || '0') / (tradingSide === 'YES' ? selectedMarket.yesPrice : selectedMarket.noPrice)).toFixed(2)} USDC
@@ -1603,7 +1660,7 @@ function App() {
                     </>
                   ) : (
                     <>
-                      <div className="potential-row" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px', marginTop: '4px' }}>
+                      <div className="potential-row" style={{ borderTop: '1px solid var(--border-light)', paddingTop: '8px', marginTop: '4px' }}>
                         <span style={{ fontWeight: 600 }}>Estimated Payout</span>
                         <span className="potential-val win">
                           ${(parseFloat(tradeAmount || '0') * (tradingSide === 'YES' ? selectedMarket.yesPrice : selectedMarket.noPrice)).toFixed(2)} USDC

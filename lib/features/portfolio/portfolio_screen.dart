@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/puls_app.dart';
 import '../../app/puls_app_state.dart';
@@ -30,36 +31,43 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   String _totalSpent = '0.00';
   bool _loading = true;
   String? _error;
-  Timer? _pollTimer;
+  RealtimeChannel? _tradeChannel;
+  final _supabase = Supabase.instance.client;
   final http.Client _client = http.Client();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _load();
+    _setupRealtime();
+  }
+
+  void _setupRealtime() {
+    final ws = WalletServiceScope.of(context).state;
+    if (ws.userId == null) return;
+    
+    _tradeChannel ??= _supabase.channel('public:trades:portfolio')
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'trades',
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: 'user_id',
+          value: ws.userId,
+        ),
+        callback: (payload) {
+          _load();
+        },
+      )
+      .subscribe();
   }
 
   @override
   void dispose() {
-    _pollTimer?.cancel();
+    _tradeChannel?.unsubscribe();
     _client.close();
     super.dispose();
-  }
-
-  void _startPollingIfNeeded() {
-    final hasPending = _positions.any((p) =>
-        p['state'] == 'INITIATED' || p['state'] == 'SENT' || p['state'] == 'QUEUED');
-    if (hasPending && _pollTimer == null) {
-      _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
-        await _load();
-        final stillPending = _positions.any((p) =>
-            p['state'] == 'INITIATED' || p['state'] == 'SENT' || p['state'] == 'QUEUED');
-        if (!stillPending) {
-          _pollTimer?.cancel();
-          _pollTimer = null;
-        }
-      });
-    }
   }
 
   Future<void> _load() async {
@@ -80,7 +88,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         _totalSpent = data['totalSpent'] as String? ?? '0.00';
         _loading = false;
       });
-      _startPollingIfNeeded();
     } catch (e) {
       setState(() { _error = e.toString(); _loading = false; });
     }
