@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -190,7 +191,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
                             border: Border.all(color: t.border.withValues(alpha: 0.5)),
                           ),
                           child: Image.network(
-                            market.imageUrl.isNotEmpty ? market.imageUrl : _getTopicImage(market.category, market.id),
+                            _proxied(market.imageUrl.isNotEmpty ? market.imageUrl : _getTopicImage(market.category, market.id)),
                             height: 130,
                             width: double.infinity,
                             fit: BoxFit.cover,
@@ -578,3 +579,9 @@ String _getTopicImage(String category, String id) {
   ];
   return fallbacks[idx];
 }
+
+String _proxied(String url) {
+  if (!kIsWeb || url.isEmpty) return url;
+  return 'https://images.weserv.nl/?url=${Uri.encodeComponent(url)}&w=600&output=webp';
+}
+

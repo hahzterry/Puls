@@ -13,5 +13,6 @@ if [ ! -d "flutter" ]; then
 fi
 
 # Build web
-flutter/bin/flutter build web --release --web-renderer html
+flutter/bin/flutter build web --release
+
 
