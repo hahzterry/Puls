@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/puls_app_state.dart';
+import '../../app/puls_app.dart';
 import '../../core/theme/app_theme.dart';
 
 class WebLandingPage extends StatefulWidget {
@@ -124,7 +125,7 @@ class _Navbar extends StatelessWidget {
           const Spacer(),
           _NavLink('GitHub', 'https://github.com/rdmbtc/Puls'),
           const SizedBox(width: 8),
-          _NavLink('Explorer', 'https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
+          _NavLink('Explorer', 'https://testnet.arcscan.app/address/0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072'),
           const SizedBox(width: 16),
           // Theme Toggle button
           IconButton(
@@ -271,25 +272,26 @@ class _HeroContent extends StatelessWidget {
         const SizedBox(height: 28),
         // Title
         Text(
-          'Predict Markets.\nSwipe YES or NO.\nWin USDC.',
+          'Trade on the\nFuture of Everything.',
           textAlign: TextAlign.center,
           style: TextStyle(
+            fontFamily: PulsColors.fontDisplay,
             color: t.text,
-            fontSize: 66,
-            fontWeight: FontWeight.w900,
-            height: 1.1,
+            fontSize: 62,
+            fontWeight: FontWeight.w700,
+            height: 1.12,
             letterSpacing: -2.0,
           ),
         ).animate().fadeIn(duration: 600.ms, delay: 100.ms).slideY(begin: 0.15, delay: 100.ms),
         const SizedBox(height: 24),
         // Subtitle
         Text(
-          'Real Polymarket predictions. Real USDC on-chain.\nNo ETH, no seed phrase — just Google sign-in.',
+          'An on-chain prediction market powered by USDC.\nNo gas tokens needed. Sub-second finality.',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: t.textMuted,
             fontSize: 17,
-            height: 1.6,
+            height: 1.65,
             fontWeight: FontWeight.w400,
           ),
         ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.15, delay: 200.ms),
@@ -298,16 +300,23 @@ class _HeroContent extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _PrimaryButton(label: 'Launch App', onTap: appState.completeOnboarding)
+            _PrimaryButton(label: 'Sign in with Google', onTap: appState.completeOnboarding)
                 .animate().fadeIn(duration: 600.ms, delay: 300.ms).slideY(begin: 0.15, delay: 300.ms),
-            const SizedBox(width: 16),
-            _SecondaryButton(
-              label: 'View Contract ↗',
-              onTap: () => launchUrl(
-                Uri.parse('https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
-                mode: LaunchMode.externalApplication,
-              ),
-            ).animate().fadeIn(duration: 600.ms, delay: 350.ms).slideY(begin: 0.15, delay: 350.ms),
+            const SizedBox(width: 12),
+            Builder(
+              builder: (context) {
+                final wallet = WalletServiceScope.of(context);
+                return _SecondaryButton(
+                  label: 'Connect Wallet',
+                  onTap: () async {
+                    await wallet.signInWithExternalWallet();
+                    if (wallet.state.isExternalWallet && context.mounted) {
+                      appState.completeOnboarding();
+                    }
+                  },
+                ).animate().fadeIn(duration: 600.ms, delay: 350.ms).slideY(begin: 0.15, delay: 350.ms);
+              },
+            ),
           ],
         ),
         const SizedBox(height: 52),
@@ -749,19 +758,19 @@ class _StatsSection extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '0xca048d69BaA38C6364d3E107c2b389BB8D1320dB',
+                            '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072',
                             style: TextStyle(color: t.textSubtle, fontSize: 12, fontFamily: 'monospace'),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _CopyButton(text: '0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
+                    _CopyButton(text: '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072'),
                     const SizedBox(width: 8),
                     _SecondaryButton(
                       label: 'View ↗',
                       onTap: () => launchUrl(
-                        Uri.parse('https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
+                        Uri.parse('https://testnet.arcscan.app/address/0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072'),
                         mode: LaunchMode.externalApplication,
                       ),
                       small: true,
@@ -917,7 +926,7 @@ class _FooterSection extends StatelessWidget {
                   const Spacer(),
                   _FooterLink('GitHub', 'https://github.com/rdmbtc/Puls'),
                   const SizedBox(width: 20),
-                  _FooterLink('Explorer', 'https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
+                  _FooterLink('Explorer', 'https://testnet.arcscan.app/address/0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072'),
                   const SizedBox(width: 20),
                   _FooterLink('Faucet', 'https://faucet.circle.com'),
                 ],

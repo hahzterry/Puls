@@ -37,7 +37,7 @@ class _WebHomeScreen extends StatelessWidget {
       orElse: () => appState.markets.isNotEmpty
           ? appState.markets.first
           : Market(
-              id: '0xca048d69BaA38C6364d3E107c2b389BB8D1320dB',
+              id: '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072',
               question: 'Will Donald Trump launch a new token in 2026?',
               category: 'Crypto',
               context: 'Resolves to YES if Donald Trump officially launches a new token on-chain in 2026.',

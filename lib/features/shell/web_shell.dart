@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:picons/picons.dart';
 
 import '../../app/puls_app_state.dart';
+import '../../app/puls_app.dart';
 import '../../core/theme/app_theme.dart';
 import '../discover/discover_screen.dart';
 import '../feed/feed_screen.dart';
@@ -76,13 +77,13 @@ class _WebShellState extends State<WebShell>
     // Theme-aware gradient
     final gradientBg = isDark
         ? const Color(0xFF09090B)
-        : const Color(0xFFFFFFFF);
+        : const Color(0xFFFAFAF7);
     final gradientGlow = isDark
         ? const Color(0x40312E81)
-        : const Color(0x184F46E5);
+        : const Color(0x1CFAF6EE);
     final gradientEnd = isDark
         ? const Color(0xFF09090B)
-        : const Color(0xFFFFFFFF);
+        : const Color(0xFFFAFAF7);
     final dotColor = isDark
         ? const Color(0x0AFFFFFF)
         : const Color(0x0A000000);
@@ -240,6 +241,8 @@ class _Sidebar extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(collapsed ? 8 : 12, 0, collapsed ? 8 : 12, 20),
           child: Column(
             children: [
+              _buildWalletCard(context),
+              const SizedBox(height: 8),
               // Dark mode toggle
               _SidebarToggle(
                 isDark: isDark,
@@ -282,6 +285,85 @@ class _Sidebar extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildWalletCard(BuildContext context) {
+    final wallet = WalletServiceScope.of(context);
+    final ws = wallet.state;
+    if (ws.walletAddress == null || ws.walletAddress!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    final shortAddress = ws.walletAddress!.length > 10 
+        ? '${ws.walletAddress!.substring(0, 6)}...${ws.walletAddress!.substring(ws.walletAddress!.length - 4)}'
+        : ws.walletAddress!;
+        
+    final label = ws.isExternalWallet ? 'Browser Wallet' : 'MPC Wallet';
+
+    if (collapsed) {
+      return Tooltip(
+        message: '$label: $shortAddress\n${ws.usdcBalance} USDC',
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: t.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: t.border),
+          ),
+          child: Icon(Icons.account_balance_wallet_outlined, size: 18, color: t.textMuted),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: t.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: t.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.account_balance_wallet_outlined, size: 13, color: t.textSubtle),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(color: t.textSubtle, fontSize: 10, fontWeight: FontWeight.w500),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: wallet.signOut,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Icon(Icons.logout_rounded, size: 11, color: t.textSubtle),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            shortAddress,
+            style: TextStyle(
+              color: t.text,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '\$${double.tryParse(ws.usdcBalance)?.toStringAsFixed(2) ?? ws.usdcBalance} USDC',
+            style: const TextStyle(
+              color: PulsColors.green,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

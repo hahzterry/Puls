@@ -12,24 +12,200 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Puls">
-  <meta name="theme-color" content="#0a0a0a">
+  <meta name="theme-color" content="#FAFAF7">
 
   <!-- iOS icons -->
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <link rel="apple-touch-icon" sizes="192x192" href="icons/Icon-192.png">
   <link rel="apple-touch-icon" sizes="512x512" href="icons/Icon-512.png">
 
+  <!-- Google Fonts — Editorial: Playfair Display + DM Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+
   <link rel="manifest" href="manifest.json">
   <title>Puls</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background-color: #0a0a0a; overflow: hidden; }
+    body { background-color: #FAFAF7; overflow: hidden; }
   </style>
+
+  <!-- Ethers.js for WalletConnect -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
 </head>
 <body>
   <script>
     window.flutterConfiguration = { renderer: "html" };
   </script>
+
+  <!-- WalletConnect JS Bridge for Flutter -->
+  <script>
+    // Arc Testnet chain config
+    const ARC_TESTNET = {
+      chainId: 5042002,
+      chainIdHex: '0x4CEF52',
+      name: 'Arc Testnet',
+      rpcUrl: 'https://rpc.testnet.arc.network',
+      explorerUrl: 'https://testnet.arcscan.app',
+      currencySymbol: 'USDC',
+      currencyDecimals: 18,
+    };
+
+    // State
+    window._walletAddress = null;
+    window._walletProvider = null;
+
+    // Connect via browser wallet (MetaMask, etc.)
+    window.connectBrowserWallet = async function() {
+      try {
+        if (!window.ethereum) {
+          return JSON.stringify({ error: 'No browser wallet found. Please install MetaMask.' });
+        }
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const accounts = await provider.send('eth_requestAccounts', []);
+        if (!accounts || accounts.length === 0) {
+          return JSON.stringify({ error: 'No accounts found' });
+        }
+
+        // Try to switch to Arc Testnet
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: ARC_TESTNET.chainIdHex }],
+          });
+        } catch (switchError) {
+          // Chain not added — add it
+          if (switchError.code === 4902) {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: ARC_TESTNET.chainIdHex,
+                chainName: ARC_TESTNET.name,
+                rpcUrls: [ARC_TESTNET.rpcUrl],
+                blockExplorerUrls: [ARC_TESTNET.explorerUrl],
+                nativeCurrency: {
+                  name: ARC_TESTNET.currencySymbol,
+                  symbol: ARC_TESTNET.currencySymbol,
+                  decimals: ARC_TESTNET.currencyDecimals,
+                },
+              }],
+            });
+          }
+        }
+
+        window._walletAddress = accounts[0];
+        window._walletProvider = provider;
+
+        // Listen for account changes
+        window.ethereum.on('accountsChanged', function(newAccounts) {
+          window._walletAddress = newAccounts.length > 0 ? newAccounts[0] : null;
+          if (window._onWalletChanged) window._onWalletChanged(window._walletAddress);
+        });
+
+        return JSON.stringify({ address: accounts[0] });
+      } catch (e) {
+        return JSON.stringify({ error: e.message || 'Connection failed' });
+      }
+    };
+
+    // Disconnect
+    window.disconnectBrowserWallet = function() {
+      window._walletAddress = null;
+      window._walletProvider = null;
+      return JSON.stringify({ success: true });
+    };
+
+    // Get current address
+    window.getBrowserWalletAddress = function() {
+      return window._walletAddress || '';
+    };
+
+    // Check if browser wallet is available
+    window.hasBrowserWallet = function() {
+      return !!window.ethereum;
+    };
+
+    // On-chain interaction config
+    const USDC_ADDRESS = '0x3600000000000000000000000000000000000000';
+    const USDC_ABI = [
+      'function allowance(address owner, address spender) view returns (uint256)',
+      'function approve(address spender, uint256 amount) returns (bool)'
+    ];
+    const MARKET_ABI = [
+      'function buyYes(uint256 amount) returns (uint256)',
+      'function buyNo(uint256 amount) returns (uint256)',
+      'function sellYes(uint256 shares) returns (uint256)',
+      'function sellNo(uint256 shares) returns (uint256)',
+      'function claim() returns (uint256)'
+    ];
+
+    window.buyPositionOnChain = async function(isYes, amountUsdc, contractAddress) {
+      try {
+        if (!window.ethereum) throw new Error('No browser wallet found.');
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const userAddr = await signer.getAddress();
+
+        // Convert amount to micro USDC (6 decimals)
+        const amountMicro = Math.round(parseFloat(amountUsdc) * 1000000);
+        const amountBigInt = BigInt(amountMicro);
+
+        // Check allowance
+        const usdc = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
+        const allowance = await usdc.allowance(userAddr, contractAddress);
+        if (allowance < amountBigInt) {
+          // Approve max
+          const approveTx = await usdc.approve(contractAddress, ethers.MaxUint256);
+          await approveTx.wait();
+        }
+
+        // Call market contract
+        const market = new ethers.Contract(contractAddress, MARKET_ABI, signer);
+        const method = isYes ? 'buyYes' : 'buyNo';
+        const tx = await market[method](amountBigInt);
+        await tx.wait();
+        return JSON.stringify({ txHash: tx.hash });
+      } catch (e) {
+        return JSON.stringify({ error: e.message || 'Transaction failed' });
+      }
+    };
+
+    window.sellPositionOnChain = async function(isYes, shares, contractAddress) {
+      try {
+        if (!window.ethereum) throw new Error('No browser wallet found.');
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+
+        const sharesMicro = Math.round(parseFloat(shares) * 1000000);
+        const sharesBigInt = BigInt(sharesMicro);
+
+        const market = new ethers.Contract(contractAddress, MARKET_ABI, signer);
+        const method = isYes ? 'sellYes' : 'sellNo';
+        const tx = await market[method](sharesBigInt);
+        await tx.wait();
+        return JSON.stringify({ txHash: tx.hash });
+      } catch (e) {
+        return JSON.stringify({ error: e.message || 'Transaction failed' });
+      }
+    };
+
+    window.claimOnChain = async function(contractAddress) {
+      try {
+        if (!window.ethereum) throw new Error('No browser wallet found.');
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+
+        const market = new ethers.Contract(contractAddress, MARKET_ABI, signer);
+        const tx = await market.claim();
+        await tx.wait();
+        return JSON.stringify({ txHash: tx.hash });
+      } catch (e) {
+        return JSON.stringify({ error: e.message || 'Transaction failed' });
+      }
+    };
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

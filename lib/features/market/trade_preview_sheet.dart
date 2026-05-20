@@ -399,6 +399,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                                   usdcAmount: _amount,
                                   question: widget.market.question,
                                   entryPrice: price,
+                                  contractAddress: widget.market.id,
                                 );
                               } else {
                                 result = await walletService.sellPosition(
@@ -406,6 +407,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                                   shares: _amount,
                                   question: widget.market.question,
                                   entryPrice: price,
+                                  contractAddress: widget.market.id,
                                 );
                               }
                               if (!context.mounted) return;

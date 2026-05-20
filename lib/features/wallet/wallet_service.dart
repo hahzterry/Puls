@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config.dart' show backendUrl;
+import 'web3_wallet_bridge.dart' as web3;
 const _backendUrl = backendUrl;
 
 final _supabase = Supabase.instance.client;
@@ -17,6 +18,7 @@ class WalletState {
     this.usdcBalance = '0',
     this.isLoading = false,
     this.error,
+    this.isExternalWallet = false,
   });
 
   final String? userId;
@@ -25,8 +27,9 @@ class WalletState {
   final String usdcBalance;
   final bool isLoading;
   final String? error;
+  final bool isExternalWallet;
 
-  bool get hasWallet => walletId != null;
+  bool get hasWallet => walletId != null || isExternalWallet;
 
   WalletState copyWith({
     String? userId,
@@ -35,6 +38,7 @@ class WalletState {
     String? usdcBalance,
     bool? isLoading,
     String? error,
+    bool? isExternalWallet,
   }) =>
       WalletState(
         userId: userId ?? this.userId,
@@ -43,6 +47,7 @@ class WalletState {
         usdcBalance: usdcBalance ?? this.usdcBalance,
         isLoading: isLoading ?? this.isLoading,
         error: error,
+        isExternalWallet: isExternalWallet ?? this.isExternalWallet,
       );
 }
 
@@ -101,10 +106,46 @@ class WalletService extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    await _supabase.auth.signOut();
+    if (_state.isExternalWallet) {
+      web3.disconnectBrowserWallet();
+    } else {
+      await _supabase.auth.signOut();
+    }
+    _refreshTimer?.cancel();
     _state = const WalletState();
     notifyListeners();
   }
+
+  // ── External wallet (MetaMask) ────────────────────────────────────────────
+
+  /// Connect an external browser wallet (MetaMask, etc.)
+  Future<void> signInWithExternalWallet() async {
+    if (!kIsWeb) return;
+    _setState(_state.copyWith(isLoading: true, error: null));
+    try {
+      final result = await web3.connectBrowserWallet();
+      if (result.error != null) {
+        _setState(_state.copyWith(isLoading: false, error: result.error));
+        return;
+      }
+      final address = result.address!;
+      final userId = 'eth_$address';
+      _setState(_state.copyWith(
+        userId: userId,
+        walletAddress: address,
+        isExternalWallet: true,
+        isLoading: false,
+      ));
+      // Fetch balance from chain
+      await _fetchBalanceFromChain(address);
+      _startPeriodicRefresh();
+    } catch (e) {
+      _setState(_state.copyWith(isLoading: false, error: e.toString()));
+    }
+  }
+
+  /// Whether a browser wallet (MetaMask) is available.
+  bool get hasBrowserWalletAvailable => kIsWeb && web3.hasBrowserWallet();
 
   void _onSignedIn(User user) {
     final userId = 'supabase_${user.id}';
@@ -207,6 +248,7 @@ class WalletService extends ChangeNotifier {
     required double usdcAmount,
     required String question,
     double entryPrice = 0.5,
+    String? contractAddress,
   }) async {
     if (_state.userId == null) throw Exception('Not signed in');
     if (!_state.hasWallet) throw Exception('No wallet');
@@ -217,6 +259,26 @@ class WalletService extends ChangeNotifier {
     _setState(_state.copyWith(usdcBalance: newVal.toStringAsFixed(2)));
 
     try {
+      if (_state.isExternalWallet) {
+        final addr = contractAddress ?? '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072';
+        final web3Res = await web3.buyPositionOnChain(isYes, usdcAmount, addr);
+        if (web3Res.error != null) throw Exception(web3Res.error!);
+        
+        final txHash = web3Res.txHash!;
+        await _post('/api/trade/save-external', {
+          'userId': _state.userId!,
+          'side': isYes ? 'YES' : 'NO',
+          'usdcAmount': usdcAmount.toStringAsFixed(6),
+          'entryPrice': entryPrice.toStringAsFixed(4),
+          'question': question,
+          'txHash': txHash,
+          'marketId': addr,
+        });
+        
+        refreshBalance();
+        return {'txId': txHash, 'state': 'COMPLETE'};
+      }
+
       final res = await _post('/api/trade/buy', {
         'userId': _state.userId!,
         'side': isYes ? 'YES' : 'NO',
@@ -240,6 +302,7 @@ class WalletService extends ChangeNotifier {
     required double shares,
     required String question,
     double entryPrice = 0.5,
+    String? contractAddress,
   }) async {
     if (_state.userId == null) throw Exception('Not signed in');
     if (!_state.hasWallet) throw Exception('No wallet');
@@ -251,6 +314,26 @@ class WalletService extends ChangeNotifier {
     _setState(_state.copyWith(usdcBalance: newVal.toStringAsFixed(2)));
 
     try {
+      if (_state.isExternalWallet) {
+        final addr = contractAddress ?? '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072';
+        final web3Res = await web3.sellPositionOnChain(isYes, shares, addr);
+        if (web3Res.error != null) throw Exception(web3Res.error!);
+        
+        final txHash = web3Res.txHash!;
+        await _post('/api/trade/save-external', {
+          'userId': _state.userId!,
+          'side': isYes ? 'YES' : 'NO',
+          'usdcAmount': (-shares).toStringAsFixed(6),
+          'entryPrice': entryPrice.toStringAsFixed(4),
+          'question': question,
+          'txHash': txHash,
+          'marketId': addr,
+        });
+        
+        refreshBalance();
+        return {'txId': txHash, 'state': 'COMPLETE'};
+      }
+
       final res = await _post('/api/trade/sell', {
         'userId': _state.userId!,
         'side': isYes ? 'YES' : 'NO',
@@ -269,8 +352,29 @@ class WalletService extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> claimWinnings() async {
+  Future<Map<String, dynamic>> claimWinnings({String? contractAddress}) async {
     if (_state.userId == null) throw Exception('Not signed in');
+    
+    if (_state.isExternalWallet) {
+      final addr = contractAddress ?? '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072';
+      final web3Res = await web3.claimOnChain(addr);
+      if (web3Res.error != null) throw Exception(web3Res.error!);
+      
+      final txHash = web3Res.txHash!;
+      await _post('/api/trade/save-external', {
+        'userId': _state.userId!,
+        'side': 'CLAIM',
+        'usdcAmount': '0',
+        'entryPrice': '0',
+        'question': 'Claim Winnings',
+        'txHash': txHash,
+        'marketId': addr,
+      });
+      
+      refreshBalance();
+      return {'txId': txHash, 'state': 'COMPLETE'};
+    }
+    
     final res = await _post('/api/trade/claim', {'userId': _state.userId!});
     // Refresh immediately + again after 8s for on-chain confirmation
     refreshBalance();

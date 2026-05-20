@@ -613,8 +613,19 @@ class _PositionCardState extends State<_PositionCard> {
 
   Future<void> _claim() async {
     setState(() => _claiming = true);
+    final question = widget.position['question'] as String? ?? '';
+    String? contractAddress;
     try {
-      await widget.walletService.claimWinnings();
+      final matchedMarket = (widget.appState.markets as List).firstWhere(
+        (m) => (m.question as String).toLowerCase().contains(
+              question.toLowerCase().split(' ').take(3).join(' '),
+            ),
+      );
+      contractAddress = matchedMarket.id as String?;
+    } catch (_) {}
+
+    try {
+      await widget.walletService.claimWinnings(contractAddress: contractAddress);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('✅ Claim submitted! Check balance in a few seconds.')),
@@ -664,7 +675,7 @@ class _PositionCardState extends State<_PositionCard> {
     }
 
     matchedMarket ??= Market(
-      id: '0xca048d69BaA38C6364d3E107c2b389BB8D1320dB',
+      id: '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072',
       question: question,
       category: 'Crypto',
       context: '',

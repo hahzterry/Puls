@@ -123,10 +123,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _Row(
                           icon: Icons.info_outline_rounded,
                           title: 'Market contract',
-                          subtitle: '0xca048d...20dB',
+                          subtitle: '0x6c1f21...8072',
                           t: t,
                           onTap: () => launchUrl(
-                            Uri.parse('https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
+                            Uri.parse('https://testnet.arcscan.app/address/0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072'),
                             mode: LaunchMode.externalApplication,
                           ),
                           trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
@@ -256,10 +256,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _Row(
                   icon: Icons.info_outline_rounded,
                   title: 'Market contract',
-                  subtitle: '0xca048d...20dB',
+                  subtitle: '0x6c1f21...8072',
                   t: t,
                   onTap: () => launchUrl(
-                    Uri.parse('https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB'),
+                    Uri.parse('https://testnet.arcscan.app/address/0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072'),
                     mode: LaunchMode.externalApplication,
                   ),
                   trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),

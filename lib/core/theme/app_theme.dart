@@ -2,28 +2,28 @@ import 'package:flutter/material.dart';
 
 // ── Semantic palette ──────────────────────────────────────────────────────────
 class PulsColors {
-  // Brand
-  static const indigo = Color(0xFF4F46E5);
-  static const indigoLight = Color(0xFFEEF2FF);
-  static const indigoDark = Color(0xFF3730A3);
+  // Brand — editorial uses dark primary for CTAs
+  static const indigo = Color(0xFF3D5A80);
+  static const indigoLight = Color(0xFFF0EFE9);
+  static const indigoDark = Color(0xFF1A1A1A);
 
-  // Semantic
-  static const green = Color(0xFF16A34A);
-  static const greenLight = Color(0xFFDCFCE7);
-  static const red = Color(0xFFDC2626);
-  static const redLight = Color(0xFFFEE2E2);
-  static const amber = Color(0xFFD97706);
-  static const amberLight = Color(0xFFFEF3C7);
+  // Semantic — muted editorial market colors
+  static const green = Color(0xFF2D8A56);       // forest green (YES)
+  static const greenLight = Color(0xFFF0F7F3);
+  static const red = Color(0xFFC0392B);          // terracotta (NO)
+  static const redLight = Color(0xFFFDF2F1);
+  static const amber = Color(0xFFC9A96E);        // warm gold
+  static const amberLight = Color(0xFFFAF6EE);
 
-  // Neutrals (warm gray)
-  static const gray50 = Color(0xFFFAFAFA);
-  static const gray100 = Color(0xFFF4F4F5);
-  static const gray200 = Color(0xFFE4E4E7);
-  static const gray300 = Color(0xFFD4D4D8);
-  static const gray400 = Color(0xFFA1A1AA);
-  static const gray500 = Color(0xFF71717A);
-  static const gray700 = Color(0xFF3F3F46);
-  static const gray900 = Color(0xFF18181B);
+  // Neutrals (warm gray — editorial)
+  static const gray50 = Color(0xFFFAFAF7);
+  static const gray100 = Color(0xFFF5F4EF);
+  static const gray200 = Color(0xFFEDEDEB);
+  static const gray300 = Color(0xFFD8D8D4);
+  static const gray400 = Color(0xFF9A9A94);
+  static const gray500 = Color(0xFF5A5A5A);
+  static const gray700 = Color(0xFF3A3A3A);
+  static const gray900 = Color(0xFF1A1A1A);
 
   // Dark mode equivalents
   static const dark50 = Color(0xFF09090B);
@@ -33,7 +33,11 @@ class PulsColors {
   static const dark400 = Color(0xFF52525B);
   static const dark500 = Color(0xFF71717A);
   static const dark600 = Color(0xFFA1A1AA);
-  static const dark900 = Color(0xFFFAFAFA);
+  static const dark900 = Color(0xFFFAFAF7);
+
+  // Font families
+  static const fontDisplay = 'Playfair Display';
+  static const fontSans = 'DM Sans';
 }
 
 // ── Theme extension ───────────────────────────────────────────────────────────
@@ -108,16 +112,16 @@ extension PulsThemeX on BuildContext {
 // ── Theme builder ─────────────────────────────────────────────────────────────
 class PulsTheme {
   static const _light = PulsThemeColors(
-    bg: Color(0xFFFFFFFF),
-    surface: Color(0xFFFAFAFA),
-    surfaceRaised: Color(0xFFFFFFFF),
-    border: Color(0xFFE4E4E7),
-    borderStrong: Color(0xFFD4D4D8),
-    text: Color(0xFF18181B),
-    textMuted: Color(0xFF52525B),
-    textSubtle: Color(0xFFA1A1AA),
-    brand: Color(0xFF4F46E5),
-    brandSubtle: Color(0xFFEEF2FF),
+    bg: Color(0xFFFAFAF7),        // warm off-white canvas
+    surface: Color(0xFFFFFFFF),     // pure white cards
+    surfaceRaised: Color(0xFFF5F4EF), // warm elevated
+    border: Color(0xFFEDEDEB),     // warm border
+    borderStrong: Color(0xFFD8D8D4),
+    text: Color(0xFF1A1A1A),       // rich black
+    textMuted: Color(0xFF5A5A5A),  // warm gray
+    textSubtle: Color(0xFF9A9A94), // light warm gray
+    brand: Color(0xFF1A1A1A),      // editorial: dark CTAs
+    brandSubtle: Color(0xFFF0EFE9),
   );
 
   static const _dark = PulsThemeColors(
@@ -138,12 +142,15 @@ class PulsTheme {
 
   static ThemeData _build(Brightness brightness, PulsThemeColors t) {
     final isLight = brightness == Brightness.light;
+    const displayFont = PulsColors.fontDisplay;
+    const bodyFont = PulsColors.fontSans;
+
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       scaffoldBackgroundColor: t.bg,
       extensions: [t],
-      fontFamily: 'Roboto',
+      fontFamily: bodyFont,
       appBarTheme: AppBarTheme(
         backgroundColor: t.bg,
         foregroundColor: t.text,
@@ -151,10 +158,11 @@ class PulsTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
+          fontFamily: displayFont,
           color: t.text,
           fontSize: 17,
           fontWeight: FontWeight.w600,
-          letterSpacing: -0.2,
+          letterSpacing: -0.3,
         ),
         iconTheme: IconThemeData(color: t.text, size: 22),
       ),
@@ -162,7 +170,7 @@ class PulsTheme {
         color: t.surfaceRaised,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           side: BorderSide(color: t.border),
         ),
         margin: EdgeInsets.zero,
@@ -173,20 +181,20 @@ class PulsTheme {
         fillColor: t.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: t.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: t.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: t.brand, width: 1.5),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: t.text, width: 1.5),
         ),
-        hintStyle: TextStyle(color: t.textSubtle, fontSize: 14),
-        labelStyle: TextStyle(color: t.textMuted),
-        prefixStyle: TextStyle(color: t.text),
+        hintStyle: TextStyle(fontFamily: bodyFont, color: t.textSubtle, fontSize: 14),
+        labelStyle: TextStyle(fontFamily: bodyFont, color: t.textMuted),
+        prefixStyle: TextStyle(fontFamily: bodyFont, color: t.text),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: t.bg,
@@ -196,7 +204,7 @@ class PulsTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: t.surfaceRaised,
-        contentTextStyle: TextStyle(color: t.text),
+        contentTextStyle: TextStyle(fontFamily: bodyFont, color: t.text),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         behavior: SnackBarBehavior.floating,
       ),
@@ -206,8 +214,8 @@ class PulsTheme {
       ),
       colorScheme: ColorScheme(
         brightness: brightness,
-        primary: t.brand,
-        onPrimary: Colors.white,
+        primary: isLight ? const Color(0xFF1A1A1A) : const Color(0xFF818CF8),
+        onPrimary: isLight ? Colors.white : Colors.black,
         secondary: t.brand,
         onSecondary: Colors.white,
         surface: t.surface,
@@ -217,38 +225,48 @@ class PulsTheme {
         onError: Colors.white,
       ),
       textTheme: TextTheme(
+        // Serif display — Playfair Display
         displaySmall: TextStyle(
+          fontFamily: displayFont,
           color: t.text, fontSize: 30, fontWeight: FontWeight.w700,
-          height: 1.1, letterSpacing: -0.8,
+          height: 1.12, letterSpacing: -1.0,
         ),
         headlineMedium: TextStyle(
+          fontFamily: displayFont,
           color: t.text, fontSize: 22, fontWeight: FontWeight.w700,
-          height: 1.2, letterSpacing: -0.4,
+          height: 1.2, letterSpacing: -0.5,
         ),
         titleLarge: TextStyle(
+          fontFamily: displayFont,
           color: t.text, fontSize: 18, fontWeight: FontWeight.w600,
-          letterSpacing: -0.2,
+          letterSpacing: -0.3,
         ),
+        // Sans body — DM Sans
         titleMedium: TextStyle(
+          fontFamily: bodyFont,
           color: t.text, fontSize: 15, fontWeight: FontWeight.w600,
         ),
         bodyLarge: TextStyle(
-          color: t.text, fontSize: 15, height: 1.5,
+          fontFamily: bodyFont,
+          color: t.text, fontSize: 15, height: 1.6,
         ),
         bodyMedium: TextStyle(
+          fontFamily: bodyFont,
           color: t.textMuted, fontSize: 13, height: 1.5,
         ),
         labelLarge: TextStyle(
+          fontFamily: bodyFont,
           color: t.text, fontSize: 14, fontWeight: FontWeight.w600,
         ),
         labelSmall: TextStyle(
+          fontFamily: bodyFont,
           color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w500,
-          letterSpacing: 0.4,
+          letterSpacing: 0.5,
         ),
       ),
       // Soft shadow for cards
       shadowColor: isLight
-          ? Colors.black.withValues(alpha: 0.06)
+          ? Colors.black.withValues(alpha: 0.04)
           : Colors.black.withValues(alpha: 0.4),
     );
   }
