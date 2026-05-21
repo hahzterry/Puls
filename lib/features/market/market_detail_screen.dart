@@ -107,9 +107,9 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
     );
 
     return Scaffold(
-      backgroundColor: kIsWeb ? Colors.transparent : t.bg,
+      backgroundColor: t.bg,
       appBar: AppBar(
-        backgroundColor: kIsWeb ? Colors.transparent : t.bg,
+        backgroundColor: t.bg,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, size: 20, color: t.text),
           onPressed: () => Navigator.of(context).pop(),
@@ -340,6 +340,7 @@ class _FullChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final spots = prices.asMap().entries
         .map((e) => FlSpot(e.key.toDouble(), e.value))
         .toList();
@@ -356,7 +357,7 @@ class _FullChart extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: 0.25,
           getDrawingHorizontalLine: (_) => FlLine(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: t.border,
             strokeWidth: 1,
           ),
         ),
@@ -369,7 +370,7 @@ class _FullChart extends StatelessWidget {
               interval: 0.25,
               getTitlesWidget: (v, _) => Text(
                 '${(v * 100).toStringAsFixed(0)}¢',
-                style: TextStyle(color: Colors.grey.withValues(alpha: 0.5), fontSize: 9),
+                style: TextStyle(color: t.textSubtle, fontSize: 9),
               ),
             ),
           ),

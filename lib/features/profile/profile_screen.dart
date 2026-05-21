@@ -662,138 +662,112 @@ class _WalletCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (ws.userId == null) {
-      return Container(
-        padding: const EdgeInsets.all(26),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [t.brand, const Color(0xFF3730A3), t.brand.withValues(alpha: 0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: t.brand.withValues(alpha: 0.35),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
+      return GlassCard(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Positioned(
-              right: -40,
-              top: -40,
-              child: CircleAvatar(
-                radius: 90,
-                backgroundColor: Colors.white.withValues(alpha: 0.06),
-              ),
-            ),
-            Positioned(
-              left: -30,
-              bottom: -30,
-              child: CircleAvatar(
-                radius: 60,
-                backgroundColor: const Color(0xFF4F46E5).withValues(alpha: 0.05),
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Header
+            Row(
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.bolt_rounded, color: Colors.white, size: 24),
-                    const SizedBox(width: 8),
-                    Text(
-                      'PULS PLATINUM WALLET',
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.5),
+                Container(
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [t.brand, const Color(0xFF818CF8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Center(child: Icon(Icons.bolt_rounded, color: Colors.white, size: 24)),
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Onchain Trading Account',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: -0.5),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Instantly setup a secure non-custodial wallet on Arc L1 with one-click Google connection.',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, height: 1.4),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: ws.isLoading ? null : wallet.signInWithGoogle,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: t.brand,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 4,
-                      shadowColor: const Color(0xFF4F46E5).withValues(alpha: 0.12),
-                    ),
-                    child: ws.isLoading
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2.5, color: t.brand),
-                          )
-                        : const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.login_rounded, size: 18),
-                              SizedBox(width: 8),
-                              Text('Connect Google Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                            ],
-                          ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Connect Your Account',
+                          style: TextStyle(color: t.text, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                      const SizedBox(height: 4),
+                      Text('Setup a secure wallet on Arc L1',
+                          style: TextStyle(color: t.textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
+                    ],
                   ),
                 ),
-                if (kIsWeb) ...[
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: ws.isLoading ? null : () async {
-                        try {
-                          await wallet.signInWithExternalWallet();
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Connection failed: $e')),
-                            );
-                          }
-                        }
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: ws.isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                            )
-                          : const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.account_balance_wallet_outlined, size: 18),
-                                SizedBox(width: 8),
-                                Text('Connect Web3 Wallet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              ],
-                            ),
-                    ),
-                  ),
-                ],
-                if (ws.error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(ws.error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
-                ],
               ],
             ),
+            const SizedBox(height: 24),
+            // Features
+            _FeatureRow(icon: Icons.shield_outlined, text: 'Non-custodial MPC wallet — you own your keys', t: t),
+            const SizedBox(height: 10),
+            _FeatureRow(icon: Icons.flash_on_rounded, text: 'USDC as gas — no ETH needed', t: t),
+            const SizedBox(height: 10),
+            _FeatureRow(icon: Icons.speed_rounded, text: 'Sub-second finality on Arc Testnet', t: t),
+            const SizedBox(height: 28),
+            // Google button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: ws.isLoading ? null : wallet.signInWithGoogle,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: t.brand,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                child: ws.isLoading
+                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.login_rounded, size: 20),
+                          SizedBox(width: 10),
+                          Text('Connect with Google', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                        ],
+                      ),
+              ),
+            ),
+            if (kIsWeb) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton(
+                  onPressed: ws.isLoading ? null : () async {
+                    try {
+                      await wallet.signInWithExternalWallet();
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Connection failed: $e')),
+                        );
+                      }
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: t.text,
+                    side: BorderSide(color: t.border, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: ws.isLoading
+                      ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: t.brand))
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.account_balance_wallet_outlined, size: 20, color: t.text),
+                            const SizedBox(width: 10),
+                            Text('Connect Web3 Wallet', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: t.text)),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+            if (ws.error != null) ...[
+              const SizedBox(height: 14),
+              Text(ws.error!, style: TextStyle(color: t.no, fontSize: 13, fontWeight: FontWeight.w600)),
+            ],
           ],
         ),
       );
@@ -1130,6 +1104,25 @@ class _InfoRow extends StatelessWidget {
           Text(value, style: TextStyle(color: t.text, fontWeight: FontWeight.bold, fontSize: 13)),
         ],
       ),
+    );
+  }
+}
+
+// ── Feature row helper ────────────────────────────────────────────────────────
+class _FeatureRow extends StatelessWidget {
+  const _FeatureRow({required this.icon, required this.text, required this.t});
+  final IconData icon;
+  final String text;
+  final PulsThemeColors t;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: t.brand),
+        const SizedBox(width: 12),
+        Expanded(child: Text(text, style: TextStyle(color: t.textMuted, fontSize: 14, height: 1.3))),
+      ],
     );
   }
 }
