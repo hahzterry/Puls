@@ -96,10 +96,20 @@
 
         window._walletAddress = accounts[0];
         window._walletProvider = provider;
+        window._walletSigner = await provider.getSigner();
 
         // Listen for account changes
-        window.ethereum.on('accountsChanged', function(newAccounts) {
+        window.ethereum.on('accountsChanged', async function(newAccounts) {
           window._walletAddress = newAccounts.length > 0 ? newAccounts[0] : null;
+          if (newAccounts.length > 0) {
+            try {
+              window._walletSigner = await window._walletProvider.getSigner();
+            } catch (err) {
+              window._walletSigner = null;
+            }
+          } else {
+            window._walletSigner = null;
+          }
           if (window._onWalletChanged) window._onWalletChanged(window._walletAddress);
         });
 
@@ -113,6 +123,7 @@
     window.disconnectBrowserWallet = function() {
       window._walletAddress = null;
       window._walletProvider = null;
+      window._walletSigner = null;
       return JSON.stringify({ success: true });
     };
 
@@ -140,11 +151,19 @@
       'function claim() returns (uint256)'
     ];
 
+    // Helper to get signer instantly (cached or fresh)
+    async function getSigner() {
+      if (window._walletSigner) return window._walletSigner;
+      if (!window.ethereum) throw new Error('No browser wallet found.');
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      window._walletProvider = provider;
+      window._walletSigner = await provider.getSigner();
+      return window._walletSigner;
+    }
+
     window.buyPositionOnChain = async function(isYes, amountUsdc, contractAddress) {
       try {
-        if (!window.ethereum) throw new Error('No browser wallet found.');
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
+        const signer = await getSigner();
         const userAddr = await signer.getAddress();
 
         // Convert amount to micro USDC (6 decimals)
@@ -164,7 +183,6 @@
         const market = new ethers.Contract(contractAddress, MARKET_ABI, signer);
         const method = isYes ? 'buyYes' : 'buyNo';
         const tx = await market[method](amountBigInt);
-        await tx.wait();
         return JSON.stringify({ txHash: tx.hash });
       } catch (e) {
         return JSON.stringify({ error: e.message || 'Transaction failed' });
@@ -173,9 +191,7 @@
 
     window.sellPositionOnChain = async function(isYes, shares, contractAddress) {
       try {
-        if (!window.ethereum) throw new Error('No browser wallet found.');
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
+        const signer = await getSigner();
 
         const sharesMicro = Math.round(parseFloat(shares) * 1000000);
         const sharesBigInt = BigInt(sharesMicro);
@@ -183,7 +199,6 @@
         const market = new ethers.Contract(contractAddress, MARKET_ABI, signer);
         const method = isYes ? 'sellYes' : 'sellNo';
         const tx = await market[method](sharesBigInt);
-        await tx.wait();
         return JSON.stringify({ txHash: tx.hash });
       } catch (e) {
         return JSON.stringify({ error: e.message || 'Transaction failed' });
@@ -192,13 +207,10 @@
 
     window.claimOnChain = async function(contractAddress) {
       try {
-        if (!window.ethereum) throw new Error('No browser wallet found.');
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
+        const signer = await getSigner();
 
         const market = new ethers.Contract(contractAddress, MARKET_ABI, signer);
         const tx = await market.claim();
-        await tx.wait();
         return JSON.stringify({ txHash: tx.hash });
       } catch (e) {
         return JSON.stringify({ error: e.message || 'Transaction failed' });

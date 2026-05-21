@@ -49,6 +49,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
   late final TextEditingController _ctrl;
   late bool _isBuy;
   double _amount = 50;
+  bool _isExecuting = false;
 
   @override
   void initState() {
@@ -388,10 +389,11 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                 width: double.infinity,
                 height: 52,
                 child: TextButton(
-                  onPressed: _amount > 0
+                  onPressed: (_amount > 0 && !_isExecuting)
                       ? () async {
-                          if (hasRealWallet) {
-                            try {
+                          setState(() => _isExecuting = true);
+                          try {
+                            if (hasRealWallet) {
                               final Map<String, dynamic> result;
                               if (_isBuy) {
                                 result = await walletService.buyPosition(
@@ -423,56 +425,70 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                                 amount: _amount,
                                 walletService: walletService,
                               );
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(e.toString().contains('Insufficient')
-                                        ? e.toString().replaceFirst('Exception: ', '')
-                                        : 'Trade failed: $e'),
-                                    duration: const Duration(seconds: 5),
-                                  ),
-                                );
-                              }
-                            }
-                          } else {
-                            // Demo trade
-                            if (_isBuy) {
-                              appState.addDemoPosition(
-                                market: widget.market,
-                                side: widget.side,
-                                amount: _amount,
-                              );
                             } else {
-                              // Demo sell (remove from portfolio)
-                              // Just pop for simplicity in demo mode
+                              // Demo trade
+                              if (_isBuy) {
+                                appState.addDemoPosition(
+                                  market: widget.market,
+                                  side: widget.side,
+                                  amount: _amount,
+                                );
+                              } else {
+                                // Demo sell (remove from portfolio)
+                                // Just pop for simplicity in demo mode
+                              }
+                              if (!context.mounted) return;
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(_isBuy 
+                                      ? 'Added demo ${isYes ? 'Yes' : 'No'} position.'
+                                      : 'Sold demo ${isYes ? 'Yes' : 'No'} position.'),
+                                ),
+                              );
                             }
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(_isBuy 
-                                    ? 'Added demo ${isYes ? 'Yes' : 'No'} position.'
-                                    : 'Sold demo ${isYes ? 'Yes' : 'No'} position.'),
-                              ),
-                            );
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString().contains('Insufficient')
+                                      ? e.toString().replaceFirst('Exception: ', '')
+                                      : 'Trade failed: $e'),
+                                  duration: const Duration(seconds: 5),
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isExecuting = false);
+                            }
                           }
                         }
                       : null,
                   style: TextButton.styleFrom(
-                    backgroundColor: _amount > 0 ? sideFg : t.border,
+                    backgroundColor: (_amount > 0 && !_isExecuting) ? sideFg : t.border,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text(
-                    hasRealWallet 
-                        ? (_isBuy ? 'Buy $sideLabel with USDC' : 'Sell $sideLabel Shares for USDC')
-                        : 'Confirm demo trade',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15),
-                  ),
+                  child: _isExecuting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : Text(
+                          hasRealWallet 
+                              ? (_isBuy ? 'Buy $sideLabel with USDC' : 'Sell $sideLabel Shares for USDC')
+                              : 'Confirm demo trade',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15),
+                        ),
                 ),
               ),
             ],

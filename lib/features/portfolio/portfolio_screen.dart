@@ -657,7 +657,7 @@ class _PositionCardState extends State<_PositionCard> {
     final hasRealEntryPrice = entryPrice > 0 && entryPrice != 0.5;
     Market? matchedMarket;
 
-    if (state == 'COMPLETE' && amount > 0) {
+    if (state == 'COMPLETE') {
       try {
         matchedMarket = (widget.appState.markets as List).firstWhere(
           (m) => (m.question as String).toLowerCase().contains(
@@ -665,7 +665,7 @@ class _PositionCardState extends State<_PositionCard> {
               ),
         ) as Market;
         currentPrice = isYes ? matchedMarket.yesPrice : matchedMarket.noPrice;
-        final shares = (position['shares'] as num?)?.toDouble() ?? (amount / (hasRealEntryPrice ? entryPrice : 0.5));
+        final shares = (position['shares'] as num?)?.toDouble() ?? (amount > 0 ? (amount / (hasRealEntryPrice ? entryPrice : 0.5)) : 0.0);
         pnl = (shares * currentPrice) - amount;
       } catch (_) {}
     }
@@ -810,7 +810,7 @@ class _PositionCardState extends State<_PositionCard> {
                                 market: matchedMarket!,
                                 side: isYes ? MarketSide.yes : MarketSide.no,
                                 initialIsBuy: false,
-                                maxShares: (position['shares'] as num?)?.toDouble() ?? (amount / (hasRealEntryPrice ? entryPrice : 0.5)),
+                                maxShares: (position['shares'] as num?)?.toDouble() ?? (amount > 0 ? (amount / (hasRealEntryPrice ? entryPrice : 0.5)) : 0.0),
                               ).then((_) => widget.onRefresh?.call());
                             }
                           : null,
