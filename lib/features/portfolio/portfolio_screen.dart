@@ -678,7 +678,7 @@ class _PositionCardState extends State<_PositionCard> {
     }
 
     matchedMarket ??= Market(
-      id: '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072',
+      id: (position['marketId'] as String? ?? position['contractAddress'] as String?) ?? '',
       slug: position['slug'] as String? ?? 'default-slug',
       question: question,
       category: 'Crypto',
@@ -695,6 +695,8 @@ class _PositionCardState extends State<_PositionCard> {
       comments: const [],
       news: const [],
     );
+
+    final hasValidContract = matchedMarket.id.isNotEmpty && matchedMarket.id.startsWith('0x');
 
     Color stateColor;
     String stateLabel;
@@ -808,20 +810,22 @@ class _PositionCardState extends State<_PositionCard> {
                   child: SizedBox(
                     height: 36,
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        showTradePreviewSheet(
-                          context: context,
-                          market: matchedMarket!,
-                          side: isYes ? MarketSide.yes : MarketSide.no,
-                          initialIsBuy: false,
-                          maxShares: (position['shares'] as num?)?.toDouble() ?? (amount / (hasRealEntryPrice ? entryPrice : 0.5)),
-                        ).then((_) => widget.onRefresh?.call());
-                      },
+                      onPressed: hasValidContract
+                          ? () {
+                              showTradePreviewSheet(
+                                context: context,
+                                market: matchedMarket!,
+                                side: isYes ? MarketSide.yes : MarketSide.no,
+                                initialIsBuy: false,
+                                maxShares: (position['shares'] as num?)?.toDouble() ?? (amount / (hasRealEntryPrice ? entryPrice : 0.5)),
+                              ).then((_) => widget.onRefresh?.call());
+                            }
+                          : null,
                       icon: const Icon(Icons.sell_rounded, size: 14),
                       label: const Text('Sell Position', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: t.brand,
-                        side: BorderSide(color: t.brand, width: 1.5),
+                        side: BorderSide(color: hasValidContract ? t.brand : t.border, width: 1.5),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
@@ -834,12 +838,12 @@ class _PositionCardState extends State<_PositionCard> {
                     child: _claiming
                         ? const Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)))
                         : OutlinedButton.icon(
-                            onPressed: _claim,
+                            onPressed: hasValidContract ? _claim : null,
                             icon: const Icon(Icons.redeem_rounded, size: 14),
                             label: const Text('Claim Winnings', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: t.yes,
-                              side: BorderSide(color: t.yes, width: 1.5),
+                              side: BorderSide(color: hasValidContract ? t.yes : t.border, width: 1.5),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                           ),

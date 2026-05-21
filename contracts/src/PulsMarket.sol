@@ -21,7 +21,11 @@ contract PulsMarket {
     // ── State ─────────────────────────────────────────────────────────────────
 
     IERC20 public immutable usdc;
-    address public immutable owner;
+    address public owner;
+
+    uint256 public yesOutstanding;
+    uint256 public noOutstanding;
+    uint256 public totalClaimed;
 
     string  public question;
     uint256 public deadline;
@@ -52,7 +56,7 @@ contract PulsMarket {
         uint256 _deadline,
         uint256 _initialLiquidity // USDC amount (e.g. 10_000_000 = 10 USDC)
     ) {
-        require(_initialLiquidity > 0, "Initial liquidity required");
+        require(_initialLiquidity >= 1_000_000, "Initial liquidity must be >= 1 USDC");
         usdc     = IERC20(_usdc);
         owner    = msg.sender;
         question = _question;
@@ -87,6 +91,7 @@ contract PulsMarket {
         poolYes = newPoolYes;
         poolNo  = newPoolNo;
 
+        yesOutstanding += boughtYes;
         yesShares[msg.sender] += boughtYes;
 
         emit Bought(msg.sender, true, amount, boughtYes);
@@ -109,6 +114,7 @@ contract PulsMarket {
         poolYes = newPoolYes;
         poolNo  = newPoolNo;
 
+        noOutstanding += boughtNo;
         noShares[msg.sender] += boughtNo;
 
         emit Bought(msg.sender, false, amount, boughtNo);
@@ -123,6 +129,7 @@ contract PulsMarket {
         require(shares > 0, "Shares zero");
 
         yesShares[msg.sender] -= shares;
+        yesOutstanding -= shares;
 
         uint256 newPoolYes = poolYes + shares;
         uint256 newPoolNo = k / newPoolYes;
@@ -145,6 +152,7 @@ contract PulsMarket {
         require(shares > 0, "Shares zero");
 
         noShares[msg.sender] -= shares;
+        noOutstanding -= shares;
 
         uint256 newPoolNo = poolNo + shares;
         uint256 newPoolYes = k / newPoolNo;
@@ -185,6 +193,7 @@ contract PulsMarket {
         require(payout > 0, "No winning shares");
 
         claimed[msg.sender] = true;
+        totalClaimed += payout;
         usdc.transfer(msg.sender, payout);
 
         emit Claimed(msg.sender, payout);
@@ -195,16 +204,34 @@ contract PulsMarket {
         require(msg.sender == owner, "Not owner");
         require(resolved, "Not resolved");
 
+        uint256 winningShares = outcome ? yesOutstanding : noOutstanding;
+        uint256 unclaimed = winningShares - totalClaimed;
         uint256 balance = usdc.balanceOf(address(this));
-        // Creator gets whatever is left after subtracting unclaimed winning shares
-        // In the worst case, all winners claim their payout, so the remaining is safe to withdraw.
-        // We leave the winning shares in the contract.
-        // To be safe, we calculate owner amount:
-        // ownerAmt = balance - (total winning shares outstanding)
-        // Since we don't track total outstanding winning shares easily, we can withdraw the remainder
-        // once a grace period has passed, or keep it simple for the MVP:
-        // ownerWithdraw just withdraws the entire remaining balance.
-        usdc.transfer(msg.sender, balance);
+
+        uint256 withdrawable = balance > unclaimed ? balance - unclaimed : 0;
+        require(withdrawable > 0, "No withdrawable balance");
+
+        usdc.transfer(msg.sender, withdrawable);
+    }
+
+    // ── Ownable2Step ──────────────────────────────────────────────────────────
+
+    address public pendingOwner;
+
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    function transferOwnership(address newOwner) external {
+        require(msg.sender == owner, "Not owner");
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
+    }
+
+    function acceptOwnership() external {
+        require(msg.sender == pendingOwner, "Not pending owner");
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
     }
 
     // ── View ──────────────────────────────────────────────────────────────────

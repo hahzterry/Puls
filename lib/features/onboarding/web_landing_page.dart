@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/puls_app_state.dart';
 import '../../app/puls_app.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/config.dart';
 import 'particle_shapes.dart';
 
 class WebLandingPage extends StatefulWidget {
@@ -127,7 +128,7 @@ class _Navbar extends StatelessWidget {
           const Spacer(),
           _NavLink('GitHub', 'https://github.com/rdmbtc/Puls'),
           const SizedBox(width: 8),
-          _NavLink('Explorer', 'https://testnet.arcscan.app/address/0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072'),
+          _NavLink('Explorer', 'https://testnet.arcscan.app/address/$factoryAddress'),
           const SizedBox(width: 16),
           // Theme Toggle button
           IconButton(
@@ -832,26 +833,26 @@ class _StatsSection extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'PulsMarket.sol — Arc Testnet',
-                            style: TextStyle(color: t.text, fontSize: 15, fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072',
-                            style: TextStyle(color: t.textSubtle, fontSize: 12, fontFamily: 'monospace'),
-                          ),
-                        ],
-                      ),
+                          'LMSRMarketFactory.sol — Arc Testnet',
+                          style: TextStyle(color: t.text, fontSize: 15, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          factoryAddress,
+                          style: TextStyle(color: t.textSubtle, fontSize: 12, fontFamily: 'monospace'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    _CopyButton(text: '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072'),
-                    const SizedBox(width: 8),
-                    _SecondaryButton(
-                      label: 'View ↗',
-                      onTap: () => launchUrl(
-                        Uri.parse('https://testnet.arcscan.app/address/0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072'),
-                        mode: LaunchMode.externalApplication,
-                      ),
+                  ),
+                  const SizedBox(width: 12),
+                  _CopyButton(text: factoryAddress),
+                  const SizedBox(width: 8),
+                  _SecondaryButton(
+                    label: 'View ↗',
+                    onTap: () => launchUrl(
+                      Uri.parse('https://testnet.arcscan.app/address/$factoryAddress'),
+                      mode: LaunchMode.externalApplication,
+                    ),
                       small: true,
                     ),
                   ],
@@ -1005,7 +1006,7 @@ class _FooterSection extends StatelessWidget {
                   const Spacer(),
                   _FooterLink('GitHub', 'https://github.com/rdmbtc/Puls'),
                   const SizedBox(width: 20),
-                  _FooterLink('Explorer', 'https://testnet.arcscan.app/address/0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072'),
+                  _FooterLink('Explorer', 'https://testnet.arcscan.app/address/$factoryAddress'),
                   const SizedBox(width: 20),
                   _FooterLink('Faucet', 'https://faucet.circle.com'),
                 ],

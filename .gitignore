@@ -24,7 +24,7 @@ android/app/release
 .vscode/
 
 .agents/
-test/
+/test/
 docs/
 backend/
 

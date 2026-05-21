@@ -31,35 +31,47 @@ class _WebHomeScreen extends StatelessWidget {
     final t = context.puls;
     final size = MediaQuery.sizeOf(context);
 
-    // Find the main contract market or pick first featured, or fallback to mock
+    if (appState.feedStatus == FeedStatus.loading && appState.markets.isEmpty) {
+      return Scaffold(
+        backgroundColor: t.bg,
+        body: WebLayout(
+          child: Center(
+            child: CircularProgressIndicator(color: t.brand),
+          ),
+        ),
+      );
+    }
+
+    if (appState.markets.isEmpty) {
+      return Scaffold(
+        backgroundColor: t.bg,
+        body: WebLayout(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.trending_up_rounded, size: 48, color: t.textSecondary),
+                const SizedBox(height: 16),
+                Text(
+                  'No markets live yet',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: t.text),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Check back soon or activate a market to start trading.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: t.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Find the main contract market or pick first featured
     final featuredMarket = appState.markets.firstWhere(
       (m) => m.isFeatured,
-      orElse: () => appState.markets.isNotEmpty
-          ? appState.markets.first
-          : Market(
-              id: '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072',
-              slug: 'donald-trump-token-2026',
-              question: 'Will Donald Trump launch a new token in 2026?',
-              category: 'Crypto',
-              context: 'Resolves to YES if Donald Trump officially launches a new token on-chain in 2026.',
-              yesPrice: 0.62,
-              noPrice: 0.38,
-              volume: '\$2.4M',
-              liquidity: '\$120K',
-              deadline: DateTime.now().add(const Duration(days: 90)),
-              trend: 8.5,
-              imageUrl: '',
-              clobTokenId: '',
-              volume24hr: 82000,
-              spread: 0.01,
-              bestBid: 0.61,
-              bestAsk: 0.62,
-              isFeatured: false,
-              tags: const [],
-              history: const [],
-              comments: const [],
-              news: const [],
-            ),
+      orElse: () => appState.markets.first,
     );
 
     final trendingMarkets = appState.markets

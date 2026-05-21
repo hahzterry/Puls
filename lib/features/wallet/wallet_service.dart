@@ -380,7 +380,10 @@ class WalletService extends ChangeNotifier {
     if (_state.userId == null) throw Exception('Not signed in');
     
     if (_state.isExternalWallet) {
-      final addr = contractAddress ?? '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072';
+      if (contractAddress == null || contractAddress.isEmpty) {
+        throw Exception('Market contract address not available');
+      }
+      final addr = contractAddress;
       final web3Res = await web3.claimOnChain(addr);
       if (web3Res.error != null) throw Exception(web3Res.error!);
       

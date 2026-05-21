@@ -23,7 +23,8 @@ contract LMSRMarket {
     // ── State ─────────────────────────────────────────────────────────────────
 
     IERC20 public immutable usdc;
-    address public immutable owner;
+    address public owner;
+    uint256 public totalClaimed;
 
     string  public slug;
     uint256 public deadline;
@@ -51,16 +52,19 @@ contract LMSRMarket {
     // ── Constructor ───────────────────────────────────────────────────────────
 
     bool public isFunded;
+    address public immutable factory;
 
     constructor(
         address _usdc,
         string memory _slug,
         uint256 _deadline,
-        uint256 _b // Liquidity parameter (e.g. 1000 USDC = 1_000_000_000)
+        uint256 _b, // Liquidity parameter (e.g. 1000 USDC = 1_000_000_000)
+        address _owner
     ) {
         require(_b > 0, "b required");
         usdc     = IERC20(_usdc);
-        owner    = msg.sender;
+        owner    = _owner;
+        factory  = msg.sender;
         slug     = _slug;
         deadline = _deadline;
         b        = _b;
@@ -68,6 +72,7 @@ contract LMSRMarket {
 
     /// @notice The market creator must seed the maximum theoretical loss (subsidy)
     function fund() external {
+        require(msg.sender == owner || msg.sender == factory, "Not owner or factory");
         require(!isFunded, "Already funded");
         uint256 initialCost = getCostStable(0, 0);
         require(initialCost > 0, "Initial cost too small");
@@ -111,13 +116,16 @@ contract LMSRMarket {
         SD59x18 expTerm = exp((q2_sd.sub(c1_sd)).div(b_sd)); 
         SD59x18 one = sd(1e18);
         SD59x18 inner = one.sub(expTerm);
+        require(unwrap(inner) > 0, "Lopsided market: precision limit");
         SD59x18 logInner = ln(inner);
         
         SD59x18 term = c1_sd.add(b_sd.mul(logInner));
         SD59x18 q1_sd = sd(int256(yesOutstanding * 1e12));
         SD59x18 delta_q_sd = term.sub(q1_sd);
         
-        return uint256(unwrap(delta_q_sd)) / 1e12;
+        int256 deltaVal = unwrap(delta_q_sd);
+        require(deltaVal >= 0, "Math error: negative shares");
+        return uint256(deltaVal) / 1e12;
     }
 
     /// @notice Returns NO shares obtained for spending `amount` USDC
@@ -132,13 +140,16 @@ contract LMSRMarket {
         SD59x18 expTerm = exp((q1_sd.sub(c1_sd)).div(b_sd)); 
         SD59x18 one = sd(1e18);
         SD59x18 inner = one.sub(expTerm);
+        require(unwrap(inner) > 0, "Lopsided market: precision limit");
         SD59x18 logInner = ln(inner);
         
         SD59x18 term = c1_sd.add(b_sd.mul(logInner));
         SD59x18 q2_sd = sd(int256(noOutstanding * 1e12));
         SD59x18 delta_q_sd = term.sub(q2_sd);
         
-        return uint256(unwrap(delta_q_sd)) / 1e12;
+        int256 deltaVal = unwrap(delta_q_sd);
+        require(deltaVal >= 0, "Math error: negative shares");
+        return uint256(deltaVal) / 1e12;
     }
 
     function calcSellYesUsdc(uint256 shares) public view returns (uint256) {
@@ -246,6 +257,7 @@ contract LMSRMarket {
         require(payout > 0, "No winning shares");
 
         claimed[msg.sender] = true;
+        totalClaimed += payout;
         usdc.transfer(msg.sender, payout);
 
         emit Claimed(msg.sender, payout);
@@ -255,8 +267,34 @@ contract LMSRMarket {
         require(msg.sender == owner, "Not owner");
         require(resolved, "Not resolved");
 
+        uint256 winningShares = outcome ? yesOutstanding : noOutstanding;
+        uint256 unclaimed = winningShares - totalClaimed;
         uint256 balance = usdc.balanceOf(address(this));
-        usdc.transfer(msg.sender, balance);
+
+        uint256 withdrawable = balance > unclaimed ? balance - unclaimed : 0;
+        require(withdrawable > 0, "No withdrawable balance");
+
+        usdc.transfer(msg.sender, withdrawable);
+    }
+
+    // ── Ownable2Step ──────────────────────────────────────────────────────────
+
+    address public pendingOwner;
+
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    function transferOwnership(address newOwner) external {
+        require(msg.sender == owner, "Not owner");
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
+    }
+
+    function acceptOwnership() external {
+        require(msg.sender == pendingOwner, "Not pending owner");
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
     }
 
     // ── View ──────────────────────────────────────────────────────────────────

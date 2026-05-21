@@ -32,7 +32,8 @@ contract LMSRMarketFactory {
         uint256 deadline,
         uint256 b
     ) external onlyOwner returns (address market) {
-        LMSRMarket m = new LMSRMarket(usdc, slug, deadline, b);
+        // Pass owner (the factory owner) to the LMSRMarket constructor
+        LMSRMarket m = new LMSRMarket(usdc, slug, deadline, b, owner);
         market = address(m);
         
         // Calculate funding cost
@@ -59,8 +60,36 @@ contract LMSRMarketFactory {
         return markets.length;
     }
 
-    function transferOwner(address newOwner) external onlyOwner {
-        require(newOwner != address(0), "Zero address");
-        owner = newOwner;
+    // ── Proxy functions ───────────────────────────────────────────────────────
+
+    function resolveMarket(address market, bool outcome) external onlyOwner {
+        LMSRMarket(market).resolve(outcome);
+    }
+
+    function withdrawFromMarket(address market) external onlyOwner {
+        LMSRMarket(market).ownerWithdraw();
+        uint256 balance = IERC20(usdc).balanceOf(address(this));
+        if (balance > 0) {
+            require(IERC20(usdc).transfer(owner, balance), "Transfer to owner failed");
+        }
+    }
+
+    // ── Ownable2Step ──────────────────────────────────────────────────────────
+
+    address public pendingOwner;
+
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    function transferOwnership(address newOwner) external onlyOwner {
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
+    }
+
+    function acceptOwnership() external {
+        require(msg.sender == pendingOwner, "Not pending owner");
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
     }
 }

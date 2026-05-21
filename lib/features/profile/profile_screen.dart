@@ -10,6 +10,7 @@ import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../wallet/wallet_service.dart';
 import '../shell/web_layout.dart';
+import '../../core/config.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -122,11 +123,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         _Row(
                           icon: Icons.info_outline_rounded,
-                          title: 'Market contract',
-                          subtitle: '0x6c1f21...8072',
+                          title: 'Factory contract',
+                          subtitle: '${factoryAddress.substring(0, 8)}...${factoryAddress.substring(factoryAddress.length - 4)}',
                           t: t,
                           onTap: () => launchUrl(
-                            Uri.parse('https://testnet.arcscan.app/address/0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072'),
+                            Uri.parse('https://testnet.arcscan.app/address/$factoryAddress'),
                             mode: LaunchMode.externalApplication,
                           ),
                           trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
@@ -255,11 +256,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 _Row(
                   icon: Icons.info_outline_rounded,
-                  title: 'Market contract',
-                  subtitle: '0x6c1f21...8072',
+                  title: 'Factory contract',
+                  subtitle: '${factoryAddress.substring(0, 8)}...${factoryAddress.substring(factoryAddress.length - 4)}',
                   t: t,
                   onTap: () => launchUrl(
-                    Uri.parse('https://testnet.arcscan.app/address/0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072'),
+                    Uri.parse('https://testnet.arcscan.app/address/$factoryAddress'),
                     mode: LaunchMode.externalApplication,
                   ),
                   trailing: Icon(Icons.open_in_new_rounded, size: 14, color: t.textSubtle),
