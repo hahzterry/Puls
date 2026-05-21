@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -228,9 +229,12 @@ class _HeroSectionState extends State<_HeroSection> {
         children: [
           // Particle animation background
           Positioned.fill(
-            child: Opacity(
-              opacity: 0.8,
-              child: ParticleShapes(isDark: isDark, shapeIndex: _shapeIndex),
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 1.5, sigmaY: 1.5),
+              child: Opacity(
+                opacity: 0.8,
+                child: ParticleShapes(isDark: isDark, shapeIndex: _shapeIndex),
+              ),
             ),
           ),
           // Navbar
