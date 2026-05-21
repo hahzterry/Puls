@@ -144,11 +144,11 @@
       'function approve(address spender, uint256 amount) returns (bool)'
     ];
     const MARKET_ABI = [
-      'function buyYes(uint256 amount) returns (uint256)',
-      'function buyNo(uint256 amount) returns (uint256)',
-      'function sellYes(uint256 shares) returns (uint256)',
-      'function sellNo(uint256 shares) returns (uint256)',
-      'function claim() returns (uint256)'
+      'function buyYes(uint256 amount)',
+      'function buyNo(uint256 amount)',
+      'function sellYes(uint256 shares)',
+      'function sellNo(uint256 shares)',
+      'function claim()'
     ];
 
     // Helper to get signer instantly (cached or fresh)
