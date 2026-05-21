@@ -251,7 +251,7 @@ class _FeaturedHeroBanner extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.trending_up_rounded, color: PulsColors.green, size: 16),
+              Icon(Icons.trending_up_rounded, color: t.yes, size: 16),
               const SizedBox(width: 4),
               Text(
                 'Volume: ${market.volume}',
@@ -291,8 +291,8 @@ class _FeaturedHeroBanner extends StatelessWidget {
                   label: 'Buy YES',
                   pct: '$yesPct%',
                   price: TradeMath.formatPrice(market.yesPrice),
-                  color: PulsColors.green,
-                  bg: PulsColors.greenLight,
+                  color: t.yes,
+                  bg: t.yesBg,
                   onPressed: () => showTradePreviewSheet(
                       context: context, market: market, side: MarketSide.yes),
                 ),
@@ -303,8 +303,8 @@ class _FeaturedHeroBanner extends StatelessWidget {
                   label: 'Buy NO',
                   pct: '$noPct%',
                   price: TradeMath.formatPrice(market.noPrice),
-                  color: PulsColors.red,
-                  bg: PulsColors.redLight,
+                  color: t.no,
+                  bg: t.noBg,
                   onPressed: () => showTradePreviewSheet(
                       context: context, market: market, side: MarketSide.no),
                 ),
@@ -396,9 +396,9 @@ class _WebTrendingCardState extends State<_WebTrendingCard> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _QuickPill(label: 'YES $yesPct%', color: PulsColors.green, bg: PulsColors.greenLight),
+                  _QuickPill(label: 'YES $yesPct%', color: t.yes, bg: t.yesBg),
                   const SizedBox(width: 6),
-                  _QuickPill(label: 'NO $noPct%', color: PulsColors.red, bg: PulsColors.redLight),
+                  _QuickPill(label: 'NO $noPct%', color: t.no, bg: t.noBg),
                 ],
               ),
             ],
@@ -461,7 +461,7 @@ class _WebWalletBox extends StatelessWidget {
               if (ws.walletAddress != null && ws.walletAddress!.isNotEmpty)
                 Container(
                   width: 8, height: 8,
-                  decoration: const BoxDecoration(color: PulsColors.green, shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: t.yes, shape: BoxShape.circle),
                 ),
             ],
           ),
@@ -596,13 +596,13 @@ class _WebHotMarketCardState extends State<_WebHotMarketCard> {
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: PulsColors.greenLight,
+                        color: t.yesBg,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         'YES $yesPct%',
-                        style: const TextStyle(
-                          color: PulsColors.green,
+                        style: TextStyle(
+                          color: t.yes,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -615,13 +615,13 @@ class _WebHotMarketCardState extends State<_WebHotMarketCard> {
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: PulsColors.redLight,
+                        color: t.noBg,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         'NO ${100 - yesPct}%',
-                        style: const TextStyle(
-                          color: PulsColors.red,
+                        style: TextStyle(
+                          color: t.no,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),

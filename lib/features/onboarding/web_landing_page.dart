@@ -351,7 +351,7 @@ class _LiveStatsStrip extends StatelessWidget {
         children: [
           _StatChip(icon: Icons.bolt_rounded, label: '100 Live Markets', color: t.brand),
           _Divider(),
-          _StatChip(icon: Icons.account_balance_wallet_rounded, label: 'Circle MPC Wallets', color: PulsColors.green),
+          _StatChip(icon: Icons.account_balance_wallet_rounded, label: 'Circle MPC Wallets', color: t.yes),
           _Divider(),
           _StatChip(icon: Icons.speed_rounded, label: 'Sub-second Finality', color: PulsColors.amber),
           _Divider(),
@@ -722,7 +722,7 @@ class _StatsSection extends StatelessWidget {
                   spacing: 20, runSpacing: 20,
                   children: [
                     _statCard('100+', 'Live Markets', 'From Polymarket Gamma API', t.brand, constraints, cols, t),
-                    _statCard('< 1s', 'Trade Speed', 'Arc Testnet sub-second finality', PulsColors.green, constraints, cols, t),
+                    _statCard('< 1s', 'Trade Speed', 'Arc Testnet sub-second finality', t.yes, constraints, cols, t),
                     _statCard('\$0 ETH', 'Gas Cost', 'USDC is the native gas token', PulsColors.amber, constraints, cols, t),
                     _statCard('MPC', 'Wallet Type', 'Circle developer-controlled wallets', const Color(0xFF0EA5E9), constraints, cols, t),
                   ],
@@ -837,7 +837,7 @@ class _CopyButtonState extends State<_CopyButton> {
       },
       icon: Icon(
         _copied ? Icons.check_circle_outline_rounded : Icons.copy_rounded,
-        color: _copied ? PulsColors.green : t.brand,
+        color: _copied ? t.yes : t.brand,
         size: 18,
       ),
       tooltip: 'Copy contract address',

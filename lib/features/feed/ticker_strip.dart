@@ -68,7 +68,7 @@ class _WebTickerStripState extends State<WebTickerStrip>
         itemBuilder: (context, i) {
           final m = items[i];
           final isUp = m.trendIsPositive;
-          final trendColor = isUp ? PulsColors.green : PulsColors.red;
+          final trendColor = isUp ? t.yes : t.no;
           final yesPrice = m.yesPrice;
           final trend = m.trend;
           final question = m.question;

@@ -162,8 +162,8 @@ class _WatchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final trendPositive = market.trendIsPositive;
-    final trendColor = trendPositive ? PulsColors.green : PulsColors.red;
-    final trendBg = trendPositive ? PulsColors.greenLight : PulsColors.redLight;
+    final trendColor = trendPositive ? t.yes : t.no;
+    final trendBg = trendPositive ? t.yesBg : t.noBg;
 
     return GestureDetector(
       onTap: onTap,
@@ -200,13 +200,13 @@ class _WatchCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: PulsColors.greenLight,
+                          color: t.yesBg,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           'Yes ${TradeMath.formatPrice(market.yesPrice)}',
-                          style: const TextStyle(
-                            color: PulsColors.green,
+                          style: TextStyle(
+                            color: t.yes,
                             fontWeight: FontWeight.w600,
                             fontSize: 12,
                           ),

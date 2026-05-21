@@ -37,7 +37,7 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
     final market = appState.marketById(widget.marketId);
     final t = context.puls;
     final trendPositive = market.trendIsPositive;
-    final trendColor = trendPositive ? PulsColors.green : PulsColors.red;
+    final trendColor = trendPositive ? t.yes : t.no;
 
     final body = ListView(
       padding: EdgeInsets.fromLTRB(20, 8, 20, kIsWeb ? 40 : 110),
@@ -135,13 +135,13 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
             children: [
               Expanded(child: _TradeBtn(
                 label: 'Buy YES', price: TradeMath.formatPrice(market.yesPrice),
-                bg: PulsColors.greenLight, fg: PulsColors.green,
+                bg: t.yesBg, fg: t.yes,
                 onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.yes),
               )),
               const SizedBox(width: 12),
               Expanded(child: _TradeBtn(
                 label: 'Buy NO', price: TradeMath.formatPrice(market.noPrice),
-                bg: PulsColors.redLight, fg: PulsColors.red,
+                bg: t.noBg, fg: t.no,
                 onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.no),
               )),
             ],
@@ -179,7 +179,7 @@ class _ProbabilityPanel extends StatelessWidget {
                   children: [
                     Text('YES', style: TextStyle(color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
-                    Text('$yesPct%', style: const TextStyle(color: PulsColors.green, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1)),
+                    Text('$yesPct%', style: TextStyle(color: t.yes, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1)),
                     Text(TradeMath.formatPrice(market.yesPrice), style: TextStyle(color: t.textMuted, fontSize: 12)),
                   ],
                 ),
@@ -193,7 +193,7 @@ class _ProbabilityPanel extends StatelessWidget {
                     children: [
                       Text('NO', style: TextStyle(color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 2),
-                      Text('$noPct%', style: const TextStyle(color: PulsColors.red, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1)),
+                      Text('$noPct%', style: TextStyle(color: t.no, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1)),
                       Text(TradeMath.formatPrice(market.noPrice), style: TextStyle(color: t.textMuted, fontSize: 12)),
                     ],
                   ),
@@ -205,14 +205,14 @@ class _ProbabilityPanel extends StatelessWidget {
                   children: [
                     _TradeBtn(
                       label: 'YES', price: TradeMath.formatPrice(market.yesPrice),
-                      bg: PulsColors.greenLight, fg: PulsColors.green,
+                      bg: t.yesBg, fg: t.yes,
                       onPressed: () => showTradePreviewSheet(
                         context: context, market: market, side: MarketSide.yes),
                     ),
                     const SizedBox(height: 6),
                     _TradeBtn(
                       label: 'NO', price: TradeMath.formatPrice(market.noPrice),
-                      bg: PulsColors.redLight, fg: PulsColors.red,
+                      bg: t.noBg, fg: t.no,
                       onPressed: () => showTradePreviewSheet(
                         context: context, market: market, side: MarketSide.no),
                     ),
@@ -229,8 +229,8 @@ class _ProbabilityPanel extends StatelessWidget {
               height: 8,
               child: Row(
                 children: [
-                  Expanded(flex: yesPct, child: const ColoredBox(color: PulsColors.green)),
-                  Expanded(flex: noPct, child: const ColoredBox(color: PulsColors.red)),
+                  Expanded(flex: yesPct, child: ColoredBox(color: t.yes)),
+                  Expanded(flex: noPct, child: ColoredBox(color: t.no)),
                 ],
               ),
             ),
@@ -241,13 +241,13 @@ class _ProbabilityPanel extends StatelessWidget {
               children: [
                 Expanded(child: _TradeBtn(
                   label: 'Buy YES', price: TradeMath.formatPrice(market.yesPrice),
-                  bg: PulsColors.greenLight, fg: PulsColors.green,
+                  bg: t.yesBg, fg: t.yes,
                   onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.yes),
                 )),
                 const SizedBox(width: 10),
                 Expanded(child: _TradeBtn(
                   label: 'Buy NO', price: TradeMath.formatPrice(market.noPrice),
-                  bg: PulsColors.redLight, fg: PulsColors.red,
+                  bg: t.noBg, fg: t.no,
                   onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.no),
                 )),
               ],
@@ -295,7 +295,7 @@ class _ChartSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: trendPositive ? PulsColors.greenLight : PulsColors.redLight,
+                  color: trendPositive ? t.yesBg : t.noBg,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -465,9 +465,9 @@ class _BidAskPanel extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _OrderCell(label: 'Best Bid', value: '${(market.bestBid * 100).toStringAsFixed(0)}¢', color: PulsColors.green, t: t)),
+              Expanded(child: _OrderCell(label: 'Best Bid', value: '${(market.bestBid * 100).toStringAsFixed(0)}¢', color: t.yes, t: t)),
               const SizedBox(width: 10),
-              Expanded(child: _OrderCell(label: 'Best Ask', value: '${(market.bestAsk * 100).toStringAsFixed(0)}¢', color: PulsColors.red, t: t)),
+              Expanded(child: _OrderCell(label: 'Best Ask', value: '${(market.bestAsk * 100).toStringAsFixed(0)}¢', color: t.no, t: t)),
               const SizedBox(width: 10),
               Expanded(child: _OrderCell(label: 'Spread', value: '${(market.spread * 100).toStringAsFixed(0)}¢', color: t.textMuted, t: t)),
             ],

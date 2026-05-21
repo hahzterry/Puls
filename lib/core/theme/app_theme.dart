@@ -54,6 +54,10 @@ class PulsThemeColors extends ThemeExtension<PulsThemeColors> {
     required this.textSubtle,
     required this.brand,
     required this.brandSubtle,
+    required this.yes,
+    required this.no,
+    required this.yesBg,
+    required this.noBg,
   });
 
   final Color bg;
@@ -66,6 +70,10 @@ class PulsThemeColors extends ThemeExtension<PulsThemeColors> {
   final Color textSubtle;
   final Color brand;
   final Color brandSubtle;
+  final Color yes;
+  final Color no;
+  final Color yesBg;
+  final Color noBg;
 
   @override
   PulsThemeColors copyWith({
@@ -73,6 +81,7 @@ class PulsThemeColors extends ThemeExtension<PulsThemeColors> {
     Color? border, Color? borderStrong,
     Color? text, Color? textMuted, Color? textSubtle,
     Color? brand, Color? brandSubtle,
+    Color? yes, Color? no, Color? yesBg, Color? noBg,
   }) => PulsThemeColors(
     bg: bg ?? this.bg,
     surface: surface ?? this.surface,
@@ -84,6 +93,10 @@ class PulsThemeColors extends ThemeExtension<PulsThemeColors> {
     textSubtle: textSubtle ?? this.textSubtle,
     brand: brand ?? this.brand,
     brandSubtle: brandSubtle ?? this.brandSubtle,
+    yes: yes ?? this.yes,
+    no: no ?? this.no,
+    yesBg: yesBg ?? this.yesBg,
+    noBg: noBg ?? this.noBg,
   );
 
   @override
@@ -100,6 +113,10 @@ class PulsThemeColors extends ThemeExtension<PulsThemeColors> {
       textSubtle: Color.lerp(textSubtle, other.textSubtle, t)!,
       brand: Color.lerp(brand, other.brand, t)!,
       brandSubtle: Color.lerp(brandSubtle, other.brandSubtle, t)!,
+      yes: Color.lerp(yes, other.yes, t)!,
+      no: Color.lerp(no, other.no, t)!,
+      yesBg: Color.lerp(yesBg, other.yesBg, t)!,
+      noBg: Color.lerp(noBg, other.noBg, t)!,
     );
   }
 }
@@ -123,6 +140,10 @@ class PulsTheme {
     textSubtle: Color(0xFF9A9A94),    // light warm gray
     brand: Color(0xFF4F46E5),         // ★ vibrant indigo
     brandSubtle: Color(0xFFEEF2FF),   // ★ light indigo wash
+    yes: Color(0xFF2D8A56),           // forest green
+    no: Color(0xFFC0392B),            // terracotta red
+    yesBg: Color(0xFFF0F7F3),         // light green wash
+    noBg: Color(0xFFFDF2F1),          // light red wash
   );
 
   // ── Dark: Black + Indigo ──────────────────────────────────────────────
@@ -137,6 +158,10 @@ class PulsTheme {
     textSubtle: Color(0xFF8181AA),     // ★ indigo-tinted subtle
     brand: Color(0xFF818CF8),          // ★ lighter indigo for dark
     brandSubtle: Color(0xFF1E1B4B),    // ★ deep indigo subtle
+    yes: Color(0xFF4ADE80),            // ★ bright green for dark bg
+    no: Color(0xFFF87171),             // ★ bright red for dark bg
+    yesBg: Color(0xFF14332A),          // ★ dark green surface
+    noBg: Color(0xFF331A1A),           // ★ dark red surface
   );
 
   static ThemeData light() => _build(Brightness.light, _light);

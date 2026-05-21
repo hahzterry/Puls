@@ -71,8 +71,8 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
     final ws = walletService.state;
     final t = context.puls;
     final isYes = widget.side == MarketSide.yes;
-    final sideBg = isYes ? PulsColors.greenLight : PulsColors.redLight;
-    final sideFg = isYes ? PulsColors.green : PulsColors.red;
+    final sideBg = isYes ? t.yesBg : t.noBg;
+    final sideFg = isYes ? t.yes : t.no;
     final sideLabel = isYes ? 'YES' : 'NO';
     
     // Dynamic price calculation
@@ -353,7 +353,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: hasRealWallet
-                      ? PulsColors.greenLight
+                      ? t.yesBg
                       : PulsColors.amberLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -363,7 +363,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                       hasRealWallet
                           ? Icons.check_circle_outline_rounded
                           : Icons.info_outline_rounded,
-                      color: hasRealWallet ? PulsColors.green : PulsColors.amber,
+                      color: hasRealWallet ? t.yes : PulsColors.amber,
                       size: 14,
                     ),
                     const SizedBox(width: 8),
@@ -374,7 +374,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                             : 'Demo only — connect wallet in Profile for real trades.',
                         style: TextStyle(
                           color: hasRealWallet
-                              ? PulsColors.green
+                              ? t.yes
                               : PulsColors.amber,
                           fontSize: 12,
                         ),

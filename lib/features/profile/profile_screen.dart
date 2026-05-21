@@ -453,13 +453,13 @@ class _ProfileCard extends StatelessWidget {
               ? Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                      color: PulsColors.greenLight,
+                      color: t.yesBg,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: PulsColors.green.withValues(alpha: 0.2)),
+                      border: Border.all(color: t.yes.withValues(alpha: 0.2)),
                   ),
-                  child: const Text('Connected',
+                  child: Text('Connected',
                       style: TextStyle(
-                          color: PulsColors.green,
+                          color: t.yes,
                           fontSize: 10,
                           fontWeight: FontWeight.w800)),
                 )
@@ -897,17 +897,17 @@ class _WalletCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: PulsColors.greenLight,
+                  color: t.yesBg,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: PulsColors.green.withValues(alpha: 0.2)),
+                  border: Border.all(color: t.yes.withValues(alpha: 0.2)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    CircleAvatar(radius: 3, backgroundColor: PulsColors.green),
-                    SizedBox(width: 6),
+                    CircleAvatar(radius: 3, backgroundColor: t.yes),
+                    const SizedBox(width: 6),
                     Text(
                       'Arc L1 Testnet',
-                      style: TextStyle(color: PulsColors.green, fontSize: 10, fontWeight: FontWeight.w800),
+                      style: TextStyle(color: t.yes, fontSize: 10, fontWeight: FontWeight.w800),
                     ),
                   ],
                 ),
@@ -1019,11 +1019,11 @@ class _WalletCard extends StatelessWidget {
               const Spacer(),
               TextButton.icon(
                 onPressed: wallet.signOut,
-                icon: const Icon(Icons.logout_rounded, size: 14, color: PulsColors.red),
-                label: const Text('Disconnect', style: TextStyle(color: PulsColors.red, fontSize: 12, fontWeight: FontWeight.w800)),
+                icon: Icon(Icons.logout_rounded, size: 14, color: t.no),
+                label: Text('Disconnect', style: TextStyle(color: t.no, fontSize: 12, fontWeight: FontWeight.w800)),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  backgroundColor: PulsColors.redLight,
+                  backgroundColor: t.noBg,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),

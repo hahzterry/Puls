@@ -375,7 +375,7 @@ class _PortfolioChart extends StatelessWidget {
       FlSpot(6, end),
     ];
     final isUp = pnl >= 0;
-    final color = isUp ? PulsColors.green : PulsColors.red;
+    final color = isUp ? t.yes : t.no;
 
     return Container(
       height: 160,
@@ -500,7 +500,7 @@ class _HeroCard extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          const CircleAvatar(radius: 3, backgroundColor: PulsColors.green),
+                          CircleAvatar(radius: 3, backgroundColor: t.yes),
                           const SizedBox(width: 5),
                           Text('Arc Testnet',
                               style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 10, fontWeight: FontWeight.bold)),
@@ -523,14 +523,14 @@ class _HeroCard extends StatelessWidget {
                     if (hasPnl) ...[
                       Icon(
                         pnlPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-                        color: pnlPositive ? PulsColors.green : PulsColors.red,
+                        color: pnlPositive ? t.yes : t.no,
                         size: 16,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'PNL ${pnlPositive ? '+' : ''}\$${totalPnl.toStringAsFixed(2)} USDC',
                         style: TextStyle(
-                          color: pnlPositive ? PulsColors.green : PulsColors.red,
+                          color: pnlPositive ? t.yes : t.no,
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
                         ),
@@ -647,8 +647,8 @@ class _PositionCardState extends State<_PositionCard> {
     final position = widget.position;
     final t = widget.t;
     final isYes = position['side'] == 'YES';
-    final sideBg = isYes ? PulsColors.greenLight : PulsColors.redLight;
-    final sideFg = isYes ? PulsColors.green : PulsColors.red;
+    final sideBg = isYes ? t.yesBg : t.noBg;
+    final sideFg = isYes ? t.yes : t.no;
     final state = position['state'] as String? ?? 'UNKNOWN';
     final amount = (position['usdcAmount'] as num?)?.toDouble() ?? 0.0;
     final entryPrice = (position['entryPrice'] as num?)?.toDouble() ?? 0.0;
@@ -696,12 +696,12 @@ class _PositionCardState extends State<_PositionCard> {
     String stateLabel;
     switch (state) {
       case 'COMPLETE':
-        stateColor = PulsColors.green;
+        stateColor = t.yes;
         stateLabel = 'Confirmed';
         break;
       case 'FAILED':
       case 'DENIED':
-        stateColor = PulsColors.red;
+        stateColor = t.no;
         stateLabel = 'Failed';
         break;
       default:
@@ -746,7 +746,7 @@ class _PositionCardState extends State<_PositionCard> {
                   Text('\$${amount.toStringAsFixed(2)} USDC', style: TextStyle(color: t.text, fontWeight: FontWeight.w800, fontSize: 14)),
                   if (pnl != null && pnl.abs() >= 0.01)
                     Text('${pnl >= 0 ? '+' : ''}\$${pnl.toStringAsFixed(2)}',
-                        style: TextStyle(color: pnl >= 0 ? PulsColors.green : PulsColors.red, fontWeight: FontWeight.w800, fontSize: 12)),
+                        style: TextStyle(color: pnl >= 0 ? t.yes : t.no, fontWeight: FontWeight.w800, fontSize: 12)),
                 ],
               ),
             ],
@@ -766,7 +766,7 @@ class _PositionCardState extends State<_PositionCard> {
                       style: TextStyle(
                         color: (currentPrice - entryPrice).abs() < 0.01
                             ? t.textSubtle
-                            : currentPrice >= entryPrice ? PulsColors.green : PulsColors.red,
+                            : currentPrice >= entryPrice ? t.yes : t.no,
                         fontSize: 11, fontWeight: FontWeight.w600,
                       )),
                 ],
@@ -834,8 +834,8 @@ class _PositionCardState extends State<_PositionCard> {
                             icon: const Icon(Icons.redeem_rounded, size: 14),
                             label: const Text('Claim Winnings', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: PulsColors.green,
-                              side: const BorderSide(color: PulsColors.green, width: 1.5),
+                              foregroundColor: t.yes,
+                              side: BorderSide(color: t.yes, width: 1.5),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                           ),
@@ -871,9 +871,9 @@ class _StatBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: highlight ? PulsColors.greenLight : t.surface,
+        color: highlight ? t.yesBg : t.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: highlight ? PulsColors.green.withValues(alpha: 0.3) : t.border),
+        border: Border.all(color: highlight ? t.yes.withValues(alpha: 0.3) : t.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -881,7 +881,7 @@ class _StatBox extends StatelessWidget {
           Text(label, style: TextStyle(color: t.textSubtle, fontSize: 10, fontWeight: FontWeight.w500)),
           const SizedBox(height: 2),
           Text(value, style: TextStyle(
-            color: highlight ? PulsColors.green : t.text,
+            color: highlight ? t.yes : t.text,
             fontSize: 15, fontWeight: FontWeight.w800,
           )),
         ],

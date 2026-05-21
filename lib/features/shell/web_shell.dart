@@ -76,17 +76,17 @@ class _WebShellState extends State<WebShell>
 
     // Theme-aware gradient
     final gradientBg = isDark
-        ? const Color(0xFF09090B)
+        ? const Color(0xFF0C0A1A)
         : const Color(0xFFFAFAF7);
     final gradientGlow = isDark
         ? const Color(0x40312E81)
-        : const Color(0x1CFAF6EE);
+        : const Color(0x1C4F46E5);
     final gradientEnd = isDark
-        ? const Color(0xFF09090B)
+        ? const Color(0xFF0C0A1A)
         : const Color(0xFFFAFAF7);
     final dotColor = isDark
         ? const Color(0x0AFFFFFF)
-        : const Color(0x0A000000);
+        : const Color(0x0A4F46E5);
 
     return Scaffold(
       backgroundColor: gradientBg,
@@ -263,8 +263,8 @@ class _Sidebar extends StatelessWidget {
                     children: [
                       Container(
                         width: 8, height: 8,
-                        decoration: const BoxDecoration(
-                          color: PulsColors.green, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                          color: t.yes, shape: BoxShape.circle),
                       ),
                       const SizedBox(width: 8),
                       Text('Arc Testnet',
@@ -278,8 +278,8 @@ class _Sidebar extends StatelessWidget {
               else
                 Container(
                   width: 8, height: 8,
-                  decoration: const BoxDecoration(
-                    color: PulsColors.green, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: t.yes, shape: BoxShape.circle),
                 ),
             ],
           ),
@@ -356,8 +356,8 @@ class _Sidebar extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             '\$${double.tryParse(ws.usdcBalance)?.toStringAsFixed(2) ?? ws.usdcBalance} USDC',
-            style: const TextStyle(
-              color: PulsColors.green,
+            style: TextStyle(
+              color: t.yes,
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),

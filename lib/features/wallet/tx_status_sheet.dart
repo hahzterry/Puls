@@ -109,8 +109,8 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
   Widget build(BuildContext context) {
     final t = context.puls;
     final isYes = widget.side == 'YES';
-    final sideColor = isYes ? PulsColors.green : PulsColors.red;
-    final sideBg = isYes ? PulsColors.greenLight : PulsColors.redLight;
+    final sideColor = isYes ? t.yes : t.no;
+    final sideBg = isYes ? t.yesBg : t.noBg;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
@@ -141,14 +141,14 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
                     key: ValueKey(_status),
                     width: 56, height: 56,
                     decoration: BoxDecoration(
-                      color: _status == TxStatus.complete ? PulsColors.greenLight : PulsColors.redLight,
+                      color: _status == TxStatus.complete ? t.yesBg : t.noBg,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       _status == TxStatus.complete
                           ? Icons.check_rounded
                           : Icons.close_rounded,
-                      color: _status == TxStatus.complete ? PulsColors.green : PulsColors.red,
+                      color: _status == TxStatus.complete ? t.yes : t.no,
                       size: 28,
                     ),
                   ),

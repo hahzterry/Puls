@@ -355,8 +355,8 @@ class _MarketCardState extends State<_MarketCard> {
     final market = widget.market;
     final t = widget.t;
     final trendPositive = market.trendIsPositive;
-    final trendColor = trendPositive ? PulsColors.green : PulsColors.red;
-    final trendBg = trendPositive ? PulsColors.greenLight : PulsColors.redLight;
+    final trendColor = trendPositive ? t.yes : t.no;
+    final trendBg = trendPositive ? t.yesBg : t.noBg;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -475,8 +475,8 @@ class _MarketCardState extends State<_MarketCard> {
                       _BuyBtn(
                         label: 'YES',
                         price: TradeMath.formatPrice(market.yesPrice),
-                        bg: PulsColors.greenLight,
-                        fg: PulsColors.green,
+                        bg: t.yesBg,
+                        fg: t.yes,
                         onPressed: () => showTradePreviewSheet(
                           context: context,
                           market: market,
@@ -487,8 +487,8 @@ class _MarketCardState extends State<_MarketCard> {
                       _BuyBtn(
                         label: 'NO',
                         price: TradeMath.formatPrice(market.noPrice),
-                        bg: PulsColors.redLight,
-                        fg: PulsColors.red,
+                        bg: t.noBg,
+                        fg: t.no,
                         onPressed: () => showTradePreviewSheet(
                           context: context,
                           market: market,
@@ -531,7 +531,8 @@ class _MiniSparkline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isUp ? PulsColors.green : PulsColors.red;
+    final t = context.puls;
+    final color = isUp ? t.yes : t.no;
     final spots = prices.asMap().entries
         .map((e) => FlSpot(e.key.toDouble(), e.value))
         .toList();

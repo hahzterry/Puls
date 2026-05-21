@@ -62,7 +62,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
     final market = widget.market;
     final progress = (_dragX.abs() / 140).clamp(0.0, 1.0);
     final side = _dragX >= 0 ? MarketSide.yes : MarketSide.no;
-    final swipeColor = side == MarketSide.yes ? PulsColors.green : PulsColors.red;
+    final swipeColor = side == MarketSide.yes ? t.yes : t.no;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -257,7 +257,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
                                 _Stat(
                                   icon: Picons.trendUp,
                                   label: '${market.trendIsPositive ? '+' : ''}${TradeMath.formatPercent(market.trend)}',
-                                  color: market.trendIsPositive ? PulsColors.green : PulsColors.red,
+                                  color: market.trendIsPositive ? t.yes : t.no,
                                 ),
                                 const SizedBox(width: 8),
                                 if (market.volume24hr > 0)
@@ -307,8 +307,8 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
                                     label: 'YES',
                                     price: TradeMath.formatPrice(
                                         market.yesPrice),
-                                    bg: PulsColors.greenLight,
-                                    fg: PulsColors.green,
+                                    bg: t.yesBg,
+                                    fg: t.yes,
                                     onPressed: () =>
                                         widget.onChoose(MarketSide.yes),
                                   ),
@@ -319,8 +319,8 @@ class _PredictionFeedCardState extends State<PredictionFeedCard> {
                                     label: 'NO',
                                     price: TradeMath.formatPrice(
                                         market.noPrice),
-                                    bg: PulsColors.redLight,
-                                    fg: PulsColors.red,
+                                    bg: t.noBg,
+                                    fg: t.no,
                                     onPressed: () =>
                                         widget.onChoose(MarketSide.no),
                                   ),
@@ -364,7 +364,8 @@ class _CardSparkline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isUp ? PulsColors.green : PulsColors.red;
+    final t = context.puls;
+    final color = isUp ? t.yes : t.no;
     final spots = prices.asMap().entries
         .map((e) => FlSpot(e.key.toDouble(), e.value))
         .toList();
@@ -415,19 +416,20 @@ class _OddsBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return Column(
       children: [
         Row(
           children: [
             Text('Yes ${TradeMath.formatPrice(market.yesPrice)}',
-                style: const TextStyle(
-                    color: PulsColors.green,
+                style: TextStyle(
+                    color: t.yes,
                     fontWeight: FontWeight.w700,
                     fontSize: 13)),
             const Spacer(),
             Text('No ${TradeMath.formatPrice(market.noPrice)}',
-                style: const TextStyle(
-                    color: PulsColors.red,
+                style: TextStyle(
+                    color: t.no,
                     fontWeight: FontWeight.w700,
                     fontSize: 13)),
           ],
@@ -441,11 +443,11 @@ class _OddsBar extends StatelessWidget {
               children: [
                 Expanded(
                   flex: (market.yesPrice * 100).round(),
-                  child: const ColoredBox(color: PulsColors.green),
+                  child: ColoredBox(color: t.yes),
                 ),
                 Expanded(
                   flex: (market.noPrice * 100).round(),
-                  child: const ColoredBox(color: PulsColors.red),
+                  child: ColoredBox(color: t.no),
                 ),
               ],
             ),

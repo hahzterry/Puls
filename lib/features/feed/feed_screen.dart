@@ -325,9 +325,9 @@ class _TopToastState extends State<_TopToast>
   @override
   Widget build(BuildContext context) {
     final bg = widget.isSuccess
-        ? PulsColors.green
+        ? widget.t.yes
         : widget.isError
-            ? PulsColors.red
+            ? widget.t.no
             : widget.t.brand;
 
     return Positioned(
@@ -675,8 +675,8 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                         Container(
                           width: 8,
                           height: 8,
-                          decoration: const BoxDecoration(
-                            color: PulsColors.green,
+                          decoration: BoxDecoration(
+                            color: t.yes,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -699,7 +699,7 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                         separatorBuilder: (_, __) => Divider(color: t.border, height: 16),
                         itemBuilder: (context, i) {
                           final act = _activities[i];
-                          final sideColor = act.isYes ? PulsColors.green : PulsColors.red;
+                          final sideColor = act.isYes ? t.yes : t.no;
                           final sideText = act.isYes ? 'YES' : 'NO';
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
