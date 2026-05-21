@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/puls_app_state.dart';
 import '../../app/puls_app.dart';
 import '../../core/theme/app_theme.dart';
+import 'particle_shapes.dart';
 
 class WebLandingPage extends StatefulWidget {
   const WebLandingPage({super.key});
@@ -187,21 +188,51 @@ class _NavLinkState extends State<_NavLink> {
 }
 
 // ── Hero Section ──────────────────────────────────────────────────────────────
-class _HeroSection extends StatelessWidget {
+class _HeroSection extends StatefulWidget {
   const _HeroSection({required this.scrollOffset});
   final double scrollOffset;
 
   @override
+  State<_HeroSection> createState() => _HeroSectionState();
+}
+
+class _HeroSectionState extends State<_HeroSection> {
+  int _shapeIndex = 0;
+  static const _words = ['Predict', 'Swipe', 'Win'];
+
+  @override
+  void initState() {
+    super.initState();
+    _cycleWords();
+  }
+
+  void _cycleWords() {
+    Future.delayed(const Duration(seconds: 4), () {
+      if (!mounted) return;
+      setState(() => _shapeIndex = (_shapeIndex + 1) % _words.length);
+      _cycleWords();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = context.puls;
+    final isDark = context.isDark;
     final h = MediaQuery.sizeOf(context).height;
-    final parallaxY = -(scrollOffset * 0.2).clamp(0.0, h * 0.25);
-    final heroOpacity = (1 - scrollOffset / (h * 0.5)).clamp(0.0, 1.0);
+    final parallaxY = -(widget.scrollOffset * 0.2).clamp(0.0, h * 0.25);
+    final heroOpacity = (1 - widget.scrollOffset / (h * 0.5)).clamp(0.0, 1.0);
 
     return SizedBox(
       height: h,
       child: Stack(
         children: [
+          // Particle animation background
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.4,
+              child: ParticleShapes(isDark: isDark, shapeIndex: _shapeIndex),
+            ),
+          ),
           // Navbar
           const Positioned(top: 0, left: 0, right: 0, child: _Navbar()),
           // Hero content with parallax
@@ -210,7 +241,7 @@ class _HeroSection extends StatelessWidget {
               offset: Offset(0, parallaxY),
               child: Opacity(
                 opacity: heroOpacity,
-                child: const _HeroContent(),
+                child: _HeroContent(word: _words[_shapeIndex], wordIndex: _shapeIndex),
               ),
             ),
           ),
@@ -235,7 +266,9 @@ class _HeroSection extends StatelessWidget {
 }
 
 class _HeroContent extends StatelessWidget {
-  const _HeroContent();
+  const _HeroContent({required this.word, required this.wordIndex});
+  final String word;
+  final int wordIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -270,18 +303,60 @@ class _HeroContent extends StatelessWidget {
           ),
         ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.15),
         const SizedBox(height: 28),
-        // Title
-        Text(
-          'Trade on the\nFuture of Everything.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: PulsColors.fontDisplay,
-            color: t.text,
-            fontSize: 62,
-            fontWeight: FontWeight.w700,
-            height: 1.12,
-            letterSpacing: -2.0,
-          ),
+        // Title with cycling word
+        Column(
+          children: [
+            Text(
+              'Trade on the',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: PulsColors.fontDisplay,
+                color: t.text,
+                fontSize: 62,
+                fontWeight: FontWeight.w700,
+                height: 1.12,
+                letterSpacing: -2.0,
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Future of ',
+                  style: TextStyle(
+                    fontFamily: PulsColors.fontDisplay,
+                    color: t.text,
+                    fontSize: 62,
+                    fontWeight: FontWeight.w700,
+                    height: 1.12,
+                    letterSpacing: -2.0,
+                  ),
+                ),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 500),
+                  transitionBuilder: (child, anim) => FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: Tween(begin: const Offset(0, 0.3), end: Offset.zero).animate(anim),
+                      child: child,
+                    ),
+                  ),
+                  child: Text(
+                    '$word.',
+                    key: ValueKey(wordIndex),
+                    style: TextStyle(
+                      fontFamily: PulsColors.fontDisplay,
+                      color: t.brand,
+                      fontSize: 62,
+                      fontWeight: FontWeight.w700,
+                      height: 1.12,
+                      letterSpacing: -2.0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ).animate().fadeIn(duration: 600.ms, delay: 100.ms).slideY(begin: 0.15, delay: 100.ms),
         const SizedBox(height: 24),
         // Subtitle
