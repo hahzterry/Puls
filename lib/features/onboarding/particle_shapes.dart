@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 /// Particle shape animation that cycles through Prediction/Swipe/Win shapes.
@@ -232,9 +231,9 @@ class _ParticlePainter extends CustomPainter {
     final prevCount = prevTargets.length;
     final eased = _easeOutQuart(morphProgress);
 
-    final points = <ui.Offset>[];
+    final points = <Offset>[];
     final colors = <Color>[];
-    final baseColor = isDark ? Colors.white : const Color(0xFF4F46E5);
+    final baseColor = isDark ? const Color(0xFF818CF8) : const Color(0xFF4F46E5);
 
     for (int i = 0; i < count; i++) {
       final p = particles[i];
@@ -256,23 +255,20 @@ class _ParticlePainter extends CustomPainter {
       final px = p.x + breatheOffset * cos(p.flickerPhase);
       final py = p.y + breatheOffset * sin(p.flickerPhase);
 
-      // Alpha with flicker
+      // Alpha with flicker - higher base for visibility
       final flicker = sin(morphProgress * pi * 4 + p.flickerPhase * p.flickerSpeed);
-      final alpha = (0.4 + breathe * 0.15 + flicker * 0.1).clamp(0.3, 0.9);
+      final alpha = (0.7 + breathe * 0.15 + flicker * 0.1).clamp(0.5, 1.0);
 
       points.add(Offset(px, py));
       colors.add(baseColor.withValues(alpha: alpha));
     }
 
-    // Draw all particles as small rects for performance
+    // Draw all particles as dots
     final paint = Paint();
-    final dotSize = isDark ? 1.5 : 2.0;
+    const dotSize = 2.5;
     for (int i = 0; i < points.length; i++) {
       paint.color = colors[i];
-      canvas.drawRect(
-        Rect.fromLTWH(points[i].dx, points[i].dy, dotSize, dotSize),
-        paint,
-      );
+      canvas.drawCircle(points[i], dotSize, paint);
     }
   }
 

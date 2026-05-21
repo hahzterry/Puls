@@ -229,7 +229,7 @@ class _HeroSectionState extends State<_HeroSection> {
           // Particle animation background
           Positioned.fill(
             child: Opacity(
-              opacity: 0.4,
+              opacity: 0.8,
               child: ParticleShapes(isDark: isDark, shapeIndex: _shapeIndex),
             ),
           ),
