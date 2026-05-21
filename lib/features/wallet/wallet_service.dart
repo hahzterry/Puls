@@ -211,6 +211,10 @@ class WalletService extends ChangeNotifier {
     final padded = address.toLowerCase().replaceFirst('0x', '').padLeft(64, '0');
     final data = '0x70a08231$padded';
     try {
+      if (kIsWeb) {
+        // Direct RPC calls on Web fail due to CORS. Immediately throw to trigger backend fallback.
+        throw Exception('CORS bypass on web');
+      }
       final res = await _client.post(
         Uri.parse(rpc),
         headers: {'Content-Type': 'application/json'},

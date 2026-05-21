@@ -29,7 +29,7 @@ async function deploy() {
     abi: ABI,
     bytecode: BYTECODE.startsWith('0x') ? BYTECODE : `0x${BYTECODE}`,
     args: [USDC],
-    gas: 4000000n,
+    gas: 10000000n,
   });
 
   console.log(`Tx: ${hash}`);
