@@ -2,7 +2,7 @@ import type { Market } from './types';
 
 export const mockMarkets: Market[] = [
   {
-    id: '0xca048d69BaA38C6364d3E107c2b389BB8D1320dB',
+    id: 'mock-btc-100k',
     question: 'Will Bitcoin close above $100k this quarter?',
     description: 'This market resolves to YES if Bitcoin (BTC) closes at or above $100,000.00 USD according to the Binance spot price at any point before the deadline. Otherwise, it resolves to NO.',
     category: 'Crypto',

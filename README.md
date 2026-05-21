@@ -31,11 +31,11 @@ Users sign in with Google → get a Circle MPC wallet instantly → trade real P
 
 ## Smart Contract
 
-**PulsMarket** — binary prediction market with USDC settlement.
+**LMSRMarketFactory** — factory for prediction markets.
 
-- Address: `0xca048d69BaA38C6364d3E107c2b389BB8D1320dB`
-- Explorer: [testnet.arcscan.app](https://testnet.arcscan.app/address/0xca048d69BaA38C6364d3E107c2b389BB8D1320dB)
-- Source: `contracts/src/PulsMarket.sol`
+- Address: `0x18aa351799665a81a2c20099fa7d7a82199305b7`
+- Explorer: [testnet.arcscan.app](https://testnet.arcscan.app/address/0x18aa351799665a81a2c20099fa7d7a82199305b7)
+- Source: `contracts/src/LMSRMarketFactory.sol`
 
 ---
 

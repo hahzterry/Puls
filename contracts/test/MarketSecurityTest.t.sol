@@ -59,11 +59,13 @@ contract MarketSecurityTest is Test {
     address public owner;
     address public user1;
     address public user2;
+    address public user3;
 
     function setUp() public {
         owner = address(this);
         user1 = address(0x111);
         user2 = address(0x222);
+        user3 = address(0x333);
 
         usdc = new MockUSDC();
         factory = new LMSRMarketFactory(address(usdc));
@@ -71,6 +73,7 @@ contract MarketSecurityTest is Test {
         // Mint USDC to users
         usdc.mint(user1, 10_000 * 10**6);
         usdc.mint(user2, 10_000 * 10**6);
+        usdc.mint(user3, 10_000 * 10**6);
     }
 
     // ── LMSR Security Tests ───────────────────────────────────────────────────
@@ -129,6 +132,65 @@ contract MarketSecurityTest is Test {
 
         assertEq(user1BalAfter - user1BalBefore, sharesBought);
         assertEq(usdc.balanceOf(marketAddr), outstandingWinners - sharesBought);
+    }
+
+    function testLmsrMultiWinnerClaim() public {
+        string memory slug = "lmsr-multi-test";
+        uint256 deadline = block.timestamp + 3600;
+        uint256 b = 10 * 10**6; // 10 USDC
+
+        // Seeding cost
+        uint256 initialCost = 6931471;
+        usdc.approve(address(factory), initialCost);
+
+        // Deploy market
+        address marketAddr = factory.createMarket(slug, deadline, b);
+        LMSRMarket market = LMSRMarket(marketAddr);
+
+        // User1 buys YES
+        vm.startPrank(user1);
+        usdc.approve(marketAddr, type(uint256).max);
+        uint256 buyAmount1 = 10 * 10**6;
+        uint256 user1Shares = market.calcBuyYesShares(buyAmount1);
+        market.buyYes(buyAmount1);
+        vm.stopPrank();
+
+        // User3 buys YES
+        vm.startPrank(user3);
+        usdc.approve(marketAddr, type(uint256).max);
+        uint256 buyAmount3 = 5 * 10**6;
+        uint256 user3Shares = market.calcBuyYesShares(buyAmount3);
+        market.buyYes(buyAmount3);
+        vm.stopPrank();
+
+        // User2 buys NO
+        vm.startPrank(user2);
+        usdc.approve(marketAddr, type(uint256).max);
+        market.buyNo(10 * 10**6);
+        vm.stopPrank();
+
+        // Move to deadline and resolve YES
+        vm.warp(deadline);
+        market.resolve(true);
+
+        // Owner withdraws surplus
+        market.ownerWithdraw();
+
+        // Verify both user1 and user3 can claim their respective winnings
+        uint256 user1BalBefore = usdc.balanceOf(user1);
+        vm.prank(user1);
+        market.claim();
+        uint256 user1BalAfter = usdc.balanceOf(user1);
+        assertEq(user1BalAfter - user1BalBefore, user1Shares);
+
+        uint256 user3BalBefore = usdc.balanceOf(user3);
+        vm.prank(user3);
+        market.claim();
+        uint256 user3BalAfter = usdc.balanceOf(user3);
+        assertEq(user3BalAfter - user3BalBefore, user3Shares);
+
+        // Total claimed should match
+        assertEq(market.totalClaimed(), user1Shares + user3Shares);
     }
 
     function testLmsrFundGating() public {
@@ -205,6 +267,130 @@ contract MarketSecurityTest is Test {
         uint256 user1BalAfter = usdc.balanceOf(user1);
 
         assertEq(user1BalAfter - user1BalBefore, yesShares);
+    }
+
+    function testPulsMultiWinnerClaim() public {
+        uint256 initialLiquidity = 10 * 10**6; // 10 USDC
+        
+        // Pre-compute contract address and approve
+        address predictedAddress = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        usdc.approve(predictedAddress, initialLiquidity);
+        
+        // Deploy PulsMarket
+        PulsMarket market = new PulsMarket(
+            address(usdc),
+            "puls multi test",
+            block.timestamp + 3600,
+            initialLiquidity
+        );
+        address marketAddr = address(market);
+
+        // User1 buys YES
+        vm.startPrank(user1);
+        usdc.approve(marketAddr, type(uint256).max);
+        market.buyYes(15 * 10**6);
+        uint256 user1Shares = market.yesShares(user1);
+        vm.stopPrank();
+
+        // User3 buys YES
+        vm.startPrank(user3);
+        usdc.approve(marketAddr, type(uint256).max);
+        market.buyYes(10 * 10**6);
+        uint256 user3Shares = market.yesShares(user3);
+        vm.stopPrank();
+
+        // User2 buys NO
+        vm.startPrank(user2);
+        usdc.approve(marketAddr, type(uint256).max);
+        market.buyNo(20 * 10**6);
+        vm.stopPrank();
+
+        // Warp to deadline and resolve YES
+        vm.warp(block.timestamp + 3600);
+        market.resolve(true);
+
+        // Owner withdraws surplus
+        market.ownerWithdraw();
+
+        // Verify both user1 and user3 can claim their respective winnings
+        uint256 user1BalBefore = usdc.balanceOf(user1);
+        vm.prank(user1);
+        market.claim();
+        uint256 user1BalAfter = usdc.balanceOf(user1);
+        assertEq(user1BalAfter - user1BalBefore, user1Shares);
+
+        uint256 user3BalBefore = usdc.balanceOf(user3);
+        vm.prank(user3);
+        market.claim();
+        uint256 user3BalAfter = usdc.balanceOf(user3);
+        assertEq(user3BalAfter - user3BalBefore, user3Shares);
+
+        // Total claimed should match
+        assertEq(market.totalClaimed(), user1Shares + user3Shares);
+    }
+
+    function testPulsCpmmInvariant(uint256 buyAmount1, uint256 buyAmount2) public {
+        // Bound the fuzz inputs to reasonable amounts to avoid overflow or out of funds errors
+        buyAmount1 = bound(buyAmount1, 1_000_000, 5_000 * 10**6); // between 1 USDC and 5,000 USDC
+        buyAmount2 = bound(buyAmount2, 1_000_000, 5_000 * 10**6);
+
+        uint256 initialLiquidity = 10_000 * 10**6; // 10,000 USDC
+        
+        // Pre-compute contract address and approve
+        address predictedAddress = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        usdc.approve(predictedAddress, initialLiquidity);
+        
+        PulsMarket market = new PulsMarket(
+            address(usdc),
+            "invariant test",
+            block.timestamp + 3600,
+            initialLiquidity
+        );
+        address marketAddr = address(market);
+
+        uint256 initialK = market.k();
+
+        // User 1 buys YES
+        vm.startPrank(user1);
+        usdc.approve(marketAddr, type(uint256).max);
+        market.buyYes(buyAmount1);
+        vm.stopPrank();
+
+        // Check invariant: poolYes * poolNo should be <= initialK, and difference should be less than poolNo
+        uint256 poolYes1 = market.poolYes();
+        uint256 poolNo1 = market.poolNo();
+        uint256 currentK1 = poolYes1 * poolNo1;
+        assertTrue(currentK1 <= initialK, "K increased or integer division anomaly");
+        assertTrue(initialK - currentK1 < poolNo1, "Invariant difference exceeds division remainder bounds");
+
+        // User 2 buys NO
+        vm.startPrank(user2);
+        usdc.approve(marketAddr, type(uint256).max);
+        market.buyNo(buyAmount2);
+        vm.stopPrank();
+
+        // Check invariant again
+        uint256 poolYes2 = market.poolYes();
+        uint256 poolNo2 = market.poolNo();
+        uint256 currentK2 = poolYes2 * poolNo2;
+        assertTrue(currentK2 <= initialK, "K increased or integer division anomaly");
+        assertTrue(initialK - currentK2 < poolYes2, "Invariant difference exceeds division remainder bounds");
+
+        // User 1 sells some shares
+        uint256 user1Shares = market.yesShares(user1);
+        uint256 sellShares = user1Shares / 2;
+        if (sellShares > 0) {
+            vm.startPrank(user1);
+            market.sellYes(sellShares);
+            vm.stopPrank();
+
+            // Check invariant after sell
+            uint256 poolYes3 = market.poolYes();
+            uint256 poolNo3 = market.poolNo();
+            uint256 currentK3 = poolYes3 * poolNo3;
+            assertTrue(currentK3 <= initialK, "K increased or integer division anomaly");
+            assertTrue(initialK - currentK3 < poolYes3, "Invariant difference exceeds division remainder bounds");
+        }
     }
 
     function testPulsMinLiquidity() public {

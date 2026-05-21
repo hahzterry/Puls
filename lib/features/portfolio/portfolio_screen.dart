@@ -615,16 +615,9 @@ class _PositionCardState extends State<_PositionCard> {
     setState(() => _claiming = true);
     final question = widget.position['question'] as String? ?? '';
     final slug = widget.position['slug'] as String? ?? '';
-    String? contractAddress = widget.position['contractAddress'] as String?;
+    final String? contractAddress = widget.position['contractAddress'] as String?;
     if (contractAddress == null || contractAddress.isEmpty) {
-      try {
-        final matchedMarket = (widget.appState.markets as List).firstWhere(
-          (m) => (m.question as String).toLowerCase().contains(
-                question.toLowerCase().split(' ').take(3).join(' '),
-              ),
-        );
-        contractAddress = matchedMarket.id as String?;
-      } catch (_) {}
+      throw Exception('Market contract address not available');
     }
 
     try {

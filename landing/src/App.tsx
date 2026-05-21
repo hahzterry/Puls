@@ -26,7 +26,7 @@ import { useAccount, useDisconnect, useReadContract, useWriteContract } from 'wa
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { supabase } from './supabaseClient';
 
-const BACKEND_URL = 'http://localhost:3000';
+const BACKEND_URL = 'https://84-22-148-57.sslip.io';
 
 function App() {
   // Navigation & Views
@@ -301,7 +301,7 @@ function App() {
         // Positions shape: { positions: Array, totalSpent: number }
         const mapped = data.positions.map((p: any) => ({
           id: p.id || Math.random().toString(),
-          marketId: p.marketId || p.market_id || '0xca048d69BaA38C6364d3E107c2b389BB8D1320dB',
+          marketId: p.marketId || p.market_id || '',
           question: p.question,
           side: p.side,
           usdcAmount: p.usdcAmount || p.usdc_amount,
@@ -653,8 +653,8 @@ function App() {
       console.warn('Backend claim failed, running mock claim.', e);
       // Fallback mock claim payout
       // Find won positions and calculate payout
-      const contractPositions = positions.filter(p => p.marketId === '0xca048d69BaA38C6364d3E107c2b389BB8D1320dB');
       const featured = markets.find(m => m.isContract);
+      const contractPositions = positions.filter(p => p.marketId === (featured?.id || ''));
       if (!featured || !featured.resolved) {
         setClaimError('No resolved contract-based positions to claim.');
         setSubmittingClaim(false);
