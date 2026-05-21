@@ -614,18 +614,21 @@ class _PositionCardState extends State<_PositionCard> {
   Future<void> _claim() async {
     setState(() => _claiming = true);
     final question = widget.position['question'] as String? ?? '';
-    String? contractAddress;
-    try {
-      final matchedMarket = (widget.appState.markets as List).firstWhere(
-        (m) => (m.question as String).toLowerCase().contains(
-              question.toLowerCase().split(' ').take(3).join(' '),
-            ),
-      );
-      contractAddress = matchedMarket.id as String?;
-    } catch (_) {}
+    final slug = widget.position['slug'] as String? ?? '';
+    String? contractAddress = widget.position['contractAddress'] as String?;
+    if (contractAddress == null || contractAddress.isEmpty) {
+      try {
+        final matchedMarket = (widget.appState.markets as List).firstWhere(
+          (m) => (m.question as String).toLowerCase().contains(
+                question.toLowerCase().split(' ').take(3).join(' '),
+              ),
+        );
+        contractAddress = matchedMarket.id as String?;
+      } catch (_) {}
+    }
 
     try {
-      await widget.walletService.claimWinnings(contractAddress: contractAddress);
+      await widget.walletService.claimWinnings(contractAddress: contractAddress, slug: slug);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('✅ Claim submitted! Check balance in a few seconds.')),
@@ -676,6 +679,7 @@ class _PositionCardState extends State<_PositionCard> {
 
     matchedMarket ??= Market(
       id: '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072',
+      slug: position['slug'] as String? ?? 'default-slug',
       question: question,
       category: 'Crypto',
       context: '',

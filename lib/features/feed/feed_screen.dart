@@ -94,7 +94,9 @@ class _FeedBody extends StatelessWidget {
         usdcAmount: amount,
         question: market.question,
         entryPrice: isYes ? market.yesPrice : market.noPrice,
-        contractAddress: market.id,
+        contractAddress: market.contractAddress,
+        slug: market.slug,
+        deadline: market.deadline.millisecondsSinceEpoch ~/ 1000,
       );
       if (context.mounted) {
         _showToast(
@@ -469,7 +471,9 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
         usdcAmount: amount,
         question: market.question,
         entryPrice: isYes ? market.yesPrice : market.noPrice,
-        contractAddress: market.id,
+        contractAddress: market.contractAddress,
+        slug: market.slug,
+        deadline: market.deadline.millisecondsSinceEpoch ~/ 1000,
       );
       if (context.mounted) {
         _showToast(

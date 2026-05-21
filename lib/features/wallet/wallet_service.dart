@@ -247,6 +247,8 @@ class WalletService extends ChangeNotifier {
     required bool isYes,
     required double usdcAmount,
     required String question,
+    required String slug,
+    required int deadline,
     double entryPrice = 0.5,
     String? contractAddress,
   }) async {
@@ -260,7 +262,15 @@ class WalletService extends ChangeNotifier {
 
     try {
       if (_state.isExternalWallet) {
-        final addr = contractAddress ?? '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072';
+        String addr = contractAddress ?? '';
+        if (addr.isEmpty) {
+          final activateRes = await _post('/api/market/activate', {
+            'slug': slug,
+            'deadline': deadline,
+          });
+          addr = activateRes['contractAddress'] as String? ?? '';
+          if (addr.isEmpty) throw Exception('Failed to activate prediction market contract');
+        }
         final web3Res = await web3.buyPositionOnChain(isYes, usdcAmount, addr);
         if (web3Res.error != null) throw Exception(web3Res.error!);
         
@@ -285,6 +295,8 @@ class WalletService extends ChangeNotifier {
         'usdcAmount': usdcAmount.toStringAsFixed(6),
         'question': question,
         'entryPrice': entryPrice.toStringAsFixed(4),
+        'slug': slug,
+        'deadline': deadline,
       });
 
       // Trigger a sync in the background immediately
@@ -301,6 +313,8 @@ class WalletService extends ChangeNotifier {
     required bool isYes,
     required double shares,
     required String question,
+    required String slug,
+    required int deadline,
     double entryPrice = 0.5,
     String? contractAddress,
   }) async {
@@ -315,7 +329,15 @@ class WalletService extends ChangeNotifier {
 
     try {
       if (_state.isExternalWallet) {
-        final addr = contractAddress ?? '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072';
+        String addr = contractAddress ?? '';
+        if (addr.isEmpty) {
+          final activateRes = await _post('/api/market/activate', {
+            'slug': slug,
+            'deadline': deadline,
+          });
+          addr = activateRes['contractAddress'] as String? ?? '';
+          if (addr.isEmpty) throw Exception('Failed to retrieve contract address for selling');
+        }
         final web3Res = await web3.sellPositionOnChain(isYes, shares, addr);
         if (web3Res.error != null) throw Exception(web3Res.error!);
         
@@ -340,6 +362,8 @@ class WalletService extends ChangeNotifier {
         'shares': shares.toStringAsFixed(6),
         'question': question,
         'entryPrice': entryPrice.toStringAsFixed(4),
+        'slug': slug,
+        'deadline': deadline,
       });
 
       // Trigger a sync in the background immediately
@@ -352,7 +376,7 @@ class WalletService extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> claimWinnings({String? contractAddress}) async {
+  Future<Map<String, dynamic>> claimWinnings({String? contractAddress, String? slug}) async {
     if (_state.userId == null) throw Exception('Not signed in');
     
     if (_state.isExternalWallet) {
@@ -375,7 +399,10 @@ class WalletService extends ChangeNotifier {
       return {'txId': txHash, 'state': 'COMPLETE'};
     }
     
-    final res = await _post('/api/trade/claim', {'userId': _state.userId!});
+    final res = await _post('/api/trade/claim', {
+      'userId': _state.userId!,
+      'slug': slug ?? '',
+    });
     // Refresh immediately + again after 8s for on-chain confirmation
     refreshBalance();
     Future.delayed(const Duration(seconds: 8), refreshBalance);

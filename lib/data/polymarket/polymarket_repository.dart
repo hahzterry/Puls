@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 
+import '../../core/config.dart' show backendUrl;
 import '../models/market.dart';
 
 class PolymarketRepository {
-  static const _gamma = 'https://gamma-api.polymarket.com';
   int _offset = 0;
 
   Future<List<Market>> fetchMarkets({int limit = 100}) async {
@@ -26,8 +26,7 @@ class PolymarketRepository {
 
   Future<List<Market>> _fetch(int limit, int offset) async {
     final uri = Uri.parse(
-      '$_gamma/markets?limit=$limit&active=true&closed=false'
-      '&order=volume&ascending=false&offset=$offset',
+      '$backendUrl/api/markets?limit=$limit&offset=$offset',
     );
     final res = await http
         .get(uri, headers: {'Accept': 'application/json'})
@@ -60,13 +59,18 @@ class PolymarketRepository {
           ? DateTime.tryParse(endRaw) ?? DateTime.now().add(const Duration(days: 30))
           : DateTime.now().add(const Duration(days: 30));
 
+      final yesPrice = (j['yesPrice'] as num?)?.toDouble() ?? prices[0];
+      final noPrice = (j['noPrice'] as num?)?.toDouble() ?? prices[1];
+
       return Market(
         id: j['id']?.toString() ?? j['slug']?.toString() ?? '',
+        slug: j['slug'] as String? ?? '',
+        contractAddress: j['contractAddress'] as String?,
         question: j['question'] as String? ?? '',
         category: category,
         context: j['description'] as String? ?? '',
-        yesPrice: prices[0].clamp(0.01, 0.99),
-        noPrice: prices[1].clamp(0.01, 0.99),
+        yesPrice: yesPrice.clamp(0.01, 0.99),
+        noPrice: noPrice.clamp(0.01, 0.99),
         volume: _fmt(volNum),
         liquidity: _fmt(liqNum),
         deadline: deadline,

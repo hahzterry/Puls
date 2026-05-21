@@ -25,7 +25,7 @@ contract LMSRMarket {
     IERC20 public immutable usdc;
     address public immutable owner;
 
-    string  public question;
+    string  public slug;
     uint256 public deadline;
     bool    public resolved;
     bool    public outcome; // true = YES wins, false = NO wins
@@ -54,14 +54,14 @@ contract LMSRMarket {
 
     constructor(
         address _usdc,
-        string memory _question,
+        string memory _slug,
         uint256 _deadline,
         uint256 _b // Liquidity parameter (e.g. 1000 USDC = 1_000_000_000)
     ) {
         require(_b > 0, "b required");
         usdc     = IERC20(_usdc);
         owner    = msg.sender;
-        question = _question;
+        slug     = _slug;
         deadline = _deadline;
         b        = _b;
     }
@@ -262,14 +262,14 @@ contract LMSRMarket {
     // ── View ──────────────────────────────────────────────────────────────────
 
     function getMarketInfo() external view returns (
-        string memory _question,
+        string memory _slug,
         uint256 _deadline,
         bool _resolved,
         bool _outcome,
         uint256 _yesOutstanding,
         uint256 _noOutstanding
     ) {
-        return (question, deadline, resolved, outcome, yesOutstanding, noOutstanding);
+        return (slug, deadline, resolved, outcome, yesOutstanding, noOutstanding);
     }
 
     function getUserPosition(address user) external view returns (

@@ -41,6 +41,7 @@ class MockMarketRepository {
   List<Market> get markets => [
         Market(
           id: 'fed-cut-june',
+          slug: 'fed-cut-june',
           question: 'Will the Fed cut rates by June?',
           category: 'Macro',
           context:
@@ -81,6 +82,7 @@ class MockMarketRepository {
         ),
         Market(
           id: 'ai-agent-app',
+          slug: 'ai-agent-app',
           question: 'Will an AI agent app reach top 5 in the US by July?',
           category: 'AI',
           context:
@@ -116,6 +118,7 @@ class MockMarketRepository {
         ),
         Market(
           id: 'btc-100k',
+          slug: 'btc-100k',
           question: 'Will Bitcoin close above 100k this quarter?',
           category: 'Crypto',
           context:
@@ -151,6 +154,7 @@ class MockMarketRepository {
         ),
         Market(
           id: 'champions-final',
+          slug: 'champions-final',
           question: 'Will the Champions final go to extra time?',
           category: 'Sports',
           context:
@@ -181,6 +185,7 @@ class MockMarketRepository {
         ),
         Market(
           id: 'eth-etf-may',
+          slug: 'eth-etf-may',
           question: 'Will ETH ETF net flows beat BTC this month?',
           category: 'Crypto',
           context: 'ETH products saw two strong inflow days while BTC cooled.',
@@ -210,6 +215,7 @@ class MockMarketRepository {
         ),
         Market(
           id: 'summer-film',
+          slug: 'summer-film',
           question: 'Will a sci-fi film top the global box office this summer?',
           category: 'Culture',
           context:

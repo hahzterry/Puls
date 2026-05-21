@@ -1,8 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
-import '../core/config.dart' show backendUrl;
 import '../core/utils/trade_math.dart';
 import '../data/mock/mock_market_repository.dart';
 import '../data/models/market.dart';
@@ -64,42 +61,7 @@ class PulsAppState extends ChangeNotifier {
     try {
       debugPrint('[Puls] Fetching Polymarket markets…');
       final fetched = await _polymarket.fetchMarkets(limit: 100);
-
-      // Attempt to load the live contract market from backend
-      try {
-        final res = await http.get(Uri.parse('$backendUrl/api/market/info')).timeout(const Duration(seconds: 4));
-        if (res.statusCode == 200) {
-          final data = jsonDecode(res.body) as Map<String, dynamic>;
-          final deadlineSeconds = data['deadline'] as int? ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
-          final contractAddr = data['contractAddress'] as String? ?? '0x6c1f21fe9d5dff9a2feabd9c760cb9296aa48072';
-          final liveMarket = Market(
-            id: contractAddr,
-            question: data['question'] as String? ?? 'Will Bitcoin close above \$100k this quarter?',
-            category: 'Crypto',
-            context: 'This market is backed by a smart contract deployed on the Arc Testnet.',
-            yesPrice: (data['yesPrice'] as num?)?.toDouble() ?? 0.5,
-            noPrice: (data['noPrice'] as num?)?.toDouble() ?? 0.5,
-            volume: '\$${(data['totalVolume'] as num?)?.toStringAsFixed(1) ?? "20.0"}',
-            liquidity: '\$${(data['poolYes'] as num?)?.toStringAsFixed(1) ?? "10.0"}',
-            deadline: DateTime.fromMillisecondsSinceEpoch(deadlineSeconds * 1000),
-            trend: 0.0,
-            isFeatured: true,
-            tags: const ['Live Chain', 'Crypto'],
-            history: const [],
-            comments: const [],
-            news: const [],
-          );
-
-          // Prepend the live market to the list!
-          _markets = [liveMarket, ...fetched];
-        } else {
-          _markets = fetched;
-        }
-      } catch (e) {
-        debugPrint('[Puls] Live market info fetch failed: $e');
-        _markets = fetched;
-      }
-
+      _markets = fetched;
       debugPrint('[Puls] Loaded ${_markets.length} markets');
       feedStatus = FeedStatus.loaded;
     } catch (e, st) {

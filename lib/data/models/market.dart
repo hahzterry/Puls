@@ -17,6 +17,8 @@ class Market {
     required this.history,
     required this.comments,
     required this.news,
+    required this.slug,
+    this.contractAddress,
     this.imageUrl = '',
     this.volume24hr = 0,
     this.lastTradePrice = 0,
@@ -29,6 +31,8 @@ class Market {
   });
 
   final String id;
+  final String slug;
+  final String? contractAddress;
   final String question;
   final String category;
   final String context;
