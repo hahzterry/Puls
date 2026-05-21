@@ -50,7 +50,7 @@ class _WebHomeScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.trending_up_rounded, size: 48, color: t.textSecondary),
+                Icon(Icons.trending_up_rounded, size: 48, color: t.textMuted),
                 const SizedBox(height: 16),
                 Text(
                   'No markets live yet',
@@ -59,7 +59,7 @@ class _WebHomeScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Check back soon or activate a market to start trading.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: t.textSecondary),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: t.textMuted),
                 ),
               ],
             ),
