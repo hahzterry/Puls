@@ -206,7 +206,8 @@ class WalletService extends ChangeNotifier {
 
   /// Reads USDC balance directly from Arc Testnet via eth_call — no backend needed.
   Future<void> _fetchBalanceFromChain(String address) async {
-    const rpc = 'https://rpc.testnet.arc.network';
+    const qnRpc = 'https://rpc.quicknode.testnet.arc.network/QN_d4190f3d83544ea0ac4dd926a12e30c7';
+    const publicRpc = 'https://rpc.testnet.arc.network';
     const usdc = '0x3600000000000000000000000000000000000000';
     final padded = address.toLowerCase().replaceFirst('0x', '').padLeft(64, '0');
     final data = '0x70a08231$padded';
@@ -215,8 +216,33 @@ class WalletService extends ChangeNotifier {
         // Direct RPC calls on Web fail due to CORS. Immediately throw to trigger backend fallback.
         throw Exception('CORS bypass on web');
       }
+
+      // Try QuickNode first
+      try {
+        final res = await _client.post(
+          Uri.parse(qnRpc),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'jsonrpc': '2.0',
+            'method': 'eth_call',
+            'params': [{'to': usdc, 'data': data}, 'latest'],
+            'id': 1,
+          }),
+        ).timeout(const Duration(seconds: 4));
+        final result = (jsonDecode(res.body) as Map)['result'] as String?;
+        if (result != null && result.length >= 2) {
+          final raw = BigInt.tryParse(result.replaceFirst('0x', ''), radix: 16) ?? BigInt.zero;
+          final balance = raw / BigInt.from(1000000);
+          _setState(_state.copyWith(usdcBalance: balance.toStringAsFixed(2)));
+          return;
+        }
+      } catch (e) {
+        debugPrint('[Puls] QuickNode balance fetch failed, falling back to public RPC: $e');
+      }
+
+      // Fallback to public RPC
       final res = await _client.post(
-        Uri.parse(rpc),
+        Uri.parse(publicRpc),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'jsonrpc': '2.0',
