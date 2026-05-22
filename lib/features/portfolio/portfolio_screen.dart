@@ -673,6 +673,7 @@ class _PositionCardState extends State<_PositionCard> {
     matchedMarket ??= Market(
       id: (position['marketId'] as String? ?? position['contractAddress'] as String?) ?? '',
       slug: position['slug'] as String? ?? 'default-slug',
+      contractAddress: position['contractAddress'] as String? ?? position['marketId'] as String?,
       question: question,
       category: 'Crypto',
       context: '',

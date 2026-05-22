@@ -51,12 +51,26 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
   double _amount = 50;
   bool _isExecuting = false;
 
+  String _formatShares(double shares) {
+    final microShares = (shares * 1000000).floor();
+    final value = microShares / 1000000;
+    String str = value.toStringAsFixed(6);
+    while (str.contains('.') && (str.endsWith('0') || str.endsWith('.'))) {
+      if (str.endsWith('.')) {
+        str = str.substring(0, str.length - 1);
+        break;
+      }
+      str = str.substring(0, str.length - 1);
+    }
+    return str;
+  }
+
   @override
   void initState() {
     super.initState();
     _isBuy = widget.initialIsBuy;
     _amount = _isBuy ? 50.0 : (widget.maxShares ?? 10.0);
-    _ctrl = TextEditingController(text: _amount.toStringAsFixed(0));
+    _ctrl = TextEditingController(text: _isBuy ? _amount.toStringAsFixed(0) : _formatShares(_amount));
   }
 
   @override
@@ -159,7 +173,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                         onTap: () => setState(() {
                           _isBuy = false;
                           _amount = widget.maxShares ?? 10.0;
-                          _ctrl.text = _amount.toStringAsFixed(0);
+                          _ctrl.text = _formatShares(_amount);
                         }),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -282,7 +296,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                           child: GestureDetector(
                             onTap: () => setState(() {
                               _amount = amt;
-                              _ctrl.text = amt.toStringAsFixed(2);
+                              _ctrl.text = _formatShares(amt);
                             }),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 160),
@@ -324,7 +338,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                     if (_isBuy) ...[
                       _PreviewRow(
                           label: 'Estimated Shares',
-                          value: estShares.toStringAsFixed(2),
+                          value: _formatShares(estShares),
                           t: t),
                       _PreviewRow(
                           label: 'Potential Payout',
@@ -342,7 +356,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                           t: t),
                       _PreviewRow(
                           label: 'Shares Owned',
-                          value: '${widget.maxShares?.toStringAsFixed(2) ?? "0.00"} $sideLabel',
+                          value: '${widget.maxShares != null ? _formatShares(widget.maxShares!) : "0"} $sideLabel',
                           t: t,
                           isLast: true),
                     ]
