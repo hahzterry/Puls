@@ -613,7 +613,6 @@ class _PositionCardState extends State<_PositionCard> {
 
   Future<void> _claim() async {
     setState(() => _claiming = true);
-    final question = widget.position['question'] as String? ?? '';
     final slug = widget.position['slug'] as String? ?? '';
     final String? contractAddress = widget.position['contractAddress'] as String?;
     if (contractAddress == null || contractAddress.isEmpty) {
