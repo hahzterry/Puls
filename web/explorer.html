@@ -401,7 +401,7 @@
       if (s < 86400) return Math.round(s / 3600) + 'h ago';
       return Math.round(s / 86400) + 'd ago';
     }
-    function fmtAmt(n) { n = Number(n) || 0; return '$' + (n < 1 ? n.toFixed(3) : n.toFixed(2)); }
+    function fmtAmt(n) { n = Number(n) || 0; return '$' + (n > 0 && n < 1 ? parseFloat(n.toFixed(6)).toString() : n.toFixed(2)); }
 
     var flowAll = [], flowFilter = 'all', flowProofUrl = null;
 
