@@ -67,7 +67,8 @@ class _BlogSectionState extends State<BlogSection> {
     if (_news.isNotEmpty) return;
     setState(() => _loadingNews = true);
     try {
-      final res = await http.get(Uri.parse('https://min-api.cryptocompare.com/data/v2/news/?lang=EN'));
+      final target = 'https://min-api.cryptocompare.com/data/v2/news/?lang=EN';
+      final res = await http.get(Uri.parse('https://api.allorigins.win/raw?url=${Uri.encodeComponent(target)}'));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (mounted) {
@@ -112,8 +113,8 @@ class _BlogSectionState extends State<BlogSection> {
   Widget build(BuildContext context) {
     final t = context.puls;
     // Hide entirely while empty so Home stays clean before the blog has content.
-    if (_loading) return const SizedBox.shrink();
-    if (_failed || _posts.isEmpty) return const SizedBox.shrink();
+    if (_loading && _loadingNews) return const SizedBox.shrink();
+    if (_posts.isEmpty && _news.isEmpty && !_loading && !_loadingNews) return const SizedBox.shrink();
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
@@ -178,10 +179,13 @@ class _BlogSectionState extends State<BlogSection> {
       ),
       const SizedBox(height: 14),
       if (_tabIndex == 0) ...[
-        for (final p in _posts) ...[
-          BlogPostCard(post: p, onTap: () => _open(p)),
-          const SizedBox(height: 12),
-        ],
+        if (_posts.isEmpty)
+          const Padding(padding: EdgeInsets.all(20), child: Center(child: Text('No agents analysis yet.')))
+        else
+          for (final p in _posts) ...[
+            BlogPostCard(post: p, onTap: () => _open(p)),
+            const SizedBox(height: 12),
+          ],
       ] else ...[
         if (_loadingNews)
           const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()))

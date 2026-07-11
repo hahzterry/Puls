@@ -20,7 +20,7 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
   
   late final AnimationController _scrollController = AnimationController(
     vsync: this,
-    duration: const Duration(seconds: 20),
+    duration: const Duration(seconds: 100000),
   )..repeat();
 
   @override
@@ -65,8 +65,9 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
     final color = up ? t.yes : t.no;
     final icon = up ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+    return Container(
+      width: 120,
+      alignment: Alignment.center,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -111,12 +112,16 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
             ],
           );
 
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const NeverScrollableScrollPhysics(),
+          final elapsed = _scrollController.value * 100000;
+          final dx = -((elapsed * 42) % 372);
+
+          return OverflowBox(
+            minWidth: 0,
+            maxWidth: double.infinity,
+            alignment: Alignment.centerLeft,
             child: Transform.translate(
-              offset: Offset(-(_scrollController.value * 400) % 400, 0),
-              child: Row(children: [pairs, pairs, pairs, pairs, pairs]),
+              offset: Offset(dx, 0),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [pairs, pairs, pairs, pairs, pairs, pairs]),
             ),
           );
         },
