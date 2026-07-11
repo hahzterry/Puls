@@ -66,6 +66,7 @@ class _BlogSectionState extends State<BlogSection> {
   Future<void> _fetchNews() async {
     if (_news.isNotEmpty) return;
     setState(() => _loadingNews = true);
+    try {
       final target = 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fcointelegraph.com%2Frss';
       final res = await http.get(Uri.parse(target));
       if (res.statusCode == 200) {
