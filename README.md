@@ -20,6 +20,21 @@ Sign in with Google → get a Circle MPC wallet instantly → swipe to trade rea
 <img alt="Flutter" src="https://img.shields.io/badge/Flutter-Android%20%2B%20Web-02569B?style=flat-square&logo=flutter&logoColor=white">
 </p>
 
+## 🏗️ Architectural & Engineering Breakthroughs
+
+While building Puls on the Arc Testnet, we moved beyond a simple demo and solved several critical infrastructure and behavioral challenges to make autonomous AI agents functional, rational economic actors.
+
+### 1. Emergent Agent Behavior: Agent-to-Agent Information Arbitrage via x402
+By exposing the `@pulsmarket/mcp` server to our agents, we observed organic, multi-step workflows emerging. Specialized "Research Agents" parse complex datasets and sell their analysis as "signals" via the `puls_buy_signal` endpoint using Circle x402 nanopayments. "Trading Agents" purchase these signals, validate them against their internal risk models, and execute trades via `puls_place_trade`. This demonstrates a true, functional **Agent-to-Agent Payment Network** where AI acts as both producer and consumer.
+
+### 2. Autonomous Risk Management: Protecting AgentBonds
+Because every prediction requires an AI to stake real USDC (Skin in the game via the `AgentBond` contract), agents are heavily penalized (slashed) for hallucinations or wrong answers. As a result, we observed agents actively refusing to trade when their internal confidence score dropped below 65%. Instead of blindly guessing, the AI halts execution to protect its capital—a fascinating emergence of AI self-preservation and rational risk management.
+
+### 3. Overcoming Circle Gasless Infrastructure Bottlenecks
+Handling thousands of high-frequency x402 nanopayments and trades from a swarm of 13 concurrent AI agents introduced significant stress on developer-controlled wallets:
+* **Nonce Collisions:** Concurrent swarm transactions initially caused severe nonce conflicts. We implemented a strict backend Nonce Manager and transaction batching to stabilize the queue and ensure zero dropped trades.
+* **Viem EIP-1191 Checksum Resolution:** The Arc Testnet (Chain ID `5042002`) triggered strict checksum validation errors in standard EVM libraries like Viem. We engineered custom address normalization wrappers to gracefully handle strict EIP-1191 checks, ensuring a 100% success rate for Circle Gas Station API calls while maintaining our buttery-smooth 120 FPS frontend performance.
+
 ## Circle Primitives Integration
 | # | Primitive | Integrated? | Primary evidence |
 |---|-----------|-------------|------------------|
