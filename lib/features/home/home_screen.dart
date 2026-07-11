@@ -11,7 +11,7 @@ import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
 import '../market/market_detail_screen.dart';
 import '../market/trade_preview_sheet.dart';
-import '../market/swipe_discovery_screen.dart';
+import '../market/market_card.dart';
 import '../shell/web_layout.dart';
 import '../shell/shell_nav.dart';
 import '../onboarding/help_button.dart';
@@ -24,6 +24,7 @@ import 'promo_carousel.dart';
 import '../rewards/points_quests_card.dart';
 import '../rewards/season_leaderboard_card.dart';
 import '../blog/blog_section.dart';
+import 'home_api_widgets.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -173,6 +174,9 @@ class _WebHomeScreen extends StatelessWidget {
               const HumansVsAgentsCard(),
               const SizedBox(height: 16),
               const SeasonLeaderboardCard(),
+              const SizedBox(height: 16),
+              const FearAndGreedWidget(),
+              const SizedBox(height: 16),
               _WebWalletBox(ws: ws, wallet: wallet, t: t),
               const SizedBox(height: 28),
               PulsEmojiText('🔥 Hot Markets',
@@ -195,8 +199,12 @@ class _WebHomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: WebLayout(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          children: [
+            const CryptoTickerStrip(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: size.width < 900
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,6 +220,8 @@ class _WebHomeScreen extends StatelessWidget {
                     const HumansVsAgentsCard(),
                     const SizedBox(height: 16),
                     const SeasonLeaderboardCard(),
+                    const SizedBox(height: 16),
+                    const FearAndGreedWidget(),
                     const SizedBox(height: 16),
                     _WebWalletBox(ws: ws, wallet: wallet, t: t),
                     const SizedBox(height: 24),
@@ -261,6 +271,9 @@ class _WebHomeScreen extends StatelessWidget {
                   ],
                 )
               : bodyContent,
+        ),
+            ),
+          ],
         ),
       ),
     );

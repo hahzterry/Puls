@@ -431,7 +431,7 @@ class _MarketCard extends StatelessWidget {
         children: [
           // Background image (or category fallback).
           Image.network(
-            market.imageUrl.isNotEmpty ? market.imageUrl : 'https://picsum.photos/seed/${market.id}/600/800',
+            market.imageUrl.isNotEmpty ? market.imageUrl : 'https://source.unsplash.com/1080x1920/?${market.category},cyberpunk',
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => _fallbackBg(t),
           ),

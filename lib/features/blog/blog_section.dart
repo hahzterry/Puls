@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/widgets/puls_snack.dart';
 import '../../core/widgets/puls_page_route.dart';
 
@@ -24,13 +27,17 @@ class BlogSection extends StatefulWidget {
 
 class _BlogSectionState extends State<BlogSection> {
   List<BlogPost> _posts = [];
+  List<dynamic> _news = [];
   bool _loading = true;
+  bool _loadingNews = false;
   bool _failed = false;
+  int _tabIndex = 0; // 0 = AI Agents, 1 = Real News
 
   @override
   void initState() {
     super.initState();
     _fetch();
+    _fetchNews();
   }
 
   Future<void> _fetch() async {
@@ -56,6 +63,25 @@ class _BlogSectionState extends State<BlogSection> {
     }
   }
 
+  Future<void> _fetchNews() async {
+    if (_news.isNotEmpty) return;
+    setState(() => _loadingNews = true);
+    try {
+      final res = await http.get(Uri.parse('https://min-api.cryptocompare.com/data/v2/news/?lang=EN'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (mounted) {
+          setState(() {
+            _news = (data['Data'] as List?)?.take(widget.limit).toList() ?? [];
+            _loadingNews = false;
+          });
+        }
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingNews = false);
+    }
+  }
+
   void _open(BlogPost p) {
     Navigator.of(context)
         .push(pulsRoute<void>(
@@ -63,6 +89,10 @@ class _BlogSectionState extends State<BlogSection> {
           builder: (_) => BlogPostScreen(postId: p.id, preview: p),
         ))
         .then((_) => _fetch());
+  }
+
+  void _openNews(String url) {
+    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
   Future<void> _compose() async {
@@ -103,14 +133,108 @@ class _BlogSectionState extends State<BlogSection> {
               style: TextStyle(color: t.brand, fontWeight: FontWeight.w800)),
         ),
       ]),
-      const SizedBox(height: 2),
-      Text('Daily AI analyses + community posts. Tip great writing in USDC.',
-          style: TextStyle(color: t.textMuted, fontSize: 12.5)),
+      const SizedBox(height: 12),
+      // Toggle TabBar
+      Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: t.surfaceRaised,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => _tabIndex = 0),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _tabIndex == 0 ? t.surface : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: _tabIndex == 0 ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4)] : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text('🤖 AI Agents', style: TextStyle(color: _tabIndex == 0 ? t.text : t.textSubtle, fontSize: 13, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => _tabIndex = 1),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _tabIndex == 1 ? t.surface : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: _tabIndex == 1 ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4)] : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text('🌍 Real News', style: TextStyle(color: _tabIndex == 1 ? t.text : t.textSubtle, fontSize: 13, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
       const SizedBox(height: 14),
-      for (final p in _posts) ...[
-        BlogPostCard(post: p, onTap: () => _open(p)),
-        const SizedBox(height: 12),
+      if (_tabIndex == 0) ...[
+        for (final p in _posts) ...[
+          BlogPostCard(post: p, onTap: () => _open(p)),
+          const SizedBox(height: 12),
+        ],
+      ] else ...[
+        if (_loadingNews)
+          const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()))
+        else if (_news.isEmpty)
+          const Padding(padding: EdgeInsets.all(20), child: Center(child: Text('No news available.')))
+        else
+          for (final n in _news) ...[
+            _buildNewsCard(n, t),
+            const SizedBox(height: 12),
+          ],
       ],
     ]);
+  }
+
+  Widget _buildNewsCard(dynamic n, PulsThemeColors t) {
+    return InkWell(
+      onTap: () => _openNews(n['url'] ?? ''),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: t.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: t.border),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: t.brand.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(6)),
+              child: Text('REAL NEWS', style: TextStyle(color: t.brand, fontSize: 9.5, fontWeight: FontWeight.w900)),
+            ),
+            const Spacer(),
+            Text(n['source_info']?['name'] ?? 'News', style: TextStyle(color: t.textSubtle, fontSize: 11)),
+          ]),
+          const SizedBox(height: 10),
+          if (n['imageurl'] != null && n['imageurl'].toString().isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(n['imageurl'], height: 130, cacheHeight: 260, width: double.infinity, fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+            ),
+            const SizedBox(height: 10),
+          ],
+          Text(n['title'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: t.text, fontSize: 16, fontWeight: FontWeight.w900, height: 1.25, letterSpacing: -0.3)),
+          if (n['body'] != null) ...[
+            const SizedBox(height: 6),
+            Text(n['body'], maxLines: 3, overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: t.textMuted, fontSize: 13, height: 1.45)),
+          ],
+        ]),
+      ),
+    );
   }
 }

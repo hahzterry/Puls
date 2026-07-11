@@ -10,7 +10,7 @@ import { arcTestnet } from 'viem/chains';
 //   Preview:  DRY=1 node sweep-faucet-wallets.mjs
 //   Execute:        node sweep-faucet-wallets.mjs
 const TREASURY = '0xD138925168aD03fEe0Cca73cD949F1077C82c093';
-const FILE = process.argv[2] || 'C:\\Users\\User\\Documents\\Projects\\Arc\\Puls\\.agents\\wallets with usdc.txt';
+const FILE = process.argv[2] || 'C:\\Users\\User\\Documents\\Projects\\Arc\\Puls\\.agents\\wallets with usdc eurc cirbtc.txt';
 const DRY = process.env.DRY === '1';
 const rpc = http(process.env.ARC_RPC_URL || undefined);
 const pc = createPublicClient({ chain: arcTestnet, transport: rpc });

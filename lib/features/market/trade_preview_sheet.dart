@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core/widgets/puls_snack.dart';
 
@@ -66,6 +67,19 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
   late bool _isBuy;
   double _amount = 50;
   bool _isExecuting = false;
+  String _loadingQuote = 'Processing...';
+
+  static const _propheticQuotes = [
+    'Consulting the digital oracle...',
+    'Aligning the stars on Arc...',
+    'Reading the prediction tea leaves...',
+    'Summoning the market spirits...',
+    'Locking your prophecy...',
+    'Calculating the inevitable...',
+    'Weaving fate into the blockchain...',
+    'Connecting to the hive mind...',
+    'Forging your destiny on-chain...'
+  ];
 
   String _formatShares(double shares) {
     final microShares = (shares * 1000000).floor();
@@ -488,7 +502,10 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                   onPressed: (_amount > 0 && !_isExecuting)
                       ? () async {
                           final snack = PulsSnack.of(context);
-                          setState(() => _isExecuting = true);
+                          setState(() {
+                            _isExecuting = true;
+                            _loadingQuote = _propheticQuotes[math.Random().nextInt(_propheticQuotes.length)];
+                          });
                           try {
                             if (hasRealWallet) {
                               final Map<String, dynamic> result;
@@ -596,9 +613,9 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                             ),
                             if (_isExecuting) ...[
                               const SizedBox(width: 10),
-                              const Text(
-                                'Processing…',
-                                style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                              Text(
+                                _loadingQuote,
+                                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ],

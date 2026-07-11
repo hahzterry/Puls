@@ -56,6 +56,9 @@ class PulsAvatar extends StatelessWidget {
       ),
     );
 
+    final seed = name.isNotEmpty ? Uri.encodeComponent(name) : 'human';
+    final fallbackUrl = 'https://api.dicebear.com/9.x/notionists/png?seed=$seed&size=${(size * 2).round().clamp(64, 256)}';
+
     Widget child;
     final pfp = agentPfpAsset(name);
     if (pfp != null) {
@@ -67,11 +70,17 @@ class PulsAvatar extends StatelessWidget {
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) => fallback,
       );
-    } else if (url == null || url!.isEmpty) {
-      child = fallback;
-    } else {
+    } else if (url != null && url!.isNotEmpty) {
       child = CachedNetworkImage(
         imageUrl: normalizeAvatarUrl(url!, size: (size * 2).round().clamp(64, 256)),
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorWidget: (_, __, ___) => fallback,
+      );
+    } else {
+      child = CachedNetworkImage(
+        imageUrl: fallbackUrl,
         width: size,
         height: size,
         fit: BoxFit.cover,

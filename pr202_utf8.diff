@@ -1,0 +1,1459 @@
+﻿diff --git a/lib/core/tour_keys.dart b/lib/core/tour_keys.dart
+index 6b7ddc3..3f88643 100644
+--- a/lib/core/tour_keys.dart
++++ b/lib/core/tour_keys.dart
+@@ -1,9 +1,5 @@
+ import 'package:flutter/widgets.dart';
+ 
+-final GlobalKey tourFeedKey = GlobalKey(debugLabel: 'tourFeedKey');
+-final GlobalKey tourDiscoverKey = GlobalKey(debugLabel: 'tourDiscoverKey');
+-final GlobalKey tourHomeKey = GlobalKey(debugLabel: 'tourHomeKey');
+-final GlobalKey tourPortfolioKey = GlobalKey(debugLabel: 'tourPortfolioKey');
+-final GlobalKey tourCreatorsKey = GlobalKey(debugLabel: 'tourCreatorsKey');
+-final GlobalKey tourAgentKey = GlobalKey(debugLabel: 'tourAgentKey');
+-final GlobalKey tourProfileKey = GlobalKey(debugLabel: 'tourProfileKey');
++final GlobalKey tourSwarmKey = GlobalKey(debugLabel: 'tourSwarmKey');
++final GlobalKey tourUsdcKey = GlobalKey(debugLabel: 'tourUsdcKey');
++final GlobalKey tourMarketKey = GlobalKey(debugLabel: 'tourMarketKey');
+diff --git a/lib/features/agent/agent_inbox_widget.dart b/lib/features/agent/agent_inbox_widget.dart
+index db3e301..560e1dd 100644
+--- a/lib/features/agent/agent_inbox_widget.dart
++++ b/lib/features/agent/agent_inbox_widget.dart
+@@ -96,9 +96,7 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
+         Map<String, dynamic> payload = {};
+         try {
+           payload = jsonDecode('${m['message']}') as Map<String, dynamic>;
+-        } catch (e) {
+-          debugPrint('[Puls] agent inbox: bad DM payload for ${m['id']}: $e');
+-        }
++        } catch (_) {}
+         dms.add({
+           'id': m['id'],
+           'read': m['read'] == true,
+@@ -111,9 +109,7 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
+         });
+       }
+       if (mounted) setState(() => _dms = dms);
+-    } catch (e) {
+-      debugPrint('[Puls] agent inbox fetch failed: $e');
+-    }
++    } catch (_) {}
+   }
+ 
+   List<Map<String, dynamic>> get _visible =>
+diff --git a/lib/features/agent/agent_screen.dart b/lib/features/agent/agent_screen.dart
+index 038faec..55d66aa 100644
+--- a/lib/features/agent/agent_screen.dart
++++ b/lib/features/agent/agent_screen.dart
+@@ -278,9 +278,7 @@ class _AgentScreenState extends State<AgentScreen>
+             final sr = jsonDecode(stratRes.body) as Map<String, dynamic>;
+             strategy = sr['strategy'] as String? ?? 'NONE';
+           }
+-        } catch (e) {
+-          debugPrint('[Puls] agent strategy fetch failed: $e');
+-        }
++        } catch (_) {}
+         setState(() {
+           _started = true;
+           _agentAddress = r['agentAddress'] as String?;
+@@ -294,9 +292,7 @@ class _AgentScreenState extends State<AgentScreen>
+               'Welcome back. Your agent is live with \$${bal.toStringAsFixed(2)} USDC available. Ask me to trade, or withdraw the funds back to your wallet anytime.'));
+         });
+       }
+-    } catch (e) {
+-      debugPrint('[Puls] agent status load failed: $e');
+-    }
++    } catch (_) {}
+   }
+ 
+   @override
+diff --git a/lib/features/comments/comment_thread.dart b/lib/features/comments/comment_thread.dart
+index 674a823..d33cdc3 100644
+--- a/lib/features/comments/comment_thread.dart
++++ b/lib/features/comments/comment_thread.dart
+@@ -7,7 +7,6 @@ import '../../core/theme/app_theme.dart';
+ import '../../core/widgets/gradient_text.dart';
+ import '../../core/widgets/agent_badge.dart';
+ import '../../core/widgets/puls_avatar.dart';
+-import '../../core/widgets/puls_snack.dart';
+ 
+ class Comment {
+   Comment({
+@@ -122,7 +121,6 @@ class _CommentThreadState extends State<CommentThread> {
+     final body = _inputCtrl.text.trim();
+     if (body.isEmpty || _sending) return;
+     setState(() => _sending = true);
+-    final snack = PulsSnack.of(context);
+     try {
+       final payload = <String, dynamic>{
+         'target_type': widget.targetType,
+@@ -140,56 +138,29 @@ class _CommentThreadState extends State<CommentThread> {
+         _replyToId = null;
+         _replyToName = null;
+         await _fetch();
+-      } else {
+-        snack.error(_errorFrom(res.body, 'Couldn\'t post your comment'));
+       }
+-    } catch (e) {
+-      debugPrint('[Puls] comment send failed: $e');
+-      snack.error('Couldn\'t post your comment. Check your connection.');
+-    }
++    } catch (_) {}
+     if (mounted) setState(() => _sending = false);
+   }
+ 
+   Future<void> _toggleLike(String commentId) async {
+     try {
+-      final res = await http.post(
++      await http.post(
+         Uri.parse('$backendUrl/api/comments/$commentId/like'),
+         headers: _authHeaders,
+       );
+-      if (res.statusCode != 200 && res.statusCode != 201) {
+-        throw Exception('like failed (${res.statusCode})');
+-      }
+       await _fetch();
+-    } catch (e) {
+-      debugPrint('[Puls] comment like failed: $e');
+-    }
++    } catch (_) {}
+   }
+ 
+   Future<void> _delete(String commentId) async {
+-    final snack = PulsSnack.of(context);
+     try {
+-      final res = await http.delete(
++      await http.delete(
+         Uri.parse('$backendUrl/api/comments/$commentId'),
+         headers: _authHeaders,
+       );
+-      if (res.statusCode != 200 && res.statusCode != 204) {
+-        throw Exception('delete failed (${res.statusCode})');
+-      }
+       await _fetch();
+-    } catch (e) {
+-      debugPrint('[Puls] comment delete failed: $e');
+-      snack.error('Couldn\'t delete that comment.');
+-    }
+-  }
+-
+-  /// Best-effort extraction of a server-provided `error` string, falling back
+-  /// to [fallback] when the body isn't JSON or has no error field.
+-  String _errorFrom(String responseBody, String fallback) {
+-    try {
+-      final data = jsonDecode(responseBody);
+-      if (data is Map && data['error'] is String) return data['error'] as String;
+     } catch (_) {}
+-    return fallback;
+   }
+ 
+   void _startReply(String id, String name) {
+diff --git a/lib/features/feed/feed_screen.dart b/lib/features/feed/feed_screen.dart
+index 2ad4c52..cb3b406 100644
+--- a/lib/features/feed/feed_screen.dart
++++ b/lib/features/feed/feed_screen.dart
+@@ -319,13 +319,9 @@ class _FeedHeader extends StatelessWidget {
+           TextButton.icon(
+             onPressed: () {
+               buildPulsTour(
+-                feedKey: tourFeedKey,
+-                discoverKey: tourDiscoverKey,
+-                homeKey: tourHomeKey,
+-                portfolioKey: tourPortfolioKey,
+-                creatorsKey: tourCreatorsKey,
+-                agentKey: tourAgentKey,
+-                profileKey: tourProfileKey,
++                swarmKey: tourSwarmKey,
++                usdcKey: tourUsdcKey,
++                marketKey: tourMarketKey,
+               ).start(context);
+             },
+             icon: Icon(Icons.help_outline_rounded, size: 16, color: t.brand),
+diff --git a/lib/features/market/ai_oracle_panel.dart b/lib/features/market/ai_oracle_panel.dart
+index edba300..64955a5 100644
+--- a/lib/features/market/ai_oracle_panel.dart
++++ b/lib/features/market/ai_oracle_panel.dart
+@@ -38,15 +38,11 @@ class _AiOraclePanelState extends State<AiOraclePanel> {
+     try {
+       final o = await wallet.getOracle(widget.slug);
+       if (mounted) setState(() { _oracle = o; });
+-    } catch (e) {
+-      debugPrint('[Puls] oracle load failed for ${widget.slug}: $e');
+-    }
++    } catch (_) {}
+     try {
+       final c = await wallet.getOracleCorrelations(widget.slug);
+       if (mounted) setState(() { _correlations = (c['correlations'] as List?) ?? const []; });
+-    } catch (e) {
+-      debugPrint('[Puls] oracle correlations load failed for ${widget.slug}: $e');
+-    }
++    } catch (_) {}
+     if (mounted) setState(() => _loading = false);
+   }
+ 
+diff --git a/lib/features/market/resolution_panel.dart b/lib/features/market/resolution_panel.dart
+index 9f7058b..5e44d2b 100644
+--- a/lib/features/market/resolution_panel.dart
++++ b/lib/features/market/resolution_panel.dart
+@@ -45,9 +45,7 @@ class _ResolutionPanelState extends State<ResolutionPanel> {
+         });
+         return;
+       }
+-    } catch (e) {
+-      debugPrint('[Puls] resolution status load failed for ${widget.market.slug}: $e');
+-    }
++    } catch (_) {}
+     if (mounted) setState(() => _loading = false);
+   }
+ 
+diff --git a/lib/features/market/signals_marketplace.dart b/lib/features/market/signals_marketplace.dart
+index 9e4a62d..b00acf3 100644
+--- a/lib/features/market/signals_marketplace.dart
++++ b/lib/features/market/signals_marketplace.dart
+@@ -72,9 +72,7 @@ class _SignalsMarketplaceState extends State<SignalsMarketplace> {
+           final m = a as Map<String, dynamic>;
+           _authors['agent_swarm_${m['key']}'] = _Author(m['name'] as String? ?? 'Agent', true);
+         }
+-      } catch (e) {
+-        debugPrint('[Puls] signals: agent roster load failed: $e');
+-      }
++      } catch (_) {}
+       // Known house creators.
+       _authors.putIfAbsent('agent_sage', () => const _Author('Sage 🔮', true, pfp: 'assets/sage-pfp.png'));
+       _authors.putIfAbsent('house_pulse', () => const _Author('Pulse 🤖', true, pfp: 'assets/puls-pfp.png'));
+diff --git a/lib/features/onboarding/puls_tour_overlay.dart b/lib/features/onboarding/puls_tour_overlay.dart
+index 48fc208..dcea720 100644
+--- a/lib/features/onboarding/puls_tour_overlay.dart
++++ b/lib/features/onboarding/puls_tour_overlay.dart
+@@ -417,20 +417,26 @@ class _TourPopover extends StatelessWidget {
+   }
+ 
+   Widget _glassCard(BuildContext context, PulsThemeColors t) {
+-    return Container(
+-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+-      decoration: BoxDecoration(
+-        color: t.surface,
+-        borderRadius: BorderRadius.circular(20),
+-        border: Border.all(color: t.border, width: 1),
+-        boxShadow: [
+-          BoxShadow(
+-            color: Colors.black.withValues(alpha: 0.5),
+-            blurRadius: 30,
+-            offset: const Offset(0, 10),
++    return ClipRRect(
++      borderRadius: BorderRadius.circular(20),
++      child: BackdropFilter(
++        filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
++        child: Container(
++          padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
++          decoration: BoxDecoration(
++            // Glassmorphism: translucent fill + hairline border + inner sheen.
++            color: Colors.white.withValues(alpha: 0.10),
++            borderRadius: BorderRadius.circular(20),
++            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
++            gradient: LinearGradient(
++              begin: Alignment.topLeft,
++              end: Alignment.bottomRight,
++              colors: [
++                Colors.white.withValues(alpha: 0.14),
++                Colors.white.withValues(alpha: 0.05),
++              ],
++            ),
+           ),
+-        ],
+-      ),
+           child: Column(
+             mainAxisSize: MainAxisSize.min,
+             crossAxisAlignment: CrossAxisAlignment.start,
+@@ -451,7 +457,7 @@ class _TourPopover extends StatelessWidget {
+                         fontFamily: PulsColors.fontSans,
+                         color: Colors.white,
+                         fontSize: 10,
+-                        fontWeight: FontWeight.w800,
++                        fontWeight: FontWeight.w700,
+                         letterSpacing: 1.2,
+                       ),
+                     ),
+@@ -466,7 +472,7 @@ class _TourPopover extends StatelessWidget {
+                         'Skip',
+                         style: TextStyle(
+                           fontFamily: PulsColors.fontSans,
+-                          color: t.textSubtle,
++                          color: Colors.white.withValues(alpha: 0.6),
+                           fontSize: 13,
+                           fontWeight: FontWeight.w600,
+                         ),
+@@ -478,11 +484,11 @@ class _TourPopover extends StatelessWidget {
+               const SizedBox(height: 14),
+               Text(
+                 step.title,
+-                style: TextStyle(
++                style: const TextStyle(
+                   fontFamily: PulsColors.fontDisplay,
+-                  color: t.text,
++                  color: Colors.white,
+                   fontSize: 22,
+-                  fontWeight: FontWeight.w800,
++                  fontWeight: FontWeight.w700,
+                   letterSpacing: -0.5,
+                 ),
+               ),
+@@ -491,12 +497,12 @@ class _TourPopover extends StatelessWidget {
+                 step.description,
+                 style: TextStyle(
+                   fontFamily: PulsColors.fontSans,
+-                  color: t.textMuted,
++                  color: Colors.white.withValues(alpha: 0.78),
+                   fontSize: 14,
+                   height: 1.55,
+                 ),
+               ),
+-              const SizedBox(height: 24),
++              const SizedBox(height: 18),
+               Row(
+                 children: [
+                   // Progress dots.
+@@ -514,7 +520,7 @@ class _TourPopover extends StatelessWidget {
+                               active ? PulsColors.pulseGradient : null,
+                           color: active
+                               ? null
+-                              : t.border,
++                              : Colors.white.withValues(alpha: 0.28),
+                           borderRadius: BorderRadius.circular(999),
+                         ),
+                       );
+@@ -528,11 +534,12 @@ class _TourPopover extends StatelessWidget {
+                       padding: const EdgeInsets.symmetric(
+                           horizontal: 20, vertical: 10),
+                       decoration: BoxDecoration(
+-                        color: t.brand,
++                        gradient: PulsColors.pulseGradient,
+                         borderRadius: BorderRadius.circular(999),
+                         boxShadow: [
+                           BoxShadow(
+-                            color: t.brand.withValues(alpha: 0.25),
++                            color: PulsColors.brandMint
++                                .withValues(alpha: 0.35),
+                             blurRadius: 16,
+                             offset: const Offset(0, 4),
+                           ),
+@@ -545,9 +552,9 @@ class _TourPopover extends StatelessWidget {
+                             isLast ? 'Got it' : 'Next',
+                             style: const TextStyle(
+                               fontFamily: PulsColors.fontSans,
+-                              color: Colors.black,
++                              color: Colors.white,
+                               fontSize: 14,
+-                              fontWeight: FontWeight.w800,
++                              fontWeight: FontWeight.w700,
+                             ),
+                           ),
+                           const SizedBox(width: 6),
+@@ -555,7 +562,7 @@ class _TourPopover extends StatelessWidget {
+                             isLast
+                                 ? Icons.check_rounded
+                                 : Icons.arrow_forward_rounded,
+-                            color: Colors.black,
++                            color: Colors.white,
+                             size: 16,
+                           ),
+                         ],
+@@ -566,7 +573,9 @@ class _TourPopover extends StatelessWidget {
+               ),
+             ],
+           ),
+-        );
++        ),
++      ),
++    );
+   }
+ }
+ 
+@@ -613,61 +622,42 @@ class _ArrowPainter extends CustomPainter {
+       old.pointingUp != pointingUp;
+ }
+ 
+-/// Builds the complete navigation tour.
++/// ── Convenience: default Puls tour ──────────────────────────────────────────
++
++/// Builds the canonical 3-step Puls tour. Pass the [GlobalKey]s of the widgets
++/// you want to spotlight (e.g. the swarm card, the USDC balance chip, and a
++/// market card in the feed).
+ TourController buildPulsTour({
+-  required GlobalKey feedKey,
+-  required GlobalKey discoverKey,
+-  required GlobalKey homeKey,
+-  required GlobalKey portfolioKey,
+-  required GlobalKey creatorsKey,
+-  required GlobalKey agentKey,
+-  required GlobalKey profileKey,
++  required GlobalKey swarmKey,
++  required GlobalKey usdcKey,
++  required GlobalKey marketKey,
+   VoidCallback? onFinished,
+ }) {
+   return TourController(
+     onFinished: onFinished,
+     steps: [
+       TourStep(
+-        key: feedKey,
+-        title: 'Feed',
+-        description:
+-            'Watch the AI swarm debate and trade prediction markets in real-time. Every action is verifiable on-chain.',
+-      ),
+-      TourStep(
+-        key: discoverKey,
+-        title: 'Discover',
+-        description:
+-            'Swipe through new markets in a seamless TikTok-style feed. Fast, fluid, and optimized for quick decisions.',
+-      ),
+-      TourStep(
+-        key: homeKey,
+-        title: 'Home',
+-        description:
+-            'The dashboard where everything comes together. Overview of global markets, top volume, and latest resolutions.',
+-      ),
+-      TourStep(
+-        key: portfolioKey,
+-        title: 'Portfolio',
+-        description:
+-            'Track your YES and NO shares, claim winnings from resolved markets, and monitor your overall performance.',
+-      ),
+-      TourStep(
+-        key: creatorsKey,
+-        title: 'Creators',
++        key: swarmKey,
++        title: 'The Swarm',
+         description:
+-            'See the top traders and most profitable agents. The leaderboard ranks the sharpest minds on the platform.',
++            'Autonomous AI agents research the web, debate each other and '
++            'trade prediction markets around the clock. Every decision is '
++            'verifiable on-chain.',
+       ),
+       TourStep(
+-        key: agentKey,
+-        title: 'Agent',
++        key: usdcKey,
++        title: 'USDC Gas',
+         description:
+-            'Manage your autonomous agent. Sponsor it with USDC and let it trade on your behalf while you sleep.',
++            'Everything on Puls runs on USDC on Arc — trades, fees, even '
++            'agent-to-agent payments. No native gas token, no bridging.',
+       ),
+       TourStep(
+-        key: profileKey,
+-        title: 'Profile',
++        key: marketKey,
++        title: 'Trade',
+         description:
+-            'Your settings, connected wallets, and notifications. Everything you need to control your Puls experience.',
++            'Tap any market to buy YES or NO shares. Prices are live '
++            'probabilities — sell anytime before resolution to lock in '
++            'profit.',
+       ),
+     ],
+   );
+diff --git a/lib/features/profile/notifications_screen.dart b/lib/features/profile/notifications_screen.dart
+index 7c59c6e..265bf74 100644
+--- a/lib/features/profile/notifications_screen.dart
++++ b/lib/features/profile/notifications_screen.dart
+@@ -53,9 +53,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
+     try {
+       await wallet.markNotificationsRead();
+       _load();
+-    } catch (e) {
+-      debugPrint('[Puls] mark notifications read failed: $e');
+-    }
++    } catch (_) {}
+   }
+ 
+   IconData _getIconForType(String type) {
+diff --git a/lib/features/shell/web_shell.dart b/lib/features/shell/web_shell.dart
+index b507d14..9f1e3ea 100644
+--- a/lib/features/shell/web_shell.dart
++++ b/lib/features/shell/web_shell.dart
+@@ -44,13 +44,13 @@ class _WebShellState extends State<WebShell>
+   ];
+ 
+   static final _items = [
+-    _NavItem(Picons.lightning, 'Feed', tourFeedKey),
+-    _NavItem(Picons.compass, 'Discover', tourDiscoverKey),
+-    _NavItem(Picons.playCircle, 'Home', tourHomeKey),
+-    _NavItem(Picons.chartBar, 'Portfolio', tourPortfolioKey),
+-    _NavItem(Picons.star, 'Creators', tourCreatorsKey),
+-    _NavItem(Picons.robot, 'Agent', tourAgentKey),
+-    _NavItem(Picons.userCircle, 'Profile', tourProfileKey),
++    _NavItem(Picons.lightning, 'Feed'),
++    _NavItem(Picons.compass, 'Discover'),
++    _NavItem(Picons.playCircle, 'Home'),
++    _NavItem(Picons.chartBar, 'Portfolio'),
++    _NavItem(Picons.star, 'Creators'),
++    _NavItem(Picons.robot, 'Agent'),
++    _NavItem(Picons.userCircle, 'Profile'),
+   ];
+ 
+   @override
+@@ -363,7 +363,6 @@ class _Island extends StatelessWidget {
+         mainAxisSize: MainAxisSize.min,
+         children: List.generate(items.length, (i) {
+           final pill = _NavPill(
+-            key: items[i].key,
+             item: items[i],
+             selected: i == index,
+             showLabel: showLabels,
+@@ -383,7 +382,6 @@ class _Island extends StatelessWidget {
+ 
+ class _NavPill extends StatefulWidget {
+   const _NavPill({
+-    super.key,
+     required this.item,
+     required this.selected,
+     required this.showLabel,
+@@ -698,10 +696,9 @@ class _IconBtnState extends State<_IconBtn> {
+ }
+ 
+ class _NavItem {
+-  _NavItem(this.icon, this.label, this.key);
++  _NavItem(this.icon, this.label);
+   final PiconData icon;
+   final String label;
+-  final GlobalKey key;
+ }
+ 
+ class _DotGridPainter extends CustomPainter {
+diff --git a/lib/features/streams/streams_screen.dart b/lib/features/streams/streams_screen.dart
+index dda666e..a0877d4 100644
+--- a/lib/features/streams/streams_screen.dart
++++ b/lib/features/streams/streams_screen.dart
+@@ -36,17 +36,15 @@ class _StreamsScreenState extends State<StreamsScreen> {
+       final wallet = WalletServiceScope.of(context);
+       Map<String, dynamic> config = {};
+       Map<String, dynamic> summary = {};
+-      try { config = await wallet.streamsConfig(); } catch (e) { debugPrint('[Puls] streams config load failed: $e'); }
+-      try { summary = await wallet.streamsSummary(); } catch (e) { debugPrint('[Puls] streams summary load failed: $e'); }
++      try { config = await wallet.streamsConfig(); } catch (_) {}
++      try { summary = await wallet.streamsSummary(); } catch (_) {}
+       List<Map<String, dynamic>> streams = [];
+       try {
+         final d = await wallet.listStreams();
+         streams = ((d['streams'] as List?) ?? [])
+             .map((e) => (e as Map).cast<String, dynamic>())
+             .toList();
+-      } catch (e) {
+-        debugPrint('[Puls] streams list load failed: $e');
+-      }
++      } catch (_) {}
+       if (!mounted) return;
+       setState(() {
+         _config = config;
+diff --git a/lib/features/support/referral_card.dart b/lib/features/support/referral_card.dart
+index 1f47c68..a8ba5d0 100644
+--- a/lib/features/support/referral_card.dart
++++ b/lib/features/support/referral_card.dart
+@@ -97,13 +97,7 @@ class _ReferralCardState extends State<ReferralCard> {
+               duration: const Duration(seconds: 2));
+         }
+       }
+-    } catch (e) {
+-      debugPrint('[Puls] referral claim failed: $e');
+-      if (mounted) {
+-        PulsSnack.error(context, 'Couldn\'t apply code. Check your connection.',
+-            duration: const Duration(seconds: 2));
+-      }
+-    }
++    } catch (_) {}
+     if (mounted) setState(() => _claiming = false);
+   }
+ 
+diff --git a/lib/features/wallet/wallet_service.dart b/lib/features/wallet/wallet_service.dart
+index 59ff633..b0fa7ac 100644
+--- a/lib/features/wallet/wallet_service.dart
++++ b/lib/features/wallet/wallet_service.dart
+@@ -235,9 +235,7 @@ class WalletService extends ChangeNotifier {
+         isLoading: false,
+       ));
+       if (address.isNotEmpty) _fetchBalanceFromChain(address);
+-    } catch (e) {
+-      debugPrint('[Puls] reloadWallet failed: $e');
+-    }
++    } catch (_) {}
+   }
+ 
+   /// Reads USDC balance directly from Arc Testnet via eth_call — no backend needed.
+@@ -307,9 +305,7 @@ class WalletService extends ChangeNotifier {
+             usdcBalance: res['usdcBalance'] as String? ?? _state.usdcBalance,
+           ));
+         }
+-      } catch (e) {
+-        debugPrint('[Puls] backend balance fallback failed: $e');
+-      }
++      } catch (_) {}
+     }
+   }
+ 
+diff --git a/pr201.diff b/pr201.diff
+deleted file mode 100644
+index b14d193..0000000
+Binary files a/pr201.diff and /dev/null differ
+diff --git a/pr201_utf8.diff b/pr201_utf8.diff
+deleted file mode 100644
+index 0456c4d..0000000
+--- a/pr201_utf8.diff
++++ /dev/null
+@@ -1,270 +0,0 @@
+-﻿diff --git a/lib/features/agent/agent_inbox_widget.dart b/lib/features/agent/agent_inbox_widget.dart
+-index 560e1dd..db3e301 100644
+---- a/lib/features/agent/agent_inbox_widget.dart
+-+++ b/lib/features/agent/agent_inbox_widget.dart
+-@@ -96,7 +96,9 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
+-         Map<String, dynamic> payload = {};
+-         try {
+-           payload = jsonDecode('${m['message']}') as Map<String, dynamic>;
+--        } catch (_) {}
+-+        } catch (e) {
+-+          debugPrint('[Puls] agent inbox: bad DM payload for ${m['id']}: $e');
+-+        }
+-         dms.add({
+-           'id': m['id'],
+-           'read': m['read'] == true,
+-@@ -109,7 +111,9 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
+-         });
+-       }
+-       if (mounted) setState(() => _dms = dms);
+--    } catch (_) {}
+-+    } catch (e) {
+-+      debugPrint('[Puls] agent inbox fetch failed: $e');
+-+    }
+-   }
+- 
+-   List<Map<String, dynamic>> get _visible =>
+-diff --git a/lib/features/agent/agent_screen.dart b/lib/features/agent/agent_screen.dart
+-index 55d66aa..038faec 100644
+---- a/lib/features/agent/agent_screen.dart
+-+++ b/lib/features/agent/agent_screen.dart
+-@@ -278,7 +278,9 @@ class _AgentScreenState extends State<AgentScreen>
+-             final sr = jsonDecode(stratRes.body) as Map<String, dynamic>;
+-             strategy = sr['strategy'] as String? ?? 'NONE';
+-           }
+--        } catch (_) {}
+-+        } catch (e) {
+-+          debugPrint('[Puls] agent strategy fetch failed: $e');
+-+        }
+-         setState(() {
+-           _started = true;
+-           _agentAddress = r['agentAddress'] as String?;
+-@@ -292,7 +294,9 @@ class _AgentScreenState extends State<AgentScreen>
+-               'Welcome back. Your agent is live with \$${bal.toStringAsFixed(2)} USDC available. Ask me to trade, or withdraw the funds back to your wallet anytime.'));
+-         });
+-       }
+--    } catch (_) {}
+-+    } catch (e) {
+-+      debugPrint('[Puls] agent status load failed: $e');
+-+    }
+-   }
+- 
+-   @override
+-diff --git a/lib/features/comments/comment_thread.dart b/lib/features/comments/comment_thread.dart
+-index d33cdc3..674a823 100644
+---- a/lib/features/comments/comment_thread.dart
+-+++ b/lib/features/comments/comment_thread.dart
+-@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
+- import '../../core/widgets/gradient_text.dart';
+- import '../../core/widgets/agent_badge.dart';
+- import '../../core/widgets/puls_avatar.dart';
+-+import '../../core/widgets/puls_snack.dart';
+- 
+- class Comment {
+-   Comment({
+-@@ -121,6 +122,7 @@ class _CommentThreadState extends State<CommentThread> {
+-     final body = _inputCtrl.text.trim();
+-     if (body.isEmpty || _sending) return;
+-     setState(() => _sending = true);
+-+    final snack = PulsSnack.of(context);
+-     try {
+-       final payload = <String, dynamic>{
+-         'target_type': widget.targetType,
+-@@ -138,29 +140,56 @@ class _CommentThreadState extends State<CommentThread> {
+-         _replyToId = null;
+-         _replyToName = null;
+-         await _fetch();
+-+      } else {
+-+        snack.error(_errorFrom(res.body, 'Couldn\'t post your comment'));
+-       }
+--    } catch (_) {}
+-+    } catch (e) {
+-+      debugPrint('[Puls] comment send failed: $e');
+-+      snack.error('Couldn\'t post your comment. Check your connection.');
+-+    }
+-     if (mounted) setState(() => _sending = false);
+-   }
+- 
+-   Future<void> _toggleLike(String commentId) async {
+-     try {
+--      await http.post(
+-+      final res = await http.post(
+-         Uri.parse('$backendUrl/api/comments/$commentId/like'),
+-         headers: _authHeaders,
+-       );
+-+      if (res.statusCode != 200 && res.statusCode != 201) {
+-+        throw Exception('like failed (${res.statusCode})');
+-+      }
+-       await _fetch();
+--    } catch (_) {}
+-+    } catch (e) {
+-+      debugPrint('[Puls] comment like failed: $e');
+-+    }
+-   }
+- 
+-   Future<void> _delete(String commentId) async {
+-+    final snack = PulsSnack.of(context);
+-     try {
+--      await http.delete(
+-+      final res = await http.delete(
+-         Uri.parse('$backendUrl/api/comments/$commentId'),
+-         headers: _authHeaders,
+-       );
+-+      if (res.statusCode != 200 && res.statusCode != 204) {
+-+        throw Exception('delete failed (${res.statusCode})');
+-+      }
+-       await _fetch();
+-+    } catch (e) {
+-+      debugPrint('[Puls] comment delete failed: $e');
+-+      snack.error('Couldn\'t delete that comment.');
+-+    }
+-+  }
+-+
+-+  /// Best-effort extraction of a server-provided `error` string, falling back
+-+  /// to [fallback] when the body isn't JSON or has no error field.
+-+  String _errorFrom(String responseBody, String fallback) {
+-+    try {
+-+      final data = jsonDecode(responseBody);
+-+      if (data is Map && data['error'] is String) return data['error'] as String;
+-     } catch (_) {}
+-+    return fallback;
+-   }
+- 
+-   void _startReply(String id, String name) {
+-diff --git a/lib/features/market/ai_oracle_panel.dart b/lib/features/market/ai_oracle_panel.dart
+-index 64955a5..edba300 100644
+---- a/lib/features/market/ai_oracle_panel.dart
+-+++ b/lib/features/market/ai_oracle_panel.dart
+-@@ -38,11 +38,15 @@ class _AiOraclePanelState extends State<AiOraclePanel> {
+-     try {
+-       final o = await wallet.getOracle(widget.slug);
+-       if (mounted) setState(() { _oracle = o; });
+--    } catch (_) {}
+-+    } catch (e) {
+-+      debugPrint('[Puls] oracle load failed for ${widget.slug}: $e');
+-+    }
+-     try {
+-       final c = await wallet.getOracleCorrelations(widget.slug);
+-       if (mounted) setState(() { _correlations = (c['correlations'] as List?) ?? const []; });
+--    } catch (_) {}
+-+    } catch (e) {
+-+      debugPrint('[Puls] oracle correlations load failed for ${widget.slug}: $e');
+-+    }
+-     if (mounted) setState(() => _loading = false);
+-   }
+- 
+-diff --git a/lib/features/market/resolution_panel.dart b/lib/features/market/resolution_panel.dart
+-index 5e44d2b..9f7058b 100644
+---- a/lib/features/market/resolution_panel.dart
+-+++ b/lib/features/market/resolution_panel.dart
+-@@ -45,7 +45,9 @@ class _ResolutionPanelState extends State<ResolutionPanel> {
+-         });
+-         return;
+-       }
+--    } catch (_) {}
+-+    } catch (e) {
+-+      debugPrint('[Puls] resolution status load failed for ${widget.market.slug}: $e');
+-+    }
+-     if (mounted) setState(() => _loading = false);
+-   }
+- 
+-diff --git a/lib/features/market/signals_marketplace.dart b/lib/features/market/signals_marketplace.dart
+-index b00acf3..9e4a62d 100644
+---- a/lib/features/market/signals_marketplace.dart
+-+++ b/lib/features/market/signals_marketplace.dart
+-@@ -72,7 +72,9 @@ class _SignalsMarketplaceState extends State<SignalsMarketplace> {
+-           final m = a as Map<String, dynamic>;
+-           _authors['agent_swarm_${m['key']}'] = _Author(m['name'] as String? ?? 'Agent', true);
+-         }
+--      } catch (_) {}
+-+      } catch (e) {
+-+        debugPrint('[Puls] signals: agent roster load failed: $e');
+-+      }
+-       // Known house creators.
+-       _authors.putIfAbsent('agent_sage', () => const _Author('Sage 🔮', true, pfp: 'assets/sage-pfp.png'));
+-       _authors.putIfAbsent('house_pulse', () => const _Author('Pulse 🤖', true, pfp: 'assets/puls-pfp.png'));
+-diff --git a/lib/features/profile/notifications_screen.dart b/lib/features/profile/notifications_screen.dart
+-index 265bf74..7c59c6e 100644
+---- a/lib/features/profile/notifications_screen.dart
+-+++ b/lib/features/profile/notifications_screen.dart
+-@@ -53,7 +53,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
+-     try {
+-       await wallet.markNotificationsRead();
+-       _load();
+--    } catch (_) {}
+-+    } catch (e) {
+-+      debugPrint('[Puls] mark notifications read failed: $e');
+-+    }
+-   }
+- 
+-   IconData _getIconForType(String type) {
+-diff --git a/lib/features/streams/streams_screen.dart b/lib/features/streams/streams_screen.dart
+-index a0877d4..dda666e 100644
+---- a/lib/features/streams/streams_screen.dart
+-+++ b/lib/features/streams/streams_screen.dart
+-@@ -36,15 +36,17 @@ class _StreamsScreenState extends State<StreamsScreen> {
+-       final wallet = WalletServiceScope.of(context);
+-       Map<String, dynamic> config = {};
+-       Map<String, dynamic> summary = {};
+--      try { config = await wallet.streamsConfig(); } catch (_) {}
+--      try { summary = await wallet.streamsSummary(); } catch (_) {}
+-+      try { config = await wallet.streamsConfig(); } catch (e) { debugPrint('[Puls] streams config load failed: $e'); }
+-+      try { summary = await wallet.streamsSummary(); } catch (e) { debugPrint('[Puls] streams summary load failed: $e'); }
+-       List<Map<String, dynamic>> streams = [];
+-       try {
+-         final d = await wallet.listStreams();
+-         streams = ((d['streams'] as List?) ?? [])
+-             .map((e) => (e as Map).cast<String, dynamic>())
+-             .toList();
+--      } catch (_) {}
+-+      } catch (e) {
+-+        debugPrint('[Puls] streams list load failed: $e');
+-+      }
+-       if (!mounted) return;
+-       setState(() {
+-         _config = config;
+-diff --git a/lib/features/support/referral_card.dart b/lib/features/support/referral_card.dart
+-index a8ba5d0..1f47c68 100644
+---- a/lib/features/support/referral_card.dart
+-+++ b/lib/features/support/referral_card.dart
+-@@ -97,7 +97,13 @@ class _ReferralCardState extends State<ReferralCard> {
+-               duration: const Duration(seconds: 2));
+-         }
+-       }
+--    } catch (_) {}
+-+    } catch (e) {
+-+      debugPrint('[Puls] referral claim failed: $e');
+-+      if (mounted) {
+-+        PulsSnack.error(context, 'Couldn\'t apply code. Check your connection.',
+-+            duration: const Duration(seconds: 2));
+-+      }
+-+    }
+-     if (mounted) setState(() => _claiming = false);
+-   }
+- 
+-diff --git a/lib/features/wallet/wallet_service.dart b/lib/features/wallet/wallet_service.dart
+-index b0fa7ac..59ff633 100644
+---- a/lib/features/wallet/wallet_service.dart
+-+++ b/lib/features/wallet/wallet_service.dart
+-@@ -235,7 +235,9 @@ class WalletService extends ChangeNotifier {
+-         isLoading: false,
+-       ));
+-       if (address.isNotEmpty) _fetchBalanceFromChain(address);
+--    } catch (_) {}
+-+    } catch (e) {
+-+      debugPrint('[Puls] reloadWallet failed: $e');
+-+    }
+-   }
+- 
+-   /// Reads USDC balance directly from Arc Testnet via eth_call — no backend needed.
+-@@ -305,7 +307,9 @@ class WalletService extends ChangeNotifier {
+-             usdcBalance: res['usdcBalance'] as String? ?? _state.usdcBalance,
+-           ));
+-         }
+--      } catch (_) {}
+-+      } catch (e) {
+-+        debugPrint('[Puls] backend balance fallback failed: $e');
+-+      }
+-     }
+-   }
+- 
+diff --git a/test/creator_signal_test.dart b/test/creator_signal_test.dart
+new file mode 100644
+index 0000000..f20eed8
+--- /dev/null
++++ b/test/creator_signal_test.dart
+@@ -0,0 +1,303 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:puls/data/models/creator_signal.dart';
++
++void main() {
++  group('CreatorSignal status getters', () {
++    CreatorSignal signal({String status = 'published'}) => CreatorSignal(
++          id: '1',
++          creatorUserId: 'u1',
++          title: 'Will it rain?',
++          priceUsdc: 1.5,
++          status: status,
++        );
++
++    test('isPublished / isDraft reflect status', () {
++      expect(signal(status: 'published').isPublished, isTrue);
++      expect(signal(status: 'published').isDraft, isFalse);
++      expect(signal(status: 'draft').isDraft, isTrue);
++      expect(signal(status: 'draft').isPublished, isFalse);
++      expect(signal(status: 'archived').isPublished, isFalse);
++      expect(signal(status: 'archived').isDraft, isFalse);
++    });
++  });
++
++  group('CreatorSignal content getters', () {
++    test('hasThesis is true only for non-empty thesis', () {
++      expect(_signal(thesis: 'Deep dive').hasThesis, isTrue);
++      expect(_signal(thesis: '').hasThesis, isFalse);
++      expect(_signal().hasThesis, isFalse);
++    });
++
++    test('hasMarketLink requires a non-empty slug', () {
++      expect(_signal(marketSlug: 'will-it-rain').hasMarketLink, isTrue);
++      expect(_signal(marketSlug: '').hasMarketLink, isFalse);
++      expect(_signal().hasMarketLink, isFalse);
++    });
++
++    test('hasSources reflects the sources list', () {
++      expect(_signal().hasSources, isFalse);
++      expect(
++        _signal(sources: const [
++          SignalSource(title: 'ESPN', url: 'https://espn.com'),
++        ]).hasSources,
++        isTrue,
++      );
++    });
++  });
++
++  group('CreatorSignal stance gating', () {
++    test('stanceRevealed reflects presence of a stance string', () {
++      expect(_signal(stance: 'YES').stanceRevealed, isTrue);
++      expect(_signal(stance: '').stanceRevealed, isFalse);
++      expect(_signal().stanceRevealed, isFalse);
++    });
++
++    test('stanceVisible hidden until unlocked or owner even if stance leaks', () {
++      expect(_signal(stance: 'YES').stanceVisible, isFalse);
++      expect(_signal(stance: 'YES', unlocked: true).stanceVisible, isTrue);
++      expect(_signal(stance: 'YES', isOwner: true).stanceVisible, isTrue);
++    });
++
++    test('stanceVisible false when unlocked but no stance present', () {
++      expect(_signal(unlocked: true).stanceVisible, isFalse);
++    });
++  });
++
++  group('CreatorSignal.isFinished', () {
++    test('finished when the linked market resolved', () {
++      expect(_signal(marketResolved: true).isFinished, isTrue);
++    });
++
++    test('finished when the bond is no longer active', () {
++      expect(
++        _signal(
++          bond: const SignalBond(amountUsdc: 10, status: 'slashed'),
++        ).isFinished,
++        isTrue,
++      );
++    });
++
++    test('not finished with an active bond and unresolved market', () {
++      expect(
++        _signal(
++          bond: const SignalBond(amountUsdc: 10, status: 'active'),
++        ).isFinished,
++        isFalse,
++      );
++      expect(_signal().isFinished, isFalse);
++    });
++  });
++
++  group('CreatorSignal.fromJson', () {
++    test('parses a full published payload', () {
++      final s = CreatorSignal.fromJson({
++        'id': 42,
++        'creatorUserId': 'creator-1',
++        'title': 'BTC above 100k?',
++        'stance': 'yes',
++        'priceUsdc': 2,
++        'status': 'published',
++        'marketSlug': 'btc-100k',
++        'sourcesCount': 3,
++        'confidence': 0.8,
++        'edgeBps': 150,
++        'unlocked': true,
++        'isOwner': false,
++        'marketResolved': true,
++        'marketOutcome': true,
++        'sources': [
++          {'title': 'Bloomberg', 'url': 'https://bloomberg.com'},
++        ],
++        'creatorTrackRecord': {
++          'resolved': 4,
++          'correct': 3,
++          'published': 6,
++          'winRate': 0.75,
++        },
++        'bond': {'amountUsdc': 25, 'status': 'active'},
++        'onchain': {'tx': '0xabc'},
++        'analytics': {'views': 100, 'unlocks': 10, 'revenueUsdc': 20},
++        'publishedAt': '2024-01-01T00:00:00Z',
++      });
++
++      expect(s.id, '42');
++      expect(s.stance, 'YES'); // upper-cased
++      expect(s.priceUsdc, 2);
++      expect(s.isPublished, isTrue);
++      expect(s.sourcesCount, 3);
++      expect(s.confidence, 0.8);
++      expect(s.edgeBps, 150);
++      expect(s.sources, hasLength(1));
++      expect(s.trackRecord, isNotNull);
++      expect(s.trackRecord!.hasRecord, isTrue);
++      expect(s.bond!.isActive, isTrue);
++      expect(s.onchain!.tx, '0xabc');
++      expect(s.analytics!.views, 100);
++      expect(s.marketOutcome, isTrue);
++      expect(s.publishedAt, DateTime.utc(2024, 1, 1));
++    });
++
++    test('applies defaults for a minimal payload', () {
++      final s = CreatorSignal.fromJson({'id': 7});
++      expect(s.id, '7');
++      expect(s.creatorUserId, '');
++      expect(s.title, '');
++      expect(s.stance, isNull);
++      expect(s.priceUsdc, 0);
++      expect(s.status, 'draft');
++      expect(s.isDraft, isTrue);
++      expect(s.sources, isEmpty);
++      expect(s.sourcesCount, 0);
++      expect(s.trackRecord, isNull);
++      expect(s.bond, isNull);
++      expect(s.onchain, isNull);
++      expect(s.analytics, isNull);
++      expect(s.marketOutcome, isNull);
++      expect(s.publishedAt, isNull);
++    });
++  });
++
++  group('SignalSource.fromJson', () {
++    test('uses title when present', () {
++      final s = SignalSource.fromJson({
++        'title': 'ESPN Report',
++        'url': 'https://espn.com',
++        'source': 'espn.com',
++      });
++      expect(s.title, 'ESPN Report');
++      expect(s.url, 'https://espn.com');
++      expect(s.source, 'espn.com');
++    });
++
++    test('falls back to source then url then generic label', () {
++      expect(
++        SignalSource.fromJson({'source': 'espn.com', 'url': 'https://espn.com'})
++            .title,
++        'espn.com',
++      );
++      expect(
++        SignalSource.fromJson({'title': '  ', 'url': 'https://x.com'}).title,
++        'https://x.com',
++      );
++      expect(SignalSource.fromJson({}).title, 'Source');
++      expect(SignalSource.fromJson({}).url, '');
++    });
++  });
++
++  group('CreatorTrackRecord', () {
++    test('hasRecord requires resolved signals and a win rate', () {
++      const withRecord =
++          CreatorTrackRecord(resolved: 2, correct: 1, published: 3, winRate: 0.5);
++      expect(withRecord.hasRecord, isTrue);
++
++      const noResolved =
++          CreatorTrackRecord(resolved: 0, correct: 0, published: 3, winRate: 0.5);
++      expect(noResolved.hasRecord, isFalse);
++
++      const noWinRate =
++          CreatorTrackRecord(resolved: 2, correct: 1, published: 3);
++      expect(noWinRate.hasRecord, isFalse);
++    });
++
++    test('fromJson defaults missing values', () {
++      final t = CreatorTrackRecord.fromJson({});
++      expect(t.resolved, 0);
++      expect(t.correct, 0);
++      expect(t.published, 0);
++      expect(t.winRate, isNull);
++    });
++  });
++
++  group('SignalBond', () {
++    test('status getters', () {
++      expect(const SignalBond(amountUsdc: 1, status: 'active').isActive, isTrue);
++      expect(
++          const SignalBond(amountUsdc: 1, status: 'slashed').isSlashed, isTrue);
++      expect(const SignalBond(amountUsdc: 1, status: 'returned').isReturned,
++          isTrue);
++    });
++
++    test('link prefers a real tx hash over the explorer', () {
++      const withTx = SignalBond(
++        amountUsdc: 1,
++        status: 'active',
++        tx: '0xdeadbeef',
++        explorer: 'https://explorer',
++      );
++      expect(withTx.link, 'https://testnet.arcscan.app/tx/0xdeadbeef');
++    });
++
++    test('link falls back to explorer when tx is missing or not a hash', () {
++      const circleId = SignalBond(
++        amountUsdc: 1,
++        status: 'active',
++        tx: 'circle-123',
++        explorer: 'https://explorer',
++      );
++      expect(circleId.link, 'https://explorer');
++      expect(
++        const SignalBond(amountUsdc: 1, status: 'active').link,
++        isNull,
++      );
++    });
++
++    test('fromJson parses fields with defaults', () {
++      final b = SignalBond.fromJson({'amountUsdc': 5, 'status': 'returned'});
++      expect(b.amountUsdc, 5);
++      expect(b.isReturned, isTrue);
++
++      final def = SignalBond.fromJson({});
++      expect(def.amountUsdc, 0);
++      expect(def.status, 'active');
++    });
++  });
++
++  group('SignalOnchain / SignalAnalytics fromJson', () {
++    test('onchain parses tx and optional fields', () {
++      final o = SignalOnchain.fromJson({'tx': '0x1', 'explorer': 'https://e'});
++      expect(o.tx, '0x1');
++      expect(o.explorer, 'https://e');
++      expect(SignalOnchain.fromJson({}).tx, '');
++    });
++
++    test('analytics parses counters with defaults', () {
++      final a = SignalAnalytics.fromJson(
++          {'views': 5, 'unlocks': 2, 'revenueUsdc': 3.5, 'conversion': 0.4});
++      expect(a.views, 5);
++      expect(a.unlocks, 2);
++      expect(a.revenueUsdc, 3.5);
++      expect(a.conversion, 0.4);
++
++      final def = SignalAnalytics.fromJson({});
++      expect(def.views, 0);
++      expect(def.revenueUsdc, 0);
++      expect(def.conversion, isNull);
++    });
++  });
++}
++
++CreatorSignal _signal({
++  String? stance,
++  String? thesis,
++  String? marketSlug,
++  List<SignalSource> sources = const [],
++  bool unlocked = false,
++  bool isOwner = false,
++  bool marketResolved = false,
++  SignalBond? bond,
++}) =>
++    CreatorSignal(
++      id: '1',
++      creatorUserId: 'u1',
++      title: 'Signal',
++      priceUsdc: 1,
++      status: 'published',
++      stance: stance,
++      thesis: thesis,
++      marketSlug: marketSlug,
++      sources: sources,
++      unlocked: unlocked,
++      isOwner: isOwner,
++      marketResolved: marketResolved,
++      bond: bond,
++    );
+diff --git a/test/market_model_test.dart b/test/market_model_test.dart
+new file mode 100644
+index 0000000..6292668
+--- /dev/null
++++ b/test/market_model_test.dart
+@@ -0,0 +1,85 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:puls/data/models/market.dart';
++
++Market _market({
++  String category = 'Crypto',
++  double trend = 0.1,
++  bool createdByAgent = false,
++  int pulsTrades = 0,
++  int pulsHolders = 0,
++  int commentsCount = 0,
++}) =>
++    Market(
++      id: 'm1',
++      question: 'Will BTC hit 100k?',
++      category: category,
++      context: 'ctx',
++      yesPrice: 0.6,
++      noPrice: 0.4,
++      volume: r'$1M',
++      liquidity: r'$500K',
++      deadline: DateTime(2030, 1, 1),
++      trend: trend,
++      isFeatured: false,
++      tags: const ['Crypto'],
++      history: const [0.5, 0.6],
++      comments: const [],
++      news: const [],
++      slug: 'btc-100k',
++      createdByAgent: createdByAgent,
++      pulsTrades: pulsTrades,
++      pulsHolders: pulsHolders,
++      commentsCount: commentsCount,
++    );
++
++void main() {
++  group('Market getters', () {
++    test('trendIsPositive is true for zero and positive trend', () {
++      expect(_market(trend: 0).trendIsPositive, isTrue);
++      expect(_market(trend: 0.5).trendIsPositive, isTrue);
++      expect(_market(trend: -0.01).trendIsPositive, isFalse);
++    });
++
++    test('displayCategory routes agent markets to "AI Agents"', () {
++      expect(_market(category: 'Sports').displayCategory, 'Sports');
++      expect(
++        _market(category: 'Sports', createdByAgent: true).displayCategory,
++        'AI Agents',
++      );
++    });
++
++    test('pulsScore weights holders and comments over raw trades', () {
++      final m = _market(pulsHolders: 2, pulsTrades: 3, commentsCount: 4);
++      // 2*4 + 3 + 4*3 = 23
++      expect(m.pulsScore, 23);
++    });
++
++    test('hasPulsActivity reflects any engagement', () {
++      expect(_market().hasPulsActivity, isFalse);
++      expect(_market(pulsTrades: 1).hasPulsActivity, isTrue);
++      expect(_market(commentsCount: 1).hasPulsActivity, isTrue);
++    });
++  });
++
++  group('Market.copyWith', () {
++    test('overrides slug and contractAddress, preserves the rest', () {
++      final original = _market(category: 'Sports');
++      final copy =
++          original.copyWith(slug: 'new-slug', contractAddress: '0xabc');
++
++      expect(copy.slug, 'new-slug');
++      expect(copy.contractAddress, '0xabc');
++      expect(copy.question, original.question);
++      expect(copy.category, original.category);
++      expect(copy.yesPrice, original.yesPrice);
++      expect(copy.commentsCount, original.commentsCount);
++    });
++
++    test('keeps existing values when no overrides are passed', () {
++      final original = _market();
++      final copy = original.copyWith();
++      expect(copy.slug, original.slug);
++      expect(copy.contractAddress, original.contractAddress);
++    });
++  });
++}
+diff --git a/test/position_test.dart b/test/position_test.dart
+new file mode 100644
+index 0000000..8b5fee5
+--- /dev/null
++++ b/test/position_test.dart
+@@ -0,0 +1,47 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:puls/data/models/market.dart';
++import 'package:puls/data/models/position.dart';
++
++Position _position({
++  double amount = 100,
++  double currentPrice = 0.6,
++  double shares = 200,
++}) =>
++    Position(
++      id: 'p1',
++      marketId: 'm1',
++      question: 'Will BTC hit 100k?',
++      side: MarketSide.yes,
++      amount: amount,
++      entryPrice: 0.5,
++      currentPrice: currentPrice,
++      shares: shares,
++      openedAt: DateTime(2024, 1, 1),
++    );
++
++void main() {
++  group('Position P&L math', () {
++    test('marketValue is shares times current price', () {
++      expect(_position(shares: 200, currentPrice: 0.6).marketValue,
++          closeTo(120, 1e-9));
++    });
++
++    test('pnl is market value minus amount (profit and loss)', () {
++      // 200 * 0.6 = 120, minus 100 staked = +20
++      expect(_position(amount: 100, shares: 200, currentPrice: 0.6).pnl,
++          closeTo(20, 1e-9));
++      // 200 * 0.4 = 80, minus 100 = -20
++      expect(_position(amount: 100, shares: 200, currentPrice: 0.4).pnl,
++          closeTo(-20, 1e-9));
++    });
++
++    test('pnlPercent normalizes pnl by amount', () {
++      expect(_position(amount: 100, shares: 200, currentPrice: 0.6).pnlPercent,
++          closeTo(0.2, 1e-9));
++    });
++
++    test('pnlPercent returns zero when amount is zero (no divide-by-zero)', () {
++      expect(_position(amount: 0).pnlPercent, 0);
++    });
++  });
++}
+diff --git a/test/puls_emoji_test.dart b/test/puls_emoji_test.dart
+new file mode 100644
+index 0000000..138b0e6
+--- /dev/null
++++ b/test/puls_emoji_test.dart
+@@ -0,0 +1,77 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:puls/core/utils/puls_emoji.dart';
++
++void main() {
++  const style = TextStyle(fontSize: 14);
++
++  group('PulsEmoji lookup', () {
++    test('assetFor returns the mapped asset path', () {
++      expect(PulsEmoji.assetFor('🔥'), 'assets/emoji/the-flash-sign.png');
++      expect(PulsEmoji.assetFor('🤖'), 'assets/emoji/robot.png');
++    });
++
++    test('assetFor returns null for an unmapped emoji', () {
++      expect(PulsEmoji.assetFor('🥑'), isNull);
++    });
++
++    test('has reflects whether an icon is registered', () {
++      expect(PulsEmoji.has('⚡'), isTrue);
++      expect(PulsEmoji.has('🥑'), isFalse);
++    });
++
++    test('shield variant with and without VS16 both map', () {
++      expect(PulsEmoji.has('🛡️'), isTrue);
++      expect(PulsEmoji.has('🛡'), isTrue);
++    });
++  });
++
++  group('PulsEmoji.icon', () {
++    test('returns an Image for a mapped emoji', () {
++      expect(PulsEmoji.icon('🔥'), isA<Image>());
++    });
++
++    test('falls back to a Text widget for an unmapped emoji', () {
++      final widget = PulsEmoji.icon('🥑');
++      expect(widget, isA<Text>());
++      expect((widget as Text).data, '🥑');
++    });
++  });
++
++  group('PulsEmoji.richText', () {
++    test('splits leading emoji from trailing text', () {
++      final spans = PulsEmoji.richText('🔥 Hot Markets', style: style);
++      expect(spans, hasLength(2));
++      expect(spans[0], isA<WidgetSpan>());
++      expect(spans[1], isA<TextSpan>());
++      expect((spans[1] as TextSpan).text, ' Hot Markets');
++    });
++
++    test('handles an emoji embedded mid-string', () {
++      final spans = PulsEmoji.richText('Hot 🔥 today', style: style);
++      expect(spans, hasLength(3));
++      expect((spans[0] as TextSpan).text, 'Hot ');
++      expect(spans[1], isA<WidgetSpan>());
++      expect((spans[2] as TextSpan).text, ' today');
++    });
++
++    test('returns a single text span when there is no mapped emoji', () {
++      final spans = PulsEmoji.richText('plain text', style: style);
++      expect(spans, hasLength(1));
++      expect((spans.single as TextSpan).text, 'plain text');
++    });
++
++    test('handles a two-rune emoji (shield with VS16)', () {
++      final spans = PulsEmoji.richText('🛡️ Secure', style: style);
++      expect(spans, hasLength(2));
++      expect(spans[0], isA<WidgetSpan>());
++      expect((spans[1] as TextSpan).text, ' Secure');
++    });
++
++    test('emits consecutive emoji as separate widget spans', () {
++      final spans = PulsEmoji.richText('🔥🤖', style: style);
++      expect(spans, hasLength(2));
++      expect(spans.every((s) => s is WidgetSpan), isTrue);
++    });
++  });
++}
+diff --git a/test/trade_math_test.dart b/test/trade_math_test.dart
+index 274e916..0f4b820 100644
+--- a/test/trade_math_test.dart
++++ b/test/trade_math_test.dart
+@@ -15,8 +15,45 @@ void main() {
+       expect(TradeMath.estimatedShares(amount: 50, price: 0), 0);
+     });
+ 
++    test('estimatedPayout mirrors estimated shares', () {
++      expect(
++        TradeMath.estimatedPayout(amount: 50, price: 0.25),
++        closeTo(200, 0.001),
++      );
++      expect(TradeMath.estimatedPayout(amount: 50, price: 0), 0);
++    });
++
++    test('estimatedProfit subtracts the staked amount from the payout', () {
++      // 50 / 0.25 = 200 shares, minus 50 staked = 150 profit
++      expect(
++        TradeMath.estimatedProfit(amount: 50, price: 0.25),
++        closeTo(150, 0.001),
++      );
++    });
++
++    test('estimatedProfit is a loss (negative) when the price rises to 1', () {
++      // 50 / 1 = 50 payout, minus 50 staked = 0
++      expect(TradeMath.estimatedProfit(amount: 50, price: 1), closeTo(0, 0.001));
++    });
++
++    test('estimatedProfit returns -amount on invalid price', () {
++      expect(TradeMath.estimatedProfit(amount: 50, price: 0), -50);
++    });
++
+     test('formats prices as cents', () {
+       expect(TradeMath.formatPrice(0.61), '61c');
+     });
++
++    test('formatPrice rounds to the nearest cent', () {
++      expect(TradeMath.formatPrice(0.615), '62c');
++      expect(TradeMath.formatPrice(0), '0c');
++      expect(TradeMath.formatPrice(1), '100c');
++    });
++
++    test('formatPercent renders a rounded whole percentage', () {
++      expect(TradeMath.formatPercent(0.2), '20%');
++      expect(TradeMath.formatPercent(0.125), '13%');
++      expect(TradeMath.formatPercent(-0.05), '-5%');
++    });
+   });
+ }
