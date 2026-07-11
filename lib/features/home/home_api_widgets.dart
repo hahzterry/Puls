@@ -97,6 +97,7 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
         color: t.surface,
         border: Border(bottom: BorderSide(color: t.border)),
       ),
+      clipBehavior: Clip.antiAlias,
       child: AnimatedBuilder(
         animation: _scrollController,
         builder: (context, child) {

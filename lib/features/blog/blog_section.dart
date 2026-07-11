@@ -66,14 +66,13 @@ class _BlogSectionState extends State<BlogSection> {
   Future<void> _fetchNews() async {
     if (_news.isNotEmpty) return;
     setState(() => _loadingNews = true);
-    try {
-      final target = 'https://min-api.cryptocompare.com/data/v2/news/?lang=EN';
-      final res = await http.get(Uri.parse('https://api.allorigins.win/raw?url=${Uri.encodeComponent(target)}'));
+      final target = 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fcointelegraph.com%2Frss';
+      final res = await http.get(Uri.parse(target));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (mounted) {
           setState(() {
-            _news = (data['Data'] as List?)?.take(widget.limit).toList() ?? [];
+            _news = (data['items'] as List?)?.take(widget.limit).toList() ?? [];
             _loadingNews = false;
           });
         }
@@ -201,8 +200,15 @@ class _BlogSectionState extends State<BlogSection> {
   }
 
   Widget _buildNewsCard(dynamic n, PulsThemeColors t) {
+    final title = n['title'] ?? '';
+    final url = n['link'] ?? '';
+    final author = n['author'] ?? 'Cointelegraph';
+    var body = n['description'] ?? '';
+    body = body.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '').trim();
+    final imageUrl = n['enclosure']?['link'] ?? n['thumbnail'];
+
     return InkWell(
-      onTap: () => _openNews(n['url'] ?? ''),
+      onTap: () => _openNews(url),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -219,22 +225,22 @@ class _BlogSectionState extends State<BlogSection> {
               child: Text('REAL NEWS', style: TextStyle(color: t.brand, fontSize: 9.5, fontWeight: FontWeight.w900)),
             ),
             const Spacer(),
-            Text(n['source_info']?['name'] ?? 'News', style: TextStyle(color: t.textSubtle, fontSize: 11)),
+            Text(author, style: TextStyle(color: t.textSubtle, fontSize: 11)),
           ]),
           const SizedBox(height: 10),
-          if (n['imageurl'] != null && n['imageurl'].toString().isNotEmpty) ...[
+          if (imageUrl != null && imageUrl.toString().isNotEmpty) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(n['imageurl'], height: 130, cacheHeight: 260, width: double.infinity, fit: BoxFit.cover,
+              child: Image.network(imageUrl, height: 130, cacheHeight: 260, width: double.infinity, fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink()),
             ),
             const SizedBox(height: 10),
           ],
-          Text(n['title'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis,
+          Text(title, maxLines: 2, overflow: TextOverflow.ellipsis,
               style: TextStyle(color: t.text, fontSize: 16, fontWeight: FontWeight.w900, height: 1.25, letterSpacing: -0.3)),
-          if (n['body'] != null) ...[
+          if (body.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(n['body'], maxLines: 3, overflow: TextOverflow.ellipsis,
+            Text(body, maxLines: 3, overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: t.textMuted, fontSize: 13, height: 1.45)),
           ],
         ]),
