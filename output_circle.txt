@@ -1,0 +1,9 @@
+◇ injected env (221) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+Error stack: TypeError: Cannot read properties of undefined (reading 'length')
+    at Ki (/opt/puls-backend/node_modules/@circle-fin/developer-controlled-wallets/dist/developer-controlled-wallets.cjs.js:1:78467)
+    at dc (/opt/puls-backend/node_modules/@circle-fin/developer-controlled-wallets/dist/developer-controlled-wallets.cjs.js:1:81463)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async /opt/puls-backend/node_modules/@circle-fin/developer-controlled-wallets/dist/developer-controlled-wallets.cjs.js:1:81813
+    at async /opt/puls-backend/node_modules/@circle-fin/developer-controlled-wallets/dist/developer-controlled-wallets.cjs.js:1:84059
+    at async test (/opt/puls-backend/test_circle.cjs:6:16)
+Error response data: undefined

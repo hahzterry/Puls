@@ -23,6 +23,7 @@ import '../shell/shell_nav.dart';
 import '../onboarding/help_button.dart';
 import '../../app/puls_app.dart';
 import 'create_market_dialog.dart';
+import 'package:puls/core/config.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -634,8 +635,7 @@ class _MarketCardState extends State<_MarketCard> {
                       if (market.imageUrl.isNotEmpty) ...[
                         ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            market.imageUrl,
+                          child: Image.network(proxifyImageUrl(market.imageUrl),
                             width: 44,
                             height: 44,
                             cacheHeight: 88,
@@ -949,8 +949,7 @@ class _FeaturedMarketCardState extends State<_FeaturedMarketCard> {
                   if (m.imageUrl.isNotEmpty) ...[
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        m.imageUrl,
+                      child: Image.network(proxifyImageUrl(m.imageUrl),
                         width: 52,
                         height: 52,
                         cacheHeight: 104,

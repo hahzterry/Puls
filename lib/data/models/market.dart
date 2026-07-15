@@ -1,3 +1,4 @@
+import 'package:puls/core/config.dart';
 enum MarketSide { yes, no }
 
 class Market {
@@ -103,7 +104,7 @@ class Market {
         history: history,
         comments: comments,
         news: news,
-        imageUrl: imageUrl,
+        imageUrl: proxifyImageUrl(imageUrl),
         volume24hr: volume24hr,
         lastTradePrice: lastTradePrice,
         bestBid: bestBid,

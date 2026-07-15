@@ -25,6 +25,7 @@ import '../rewards/points_quests_card.dart';
 import '../rewards/season_leaderboard_card.dart';
 import '../blog/blog_section.dart';
 import 'home_api_widgets.dart';
+import 'package:puls/core/config.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -505,8 +506,7 @@ class _WebTrendingCardState extends State<_WebTrendingCard> {
                     if (widget.market.imageUrl.isNotEmpty) ...[
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          widget.market.imageUrl,
+                        child: Image.network(proxifyImageUrl(widget.market.imageUrl),
                           width: 40,
                           height: 40,
                           cacheHeight: 80,

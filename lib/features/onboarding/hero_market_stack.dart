@@ -279,8 +279,7 @@ class _MarketCardState extends State<_MarketCard> {
                       if (m.imageUrl.isNotEmpty)
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            m.imageUrl,
+                          child: Image.network(proxifyImageUrl(m.imageUrl),
                             width: 28,
                             height: 28,
                             cacheHeight: 56,

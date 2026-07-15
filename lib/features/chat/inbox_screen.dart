@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/config.dart';
 import '../../app/puls_app.dart';
 import 'user_chat_screen.dart';
 
@@ -28,7 +29,7 @@ class _InboxScreenState extends State<InboxScreen> {
     if (uid == null) return;
 
     try {
-      final res = await http.get(Uri.parse('https://api.puls.dev/api/messages?userId=$uid'));
+      final res = await http.get(Uri.parse('$backendUrl/api/messages?userId=$uid'));
       if (res.statusCode == 200) {
         if (mounted) {
           setState(() {
@@ -75,7 +76,7 @@ class _InboxScreenState extends State<InboxScreen> {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           leading: CircleAvatar(
                             backgroundColor: t.surfaceRaised,
-                            backgroundImage: NetworkImage('https://api.dicebear.com/7.x/identicon/png?seed=$partnerId&size=64'),
+                            backgroundImage: NetworkImage(proxifyImageUrl('https://api.dicebear.com/7.x/identicon/png?seed=$partnerId&size=64')),
                           ),
                           title: Text(partnerId, style: TextStyle(color: t.text, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                           subtitle: Row(

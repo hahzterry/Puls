@@ -1,0 +1,105 @@
+[TAILING] Tailing last 50 lines for [puls-backend] process (change the value with --lines option)
+/root/.pm2/logs/puls-backend-error.log last 50 lines:
+0|puls-bac | [llm] provider (gemini-2.5-flash) attempt 1/1 failed: LLM 429: {
+0|puls-bac |   "error": {
+0|puls-bac |     "code": 429,
+0|puls-bac |     "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-a
+0|puls-bac | [llm] provider (gemini-3.5-flash) attempt 1/1 failed: LLM 429: {
+0|puls-bac |   "error": {
+0|puls-bac |     "code": 429,
+0|puls-bac |     "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-a
+0|puls-bac | [llm] provider (gemini-3.1-flash-lite) attempt 1/1 failed: LLM 429: {
+0|puls-bac |   "error": {
+0|puls-bac |     "code": 429,
+0|puls-bac |     "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-a
+0|puls-bac | Failed to warm up market cs2-imperi-inf6-2026-04-09-game2-odd-even-total-kills: Market cs2-imperi-inf6-2026-04-09-game2-odd-even-total-kills deadline 1775744400 is in the past (or <5min away) — skipping deployment
+0|puls-bac | agent withdraw error: the asset amount owned by the wallet is insufficient for the transaction.
+0|puls-bac | agent withdraw error: the asset amount owned by the wallet is insufficient for the transaction.
+0|puls-bac | Failed to warm up market highest-temperature-in-istanbul-on-july-11-2026-22corbelow: Market highest-temperature-in-istanbul-on-july-11-2026-22corbelow deadline 1783771200 is in the past (or <5min away) — skipping deployment
+0|puls-bac | Failed to warm up market highest-temperature-in-seattle-on-july-11-2026-82-83f: Market highest-temperature-in-seattle-on-july-11-2026-82-83f deadline 1783771200 is in the past (or <5min away) — skipping deployment
+0|puls-bac | [swarm] memo transfer fell back to plain: Address "[object Object]" is invalid.
+0|puls-bac | 
+0|puls-bac | - Address must be a hex value of 20 bytes (40 hex characters).
+0|puls-bac | - Address must match its checksum counterpart.
+0|puls-bac | 
+0|puls-bac | Version: viem@2.50.4
+0|puls-bac | agent withdraw error: the asset amount owned by the wallet is insufficient for the transaction.
+0|puls-bac | [llm] provider (openai/gpt-oss-120b) attempt 1/1 failed: LLM 402: {"error":"You have depleted your monthly included credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get 20x more included usage."}
+0|puls-bac | [llm] provider (gemini-3.5-flash) attempt 1/1 failed: LLM 429: {
+0|puls-bac |   "error": {
+0|puls-bac |     "code": 429,
+0|puls-bac |     "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-a
+0|puls-bac | [llm] provider (gemini-3.1-flash-lite) attempt 1/1 failed: LLM 429: {
+0|puls-bac |   "error": {
+0|puls-bac |     "code": 429,
+0|puls-bac |     "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-a
+0|puls-bac | agent withdraw error: the asset amount owned by the wallet is insufficient for the transaction.
+0|puls-bac | agent withdraw error: the asset amount owned by the wallet is insufficient for the transaction.
+0|puls-bac | [swarm] memo transfer fell back to plain: Address "[object Object]" is invalid.
+0|puls-bac | 
+0|puls-bac | - Address must be a hex value of 20 bytes (40 hex characters).
+0|puls-bac | - Address must match its checksum counterpart.
+0|puls-bac | 
+0|puls-bac | Version: viem@2.50.4
+0|puls-bac | [research] readUrl failed: HTTP 403
+0|puls-bac | [research] readUrl failed: HTTP 403
+0|puls-bac | [llm] provider (deepseek-v3.2:free) attempt 1/1 failed: LLM 403: {"error":"Daily limit reached and no permanent credit available. The free model deepseek-v3.2:free on the Basic tier is limited to 30 requests per day. Please upgrade your tier or top up permanent cre
+0|puls-bac | [swarm] memo transfer fell back to plain: Address "[object Object]" is invalid.
+0|puls-bac | 
+0|puls-bac | - Address must be a hex value of 20 bytes (40 hex characters).
+0|puls-bac | - Address must match its checksum counterpart.
+0|puls-bac | 
+0|puls-bac | Version: viem@2.50.4
+
+/root/.pm2/logs/puls-backend-out.log last 50 lines:
+0|puls-bac | Running limit orders matching check...
+0|puls-bac | Running autonomous agent strategies loop...
+0|puls-bac | No pending limit orders to check.
+0|puls-bac | [swarm:orion] bought signal 838d99f0-d17a-4f89-a804-e0d29ceec4de from agent_swarm_striker — 0.001 USDC → 0xf17f57e43fd61a66f59f46e180f55e8965fb146a (on-chain memo) (tx 28594677-9c3a-506e-8538-dd3cfea3dc04)
+0|puls-bac | 
+0|puls-bac | 🟢 [RECEIPT] x402 NANOPAYMENT CLEARED · settled on Arc
+0|puls-bac | ┌──────────────────────────────────────────────────────┐
+0|puls-bac | │  $0.0001 USDC                                        │
+0|puls-bac | │  from Agent Orion 🔭 (trader)
+0|puls-bac | │    to Puls Data Faucet (Tavily/CMC Bridge)           │
+0|puls-bac | └──────────────────────────────────────────────────────┘
+0|puls-bac | ▸ Data unlocked: Web Search & Oracle Prices
+0|puls-bac | ⛓ https://testnet.arcscan.app/tx/b874bf55-c12a-5183-95bc-26b611e6a709
+0|puls-bac | 
+0|puls-bac | [swarm:orion] memory → still open: Danaher dhr q2 non gaap core revenue growth 0  (NO); Will the democratic party win the ca 11 house  (YES); World cup most goals record broken 20260608192 (YES); Cs2 pain shk 2026 07 11 total games 2pt5 (NO).
+0|puls-bac | [swarm:orion] NO $0.5 on will-dplus-esports-win-challengers-2026-korea-wdg-split-2-20260625201721837
+0|puls-bac | [WebSocket] Broadcasting trade event: 92483741-b761-47af-b48a-1ba0e819743f
+0|puls-bac | [swarm:orion] published decision, tx 0x704e36843e8cfbeb92788f0e0672f6e28eb3763e59ac0469917ca4bd0513aadb
+0|puls-bac | Running limit orders matching check...
+0|puls-bac | No pending limit orders to check.
+0|puls-bac | Running limit orders matching check...
+0|puls-bac | No pending limit orders to check.
+0|puls-bac | Running auto-resolution cron check...
+0|puls-bac | Found 16 markets to check for resolution.
+0|puls-bac | Running autonomous agent strategies loop...
+0|puls-bac | Running limit orders matching check...
+0|puls-bac | Market chi-sgr-bgu-2026-07-11-sgr is past deadline but not yet resolved on Polymarket.
+0|puls-bac | No pending limit orders to check.
+0|puls-bac | [UMA] trump-approval-up-or-down-this-week-20260703165720397: request open, waiting for a determinable outcome to propose
+0|puls-bac | Market dota2-poorra-re-2026-07-11-poorra is past deadline but not yet resolved on Polymarket.
+0|puls-bac | Market highest-temperature-in-helsinki-on-july-11-2026-29corhigher is past deadline but not yet resolved on Polymarket.
+0|puls-bac | Market highest-temperature-in-karachi-on-july-11-2026-32c is past deadline but not yet resolved on Polymarket.
+0|puls-bac | [UMA] atp-moutet-fucsovi-2026-06-22-match-total-21pt5: request open, waiting for a determinable outcome to propose
+0|puls-bac | Market chi-xin-qin-2026-07-11-spread-away-1pt5 is past deadline but not yet resolved on Polymarket.
+0|puls-bac | Market lowest-temperature-in-seoul-on-july-11-2026-19corbelow is past deadline but not yet resolved on Polymarket.
+0|puls-bac | [UMA] cs2-omega1-shishk-2026-06-27: request open, waiting for a determinable outcome to propose
+0|puls-bac | Market highest-temperature-in-cape-town-on-july-11-2026-13corbelow is past deadline but not yet resolved on Polymarket.
+0|puls-bac | Market highest-temperature-in-taipei-on-july-11-2026-32corhigher is past deadline but not yet resolved on Polymarket.
+0|puls-bac | Market highest-temperature-in-atlanta-on-july-11-2026-92-93f is past deadline but not yet resolved on Polymarket.
+0|puls-bac | Market highest-temperature-in-shenzhen-on-july-11-2026-36c is past deadline but not yet resolved on Polymarket.
+0|puls-bac | Market highest-temperature-in-munich-on-july-11-2026-28c is past deadline but not yet resolved on Polymarket.
+0|puls-bac | Market highest-temperature-in-houston-on-july-11-2026-88-89f is past deadline but not yet resolved on Polymarket.
+0|puls-bac | Market nor-ffk-lil-2026-07-11-btts is past deadline but not yet resolved on Polymarket.
+0|puls-bac | Running limit orders matching check...
+0|puls-bac | No pending limit orders to check.
+0|puls-bac | Running limit orders matching check...
+0|puls-bac | No pending limit orders to check.
+0|puls-bac | Running autonomous agent strategies loop...
+0|puls-bac | Running limit orders matching check...
+0|puls-bac | No pending limit orders to check.
+

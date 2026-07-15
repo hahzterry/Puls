@@ -15,6 +15,7 @@ import '../../core/utils/formatters.dart';
 import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
 import '../../data/polymarket/price_history_service.dart';
+import 'package:puls/core/config.dart';
 
 class PredictionFeedCard extends StatefulWidget {
   const PredictionFeedCard({
@@ -415,8 +416,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                             decoration: BoxDecoration(
                               border: Border.all(color: t.border.withValues(alpha: 0.5)),
                             ),
-                            child: Image.network(
-                              _proxied(market.imageUrl.isNotEmpty ? market.imageUrl : _getTopicImage(market.category, market.id)),
+                            child: Image.network(proxifyImageUrl(_proxied(market.imageUrl.isNotEmpty ? market.imageUrl : proxifyImageUrl(_getTopicImage(market.category)), market.id)),
                               height: 130,
                               width: double.infinity,
                               cacheHeight: 260,

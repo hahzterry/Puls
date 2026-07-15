@@ -763,7 +763,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                     sub: 'Buy YES or NO on any prediction to get started.',
                     t: t,
                     imageUrl:
-                        'https://img.icons8.com/?id=4xcZGzia5Blf&format=png&size=256',
+                        proxifyImageUrl('https://img.icons8.com/?id=4xcZGzia5Blf&format=png&size=256'),
                     ctaLabel: 'Browse markets',
                     ctaIcon: Icons.explore_rounded,
                     onCta: () =>

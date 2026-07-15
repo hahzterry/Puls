@@ -241,8 +241,7 @@ class _TickerChip extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(9),
                 child: item.imageUrl.isNotEmpty
-                    ? Image.network(
-                        item.imageUrl,
+                    ? Image.network(proxifyImageUrl(item.imageUrl),
                         width: 34,
                         height: 34,
                         cacheHeight: 68,

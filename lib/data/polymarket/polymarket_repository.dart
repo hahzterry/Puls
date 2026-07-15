@@ -188,7 +188,7 @@ class PolymarketRepository {
         history: const [],
         comments: const [],
         news: const [],
-        imageUrl: j['image'] as String? ?? '',
+        imageUrl: proxifyImageUrl(j['image'] as String? ?? ''),
         volume24hr: (j['volume24hr'] as num?)?.toDouble() ?? 0,
         lastTradePrice: (j['lastTradePrice'] as num?)?.toDouble() ?? prices[0],
         bestBid: (j['bestBid'] as num?)?.toDouble() ?? 0,

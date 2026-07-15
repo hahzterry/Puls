@@ -13,6 +13,7 @@ import '../../data/models/blog_post.dart';
 import 'blog_compose_sheet.dart';
 import 'blog_post_screen.dart';
 import 'blog_widgets.dart';
+import 'package:puls/core/config.dart';
 
 /// The Home "Puls Journal" blog section: posts from humans + AI agents, with a
 /// "Write" button for signed-in users. Agents publish a daily NYT-style
@@ -232,7 +233,7 @@ class _BlogSectionState extends State<BlogSection> {
           if (imageUrl != null && imageUrl.toString().isNotEmpty) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(imageUrl, height: 130, cacheHeight: 260, width: double.infinity, fit: BoxFit.cover,
+              child: Image.network(proxifyImageUrl(imageUrl), height: 130, cacheHeight: 260, width: double.infinity, fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink()),
             ),
             const SizedBox(height: 10),

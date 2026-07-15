@@ -190,10 +190,9 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
                     width: 56, height: 56,
                     child: CircularProgressIndicator(color: t.brand, strokeWidth: 3),
                   )
-                : Image.network(
-                    _status == TxStatus.complete
+                : Image.network(proxifyImageUrl(_status == TxStatus.complete
                         ? 'https://img.icons8.com/?id=hJniet82Bq1U&format=png&size=256'
-                        : 'https://img.icons8.com/?id=DXECg4JU1n2x&format=png&size=256',
+                        : 'https://img.icons8.com/?id=DXECg4JU1n2x&format=png&size=256'),
                     key: ValueKey(_status),
                     width: 56, height: 56,
                     fit: BoxFit.contain,

@@ -1,0 +1,17 @@
+◇ injected env (221) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+/opt/puls-backend/node_modules/pg-pool/index.js:45
+    Error.captureStackTrace(err)
+          ^
+
+Error: connect ECONNREFUSED 127.0.0.1:5432
+    at /opt/puls-backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async test (/opt/puls-backend/test_withdraw.cjs:6:15) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5432
+}
+
+Node.js v22.23.1

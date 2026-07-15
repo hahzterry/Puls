@@ -1,0 +1,6 @@
+◇ injected env (221) from .env // tip: ⌘ enable debugging { debug: true }
+wallet=49bc39b5-259c-596d-97a3-919d8198d758 erc20Bal=0.5
+Attempting to withdraw 0.45 (90%) ...
+SUCCESS: {"id":"de734520-4d76-59cf-98f2-bfe8303edcdf","state":"INITIATED"}
+Attempting to withdraw 0.25 (50%) ...
+SUCCESS 50%: {"id":"6be2c28a-930d-5e08-8ca4-b5117609d074","state":"INITIATED"}

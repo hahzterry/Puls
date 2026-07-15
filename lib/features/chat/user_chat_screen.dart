@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/puls_snack.dart';
+import '../../core/config.dart';
 import '../../app/puls_app.dart';
 
 class UserChatScreen extends StatefulWidget {
@@ -48,8 +49,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
     if (uid == null) return;
 
     try {
-      // NOTE: Using backend URL directly (for prod replace with env)
-      final res = await http.get(Uri.parse('https://api.puls.dev/api/messages/${widget.targetUserId}?userId=$uid'));
+      final res = await http.get(Uri.parse('$backendUrl/api/messages/${widget.targetUserId}?userId=$uid'));
       if (res.statusCode == 200) {
         final List<dynamic> msgs = jsonDecode(res.body);
         if (mounted) {
@@ -101,7 +101,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
 
     try {
       await http.post(
-        Uri.parse('https://api.puls.dev/api/messages/${widget.targetUserId}'),
+        Uri.parse('$backendUrl/api/messages/${widget.targetUserId}'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'userId': uid,

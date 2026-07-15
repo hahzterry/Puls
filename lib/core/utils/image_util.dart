@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:puls/core/config.dart';
 
 String _proxied(String url) {
   if (!kIsWeb || url.isEmpty) return url;
@@ -8,15 +9,13 @@ String _proxied(String url) {
   return 'https://images.weserv.nl/?url=${Uri.encodeComponent(url)}&w=600&output=webp';
 }
 
-Widget networkImage(
-  String url, {
+Widget networkImage(proxifyImageUrl(String url), {
   double? height,
   double? width,
   BoxFit fit = BoxFit.cover,
 }) {
   if (url.isEmpty) return const SizedBox.shrink();
-  return CachedNetworkImage(
-    imageUrl: _proxied(url),
+  return CachedNetworkImage(proxifyImageUrl(imageUrl: proxifyImageUrl(_proxied(url))),
     height: height,
     width: width,
     fit: fit,

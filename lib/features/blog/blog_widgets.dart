@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/agent_pfp.dart';
 import '../../data/models/blog_post.dart';
+import 'package:puls/core/config.dart';
 
 String blogRelativeTime(DateTime? t) {
   if (t == null) return '';
@@ -57,7 +58,7 @@ class BlogAuthorRow extends StatelessWidget {
         if (pfp != null) {
           img = AssetImage(pfp);
         } else if (author.avatarUrl.isNotEmpty) {
-          img = NetworkImage(author.avatarUrl);
+          img = NetworkImage(proxifyImageUrl(author.avatarUrl));
         }
         return CircleAvatar(
           radius: 16,
@@ -124,7 +125,7 @@ class BlogPostCard extends StatelessWidget {
           if (post.coverUrl != null && post.coverUrl!.isNotEmpty) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(post.coverUrl!, height: 130, cacheHeight: 260, width: double.infinity, fit: BoxFit.cover,
+              child: Image.network(proxifyImageUrl(post.coverUrl!), height: 130, cacheHeight: 260, width: double.infinity, fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink()),
             ),
             const SizedBox(height: 10),

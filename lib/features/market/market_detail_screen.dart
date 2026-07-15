@@ -25,6 +25,7 @@ import 'ai_insight_card.dart';
 import 'resolution_panel.dart';
 import 'market_detail_tabs.dart';
 import 'ai_oracle_panel.dart';
+import 'package:puls/core/config.dart';
 
 class MarketDetailScreen extends StatefulWidget {
   const MarketDetailScreen({required this.marketId, super.key});
@@ -95,7 +96,7 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
             radius: 16,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: networkImage(market.imageUrl, height: 180, fit: BoxFit.cover),
+              child: networkImage(proxifyImageUrl(market.imageUrl), height: 180, fit: BoxFit.cover),
             ),
           ),
           const SizedBox(height: 16),

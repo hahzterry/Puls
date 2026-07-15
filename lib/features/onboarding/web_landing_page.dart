@@ -2907,8 +2907,7 @@ class _StatsSection extends StatelessWidget {
                     ),
                   ),
                 ),
-                Image.network(
-                  imageUrl,
+                Image.network(proxifyImageUrl(imageUrl),
                   width: isMobile ? 32 : 48,
                   height: isMobile ? 32 : 48,
                   cacheHeight: 96,

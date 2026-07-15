@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../theme/app_theme.dart';
 import '../utils/agent_pfp.dart';
+import 'package:puls/core/config.dart';
 
 /// Normalizes avatar URLs so they can actually render in Flutter.
 ///
@@ -71,16 +72,14 @@ class PulsAvatar extends StatelessWidget {
         errorBuilder: (_, __, ___) => fallback,
       );
     } else if (url != null && url!.isNotEmpty) {
-      child = CachedNetworkImage(
-        imageUrl: normalizeAvatarUrl(url!, size: (size * 2).round().clamp(64, 256)),
+      child = CachedNetworkImage(proxifyImageUrl(imageUrl: proxifyImageUrl(normalizeAvatarUrl(url!)), size: (size * 2).round().clamp(64, 256)),
         width: size,
         height: size,
         fit: BoxFit.cover,
         errorWidget: (_, __, ___) => fallback,
       );
     } else {
-      child = CachedNetworkImage(
-        imageUrl: fallbackUrl,
+      child = CachedNetworkImage(proxifyImageUrl(imageUrl: proxifyImageUrl(fallbackUrl)),
         width: size,
         height: size,
         fit: BoxFit.cover,
