@@ -9,13 +9,13 @@ String _proxied(String url) {
   return 'https://images.weserv.nl/?url=${Uri.encodeComponent(url)}&w=600&output=webp';
 }
 
-Widget networkImage(proxifyImageUrl(String url), {
+Widget networkImage(String url, {
   double? height,
   double? width,
   BoxFit fit = BoxFit.cover,
 }) {
   if (url.isEmpty) return const SizedBox.shrink();
-  return CachedNetworkImage(proxifyImageUrl(imageUrl: proxifyImageUrl(_proxied(url))),
+  return CachedNetworkImage(imageUrl: proxifyImageUrl(_proxied(url)),
     height: height,
     width: width,
     fit: fit,

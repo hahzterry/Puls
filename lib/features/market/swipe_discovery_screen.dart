@@ -431,7 +431,7 @@ class _MarketCard extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // Background image (or category fallback).
-          Image.network(proxifyImageUrl(market.imageUrl.isNotEmpty ? market.imageUrl : proxifyImageUrl('https://image.pollinations.ai/prompt/${Uri.encodeComponent("${market.category} cyberpunk landscape")))}?width=1080&height=1920&nologo=true',
+          Image.network(proxifyImageUrl(market.imageUrl.isNotEmpty ? market.imageUrl : 'https://image.pollinations.ai/prompt/${Uri.encodeComponent("${market.category} cyberpunk landscape")}?width=1080&height=1920&nologo=true'),
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => _fallbackBg(t),
           ),

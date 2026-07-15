@@ -1,3 +1,4 @@
+import 'package:puls/core/config.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';

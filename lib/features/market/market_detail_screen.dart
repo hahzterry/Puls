@@ -96,7 +96,7 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
             radius: 16,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: networkImage(proxifyImageUrl(market.imageUrl), height: 180, fit: BoxFit.cover),
+              child: networkImage(market.imageUrl, height: 180, fit: BoxFit.cover),
             ),
           ),
           const SizedBox(height: 16),

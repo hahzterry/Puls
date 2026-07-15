@@ -1,3 +1,4 @@
+import 'package:puls/core/config.dart';
 import 'dart:convert';
 import 'dart:math' as math;
 
