@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
@@ -24,12 +25,33 @@ class _InboxScreenState extends State<InboxScreen> {
     _fetch();
   }
 
+  Future<Map<String, String>> _authHeaders() async {
+    final auth = Supabase.instance.client.auth;
+    var s = auth.currentSession;
+    final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final needsRefresh = s == null || (s.expiresAt != null && s.expiresAt! - nowSec < 60);
+    if (needsRefresh) {
+      try {
+        final res = await auth.refreshSession();
+        s = res.session ?? auth.currentSession;
+      } catch (_) {
+        s = auth.currentSession;
+      }
+    }
+    final h = <String, String>{'Content-Type': 'application/json'};
+    if (s != null) h['Authorization'] = 'Bearer ${s.accessToken}';
+    return h;
+  }
+
   Future<void> _fetch() async {
     final uid = WalletServiceScope.of(context).state.userId;
     if (uid == null) return;
 
     try {
-      final res = await http.get(Uri.parse('$backendUrl/api/messages?userId=$uid'));
+      final res = await http.get(
+        Uri.parse('$backendUrl/api/messages?userId=$uid'),
+        headers: await _authHeaders(),
+      );
       if (res.statusCode == 200) {
         if (mounted) {
           setState(() {
