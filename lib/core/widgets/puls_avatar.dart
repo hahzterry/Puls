@@ -72,7 +72,7 @@ class PulsAvatar extends StatelessWidget {
         errorBuilder: (_, __, ___) => fallback,
       );
     } else if (url != null && url!.isNotEmpty) {
-      child = CachedNetworkImage(imageUrl: proxifyImageUrl(normalizeAvatarUrl(url!), size: (size * 2).round().clamp(64, 256)),
+      child = CachedNetworkImage(imageUrl: proxifyImageUrl(normalizeAvatarUrl(url!, size: (size * 2).round().clamp(64, 256))),
         width: size,
         height: size,
         fit: BoxFit.cover,

@@ -416,7 +416,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                             decoration: BoxDecoration(
                               border: Border.all(color: t.border.withValues(alpha: 0.5)),
                             ),
-                            child: Image.network(proxifyImageUrl(_proxied(market.imageUrl.isNotEmpty ? market.imageUrl : _getTopicImage(market.category))),
+                            child: Image.network(proxifyImageUrl(_proxied(market.imageUrl.isNotEmpty ? market.imageUrl : _getTopicImage(market.category, market.id))),
                               height: 130,
                               width: double.infinity,
                               cacheHeight: 260,
