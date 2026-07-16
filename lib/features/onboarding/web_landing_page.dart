@@ -602,9 +602,10 @@ class _HeroCopy extends StatelessWidget {
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: Text(
-            'A mobile prediction market on Arc — swipe to trade real-world events '
-            'in USDC, no seed phrase. The twist: autonomous AI agents trade beside you, '
-            'each staking a USDC bond on every call — slashed when wrong, returned when right.',
+            'A mobile prediction market on Arc. Swipe to trade real-world events '
+            'in USDC with no seed phrase. The twist: autonomous AI agents trade beside you. '
+            'They buy premium data via Puls Gateway (x402) and stake a USDC bond on every call. '
+            'Slashed when wrong, returned when right.',
             textAlign: align,
             style: TextStyle(
               color: t.textMuted,
@@ -765,11 +766,12 @@ class _TrustStrip extends StatelessWidget {
   const _TrustStrip();
 
   static const _rails = [
-    ('CIRCLE', 'MPC wallets'),
+    ('CIRCLE', 'MPC wallets & CCTP'),
     ('ARC', 'USDC-gas L1'),
+    ('PULS GATEWAY', 'x402 payments'),
+    ('INDEXNOW', 'instant indexing'),
     ('UMA', 'oracle settlement'),
-    ('POLYMARKET', 'live market data'),
-    ('ERC-8004', 'agent identity + AgentBond'),
+    ('ERC-8004', 'agent identity'),
   ];
 
   @override
@@ -1223,13 +1225,12 @@ class _BentoState extends State<_Bento> {
         visual: const _SwipeViz(),
         horizontal: wide,
       );
-      final streams = _BentoCell(
-        accent: const Color(0xFF22D3EE),
-        eyebrow: 'PAY-PER-SECOND · USDC',
-        title: 'Stream value by the second',
-        body: 'Authorize a rate and a cap once — then pay per second as a live '
-            'feed flows, auto-paused when it stops and batched into USDC on Arc.',
-        visual: const _StreamMeterViz(),
+      final gateway = _BentoCell(
+        accent: const Color(0xFF3B82F6),
+        eyebrow: 'PULS GATEWAY · x402',
+        title: 'Agents buy real-world data',
+        body: 'Agents use Circle MPC wallets to purchase verified macro and crypto intel via x402 nanopayments. No hallucination, just verified data.',
+        visual: const _GatewayViz(),
         horizontal: wide,
       );
 
@@ -1246,7 +1247,7 @@ class _BentoState extends State<_Bento> {
             const SizedBox(height: gap),
             SizedBox(height: 280, child: _cell(director, 4)),
             const SizedBox(height: gap),
-            SizedBox(height: 300, child: _cell(streams, 5)),
+            SizedBox(height: 300, child: _cell(gateway, 5)),
             const SizedBox(height: gap),
             SizedBox(height: 300, child: _cell(swipe, 6)),
           ],
@@ -1281,7 +1282,7 @@ class _BentoState extends State<_Bento> {
             ),
           ),
           const SizedBox(height: gap),
-          SizedBox(height: 208, child: _cell(streams, 5)),
+          SizedBox(height: 208, child: _cell(gateway, 5)),
           const SizedBox(height: gap),
           SizedBox(height: 208, child: _cell(swipe, 6)),
         ],
@@ -3530,6 +3531,101 @@ class _ScrollCueState extends State<_ScrollCue>
             ),
             child: Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: t.textMuted),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Visual · Puls Gateway (x402) ───────────────────────────────────────────────
+class _GatewayViz extends StatefulWidget {
+  const _GatewayViz();
+  @override
+  State<_GatewayViz> createState() => _GatewayVizState();
+}
+
+class _GatewayVizState extends State<_GatewayViz> with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(vsync: this, duration: const Duration(seconds: 4));
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduce = context.reduceMotion;
+    if (reduce) {
+      if (_c.isAnimating) _c.stop();
+    } else if (!_c.isAnimating) {
+      _c.repeat();
+    }
+    final t = context.puls;
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final v = reduce ? 0.8 : _c.value;
+        final phase = v < 0.33 ? 0 : (v < 0.66 ? 1 : 2); // 0: Query, 1: Pay, 2: Data
+        
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _node(t, phase == 0, Icons.smart_toy_rounded, 'Agent'),
+                _line(t, phase == 1, 'x402 Pay'),
+                _node(t, phase == 2, Icons.cloud_download_rounded, 'Premium API'),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              phase == 0 ? 'Evaluating ROI...' : (phase == 1 ? 'Settling 0.000005 USDC' : 'Data Unlocked'),
+               style: TextStyle(color: t.textSubtle, fontSize: 10, fontWeight: FontWeight.w700),
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _node(PulsThemeColors t, bool active, IconData icon, String label) {
+     return Column(
+       mainAxisSize: MainAxisSize.min,
+       children: [
+         AnimatedContainer(
+           duration: const Duration(milliseconds: 300),
+           padding: const EdgeInsets.all(12),
+           decoration: BoxDecoration(
+             color: active ? t.brand.withValues(alpha: 0.2) : t.surfaceRaised,
+             shape: BoxShape.circle,
+             border: Border.all(color: active ? t.brand : t.border)
+           ),
+           child: Icon(icon, size: 18, color: active ? t.brand : t.textMuted),
+         ),
+         const SizedBox(height: 6),
+         Text(label, style: TextStyle(color: t.textMuted, fontSize: 9, fontWeight: FontWeight.w800)),
+       ]
+     );
+  }
+
+  Widget _line(PulsThemeColors t, bool active, String label) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: TextStyle(color: active ? t.yes : Colors.transparent, fontSize: 8, fontWeight: FontWeight.w900)),
+        Container(
+          width: 40,
+          height: 2,
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          color: active ? t.yes : t.border,
         ),
       ],
     );
