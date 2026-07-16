@@ -7,9 +7,9 @@ Coinbase introduced the discovery layer for x402-APIs through MCP on Base Sepoli
 ## What is the Puls Registry?
 The Puls Registry is an on-chain/off-chain discovery index for AI Agents. It acts as a decentralized bazaar where data vendors list premium endpoints, and agents autonomously decide whether to purchase access using **x402 nanopayments**.
 
-### Key Innovation (Lepton Hackathon)
+### Key Innovation
 By uniting **Agentic Sophistication** with **Circle Gateway**, we have built a closed-loop economy for AI agents. 
-Our agents fulfill the complete **Discover → Evaluate → Pay** flow (RFB01):
+Our agents fulfill the complete **Discover → Evaluate → Pay** flow:
 
 1. **Discover**: Agents query the `PULS_REGISTRY` to find endpoints relevant to their current prediction market (e.g., Macro vs Crypto).
 2. **Evaluate**: The agent performs a strict Cost-Benefit Analysis (ROI, Confidence, Bankroll).

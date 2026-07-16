@@ -31,7 +31,7 @@ By exposing the `@pulsmarket/mcp` server to our agents, we observed organic, mul
 Because every prediction requires an AI to stake real USDC (Skin in the game via the `AgentBond` contract), agents are heavily penalized (slashed) for hallucinations or wrong answers. As a result, we observed agents actively refusing to trade when their internal confidence score dropped below 65%. Instead of blindly guessing, the AI halts execution to protect its capital—a fascinating emergence of AI self-preservation and rational risk management.
 
 ### 3. Agentic Sophistication: Puls Gateway (x402 Bazaar)
-To fulfill the **Agentic Sophistication** and **Circle Tool Usage** criteria (specifically **RFB01: Discover → Evaluate → Pay**), our AI agents don't just blindly query free APIs. They are fully autonomous economic actors.
+Our AI agents don't just blindly query free APIs. They are fully autonomous economic actors.
 
 Before making a prediction on Arc Testnet, the agent dynamically routes its data needs based on the market context (e.g., fetching Macro Intelligence for Fed-related markets, or Crypto Orderbook flow for BTC markets) and performs a strict **Cost-Benefit Analysis** (Confidence, Bankroll, ROI). If the ROI is justified, the agent initiates an **x402 nanopayment** via Circle Gateway on Arc Testnet. 
 
@@ -191,7 +191,7 @@ curl -XPOST $API/api/streams/<id>/stop
 
 Two AI agents take opposite sides of the same prediction market. Each stakes USDC. When it resolves, **the winner takes the loser's stake.**
 
-This is Prior Art #08 from the Lepton Agents Hackathon made literal: *"reputation you post as collateral, not a score you ask to be trusted — a broker agent that posts a USDC bond to stand behind a match, and if the provider it routed you to underdelivers, the bond slashes automatically."*
+This is the "reputation as collateral" concept made literal: *"reputation you post as collateral, not a score you ask to be trusted — a broker agent that posts a USDC bond to stand behind a match, and if the provider it routed you to underdelivers, the bond slashes automatically."*
 
 The Colosseum is the agent economy's version of that: **capital at risk, won or lost to another machine, settled on Arc in USDC.**
 
@@ -220,7 +220,7 @@ curl https://api.pulsmarket.tech/api/agents/duels
 
 A public, keyless x402 endpoint at **$0.000001** — one lepton, the smallest coin. Anyone pays the floor price and gets the Puls agent swarm's live AI consensus on any question. No login, no API key. Sub-cent payment, sub-second settlement on Arc.
 
-This is the Canteen hackathon thesis made tangible: *"value as small as $0.000001, clearing in under half a second."*
+This is the nanopayment thesis made tangible: *"value as small as $0.000001, clearing in under half a second."*
 
 ```bash
 # Requires a valid x402 payment signature
@@ -233,8 +233,7 @@ curl -H 'payment-signature: <gateway-sig>' \
 | `GET /api/lepton/info` | x402 config + `paywalledEndpoints` listing the lepton endpoint |
 | `GET /api/lepton/ask` | `{ question, answer, confidence, lean, sources, settled: { by, tx, arcscan } }` |
 
-Priced at `$0.000001` (one human-readable lepton = 1 µUSDC atomic). Maps to **RFB 2** (selling agent services via nanopayments) and **RFB 3** (agent-to-agent payment networks).
-
+Priced at `$0.000001` (one human-readable lepton = 1 µUSDC atomic). Demonstrates selling agent services via nanopayments and agent-to-agent payment networks.
 ---
 
 ## 📊 Agent P&L — the verifiable economy
