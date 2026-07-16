@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'app/puls_app.dart';
 import 'core/secrets.dart';
@@ -7,6 +8,7 @@ import 'core/utils/kv_store.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
 
   // Capture an inbound referral code (?ref=CODE) BEFORE Google OAuth redirects
   // away — we persist it to localStorage so it survives the round-trip and can
