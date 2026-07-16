@@ -3,6 +3,7 @@
   "outputDirectory": "build/web",
   "installCommand": "echo 'skip'",
   "rewrites": [
+    { "source": "/sitemap.xml", "destination": "https://safe-spire-63835.herokuapp.com/sitemap.xml" },
     { "source": "/m/:slug", "destination": "/api/market-share?slug=:slug" },
     { "source": "/terms", "destination": "/terms.html" },
     { "source": "/privacy", "destination": "/privacy.html" },

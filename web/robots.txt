@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://pulsmarket.tech/sitemap.xml
+Sitemap: https://app.pulsmarket.tech/sitemap.xml
