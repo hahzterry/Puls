@@ -13,6 +13,7 @@ import '../../core/widgets/tactile.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/widgets/puls_video_illustration.dart';
 import '../../app/puls_app.dart';
+import '../chat/user_chat_screen.dart';
 
 /// Floating bottom-right widget where the AI agents proactively reach out — each
 /// in its own voice — to pitch their fresh signal / blog / trade. Reads
@@ -33,6 +34,9 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
   bool _open = false;
   List<Map<String, dynamic>> _dms = [];
   Set<String> _muted = {};
+
+  List<dynamic> _usersAndAgents = [];
+  String _searchQuery = '';
 
   int _tabIndex = 0; // 0 = Inbox, 1 = Chat
   String? _selectedAgentKey;
@@ -59,8 +63,32 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
     _muted = raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toSet();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetch();
+      _fetchUsers();
       _poll = Timer.periodic(const Duration(seconds: 30), (_) => _fetch());
     });
+  }
+
+  Future<void> _fetchUsers() async {
+    try {
+      final list = await WalletServiceScope.of(context).getLeaderboard(sort: 'pnl', limit: 200, type: 'all');
+      if (mounted) {
+        setState(() {
+          _usersAndAgents = list;
+        });
+      }
+    } catch (e) {
+      debugPrint('[Puls] agent inbox fetch users failed: $e');
+    }
+  }
+
+  String _displayName(dynamic trader) {
+    final name = trader['displayName'] as String?;
+    if (name != null && name.isNotEmpty && name != 'Puls Trader') return name;
+    final uid = trader['userId'] as String? ?? '';
+    if (uid.startsWith('0x') && uid.length > 10) {
+      return '${uid.substring(0, 6)}…${uid.substring(uid.length - 4)}';
+    }
+    return 'Trader';
   }
 
   @override
@@ -419,42 +447,108 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
 
   Widget _buildChatTab(PulsThemeColors t) {
     if (_selectedAgentKey == null) {
-      return ListView.separated(
-        padding: const EdgeInsets.all(10),
-        itemCount: _agents.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (_, i) {
-          final a = _agents[i];
-          return Tactile(
-            onTap: () => setState(() => _selectedAgentKey = a['key']),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                  color: t.surfaceRaised,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: t.border)),
-              child: Row(children: [
-                CircleAvatar(
-                    radius: 18,
-                    backgroundColor: t.brand.withValues(alpha: 0.15),
-                    child: PulsEmoji.icon(_emojiFor(a['name']), size: 18)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${a['name']}',
-                          style: TextStyle(color: t.text, fontSize: 14, fontWeight: FontWeight.w900)),
-                      Text('${a['role']}',
-                          style: TextStyle(color: t.textMuted, fontSize: 11)),
-                    ],
-                  ),
+      final query = _searchQuery.toLowerCase();
+      
+      final combined = <Map<String, dynamic>>[];
+      for (final a in _agents) {
+         combined.add({
+           'isHuman': false,
+           'key': a['key'],
+           'name': a['name'],
+           'role': a['role'],
+           'emoji': _emojiFor(a['name']),
+         });
+      }
+      
+      for (final u in _usersAndAgents) {
+         final name = _displayName(u);
+         if (name == 'Trader') continue;
+         
+         combined.add({
+           'isHuman': true,
+           'id': u['userId'],
+           'name': name,
+           'role': (u['isAgent'] == true || u['is_agent'] == true) ? 'AI Agent' : 'Trader',
+           'emoji': (u['isAgent'] == true || u['is_agent'] == true) ? '🤖' : '👤',
+         });
+      }
+      
+      final filtered = combined.where((item) {
+         final name = (item['name'] as String).toLowerCase();
+         return name.contains(query);
+      }).toList();
+
+      return Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 2),
+            child: TextField(
+              onChanged: (v) => setState(() => _searchQuery = v),
+              style: TextStyle(color: t.text, fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'Search by nickname...',
+                hintStyle: TextStyle(color: t.textMuted, fontSize: 13),
+                prefixIcon: Icon(Icons.search_rounded, color: t.textMuted, size: 16),
+                isDense: true,
+                filled: true,
+                fillColor: t.surfaceRaised,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
                 ),
-                Icon(Icons.chat_bubble_outline_rounded, color: t.brand, size: 18),
-              ]),
+              ),
             ),
-          );
-        },
+          ),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.all(10),
+              itemCount: filtered.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (_, i) {
+                final item = filtered[i];
+                return Tactile(
+                  onTap: () {
+                    if (item['isHuman'] == true) {
+                      final uid = item['id'];
+                      if (uid != null && uid != _userId) {
+                         Navigator.push(context, MaterialPageRoute(builder: (_) => UserChatScreen(targetUserId: uid, targetUserName: item['name'])));
+                      }
+                    } else {
+                      setState(() => _selectedAgentKey = item['key']);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                        color: t.surfaceRaised,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: t.border)),
+                    child: Row(children: [
+                      CircleAvatar(
+                          radius: 18,
+                          backgroundColor: t.brand.withValues(alpha: 0.15),
+                          child: PulsEmoji.icon(item['emoji'], size: 18)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${item['name']}',
+                                style: TextStyle(color: t.text, fontSize: 14, fontWeight: FontWeight.w900)),
+                            Text('${item['role']}',
+                                style: TextStyle(color: t.textMuted, fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chat_bubble_outline_rounded, color: t.brand, size: 18),
+                    ]),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       );
     }
 
