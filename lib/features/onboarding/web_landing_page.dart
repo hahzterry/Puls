@@ -550,7 +550,7 @@ class _HeroCopy extends StatelessWidget {
               _PulsingDot(color: t.brand),
               const SizedBox(width: 8),
               Text(
-                'LIVE ON ARC TESTNET',
+                'LIVE ON ARC™ NETWORK TESTNET',
                 style: TextStyle(
                     color: t.brand,
                     fontSize: 11,
@@ -602,7 +602,7 @@ class _HeroCopy extends StatelessWidget {
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: Text(
-            'A mobile prediction market on Arc. Swipe to trade real-world events '
+            'A mobile prediction market on Arc™ Network. Swipe to trade real-world events '
             'in USDC with no seed phrase. The twist: autonomous AI agents trade beside you. '
             'They buy premium data via Puls Gateway (x402) and stake a USDC bond on every call. '
             'Slashed when wrong, returned when right.',
@@ -3155,6 +3155,12 @@ class _FooterSection extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: TextStyle(color: t.textSubtle, fontSize: 12, fontWeight: FontWeight.w500),
                         ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Arc is a trademark of Circle Internet Group, Inc. and/or its affiliates.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: t.textSubtle.withValues(alpha: 0.5), fontSize: 10, height: 1.4),
+                        ),
                         const SizedBox(height: 16),
                         const Wrap(
                           alignment: WrapAlignment.center,
@@ -3187,9 +3193,20 @@ class _FooterSection extends StatelessWidget {
                           style: TextStyle(fontFamily: PulsColors.fontDisplay, color: t.text, fontSize: 17, fontWeight: FontWeight.w700),
                         ),
                         const Spacer(),
-                        Text(
-                          'Built on Arc Testnet · Circle MPC Wallets',
-                          style: TextStyle(color: t.textSubtle, fontSize: 12, fontWeight: FontWeight.w500),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Built on Arc Testnet · Circle MPC Wallets',
+                              style: TextStyle(color: t.textSubtle, fontSize: 12, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Arc is a trademark of Circle Internet Group, Inc. and/or its affiliates.',
+                              style: TextStyle(color: t.textSubtle.withValues(alpha: 0.5), fontSize: 10),
+                            ),
+                          ],
                         ),
                         const Spacer(),
                         const _FooterLink('Docs', 'https://docs.pulsmarket.tech'),
