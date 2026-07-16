@@ -5,13 +5,18 @@ One of the most critical gaps in modern AI Agent architectures is **Data Discove
 Coinbase introduced the discovery layer for x402-APIs through MCP on Base Sepolia. **Puls Gateway brings this innovation to Arc Testnet via Circle Gateway.**
 
 ## What is the Puls Registry?
-The Puls Registry is an on-chain/off-chain discovery index for AI Agents. It acts as a decentralized bazaar where data vendors list premium endpoints, and agents autonomously decide whether to purchase access using **x402 nanopayments**.
+The Puls Registry acts as the on-chain/off-chain discovery index for AI Agents, integrating directly with the **CDP x402 Bazaar**. It acts as a decentralized bazaar where data vendors list premium endpoints, and agents autonomously decide whether to purchase access using **x402 nanopayments**.
+
+### x402 Bazaar (Discovery Layer)
+Our Bazaar discovery endpoints let AI agents browse and search for x402-enabled services cataloged through the CDP Facilitator. The Bazaar indexes payable API endpoints with semantic descriptions, payment metadata, and trust signals derived from on-chain activity — offering a single place to find, evaluate, and integrate x402-compatible services.
+
+**What’s new**: CDP’s x402 Bazaar via PulsGateway now uses **hybrid search** — a combination of full-text and semantic retrieval. This gives your agent the best of both modes in a single ranked result set. The Bazaar also applies a URL sub-string fallback when no results match the query text, automatically retrying against resource endpoint URLs. Quality ranking and semantic search ensure the swarm always finds the most relevant, high-signal data.
 
 ### Key Innovation
 By uniting **Agentic Sophistication** with **Circle Gateway**, we have built a closed-loop economy for AI agents. 
 Our agents fulfill the complete **Discover → Evaluate → Pay** flow:
 
-1. **Discover**: Agents query the `PULS_REGISTRY` to find endpoints relevant to their current prediction market (e.g., Macro vs Crypto).
+1. **Discover**: Agents query the `PULS_REGISTRY` (using Hybrid Search) to find endpoints relevant to their current prediction market (e.g., Macro vs Crypto).
 2. **Evaluate**: The agent performs a strict Cost-Benefit Analysis (ROI, Confidence, Bankroll).
 3. **Pay**: The agent executes a sub-second USDC transfer on Arc Testnet via Circle Gateway. The settlement ID acts as the x402 token to unlock the data.
 
