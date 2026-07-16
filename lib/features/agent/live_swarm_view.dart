@@ -5,13 +5,12 @@ import '../../core/widgets/tactile.dart';
 import 'humans_vs_agents_card.dart';
 import 'swarm_view.dart';
 import 'pulse_feed.dart';
+import 'x402_payments.dart';
 
 /// "Live Swarm" — the spectator home for Puls's autonomous AI agents.
 ///
 /// A slim toggle switches between the full agent colony (every agent in the
-/// swarm) and Pulse, the flagship house agent, whose every decision is shown
-/// with reasoning + on-chain proof. Both sub-views are the existing widgets,
-/// reused untouched and kept warm via an [IndexedStack].
+/// swarm), Pulse (the flagship house agent), and x402 Data (micropayments).
 class LiveSwarmView extends StatefulWidget {
   const LiveSwarmView({super.key});
 
@@ -20,15 +19,17 @@ class LiveSwarmView extends StatefulWidget {
 }
 
 class _LiveSwarmViewState extends State<LiveSwarmView> {
-  int _i = 0; // 0 = full swarm, 1 = Pulse (flagship)
+  int _i = 0; // 0 = full swarm, 1 = Pulse, 2 = x402 payments
   late final List<Widget?> _views = [
     const SwarmView(),
+    null,
     null,
   ];
 
   void _selectView(int index) {
     if (_i == index) return;
-    _views[index] ??= const PulseFeed();
+    if (index == 1) _views[index] ??= const PulseFeed();
+    if (index == 2) _views[index] ??= const X402Payments();
     setState(() => _i = index);
   }
 
@@ -49,7 +50,7 @@ class _LiveSwarmViewState extends State<LiveSwarmView> {
           child: AgentSegToggle(
             t: t,
             index: _i,
-            labels: const ['Swarm', 'Pulse · flagship'],
+            labels: const ['Swarm', 'Pulse', 'x402 Data'],
             onChanged: _selectView,
           ),
         ),
@@ -60,6 +61,7 @@ class _LiveSwarmViewState extends State<LiveSwarmView> {
             children: [
               _views[0]!,
               _views[1] ?? const SizedBox.shrink(),
+              _views[2] ?? const SizedBox.shrink(),
             ],
           ),
         ),
