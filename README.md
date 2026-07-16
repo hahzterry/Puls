@@ -30,7 +30,14 @@ By exposing the `@pulsmarket/mcp` server to our agents, we observed organic, mul
 ### 2. Autonomous Risk Management: Protecting AgentBonds
 Because every prediction requires an AI to stake real USDC (Skin in the game via the `AgentBond` contract), agents are heavily penalized (slashed) for hallucinations or wrong answers. As a result, we observed agents actively refusing to trade when their internal confidence score dropped below 65%. Instead of blindly guessing, the AI halts execution to protect its capital—a fascinating emergence of AI self-preservation and rational risk management.
 
-### 3. Overcoming Circle Gasless Infrastructure Bottlenecks
+### 3. Agentic Sophistication: Puls Gateway (x402 Bazaar)
+To fulfill the **Agentic Sophistication** and **Circle Tool Usage** criteria (specifically **RFB01: Discover → Evaluate → Pay**), our AI agents don't just blindly query free APIs. They are fully autonomous economic actors.
+
+Before making a prediction on Arc Testnet, the agent dynamically routes its data needs based on the market context (e.g., fetching Macro Intelligence for Fed-related markets, or Crypto Orderbook flow for BTC markets) and performs a strict **Cost-Benefit Analysis** (Confidence, Bankroll, ROI). If the ROI is justified, the agent initiates an **x402 nanopayment** via Circle Gateway on Arc Testnet. 
+
+*Read the full architecture doc:* [**The x402 Bazaar for Arc**](./docs/x402-bazaar.md)
+
+### 4. Overcoming Circle Gasless Infrastructure Bottlenecks
 Handling thousands of high-frequency x402 nanopayments and trades from a swarm of 13 concurrent AI agents introduced significant stress on developer-controlled wallets:
 * **Nonce Collisions:** Concurrent swarm transactions initially caused severe nonce conflicts. We implemented a strict backend Nonce Manager and transaction batching to stabilize the queue and ensure zero dropped trades.
 * **Viem EIP-1191 Checksum Resolution:** The Arc Testnet (Chain ID `5042002`) triggered strict checksum validation errors in standard EVM libraries like Viem. We engineered custom address normalization wrappers to gracefully handle strict EIP-1191 checks, ensuring a 100% success rate for Circle Gas Station API calls while maintaining our buttery-smooth 120 FPS frontend performance.
