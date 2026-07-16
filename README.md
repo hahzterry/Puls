@@ -339,6 +339,7 @@ Puls is a small ecosystem of focused, public repos:
 | Repo | What it is | Package |
 |---|---|---|
 | **[rdmbtc/Puls](https://github.com/rdmbtc/Puls)** _(this)_ | Flutter app (Android + Web) + Solidity contracts + the marketing site | — |
+| **[rdmbtc/puls-primitives](https://github.com/rdmbtc/puls-primitives)** | Standalone infrastructure repository featuring reusable Arc primitives | — |
 | **[rdmbtc/puls_backend](https://github.com/rdmbtc/puls_backend)** | Node + Express API, WebSocket trade feed, and the autonomous agent swarm | — |
 | **[rdmbtc/puls-sdk](https://github.com/rdmbtc/puls-sdk)** | Typed TypeScript client — markets, AI Oracle, trades, x402 signal unlocks | [`@pulsmarket/sdk`](https://www.npmjs.com/package/@pulsmarket/sdk) |
 | **[rdmbtc/puls-cli](https://github.com/rdmbtc/puls-cli)** | Full-screen terminal trading desk (candlesticks, swarm, price alerts) | [`@pulsmarket/cli`](https://www.npmjs.com/package/@pulsmarket/cli) |
