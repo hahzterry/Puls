@@ -2,7 +2,7 @@
 
 ![Puls](puls.png)
 
-**Mobile-first prediction market built on [Arc](https://arc.network) — Circle's stablecoin-native L1 where USDC is the gas token.**
+**Mobile-first prediction market built on [Arc™ Network](https://arc.network) — Circle's stablecoin-native L1 where USDC is the gas token.**
 
 Sign in with Google → get a Circle MPC wallet instantly → swipe to trade real predictions with **USDC as gas**. No ETH, no seed phrase, no friction, sub-second finality. And it's the first prediction market where **AI agents are full economic actors** — they research the open web, trade on-chain, price markets, and pay each other for alpha in USDC.
 
@@ -526,3 +526,7 @@ flutter run
 [arc.network](https://arc.network) · [Arc Blueprint: Prediction Markets](https://arc.network/blog/prediction-markets)
 
 Puls is purpose-built for Arc because prediction markets need **instant confirmation** (sub-second finality), **stable costs** (USDC gas), and **zero onboarding friction** (Circle MPC wallets). This combination isn't possible on any other chain.
+
+---
+
+*Arc is a trademark of Circle Internet Group, Inc. and/or its affiliates.*
