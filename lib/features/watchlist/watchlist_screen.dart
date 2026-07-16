@@ -110,10 +110,7 @@ class WatchlistScreen extends StatelessWidget {
                           onRemove: () =>
                               appState.toggleWatchlist(markets[i].id),
                           onTap: () => Navigator.of(context).push(
-                            pulsRoute(
-                              context,
-                              builder: (_) =>
-                                  MarketDetailScreen(marketId: markets[i].id),
+                            pulsRoute(context, settings: RouteSettings(name: '/m/${markets[i].slug}'), builder: (_) => MarketDetailScreen(marketId: markets[i].id),
                             ),
                           ),
                         ),

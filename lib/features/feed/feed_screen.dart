@@ -87,8 +87,7 @@ class _FeedBody extends StatelessWidget {
 
   void _openDetails(BuildContext context, Market market) {
     Navigator.of(context).push(
-      pulsRoute(context,
-          builder: (_) => MarketDetailScreen(marketId: market.id)),
+      pulsRoute(context, settings: RouteSettings(name: '/m/${market.slug}'), builder: (_) => MarketDetailScreen(marketId: market.id)),
     );
   }
 
@@ -1047,8 +1046,7 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
 
   void _openDetails(BuildContext context, Market market) {
     Navigator.of(context).push(
-      pulsRoute(context,
-          builder: (_) => MarketDetailScreen(marketId: market.id)),
+      pulsRoute(context, settings: RouteSettings(name: '/m/${market.slug}'), builder: (_) => MarketDetailScreen(marketId: market.id)),
     );
   }
 

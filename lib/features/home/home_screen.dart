@@ -366,9 +366,7 @@ class _FeaturedHeroBanner extends StatelessWidget {
           const SizedBox(height: 16),
           GestureDetector(
             onTap: () => Navigator.of(context).push(
-              pulsRoute(
-                context,
-                builder: (_) => MarketDetailScreen(marketId: market.id),
+              pulsRoute(context, settings: RouteSettings(name: '/m/${market.slug}'), builder: (_) => MarketDetailScreen(marketId: market.id),
               ),
             ),
             child: Text(
@@ -447,9 +445,7 @@ class _WebTrendingCardState extends State<_WebTrendingCard> {
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: () => Navigator.of(context).push(
-          pulsRoute(
-            context,
-            builder: (_) => MarketDetailScreen(marketId: widget.market.id),
+          pulsRoute(context, settings: RouteSettings(name: '/m/${widget.market.slug}'), builder: (_) => MarketDetailScreen(marketId: widget.market.id),
           ),
         ),
         child: AnimatedContainer(
@@ -701,9 +697,7 @@ class _WebHotMarketCardState extends State<_WebHotMarketCard> {
       child: GestureDetector(
         onTap: () {
           Navigator.of(context).push(
-            pulsRoute(
-              context,
-              builder: (_) => MarketDetailScreen(marketId: widget.market.id),
+            pulsRoute(context, settings: RouteSettings(name: '/m/${widget.market.slug}'), builder: (_) => MarketDetailScreen(marketId: widget.market.id),
             ),
           );
         },

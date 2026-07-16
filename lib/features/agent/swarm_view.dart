@@ -712,6 +712,7 @@ class AgentDetailSheet extends StatelessWidget {
               InkWell(
                 onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(
+                    settings: RouteSettings(name: '/m/$slug'),
                     builder: (_) => MarketDetailScreen(marketId: slug),
                   ));
                 },

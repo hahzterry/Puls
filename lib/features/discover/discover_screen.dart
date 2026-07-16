@@ -309,9 +309,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 isWatchlisted: appState.isWatchlisted(featured.id),
                 onWatchlist: () => appState.toggleWatchlist(featured.id),
                 onTap: () => Navigator.of(context).push(
-                  pulsRoute(context,
-                      builder: (_) =>
-                          MarketDetailScreen(marketId: featured.id)),
+                  pulsRoute(context, settings: RouteSettings(name: '/m/${featured.slug}'), builder: (_) => MarketDetailScreen(marketId: featured.id)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -411,9 +409,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               isWatchlisted: appState.isWatchlisted(gridMarkets[i].id),
               onWatchlist: () => appState.toggleWatchlist(gridMarkets[i].id),
               onTap: () => Navigator.of(context).push(
-                pulsRoute(
-                  context,
-                  builder: (_) => MarketDetailScreen(marketId: gridMarkets[i].id),
+                pulsRoute(context, settings: RouteSettings(name: '/m/${gridMarkets[i].slug}'), builder: (_) => MarketDetailScreen(marketId: gridMarkets[i].id),
                 ),
               ),
             ),
@@ -441,9 +437,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             isWatchlisted: appState.isWatchlisted(gridMarkets[i].id),
             onWatchlist: () => appState.toggleWatchlist(gridMarkets[i].id),
             onTap: () => Navigator.of(context).push(
-              pulsRoute(
-                context,
-                builder: (_) => MarketDetailScreen(marketId: gridMarkets[i].id),
+              pulsRoute(context, settings: RouteSettings(name: '/m/${gridMarkets[i].slug}'), builder: (_) => MarketDetailScreen(marketId: gridMarkets[i].id),
               ),
             ),
           ),
@@ -1273,8 +1267,7 @@ class _EmptyState extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: GestureDetector(
                     onTap: () => Navigator.of(context).push(
-                      pulsRoute(context,
-                          builder: (_) => MarketDetailScreen(marketId: m.id)),
+                      pulsRoute(context, settings: RouteSettings(name: '/m/${m.slug}'), builder: (_) => MarketDetailScreen(marketId: m.id)),
                     ),
                     child: Container(
                       padding: const EdgeInsets.symmetric(

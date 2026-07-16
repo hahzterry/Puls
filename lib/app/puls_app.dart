@@ -59,6 +59,7 @@ class _PulsAppState extends State<PulsApp> {
       _navigatorKey.currentState?.push(
         pulsRoute<void>(
           _navigatorKey.currentContext,
+          settings: RouteSettings(name: '/m/${market.slug}'),
           builder: (_) => market_detail.MarketDetailScreen(marketId: market.id),
         ),
       );

@@ -33,6 +33,7 @@ class _ViewPredictionLinkState extends State<ViewPredictionLink> {
     if (market != null) {
       navigator.push(pulsRoute<void>(
         context,
+        settings: RouteSettings(name: '/m/${market.slug}'),
         builder: (_) => MarketDetailScreen(marketId: market.id),
       ));
     } else {
