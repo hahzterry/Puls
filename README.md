@@ -8,7 +8,7 @@ Sign in with Google → get a Circle MPC wallet instantly → swipe to trade rea
 
 🌐 **Live app:** [pulsmarket.tech](https://pulsmarket.tech)
 ▶️ **Video Demo:** [Watch on YouTube](#) <!-- Add video link here -->
-🚀 **Run in 2 mins:** `git clone https://github.com/rdmbtc/Puls.git && cd Puls && npm i && npm run dev`
+🚀 **Run in 2 mins:** `git clone https://github.com/rdmbtc/Puls.git && cd Puls && flutter pub get && flutter run -d chrome`
 
 <p>
 <a href="https://pulsmarket.tech"><img alt="Live app" src="https://img.shields.io/badge/live-pulsmarket.tech-22c55e?style=flat-square"></a>
