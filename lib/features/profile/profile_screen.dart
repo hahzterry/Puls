@@ -436,7 +436,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _FastBuySection(appState: appState, t: t),
                     const SizedBox(height: 20),
                     _Section(
-                      title: 'Arc Testnet Operations',
+                      title: 'Testnet Operations',
                       t: t,
                       children: [
                         _Row(
@@ -453,7 +453,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         _Row(
                           icon: Icons.search_rounded,
-                          title: 'Arc Explorer',
+                          title: 'Arcscan Explorer',
                           subtitle: 'testnet.arcscan.app',
                           t: t,
                           onTap: () => launchUrl(
@@ -707,7 +707,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             delay: const Duration(milliseconds: 140),
             duration: const Duration(milliseconds: 350),
             child: _Section(
-              title: 'Arc Testnet',
+              title: 'Testnet',
               t: t,
               children: [
                 _Row(
@@ -724,7 +724,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 _Row(
                   icon: Icons.search_rounded,
-                  title: 'Arc Explorer',
+                  title: 'Arcscan Explorer',
                   subtitle: 'testnet.arcscan.app',
                   t: t,
                   onTap: () => launchUrl(

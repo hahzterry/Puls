@@ -601,7 +601,7 @@ class _WebWalletBox extends StatelessWidget {
               Icon(Icons.account_balance_wallet_rounded,
                   color: t.brand, size: 20),
               const SizedBox(width: 8),
-              Text('Arc Wallet',
+              Text('Your Wallet',
                   style: TextStyle(
                       color: t.text,
                       fontSize: 15,
