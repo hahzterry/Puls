@@ -35,6 +35,15 @@ class PulsAppState extends ChangeNotifier {
     } else if (savedReduceMotion == 'off') {
       reduceMotionOverride = false;
     }
+    if (kIsWeb) {
+      final q = Uri.base.queryParameters['terminal'];
+      if (q != null && (q == 'true' || q == '1')) {
+        pendingTerminal = true;
+      }
+      if (Uri.base.pathSegments.contains('terminal')) {
+        pendingTerminal = true;
+      }
+    }
     _loadMarkets();
   }
 
@@ -53,6 +62,7 @@ class PulsAppState extends ChangeNotifier {
   String? feedError;
 
   bool onboardingComplete = false;
+  bool pendingTerminal = false;
   ThemeMode themeMode = ThemeMode.dark;
   bool fastBuyEnabled = false;
   double fastBuyAmount = 1.0;
@@ -156,7 +166,7 @@ class PulsAppState extends ChangeNotifier {
   }
 
   bool webLandingDismissed = false;
-  void dismissWebLanding() {
+  void dismissWebLanding({bool terminal = false}) {
     // On the marketing landing host (pulsmarket.tech) the product lives on the
     // app subdomain — send the visitor there so pulsmarket.tech stays the
     // landing and app.pulsmarket.tech is the app. Elsewhere (the app subdomain
@@ -164,9 +174,13 @@ class PulsAppState extends ChangeNotifier {
     if (kIsWeb) {
       final host = Uri.base.host;
       if (host == 'pulsmarket.tech' || host == 'www.pulsmarket.tech') {
-        launchUrl(Uri.parse(appUrl), webOnlyWindowName: '_self');
+        final dest = terminal ? '$appUrl/?terminal=true' : appUrl;
+        launchUrl(Uri.parse(dest), webOnlyWindowName: '_self');
         return;
       }
+    }
+    if (terminal) {
+      pendingTerminal = true;
     }
     webLandingDismissed = true;
     notifyListeners();

@@ -9,6 +9,7 @@ import '../../../core/motion.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_text.dart';
+import '../../../core/widgets/puls_snack.dart';
 import '../../agent/widgets/decision_log_panel.dart';
 import '../../agent/widgets/swarm_visualizer.dart';
 import '../widgets/terminal_event_binder.dart';

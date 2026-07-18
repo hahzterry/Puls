@@ -119,7 +119,7 @@ class WebSocketService {
           .enableReconnection()
           .setReconnectionAttempts(1000)
           .setReconnectionDelay(1500)
-          .setReconnectionDelayMax(10_000)
+          .setReconnectionDelayMax(10000)
           .build(),
     );
 

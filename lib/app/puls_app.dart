@@ -8,6 +8,7 @@ import '../data/mock/mock_market_repository.dart';
 import '../features/market/market_detail_screen.dart' deferred as market_detail;
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/shell/puls_shell.dart';
+import '../features/market/screens/market_terminal_screen.dart';
 import '../features/wallet/wallet_service.dart';
 import 'puls_app_state.dart';
 
@@ -66,6 +67,24 @@ class _PulsAppState extends State<PulsApp> {
     });
   }
 
+  bool _terminalOpening = false;
+
+  void _maybeOpenTerminal(bool shellVisible) {
+    if (!_state.pendingTerminal || _terminalOpening || !shellVisible) return;
+    _terminalOpening = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _state.pendingTerminal = false;
+      _terminalOpening = false;
+      _navigatorKey.currentState?.push(
+        pulsRoute<void>(
+          _navigatorKey.currentContext,
+          settings: const RouteSettings(name: '/terminal'),
+          builder: (_) => const MarketTerminalScreen(),
+        ),
+      );
+    });
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -97,6 +116,7 @@ class _PulsAppState extends State<PulsApp> {
                 (_state.onboardingComplete ||
                     _walletService.state.userId != null));
         _maybeOpenDeepLink(shellVisible);
+        _maybeOpenTerminal(shellVisible);
         return WalletServiceScope(
           service: _walletService,
           child: PulsStateScope(

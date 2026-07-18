@@ -273,9 +273,17 @@ class _Navbar extends StatelessWidget {
             tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
           ),
           SizedBox(width: isMobile ? 8 : 16),
+          if (!isMobile) ...[
+            _SecondaryButton(
+              label: 'Terminal',
+              onTap: () => appState.dismissWebLanding(terminal: true),
+              small: true,
+            ),
+            const SizedBox(width: 8),
+          ],
           _PrimaryButton(
             label: isMobile ? 'Launch' : 'Launch App',
-            onTap: appState.dismissWebLanding,
+            onTap: () => appState.dismissWebLanding(terminal: false),
             small: true,
           ),
         ],

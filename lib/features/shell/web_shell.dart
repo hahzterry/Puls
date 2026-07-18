@@ -18,6 +18,7 @@ import '../profile/leaderboard_screen.dart';
 import '../agent/agent_screen.dart';
 import '../agent/agent_inbox_widget.dart';
 import '../onboarding/onboarding_sheet.dart';
+import '../market/screens/market_terminal_screen.dart';
 import 'shell_nav.dart';
 
 class WebShell extends StatefulWidget {
@@ -591,6 +592,8 @@ class _RightControls extends StatelessWidget {
       children: [
         _WalletChip(t: t, compact: compact),
         const SizedBox(width: 8),
+        _TerminalToggle(t: t, isDark: isDark),
+        const SizedBox(width: 8),
         _ThemeToggle(t: t, isDark: isDark, onToggle: onToggleTheme),
       ],
     );
@@ -819,4 +822,61 @@ class _DotGridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DotGridPainter old) => old.color != color;
+}
+
+class _TerminalToggle extends StatefulWidget {
+  const _TerminalToggle({
+    required this.t,
+    required this.isDark,
+  });
+  final PulsThemeColors t;
+  final bool isDark;
+
+  @override
+  State<_TerminalToggle> createState() => _TerminalToggleState();
+}
+
+class _TerminalToggleState extends State<_TerminalToggle> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.t;
+    return Tooltip(
+      message: 'AI Bloomberg Terminal',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const MarketTerminalScreen(),
+              ),
+            );
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: _hovered ? t.brand.withValues(alpha: 0.12) : Colors.transparent,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: _hovered ? t.brand.withValues(alpha: 0.4) : Colors.transparent,
+              ),
+            ),
+            child: Center(
+              child: Icon(
+                Icons.terminal_rounded,
+                size: 18,
+                color: _hovered ? t.brand : t.textMuted,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

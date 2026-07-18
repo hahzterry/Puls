@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/motion.dart';
 import '../../../core/network/websocket_service.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../agent/widgets/decision_log_panel.dart';
 import '../../agent/widgets/swarm_visualizer.dart';
 import '../../../core/rendering/swarm_painter.dart';
