@@ -20,6 +20,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/puls_app_state.dart';
+import '../../app/puls_app.dart';
 import 'hero_market_stack.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/motion.dart';
