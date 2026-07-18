@@ -1,10 +1,12 @@
 import 'package:puls/core/config.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/widgets/puls_snack.dart';
+import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/tactile.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -844,60 +846,100 @@ class _PortfolioChart extends StatelessWidget {
     final isUp = pnl >= 0;
     final color = isUp ? t.yes : t.no;
 
-    return Container(
-      height: 160,
+    return GlassCard(
+      radius: 16,
+      blur: 10,
+      fillAlpha: 0.04,
+      borderAlpha: 0.12,
       padding: const EdgeInsets.fromLTRB(14, 20, 14, 10),
-      decoration: BoxDecoration(
-        color: t.surfaceRaised,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: t.border),
-      ),
-      child: LineChart(
-        LineChartData(
-          gridData: const FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          titlesData: const FlTitlesData(show: false),
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => t.surface,
-              getTooltipItems: (touchedSpots) {
-                return touchedSpots.map((spot) {
-                  return LineTooltipItem(
-                    '\$${spot.y.toStringAsFixed(2)}',
-                    TextStyle(
-                        color: t.text,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12),
-                  );
-                }).toList();
-              },
-            ),
-          ),
-          lineBarsData: [
-            LineChartBarData(
-              spots: spots,
-              isCurved: true,
-              curveSmoothness: 0.35,
-              color: color,
-              barWidth: 3,
-              dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    color.withValues(alpha: 0.18),
-                    color.withValues(alpha: 0.0),
-                  ],
-                ),
+      child: SizedBox(
+        height: 130, // constrain chart height inside GlassCard padding
+        child: LineChart(
+          LineChartData(
+            gridData: const FlGridData(show: false),
+            borderData: FlBorderData(show: false),
+            titlesData: const FlTitlesData(show: false),
+            lineTouchData: LineTouchData(
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipColor: (_) => t.surface.withValues(alpha: 0.92),
+                tooltipBorder: BorderSide(color: color.withValues(alpha: 0.5), width: 0.8),
+                tooltipRoundedRadius: 8,
+                getTooltipItems: (touchedSpots) {
+                  return touchedSpots.map((spot) {
+                    return LineTooltipItem(
+                      '\$${spot.y.toStringAsFixed(2)} USDC',
+                      TextStyle(
+                          color: t.text,
+                          fontFamily: PulsColors.fontMono,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11),
+                    );
+                  }).toList();
+                },
               ),
             ),
-          ],
+            lineBarsData: [
+              LineChartBarData(
+                spots: spots,
+                isCurved: true,
+                curveSmoothness: 0.35,
+                color: color,
+                barWidth: 3.2,
+                shadow: Shadow(
+                  color: color.withValues(alpha: 0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+                dotData: const FlDotData(show: false),
+                belowBarData: BarAreaData(
+                  show: true,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      color.withValues(alpha: 0.18),
+                      color.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _HologramSheenPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white.withValues(alpha: 0.0),
+          Colors.white.withValues(alpha: 0.15),
+          Colors.white.withValues(alpha: 0.0),
+          Colors.white.withValues(alpha: 0.2),
+          Colors.white.withValues(alpha: 0.0),
+        ],
+        stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final linePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.05)
+      ..strokeWidth = 1.0;
+
+    canvas.drawLine(Offset(0, size.height * 0.3), Offset(size.width, size.height * 0.3), linePaint);
+    canvas.drawLine(Offset(size.width * 0.4, 0), Offset(size.width * 0.4, size.height), linePaint);
+
+    canvas.drawRect(Offset.zero & size, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _HeroCard extends StatelessWidget {
@@ -927,19 +969,38 @@ class _HeroCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: PulsColors.pulseGradient,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: t.brand.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: t.brand.withValues(alpha: 0.35),
+            blurRadius: 28,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: PulsColors.pulseGradient,
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.12),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _HologramSheenPainter(),
+            ),
+          ),
           const Positioned(
             right: -20,
             top: -10,

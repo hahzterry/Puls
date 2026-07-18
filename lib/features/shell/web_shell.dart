@@ -314,7 +314,7 @@ class _Brand extends StatelessWidget {
 }
 
 // ── The floating island holding the nav pills ───────────────────────────────────
-class _Island extends StatelessWidget {
+class _Island extends StatefulWidget {
   const _Island({
     required this.index,
     required this.items,
@@ -332,51 +332,104 @@ class _Island extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final bg = isDark ? const Color(0xFF131127) : Colors.white;
-    final shadow = isDark
-        ? t.brand.withValues(alpha: 0.22)
-        : t.brand.withValues(alpha: 0.08);
+  State<_Island> createState() => _IslandState();
+}
 
-    return Container(
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(26),
-        // 1px inner light edge → premium "glass" rim
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : t.border,
-        ),
-        boxShadow: [
-          BoxShadow(color: shadow, blurRadius: 24, offset: const Offset(0, 8)),
-          BoxShadow(
-            color: shadow.withValues(alpha: 0.06),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+class _IslandState extends State<_Island> {
+  double _tiltX = 0.0;
+  double _tiltY = 0.0;
+
+  void _onHover(PointerEvent event, Size size) {
+    final x = event.localPosition.dx;
+    final y = event.localPosition.dy;
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    const maxTilt = 0.05; // perspective tilt limit
+    setState(() {
+      _tiltX = ((y - centerY) / centerY).clamp(-1.0, 1.0) * -maxTilt;
+      _tiltY = ((x - centerX) / centerX).clamp(-1.0, 1.0) * maxTilt;
+    });
+  }
+
+  void _onExit() {
+    setState(() {
+      _tiltX = 0.0;
+      _tiltY = 0.0;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = widget.isDark ? const Color(0xFF131127) : Colors.white;
+    final shadow = widget.isDark
+        ? widget.t.brand.withValues(alpha: 0.22)
+        : widget.t.brand.withValues(alpha: 0.08);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = Size(constraints.maxWidth > 0 ? constraints.maxWidth : 400, 52);
+        return MouseRegion(
+          onHover: (e) => _onHover(e, size),
+          onExit: (_) => _onExit(),
+          child: TweenAnimationBuilder<Matrix4>(
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOutCubic,
+            tween: Matrix4Tween(
+              begin: Matrix4.identity(),
+              end: Matrix4.identity()
+                ..setEntry(3, 2, 0.001)
+                ..rotateX(_tiltX)
+                ..rotateY(_tiltY),
+            ),
+            builder: (context, matrix, child) {
+              return Transform(
+                transform: matrix,
+                alignment: Alignment.center,
+                child: child,
+              );
+            },
+            child: Container(
+              height: 52,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(
+                  color: widget.isDark
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : widget.t.border,
+                ),
+                boxShadow: [
+                  BoxShadow(color: shadow, blurRadius: 24, offset: const Offset(0, 8)),
+                  BoxShadow(
+                    color: shadow.withValues(alpha: 0.06),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(widget.items.length, (i) {
+                  final pill = _NavPill(
+                    key: widget.items[i].key,
+                    item: widget.items[i],
+                    selected: i == widget.index,
+                    showLabel: widget.showLabels,
+                    t: widget.t,
+                    isDark: widget.isDark,
+                    onTap: () => widget.onTap(i),
+                  );
+                  if (widget.items[i].label == 'Agent') {
+                    return KeyedSubtree(key: tourSwarmKey, child: pill);
+                  }
+                  return pill;
+                }),
+              ),
+            ),
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(items.length, (i) {
-          final pill = _NavPill(
-            key: items[i].key,
-            item: items[i],
-            selected: i == index,
-            showLabel: showLabels,
-            t: t,
-            isDark: isDark,
-            onTap: () => onTap(i),
-          );
-          if (items[i].label == 'Agent') {
-            return KeyedSubtree(key: tourSwarmKey, child: pill);
-          }
-          return pill;
-        }),
-      ),
+        );
+      },
     );
   }
 }
@@ -402,8 +455,39 @@ class _NavPill extends StatefulWidget {
   State<_NavPill> createState() => _NavPillState();
 }
 
-class _NavPillState extends State<_NavPill> {
+class _NavPillState extends State<_NavPill> with SingleTickerProviderStateMixin {
   bool _hovered = false;
+  late final AnimationController _pulseCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    if (widget.selected) {
+      _pulseCtrl.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _NavPill oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selected != oldWidget.selected) {
+      if (widget.selected) {
+        _pulseCtrl.repeat(reverse: true);
+      } else {
+        _pulseCtrl.stop();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -412,24 +496,38 @@ class _NavPillState extends State<_NavPill> {
     final idleIcon =
         widget.isDark ? const Color(0xFF8181AA) : const Color(0xFF9A9A94);
 
-    final pill = AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-      padding: EdgeInsets.symmetric(
-        horizontal: widget.showLabel ? 14 : 11,
-        vertical: 8,
-      ),
-      decoration: BoxDecoration(
-        color: selected
-            ? t.brand
-            : _hovered
-                ? (widget.isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : t.surfaceRaised)
-                : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
+    final pill = AnimatedBuilder(
+      animation: _pulseCtrl,
+      builder: (context, child) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.showLabel ? 14 : 11,
+            vertical: 8,
+          ),
+          decoration: BoxDecoration(
+            color: selected
+                ? t.brand
+                : _hovered
+                    ? (widget.isDark
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : t.surfaceRaised)
+                    : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              if (selected)
+                BoxShadow(
+                  color: t.brand.withValues(alpha: 0.35 + (_pulseCtrl.value * 0.25)),
+                  blurRadius: 8 + (_pulseCtrl.value * 10),
+                  spreadRadius: _pulseCtrl.value * 1.2,
+                ),
+            ],
+          ),
+          child: child,
+        );
+      },
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

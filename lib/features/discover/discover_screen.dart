@@ -526,33 +526,15 @@ class _MarketCardState extends State<_MarketCard> {
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
           transform: Matrix4.translationValues(0, _hovered ? -4.0 : 0.0, 0),
-          decoration: BoxDecoration(
-            color: _hovered
-                ? t.surfaceRaised
-                : t.surfaceRaised.withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: _hovered ? t.brand.withValues(alpha: 0.4) : t.border,
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: _hovered
-                    ? t.brand.withValues(alpha: 0.15)
-                    : const Color(0xFFEC4899).withValues(alpha: 0.05),
-                blurRadius: _hovered ? 24 : 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          child: GlassCard(
+            radius: 20,
+            blur: 10,
+            fillAlpha: _hovered ? 0.07 : 0.03,
+            borderAlpha: _hovered ? 0.45 : 0.12,
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                   Row(
                     children: [
                       Container(
@@ -732,7 +714,7 @@ class _MarketCardState extends State<_MarketCard> {
           ),
         ),
       ),
-    ));
+    );
   }
 }
 
@@ -846,32 +828,13 @@ class _FeaturedMarketCardState extends State<_FeaturedMarketCard> {
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
           transform: Matrix4.translationValues(0, _hovered ? -4.0 : 0.0, 0),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color.alphaBlend(t.brand.withValues(alpha: 0.10), t.surface),
-                t.surfaceRaised,
-              ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: _hovered
-                  ? t.brand.withValues(alpha: 0.5)
-                  : t.brand.withValues(alpha: 0.25),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: t.brand.withValues(alpha: _hovered ? 0.20 : 0.10),
-                blurRadius: _hovered ? 34 : 18,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Column(
+          child: GlassCard(
+            radius: 24,
+            blur: 12,
+            fillAlpha: _hovered ? 0.08 : 0.04,
+            borderAlpha: _hovered ? 0.5 : 0.22,
+            padding: const EdgeInsets.all(20),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -1035,6 +998,7 @@ class _FeaturedMarketCardState extends State<_FeaturedMarketCard> {
           ),
         ),
       ),
+      ),
     );
   }
 }
@@ -1140,7 +1104,12 @@ class _MiniSparkline extends StatelessWidget {
             isCurved: true,
             curveSmoothness: 0.35,
             color: color,
-            barWidth: 1.8,
+            barWidth: 2.2,
+            shadow: Shadow(
+              color: color.withValues(alpha: 0.4),
+              blurRadius: 6,
+              offset: const Offset(0, 1.5),
+            ),
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
@@ -1148,7 +1117,7 @@ class _MiniSparkline extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  color.withValues(alpha: 0.16),
+                  color.withValues(alpha: 0.18),
                   color.withValues(alpha: 0.0),
                 ],
               ),
