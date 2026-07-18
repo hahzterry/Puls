@@ -52,6 +52,12 @@ class PulsColors {
   // Font families
   static const fontDisplay = 'Playfair Display';
   static const fontSans = 'DM Sans';
+  static const fontMono = 'JetBrains Mono'; // terminal/code UI (DecisionLogPanel)
+
+  // Glassmorphism — a translucent tint over the blurred backdrop.
+  // Dark: icy mint-tinted glass over navy. Light: frosted white acrylic.
+  static const surfaceGlassDark = Color(0x0D2DD4BF); // mint @ 5% over navy
+  static const surfaceGlassLight = Color(0x0DFFFFFF); // white @ 5%
 
   // Tabular figures for numbers — applied to price/win-rate/amount text
   static const tabularFigures = [FontFeature.tabularFigures()];
@@ -64,6 +70,7 @@ class PulsThemeColors extends ThemeExtension<PulsThemeColors> {
     required this.bg,
     required this.surface,
     required this.surfaceRaised,
+    required this.surfaceGlass,
     required this.border,
     required this.borderStrong,
     required this.text,
@@ -80,6 +87,7 @@ class PulsThemeColors extends ThemeExtension<PulsThemeColors> {
   final Color bg;
   final Color surface;
   final Color surfaceRaised;
+  final Color surfaceGlass; // translucent fill used by GlassCard
   final Color border;
   final Color borderStrong;
   final Color text;
@@ -94,7 +102,7 @@ class PulsThemeColors extends ThemeExtension<PulsThemeColors> {
 
   @override
   PulsThemeColors copyWith({
-    Color? bg, Color? surface, Color? surfaceRaised,
+    Color? bg, Color? surface, Color? surfaceRaised, Color? surfaceGlass,
     Color? border, Color? borderStrong,
     Color? text, Color? textMuted, Color? textSubtle,
     Color? brand, Color? brandSubtle,
@@ -103,6 +111,7 @@ class PulsThemeColors extends ThemeExtension<PulsThemeColors> {
     bg: bg ?? this.bg,
     surface: surface ?? this.surface,
     surfaceRaised: surfaceRaised ?? this.surfaceRaised,
+    surfaceGlass: surfaceGlass ?? this.surfaceGlass,
     border: border ?? this.border,
     borderStrong: borderStrong ?? this.borderStrong,
     text: text ?? this.text,
@@ -123,6 +132,7 @@ class PulsThemeColors extends ThemeExtension<PulsThemeColors> {
       bg: Color.lerp(bg, other.bg, t)!,
       surface: Color.lerp(surface, other.surface, t)!,
       surfaceRaised: Color.lerp(surfaceRaised, other.surfaceRaised, t)!,
+      surfaceGlass: Color.lerp(surfaceGlass, other.surfaceGlass, t)!,
       border: Color.lerp(border, other.border, t)!,
       borderStrong: Color.lerp(borderStrong, other.borderStrong, t)!,
       text: Color.lerp(text, other.text, t)!,
@@ -150,6 +160,7 @@ class PulsTheme {
     bg: Color(0xFFFAFBFD),            // cool off-white canvas
     surface: Color(0xFFFFFFFF),       // pure white cards
     surfaceRaised: Color(0xFFF4F6FA), // cool elevated
+    surfaceGlass: PulsColors.surfaceGlassLight, // frosted acrylic
     border: Color(0xFFE8EBF1),        // cool border
     borderStrong: Color(0xFFD6DBE5),
     text: Color(0xFF0E1422),          // ink (cool near-black)
@@ -168,6 +179,7 @@ class PulsTheme {
     bg: Color(0xFF0A0E1A),            // deep navy-black (echoes logo)
     surface: Color(0xFF121829),        // navy card
     surfaceRaised: Color(0xFF1B2236),  // navy raised
+    surfaceGlass: PulsColors.surfaceGlassDark, // icy mint-tinted glass
     border: Color(0xFF222B40),         // navy border
     borderStrong: Color(0xFF303B54),   // navy strong border
     text: Color(0xFFEAF0FF),           // cool near-white
