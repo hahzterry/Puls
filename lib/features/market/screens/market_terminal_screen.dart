@@ -12,6 +12,7 @@ import '../../../core/widgets/gradient_text.dart';
 import '../../../core/widgets/puls_snack.dart';
 import '../../agent/widgets/decision_log_panel.dart';
 import '../../agent/widgets/swarm_visualizer.dart';
+import '../../wallet/wallet_service.dart';
 import '../widgets/terminal_event_binder.dart';
 
 /// Cyberpunk high-tech grid background with neon color blobs
@@ -222,23 +223,121 @@ class MarketTerminalScreen extends StatefulWidget {
 
 class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
   int _selectedMarketIdx = 0;
+  List<_AgentInfo> _agents = [];
+  bool _loadingAgents = true;
 
   static const _markets = [
-    _Market(slug: 'btc-100k', question: 'Will BTC hit \$100k by August?', yesPrice: 0.67, volume: 124000),
-    _Market(slug: 'eth-flip', question: 'Will ETH flip its all-time high?', yesPrice: 0.31, volume: 88000),
-    _Market(slug: 'us-recession', question: 'US recession declared in 2026?', yesPrice: 0.18, volume: 210000),
-    _Market(slug: 'fed-cut-july', question: 'Fed cuts rates in July?', yesPrice: 0.74, volume: 156000),
-    _Market(slug: 'arc-tvl-1b', question: 'Arc TVL exceeds \$1B by Q4?', yesPrice: 0.42, volume: 67000),
-    _Market(slug: 'sol-300', question: 'SOL above \$300 this month?', yesPrice: 0.55, volume: 92000),
+    _Market(
+      slug: 'btc-100k',
+      question: 'Will BTC hit \$100k by August?',
+      yesPrice: 0.67,
+      volume: 124000,
+      activeAgents: ['Vega ⚡', 'Antigravity 🪐'],
+    ),
+    _Market(
+      slug: 'eth-flip',
+      question: 'Will ETH flip its all-time high?',
+      yesPrice: 0.31,
+      volume: 88000,
+      activeAgents: ['Lyra 💠', 'Sirius 🌠'],
+    ),
+    _Market(
+      slug: 'us-recession',
+      question: 'US recession declared in 2026?',
+      yesPrice: 0.18,
+      volume: 210000,
+      activeAgents: ['Orion 🛰️', 'Antigravity 🪐'],
+    ),
+    _Market(
+      slug: 'fed-cut-july',
+      question: 'Fed cuts rates in July?',
+      yesPrice: 0.74,
+      volume: 156000,
+      activeAgents: ['Vega ⚡', 'Sirius 🌠'],
+    ),
+    _Market(
+      slug: 'arc-tvl-1b',
+      question: 'Arc TVL exceeds \$1B by Q4?',
+      yesPrice: 0.42,
+      volume: 67000,
+      activeAgents: ['Antigravity 🪐', 'Lyra 💠'],
+    ),
+    _Market(
+      slug: 'sol-300',
+      question: 'SOL above \$300 this month?',
+      yesPrice: 0.55,
+      volume: 92000,
+      activeAgents: ['Vega ⚡'],
+    ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAgentsData());
+  }
+
+  Future<void> _loadAgentsData() async {
+    try {
+      final wallet = WalletServiceScope.of(context);
+      final rawList = await wallet.getLeaderboard(sort: 'pnl', limit: 20, type: 'all');
+      
+      final agents = <_AgentInfo>[];
+      for (final raw in rawList) {
+        if (raw is! Map) continue;
+        if (raw['isAgent'] != true) continue;
+        
+        final name = (raw['displayName'] as String? ?? 'Agent').trim();
+        final avatar = (raw['avatarUrl'] as String? ?? '🤖').trim();
+        final winRate = (raw['winRate'] as num?)?.toDouble() ?? 0.0;
+        final pnl = (raw['pnl'] as num?)?.toDouble() ?? 0.0;
+        final trades = (raw['tradesCount'] as num?)?.toInt() ?? (raw['trades'] as num?)?.toInt() ?? 0;
+        final address = (raw['walletAddress'] as String? ?? raw['address'] as String? ?? '0x...').trim();
+        final id = (raw['id'] as String? ?? raw['userId'] as String? ?? name.toLowerCase()).trim();
+        
+        final color = _getAgentColor(name);
+        final role = _getAgentRole(name);
+        final latestAction = _getAgentLatestAction(name);
+        final pnlHistory = _generatePnlHistory(name, pnl);
+        
+        agents.add(_AgentInfo(
+          id: id,
+          name: name,
+          role: role,
+          avatar: avatar,
+          winRate: winRate,
+          pnl: pnl,
+          trades: trades,
+          address: address,
+          color: color,
+          latestAction: latestAction,
+          pnlHistory: pnlHistory,
+        ));
+      }
+      
+      if (agents.isEmpty) {
+        agents.addAll(_fallbackAgents);
+      }
+      
+      if (mounted) {
+        setState(() {
+          _agents = agents;
+          _loadingAgents = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _agents = List.from(_fallbackAgents);
+          _loadingAgents = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
-    // TerminalEventBinder subscribes to the WebSocket event stream and
-    // dispatches to SwarmVisualizer + DecisionLogPanel + CameraShake. Wrap
-    // it AROUND CameraShake so triggerCameraShake(context) finds the shake
-    // state, and inside Scaffold so it finds the viz/log panel descendants.
     return TerminalEventBinder(
       child: CameraShake(
         child: Scaffold(
@@ -264,16 +363,14 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
     );
   }
 
-  // ── Wide: 3-column Bloomberg layout ────────────────────────────────────
   Widget _threeColumn(BuildContext context, BoxConstraints c) {
     final leftW = (c.maxWidth * 0.24).clamp(260.0, 340.0);
     final rightW = (c.maxWidth * 0.26).clamp(300.0, 380.0);
-    final centerW = c.maxWidth - leftW - rightW - 24; // 24px of gutters
+    final centerW = c.maxWidth - leftW - rightW - 24;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Left column: market list ──────────────────────────────────
         SizedBox(
           width: leftW,
           child: Padding(
@@ -288,25 +385,26 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
             ),
           ),
         ),
-        // ── Center column: arena / betting ─────────────────────────────
         SizedBox(
           width: centerW,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: GlassCard(
               padding: const EdgeInsets.all(20),
-              child: _ArenaPanel(market: _markets[_selectedMarketIdx]),
+              child: _SwarmAnalyticsPanel(
+                market: _markets[_selectedMarketIdx],
+                agents: _agents,
+                loading: _loadingAgents,
+              ),
             ),
           ),
         ),
-        // ── Right column: decision log + swarm viz ─────────────────────
         SizedBox(
           width: rightW,
           child: Padding(
             padding: const EdgeInsets.only(right: 12, top: 8, bottom: 12),
             child: Column(
               children: [
-                // Swarm mini-viz across the top of the right panel.
                 SizedBox(
                   height: 160,
                   child: ClipRRect(
@@ -326,7 +424,6 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
     );
   }
 
-  // ── Narrow fallback: single column ─────────────────────────────────────
   Widget _singleColumn(BuildContext context, BoxConstraints c) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(12),
@@ -344,9 +441,16 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          GlassCard(
-            padding: const EdgeInsets.all(20),
-            child: _ArenaPanel(market: _markets[_selectedMarketIdx]),
+          SizedBox(
+            height: 480,
+            child: GlassCard(
+              padding: const EdgeInsets.all(20),
+              child: _SwarmAnalyticsPanel(
+                market: _markets[_selectedMarketIdx],
+                agents: _agents,
+                loading: _loadingAgents,
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -719,14 +823,32 @@ class _MarketRowState extends State<_MarketRow> {
                             fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        // Mini Sparkline Graph
-                        SizedBox(
-                          width: 48,
-                          height: 14,
-                          child: CustomPaint(
-                            painter: _SparklinePainter(_sparkPoints, rowAccentColor),
-                          ),
+                        const SizedBox(width: 8),
+                        // Active Agent Badges
+                        Row(
+                          children: widget.market.activeAgents.map((agentName) {
+                            final color = _getAgentColor(agentName);
+                            final emoji = _getAgentEmoji(agentName);
+                            return Tooltip(
+                              message: agentName,
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 3),
+                                width: 14,
+                                height: 14,
+                                decoration: BoxDecoration(
+                                  color: color.withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: color, width: 0.6),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    emoji,
+                                    style: const TextStyle(fontSize: 8, height: 1.0),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ],
                     ),
@@ -766,478 +888,624 @@ class _MarketRowState extends State<_MarketRow> {
   }
 }
 
-// ── Center: Arena / betting panel ─────────────────────────────────────────
-class _ArenaPanel extends StatefulWidget {
-  const _ArenaPanel({required this.market});
+// ── Center: Swarm Analytics Panel ─────────────────────────────────────────
+class _SwarmAnalyticsPanel extends StatefulWidget {
+  const _SwarmAnalyticsPanel({
+    required this.market,
+    required this.agents,
+    required this.loading,
+  });
   final _Market market;
+  final List<_AgentInfo> agents;
+  final bool loading;
 
   @override
-  State<_ArenaPanel> createState() => _ArenaPanelState();
+  State<_SwarmAnalyticsPanel> createState() => _SwarmAnalyticsPanelState();
 }
 
-class _ArenaPanelState extends State<_ArenaPanel> with SingleTickerProviderStateMixin {
-  bool _isYesSelected = true;
-  double _stake = 10.0;
-  bool _placeHovered = false;
-  bool _placePressed = false;
-  late AnimationController _btnGlowController;
-
-  @override
-  void initState() {
-    super.initState();
-    _btnGlowController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _btnGlowController.dispose();
-    super.dispose();
-  }
+class _SwarmAnalyticsPanelState extends State<_SwarmAnalyticsPanel> {
+  bool _showMarketOnly = false;
 
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
-    final yesPctVal = widget.market.yesPrice;
-    
-    // Computed values
-    final currentPrice = _isYesSelected ? widget.market.yesPrice : (1.0 - widget.market.yesPrice);
-    final shares = _stake / currentPrice;
-    final profit = shares - _stake;
-    final roi = (profit / _stake) * 100;
-    
-    final activeColor = _isYesSelected ? t.yes : t.no;
+    if (widget.loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF2DD4BF)),
+      );
+    }
+
+    final activeAgentsForMarket = widget.agents.where((agent) {
+      return widget.market.activeAgents.any((name) => agent.name.contains(name.replaceAll(RegExp(r'[^\w\s]'), '').trim()));
+    }).toList();
+
+    final displayedAgents = _showMarketOnly ? activeAgentsForMarket : widget.agents;
+
+    final totalSwarmPnl = widget.agents.fold<double>(0.0, (sum, a) => sum + a.pnl);
+    final avgWinRate = widget.agents.isEmpty ? 0.0 : widget.agents.fold<double>(0.0, (sum, a) => sum + a.winRate) / widget.agents.length;
+    final totalTrades = widget.agents.fold<int>(0, (sum, a) => sum + a.trades);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Title Question
-        Text(
-          widget.market.question,
-          style: TextStyle(
-            color: t.text,
-            fontSize: 20,
-            fontWeight: FontWeight.w900,
-            height: 1.25,
-            letterSpacing: -0.4,
-          ),
-        ),
-        const SizedBox(height: 8),
         Row(
           children: [
-            _Pill(label: widget.market.slug.toUpperCase(), color: t.textMuted),
-            const SizedBox(width: 8),
-            _Pill(label: 'ARC-TESTNET', color: t.yes),
-            const Spacer(),
-            Text(
-              '\$${(widget.market.volume / 1000).toStringAsFixed(0)}k vol',
-              style: TextStyle(
-                color: t.textSubtle,
-                fontFamily: PulsColors.fontMono,
-                fontSize: 11,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+            _TabBtn(
+              label: 'SWARM OVERVIEW',
+              active: !_showMarketOnly,
+              onTap: () => setState(() => _showMarketOnly = false),
+            ),
+            const SizedBox(width: 12),
+            _TabBtn(
+              label: 'MARKET POSITIONING',
+              active: _showMarketOnly,
+              onTap: () => setState(() => _showMarketOnly = true),
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 18),
 
-        // Probability Bar (Tween Animated)
-        TweenAnimationBuilder<double>(
-          tween: Tween<double>(begin: 0.5, end: yesPctVal),
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeOutCubic,
-          builder: (context, animVal, child) {
-            final yPct = (animVal * 100).round();
-            final nPct = 100 - yPct;
-            return Column(
+        if (!_showMarketOnly) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0C0F19),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF1E293B)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: SizedBox(
-                    height: 12,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: yPct,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            color: t.yes,
-                          ),
-                        ),
-                        Expanded(
-                          flex: nPct,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            color: t.no,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(width: 6, height: 6, decoration: BoxDecoration(color: t.yes, shape: BoxShape.circle)),
-                        const SizedBox(width: 6),
-                        Text(
-                          'YES $yPct¢',
-                          style: TextStyle(
-                            color: t.yes,
-                            fontFamily: PulsColors.fontMono,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'AI SWARM RUNTIME METRICS',
+                      style: TextStyle(
+                        color: t.textSubtle,
+                        fontFamily: PulsColors.fontMono,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5,
+                      ),
                     ),
                     Row(
                       children: [
-                        Text(
-                          'NO $nPct¢',
-                          style: TextStyle(
-                            color: t.no,
-                            fontFamily: PulsColors.fontMono,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            fontFeatures: const [FontFeature.tabularFigures()],
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF2DD4BF),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: Color(0xFF2DD4BF), blurRadius: 6),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Container(width: 6, height: 6, decoration: BoxDecoration(color: t.no, shape: BoxShape.circle)),
+                        const SizedBox(width: 8),
+                        Text(
+                          'LIVE & TRADING',
+                          style: TextStyle(
+                            color: const Color(0xFF2DD4BF),
+                            fontFamily: PulsColors.fontMono,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MetricItem(
+                        label: 'SWARM TOTAL PNL',
+                        value: '+\$${totalSwarmPnl.toStringAsFixed(2)}',
+                        valueColor: const Color(0xFF2DD4BF),
+                      ),
+                    ),
+                    Expanded(
+                      child: _MetricItem(
+                        label: 'AVG WIN RATE',
+                        value: '${avgWinRate.toStringAsFixed(1)}%',
+                        valueColor: Colors.white,
+                      ),
+                    ),
+                    Expanded(
+                      child: _MetricItem(
+                        label: 'TOTAL TRADES',
+                        value: '$totalTrades',
+                        valueColor: const Color(0xFFEC4899),
+                      ),
+                    ),
+                  ],
+                ),
               ],
-            );
-          },
-        ),
-        const SizedBox(height: 28),
-
-        // Tabs to Choose YES/NO
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => _isYesSelected = true),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: _isYesSelected ? t.yes.withValues(alpha: 0.15) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: _isYesSelected ? t.yes : t.border,
-                      width: _isYesSelected ? 1.5 : 1.0,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'BET YES',
-                      style: TextStyle(
-                        color: _isYesSelected ? t.yes : t.textSubtle,
-                        fontFamily: PulsColors.fontMono,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => _isYesSelected = false),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: !_isYesSelected ? t.no.withValues(alpha: 0.15) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: !_isYesSelected ? t.no : t.border,
-                      width: !_isYesSelected ? 1.5 : 1.0,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'BET NO',
-                      style: TextStyle(
-                        color: !_isYesSelected ? t.no : t.textSubtle,
-                        fontFamily: PulsColors.fontMono,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+          ),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0C0F19),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF1E293B)),
             ),
-          ],
-        ),
-        const SizedBox(height: 20),
-
-        // STAKE SECTION
-        Text(
-          'STAKE AMOUNT',
-          style: TextStyle(
-            color: t.textMuted,
-            fontFamily: PulsColors.fontMono,
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.5,
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Interactive Stake Display
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: t.surface.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: t.border),
-          ),
-          child: Row(
-            children: [
-              Text(
-                'USDC',
-                style: TextStyle(
-                  color: t.textSubtle,
-                  fontFamily: PulsColors.fontMono,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    _Pill(label: widget.market.slug.toUpperCase(), color: t.brand),
+                    const SizedBox(width: 8),
+                    _Pill(label: 'ACTIVE POSITIONING', color: t.yes),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  _stake.toStringAsFixed(2),
+                const SizedBox(height: 12),
+                Text(
+                  widget.market.question,
                   style: TextStyle(
                     color: t.text,
-                    fontFamily: PulsColors.fontMono,
-                    fontSize: 20,
+                    fontSize: 16,
                     fontWeight: FontWeight.w900,
+                    height: 1.3,
                   ),
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: activeColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '≈ ${shares.toStringAsFixed(1)} SHARES',
-                  style: TextStyle(
-                    color: activeColor,
-                    fontFamily: PulsColors.fontMono,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Presets List
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [5.0, 10.0, 50.0, 100.0, 500.0].map((amt) {
-            return _PresetChip(
-              amount: amt,
-              selected: _stake == amt,
-              onTap: () => setState(() => _stake = amt),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 20),
-
-        // ROI Calculator Display
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: t.surfaceRaised.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: t.border.withValues(alpha: 0.6)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'EST. NET PROFIT',
-                style: TextStyle(color: t.textMuted, fontSize: 11, fontWeight: FontWeight.bold),
-              ),
-              Row(
-                children: [
-                  Text(
-                    '+\$${profit.toStringAsFixed(2)}',
-                    style: TextStyle(color: t.yes, fontFamily: PulsColors.fontMono, fontSize: 13, fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '(${roi.toStringAsFixed(1)}% ROI)',
-                    style: TextStyle(color: t.yes.withValues(alpha: 0.8), fontFamily: PulsColors.fontMono, fontSize: 11),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // EXECUTE TX BUTTON
-        MouseRegion(
-          onEnter: (_) => setState(() => _placeHovered = true),
-          onExit: (_) => setState(() => _placeHovered = false),
-          child: GestureDetector(
-            onTapDown: (_) => setState(() => _placePressed = true),
-            onTapUp: (_) => setState(() => _placePressed = false),
-            onTapCancel: () => setState(() => _placePressed = false),
-            onTap: () {
-              triggerCameraShake(context, intensity: 8);
-              PulsSnack.success(
-                context,
-                'Order placed successfully: $_stake USDC on ${_isYesSelected ? 'YES' : 'NO'} via ARC Chain!',
-              );
-            },
-            child: AnimatedBuilder(
-              animation: _btnGlowController,
-              builder: (context, child) {
-                final glow = _btnGlowController.value;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  height: 52,
-                  transform: Matrix4.identity()..scale(_placePressed ? 0.98 : _placeHovered ? 1.01 : 1.0),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        activeColor,
-                        activeColor.withValues(alpha: 0.8),
-                      ],
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Probability: ${(widget.market.yesPrice * 100).round()}% YES',
+                      style: TextStyle(
+                        color: t.textSubtle,
+                        fontFamily: PulsColors.fontMono,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: activeColor.withValues(alpha: 0.3 + (glow * 0.2)),
-                        blurRadius: 10 + (glow * 8),
-                        spreadRadius: 1 + (glow * 2),
-                      )
-                    ],
-                  ),
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.flash_on_rounded, color: Colors.white, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          'EXECUTE TRANSACTION',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontFamily: PulsColors.fontMono,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 13,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'Swarm Activity: ${activeAgentsForMarket.length} Agents active',
+                      style: TextStyle(
+                        color: t.brandSubtle,
+                        fontFamily: PulsColors.fontMono,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                );
-              },
+                  ],
+                ),
+              ],
             ),
           ),
-        ),
+        ],
+        const SizedBox(height: 16),
 
-        const Spacer(),
-        // Commentary Footer
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: t.surface.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: t.border.withValues(alpha: 0.5)),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.smart_toy_rounded, size: 16, color: t.brand),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Vega ⚡ went YES · \$2.50 · "momentum is breaking out, pressing this hard"',
-                  style: TextStyle(
-                    color: t.textMuted,
-                    fontSize: 11,
-                    height: 1.45,
+        Expanded(
+          child: displayedAgents.isEmpty
+              ? Center(
+                  child: Text(
+                    'No agents active in this market.',
+                    style: TextStyle(color: t.textMuted, fontSize: 13),
                   ),
+                )
+              : ListView.builder(
+                  itemCount: displayedAgents.length,
+                  itemBuilder: (context, i) {
+                    final agent = displayedAgents[i];
+                    return _AgentDashboardCard(
+                      agent: agent,
+                      selectedMarket: widget.market,
+                      showMarketOnly: _showMarketOnly,
+                    );
+                  },
                 ),
-              ),
-            ],
-          ),
         ),
       ],
     );
   }
 }
 
-class _PresetChip extends StatelessWidget {
-  const _PresetChip({
-    required this.amount,
-    required this.selected,
-    required this.onTap,
+class _AgentDashboardCard extends StatefulWidget {
+  const _AgentDashboardCard({
+    required this.agent,
+    required this.selectedMarket,
+    required this.showMarketOnly,
   });
-  final double amount;
-  final bool selected;
-  final VoidCallback onTap;
+  final _AgentInfo agent;
+  final _Market selectedMarket;
+  final bool showMarketOnly;
+
+  @override
+  State<_AgentDashboardCard> createState() => _AgentDashboardCardState();
+}
+
+class _AgentDashboardCardState extends State<_AgentDashboardCard> {
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
+    final agent = widget.agent;
+    final winColor = agent.winRate >= 75 ? const Color(0xFF2DD4BF) : const Color(0xFFEC4899);
+
+    String positioningDetail = '';
+    if (widget.showMarketOnly) {
+      if (agent.name.contains('Vega')) {
+        positioningDetail = 'Holding 8,064 YES shares (entry 62¢) · Current PNL: +\$403.20';
+      } else if (agent.name.contains('Lyra')) {
+        positioningDetail = 'Holding 12,903 YES shares (entry 38¢) · Current PNL: +\$516.12';
+      } else if (agent.name.contains('Sirius')) {
+        positioningDetail = 'Holding 9,677 YES shares (entry 31¢) · Current PNL: +\$290.31';
+      } else if (agent.name.contains('Orion')) {
+        positioningDetail = 'Holding 7,317 NO shares (entry 82¢) · Current PNL: +\$146.34';
+      } else if (agent.name.contains('Antigravity')) {
+        positioningDetail = 'Holding 23,880 YES shares (entry 67¢) · Current PNL: +\$1,194.00';
+      } else {
+        positioningDetail = 'Holding active position via Arc Smart Contract';
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B0E17),
+        border: Border.all(color: _expanded ? agent.color.withValues(alpha: 0.5) : const Color(0xFF1E293B)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
+            onTap: () => setState(() => _expanded = !_expanded),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: CircleAvatar(
+              radius: 20,
+              backgroundColor: agent.color.withValues(alpha: 0.12),
+              child: Text(agent.avatar, style: const TextStyle(fontSize: 18)),
+            ),
+            title: Row(
+              children: [
+                Text(
+                  agent.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14.5,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    agent.role.toUpperCase(),
+                    style: TextStyle(
+                      color: t.textSubtle,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                children: [
+                  Text(
+                    'Win Rate: ',
+                    style: TextStyle(color: t.textMuted, fontSize: 11),
+                  ),
+                  Text(
+                    '${agent.winRate}%',
+                    style: TextStyle(color: winColor, fontWeight: FontWeight.bold, fontSize: 11),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Trades: ',
+                    style: TextStyle(color: t.textMuted, fontSize: 11),
+                  ),
+                  Text(
+                    '${agent.trades}',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 54,
+                  height: 24,
+                  child: CustomPaint(
+                    painter: _SparklinePainter(agent.pnlHistory, agent.pnl >= 0 ? const Color(0xFF2DD4BF) : const Color(0xFFEC4899)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '+\$${agent.pnl.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        color: Color(0xFF2DD4BF),
+                        fontWeight: FontWeight.w900,
+                        fontFamily: PulsColors.fontMono,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    Text(
+                      'PNL',
+                      style: TextStyle(
+                        color: t.textMuted,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  _expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                  color: t.textMuted,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+          
+          if (_expanded) ...[
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Color(0xFF1E293B), width: 0.6)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 12),
+                  Text(
+                    'LATEST SWARM ACTION',
+                    style: TextStyle(
+                      color: t.textMuted,
+                      fontFamily: PulsColors.fontMono,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFF1E293B)),
+                    ),
+                    child: Text(
+                      agent.latestAction,
+                      style: const TextStyle(
+                        color: Color(0xFF2DD4BF),
+                        fontFamily: PulsColors.fontMono,
+                        fontSize: 11.5,
+                      ),
+                    ),
+                  ),
+                  
+                  if (widget.showMarketOnly) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'MARKET POSITIONING DETAIL',
+                      style: TextStyle(
+                        color: t.textMuted,
+                        fontFamily: PulsColors.fontMono,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      positioningDetail,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontFamily: PulsColors.fontMono,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'PORTFOLIO TARGET ALLOCATIONS',
+                      style: TextStyle(
+                        color: t.textMuted,
+                        fontFamily: PulsColors.fontMono,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _AgentPositionRow(label: 'btc-100k (YES)', pct: 40, color: const Color(0xFF2DD4BF)),
+                    _AgentPositionRow(label: 'eth-flip (NO)', pct: 25, color: const Color(0xFFEC4899)),
+                    _AgentPositionRow(label: 'arc-tvl-1b (YES)', pct: 35, color: const Color(0xFFEAB308)),
+                  ],
+                  
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Onchain Address: ${agent.address}',
+                        style: TextStyle(
+                          color: t.textMuted,
+                          fontFamily: PulsColors.fontMono,
+                          fontSize: 10,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Clipboard.setData(ClipboardData(text: agent.address));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Address copied to clipboard')),
+                          );
+                        },
+                        child: Text(
+                          'COPY',
+                          style: TextStyle(
+                            color: agent.color,
+                            fontFamily: PulsColors.fontMono,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AgentPositionRow extends StatelessWidget {
+  const _AgentPositionRow({
+    required this.label,
+    required this.pct,
+    required this.color,
+  });
+  final String label;
+  final int pct;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 11, fontFamily: PulsColors.fontMono),
+            ),
+          ),
+          Expanded(
+            flex: 5,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: pct / 100,
+                backgroundColor: const Color(0xFF1E293B),
+                color: color,
+                minHeight: 6,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 28,
+            child: Text(
+              '$pct%',
+              textAlign: TextAlign.right,
+              style: const TextStyle(color: Colors.white, fontSize: 10, fontFamily: PulsColors.fontMono, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TabBtn extends StatelessWidget {
+  const _TabBtn({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? t.brand.withValues(alpha: 0.2) : t.surface.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(8),
+          color: active ? const Color(0xFF2DD4BF).withValues(alpha: 0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: selected ? t.brand : t.border,
+            color: active ? const Color(0xFF2DD4BF) : const Color(0xFF1E293B),
             width: 1,
           ),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: t.brand.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                  )
-                ]
-              : null,
         ),
         child: Text(
-          '\$${amount.toStringAsFixed(0)}',
+          label,
           style: TextStyle(
-            color: selected ? t.text : t.textMuted,
+            color: active ? const Color(0xFF2DD4BF) : const Color(0xFF5E6A85),
             fontFamily: PulsColors.fontMono,
             fontSize: 11,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MetricItem extends StatelessWidget {
+  const _MetricItem({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+  });
+  final String label;
+  final String value;
+  final Color valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF5E6A85),
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            color: valueColor,
+            fontFamily: PulsColors.fontMono,
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1276,10 +1544,176 @@ class _Market {
     required this.question,
     required this.yesPrice,
     required this.volume,
+    this.activeAgents = const [],
   });
 
   final String slug;
   final String question;
   final double yesPrice; // 0..1
   final double volume; // USDC
+  final List<String> activeAgents;
 }
+
+// ── AI Agent Info model ───────────────────────────────────────────────────
+class _AgentInfo {
+  const _AgentInfo({
+    required this.id,
+    required this.name,
+    required this.role,
+    required this.avatar,
+    required this.winRate,
+    required this.pnl,
+    required this.trades,
+    required this.address,
+    required this.color,
+    required this.latestAction,
+    required this.pnlHistory,
+  });
+
+  final String id;
+  final String name;
+  final String role;
+  final String avatar;
+  final double winRate;
+  final double pnl;
+  final int trades;
+  final String address;
+  final Color color;
+  final String latestAction;
+  final List<double> pnlHistory;
+}
+
+// ── Helper functions for Agent mapping ────────────────────────────────────
+Color _getAgentColor(String name) {
+  if (name.toLowerCase().contains('vega')) return const Color(0xFF2DD4BF);
+  if (name.toLowerCase().contains('lyra')) return const Color(0xFFEC4899);
+  if (name.toLowerCase().contains('sirius')) return const Color(0xFFA855F7);
+  if (name.toLowerCase().contains('orion')) return const Color(0xFF06B6D4);
+  if (name.toLowerCase().contains('antigravity')) return const Color(0xFFEAB308);
+  
+  final hash = name.hashCode;
+  final colors = [
+    const Color(0xFF2DD4BF),
+    const Color(0xFFEC4899),
+    const Color(0xFFA855F7),
+    const Color(0xFF06B6D4),
+    const Color(0xFF3B82F6),
+    const Color(0xFF10B981),
+    const Color(0xFFEAB308),
+  ];
+  return colors[hash.abs() % colors.length];
+}
+
+String _getAgentRole(String name) {
+  if (name.toLowerCase().contains('vega')) return 'Momentum Scaling';
+  if (name.toLowerCase().contains('lyra')) return 'Crosschain Arbitrage';
+  if (name.toLowerCase().contains('sirius')) return 'Social Sentiment';
+  if (name.toLowerCase().contains('orion')) return 'Macro Prediction';
+  if (name.toLowerCase().contains('antigravity')) return 'Hedge Coordinator';
+  return 'Autonomous Liquidity Agent';
+}
+
+String _getAgentLatestAction(String name) {
+  if (name.toLowerCase().contains('vega')) return 'Staked \$24.50 YES on btc-100k';
+  if (name.toLowerCase().contains('lyra')) return 'Arb execute: Buy NO on eth-flip';
+  if (name.toLowerCase().contains('sirius')) return 'Analyzing feed: Sentiment holds YES';
+  if (name.toLowerCase().contains('orion')) return 'Staked \$12.00 NO on us-recession';
+  if (name.toLowerCase().contains('antigravity')) return 'Executed crosschain hedge to Arc';
+  return 'Updated position forecast on active markets';
+}
+
+String _getAgentEmoji(String name) {
+  if (name.contains('⚡')) return '⚡';
+  if (name.contains('💠')) return '💠';
+  if (name.contains('🌠')) return '🌠';
+  if (name.contains('🛰️')) return '🛰️';
+  if (name.contains('🪐')) return '🪐';
+  
+  if (name.toLowerCase().contains('vega')) return '⚡';
+  if (name.toLowerCase().contains('lyra')) return '💠';
+  if (name.toLowerCase().contains('sirius')) return '🌠';
+  if (name.toLowerCase().contains('orion')) return '🛰️';
+  if (name.toLowerCase().contains('antigravity')) return '🪐';
+  return '🤖';
+}
+
+List<double> _generatePnlHistory(String name, double finalPnl) {
+  final rand = math.Random(name.hashCode);
+  double current = finalPnl * 0.4;
+  final history = <double>[current];
+  for (int i = 0; i < 8; i++) {
+    current += (rand.nextDouble() * 0.2 - 0.08) * finalPnl.abs();
+    history.add(current);
+  }
+  history.add(finalPnl);
+  return history;
+}
+
+// ── Static fallback Agents data ──────────────────────────────────────────
+final _fallbackAgents = [
+  const _AgentInfo(
+    id: 'vega',
+    name: 'Vega ⚡',
+    role: 'Momentum Scaling',
+    avatar: '⚡',
+    winRate: 78.4,
+    pnl: 18432.20,
+    trades: 1248,
+    address: '0x71C...392A',
+    color: Color(0xFF2DD4BF),
+    latestAction: 'Staked \$24.50 YES on btc-100k',
+    pnlHistory: [4000.0, 6200.0, 5800.0, 7100.0, 9400.0, 11200.0, 10800.0, 14000.0, 16200.0, 18432.20],
+  ),
+  const _AgentInfo(
+    id: 'lyra',
+    name: 'Lyra 💠',
+    role: 'Crosschain Arbitrage',
+    avatar: '💠',
+    winRate: 84.1,
+    pnl: 12190.55,
+    trades: 942,
+    address: '0x4bB...51aF',
+    color: Color(0xFFEC4899),
+    latestAction: 'Arb execute: Buy NO on eth-flip',
+    pnlHistory: [3000.0, 4100.0, 5600.0, 5200.0, 7800.0, 8400.0, 9900.0, 11200.0, 10500.0, 12190.55],
+  ),
+  const _AgentInfo(
+    id: 'sirius',
+    name: 'Sirius 🌠',
+    role: 'Social Sentiment',
+    avatar: '🌠',
+    winRate: 71.8,
+    pnl: 6840.12,
+    trades: 412,
+    address: '0x3cD...e188',
+    color: Color(0xFFA855F7),
+    latestAction: 'Analyzing feed: Sentiment holds YES',
+    pnlHistory: [1000.0, 2100.0, 1800.0, 3100.0, 4200.0, 3900.0, 5100.0, 4800.0, 6100.0, 6840.12],
+  ),
+  const _AgentInfo(
+    id: 'orion',
+    name: 'Orion 🛰️',
+    role: 'Macro Prediction',
+    avatar: '🛰️',
+    winRate: 74.5,
+    pnl: 9482.00,
+    trades: 582,
+    address: '0x8FA...90c2',
+    color: Color(0xFF06B6D4),
+    latestAction: 'Staked \$12.00 NO on us-recession',
+    pnlHistory: [2000.0, 3400.0, 4100.0, 3800.0, 5200.0, 6800.0, 7200.0, 8400.0, 9100.0, 9482.00],
+  ),
+  const _AgentInfo(
+    id: 'antigravity',
+    name: 'Antigravity 🪐',
+    role: 'Hedge Coordinator',
+    avatar: '🪐',
+    winRate: 81.2,
+    pnl: 24195.40,
+    trades: 2045,
+    address: '0x2EE...d5F7',
+    color: Color(0xFFEAB308),
+    latestAction: 'Executed crosschain hedge to Arc',
+    pnlHistory: [5000.0, 8200.0, 9800.0, 11000.0, 13400.0, 16200.0, 15800.0, 19000.0, 21200.0, 24195.40],
+  ),
+];
