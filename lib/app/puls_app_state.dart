@@ -39,9 +39,11 @@ class PulsAppState extends ChangeNotifier {
       final q = Uri.base.queryParameters['terminal'];
       if (q != null && (q == 'true' || q == '1')) {
         pendingTerminal = true;
+        onboardingComplete = true;
       }
       if (Uri.base.pathSegments.contains('terminal')) {
         pendingTerminal = true;
+        onboardingComplete = true;
       }
     }
     _loadMarkets();
@@ -181,6 +183,7 @@ class PulsAppState extends ChangeNotifier {
     }
     if (terminal) {
       pendingTerminal = true;
+      onboardingComplete = true;
     }
     webLandingDismissed = true;
     notifyListeners();
