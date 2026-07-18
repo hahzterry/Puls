@@ -18,7 +18,7 @@ class FaqSection extends StatelessWidget {
     ),
     (
       'Is this real money?',
-      'It runs on Arc Testnet with free testnet USDC from faucet.circle.com. The trades are '
+      'It runs on Arc with free USDC from faucet.circle.com. The trades are '
           'real on-chain transactions — but there is nothing to lose while you learn.',
     ),
     (

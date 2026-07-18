@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../core/theme/app_theme.dart';
+import 'package:puls/core/utils/formatters.dart';
 
 class CandleData {
   CandleData({
@@ -36,6 +37,21 @@ class CandlestickChart extends StatefulWidget {
 
 class _CandlestickChartState extends State<CandlestickChart> {
   int? _hoveredIndex;
+  late List<CandleData> _cachedCandles;
+
+  @override
+  void initState() {
+    super.initState();
+    _cachedCandles = _generateCandles();
+  }
+
+  @override
+  void didUpdateWidget(CandlestickChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.prices != widget.prices) {
+      _cachedCandles = _generateCandles();
+    }
+  }
 
   List<CandleData> _generateCandles() {
     if (widget.prices.length < 4) {
@@ -81,7 +97,7 @@ class _CandlestickChartState extends State<CandlestickChart> {
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
-    final candles = _generateCandles();
+    final candles = _cachedCandles;
     if (candles.isEmpty) {
       return Center(
         child: Text('No candlestick data yet — need more price history.', style: TextStyle(color: t.textSubtle, fontSize: 12)),
@@ -168,7 +184,7 @@ class _CandlestickChartState extends State<CandlestickChart> {
         style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: t.textMuted),
         children: [
           TextSpan(text: '$label: ', style: TextStyle(color: t.textSubtle, fontWeight: FontWeight.bold)),
-          TextSpan(text: '${(val * 100).toStringAsFixed(1)}¢', style: TextStyle(color: t.text, fontWeight: FontWeight.w800)),
+          TextSpan(text: formatCents(val ), style: TextStyle(color: t.text, fontWeight: FontWeight.w800)),
         ],
       ),
     );
@@ -183,7 +199,16 @@ class _CandlePainter extends CustomPainter {
     required this.textColor,
     required this.gridColor,
     required this.hoveredIndex,
-  });
+  }) : _gridPaint = Paint()
+         ..color = gridColor
+         ..strokeWidth = 1.0
+         ..style = PaintingStyle.stroke,
+       _highlightPaint = Paint()..style = PaintingStyle.fill,
+       _wickPaint = Paint()
+         ..strokeWidth = 1.5
+         ..style = PaintingStyle.stroke,
+       _bodyPaint = Paint()..style = PaintingStyle.fill,
+       _glowPaint = Paint()..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
 
   final List<CandleData> candles;
   final Color upColor;
@@ -191,6 +216,12 @@ class _CandlePainter extends CustomPainter {
   final Color textColor;
   final Color gridColor;
   final int? hoveredIndex;
+
+  final Paint _gridPaint;
+  final Paint _highlightPaint;
+  final Paint _wickPaint;
+  final Paint _bodyPaint;
+  final Paint _glowPaint;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -201,21 +232,16 @@ class _CandlePainter extends CustomPainter {
     final double yMin = (minVal - pad).clamp(0.0, 1.0);
 
     // Draw Grid Lines (Horizontal)
-    final gridPaint = Paint()
-      ..color = gridColor
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-
     const gridLines = 4;
     for (int i = 0; i <= gridLines; i++) {
       final y = size.height * i / gridLines;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), _gridPaint);
       
       // Draw grid text label
       final gridVal = yMax - (yMax - yMin) * i / gridLines;
       final textPainter = TextPainter(
         text: TextSpan(
-          text: '${(gridVal * 100).toStringAsFixed(0)}¢',
+          text: formatCents(gridVal ),
           style: TextStyle(color: textColor, fontSize: 8, fontFamily: 'monospace'),
         ),
         textDirection: TextDirection.ltr,
@@ -245,26 +271,19 @@ class _CandlePainter extends CustomPainter {
 
       // Draw hovered index highlight column
       if (i == hoveredIndex) {
-        final highlightPaint = Paint()
-          ..color = color.withValues(alpha: 0.08)
-          ..style = PaintingStyle.fill;
+        _highlightPaint.color = color.withValues(alpha: 0.08);
         canvas.drawRect(
           Rect.fromLTWH(candleWidth * i, 0, candleWidth, size.height),
-          highlightPaint,
+          _highlightPaint,
         );
       }
 
       // Draw Wick Line
-      final wickPaint = Paint()
-        ..color = color
-        ..strokeWidth = 1.5
-        ..style = PaintingStyle.stroke;
-      canvas.drawLine(Offset(xCenter, yHigh), Offset(xCenter, yLow), wickPaint);
+      _wickPaint.color = color;
+      canvas.drawLine(Offset(xCenter, yHigh), Offset(xCenter, yLow), _wickPaint);
 
       // Draw Body Rect
-      final bodyPaint = Paint()
-        ..color = color
-        ..style = PaintingStyle.fill;
+      _bodyPaint.color = color;
 
       final double top = yOpen < yClose ? yOpen : yClose;
       final double bottom = yOpen > yClose ? yOpen : yClose;
@@ -283,13 +302,12 @@ class _CandlePainter extends CustomPainter {
       );
 
       // Soft neon glow behind the body — subtle, brighter on the hovered candle.
+      _glowPaint.color = color.withValues(alpha: i == hoveredIndex ? 0.55 : 0.3);
       canvas.drawRRect(
         bodyRRect,
-        Paint()
-          ..color = color.withValues(alpha: i == hoveredIndex ? 0.55 : 0.3)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+        _glowPaint,
       );
-      canvas.drawRRect(bodyRRect, bodyPaint);
+      canvas.drawRRect(bodyRRect, _bodyPaint);
     }
   }
 
@@ -372,7 +390,7 @@ class DepthChart extends StatelessWidget {
                     getTitlesWidget: (v, _) => Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        '${(v * 100).toStringAsFixed(0)}¢',
+                        formatCents(v ),
                         style: TextStyle(color: t.textSubtle, fontSize: 9, fontFamily: 'monospace'),
                       ),
                     ),
@@ -386,7 +404,7 @@ class DepthChart extends StatelessWidget {
                     return touchedSpots.map((spot) {
                       final isBid = spot.barIndex == 0;
                       return LineTooltipItem(
-                        'Price: ${(spot.x * 100).toStringAsFixed(0)}¢\nDepth: \$${spot.y.toStringAsFixed(0)}',
+                        'Price: ${formatCents(spot.x )}\nDepth: \$${spot.y.toStringAsFixed(0)}',
                         TextStyle(color: isBid ? t.yes : t.no, fontSize: 11, fontWeight: FontWeight.bold),
                       );
                     }).toList();

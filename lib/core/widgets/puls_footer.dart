@@ -126,12 +126,12 @@ class _LinkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
+    return const Wrap(
       spacing: 18,
       runSpacing: 8,
       alignment: WrapAlignment.end,
       crossAxisAlignment: WrapCrossAlignment.center,
-      children: const [
+      children: [
         _FooterLink('Docs', 'https://docs.pulsmarket.tech'),
         _FooterLink('GitHub', 'https://github.com/rdmbtc/Puls'),
         _FooterLink('Explorer', PulsFooter._explorerAddress),

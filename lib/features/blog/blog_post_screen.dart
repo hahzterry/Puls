@@ -11,7 +11,6 @@ import '../../core/widgets/simple_markdown.dart';
 import '../../data/models/blog_post.dart';
 import '../comments/comment_thread.dart';
 import '../shell/web_layout.dart';
-import '../wallet/wallet_service.dart';
 import 'blog_widgets.dart';
 import 'package:puls/core/config.dart';
 

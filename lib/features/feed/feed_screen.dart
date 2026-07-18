@@ -15,11 +15,13 @@ import '../../core/utils/agent_pfp.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/puls_emoji.dart';
 import '../../core/motion.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/pulse_dot.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/widgets/gradient_text.dart';
 import '../../core/widgets/puls_loader.dart';
+import '../../core/widgets/state_views.dart';
 import '../../data/models/market.dart';
 import '../market/market_detail_screen.dart';
 import '../market/swipe_discovery_screen.dart';
@@ -171,33 +173,13 @@ class _FeedBody extends StatelessWidget {
         );
 
       case FeedStatus.error:
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.wifi_off_rounded, color: t.textSubtle, size: 40),
-                const SizedBox(height: 16),
-                Text('Could not load markets',
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Text(
-                  'Markets couldn\'t load. Check your connection and retry.',
-                  style: TextStyle(color: t.textMuted, fontSize: 13),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: appState.refresh,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: t.brand,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text('Retry'),
-                ),
-              ],
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: PulsErrorState(
+              title: 'Could not load markets',
+              message: 'Markets couldn\'t load. Check your connection and retry.',
+              onRetry: appState.refresh,
             ),
           ),
         );
@@ -205,23 +187,17 @@ class _FeedBody extends StatelessWidget {
       case FeedStatus.loaded:
         final markets = appState.feedMarkets;
         if (markets.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.trending_up_rounded, size: 48, color: t.textSubtle),
-                const SizedBox(height: 16),
-                Text(
-                  'No markets available right now.',
-                  style: TextStyle(
-                      color: t.text, fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Check back soon or try the Discover tab.',
-                  style: TextStyle(color: t.textMuted, fontSize: 13),
-                ),
-              ],
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Center(
+              child: PulsEmptyState(
+                icon: Icons.trending_up_rounded,
+                title: 'No markets available right now.',
+                message: 'Check back soon or try the Discover tab.',
+                actionLabel: 'Go to Discover',
+                actionIcon: Icons.explore_rounded,
+                onAction: () => ShellNavScope.maybeOf(context)?.goToTab(PulsTab.discover),
+              ),
             ),
           );
         }
@@ -232,7 +208,7 @@ class _FeedBody extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
             itemBuilder: (context, index) {
               final market = markets[index % markets.length];
-              return Padding(
+              final item = Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: PredictionFeedCard(
                   market: market,
@@ -253,6 +229,10 @@ class _FeedBody extends StatelessWidget {
                   },
                 ),
               );
+              if (context.reduceMotion) return item;
+              return item.animate()
+                  .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
+                  .slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOutCubic);
             },
           ),
         );
@@ -411,7 +391,7 @@ class _FeedHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
             child: const Text(
-              'Arc Testnet',
+              'Arc Network',
               style: TextStyle(
                 color: PulsColors.amber,
                 fontSize: 10,
@@ -1259,10 +1239,12 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                 ),
                 Expanded(
                   child: filteredMarkets.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No predictions in this category.',
-                            style: TextStyle(color: t.textMuted),
+                      ? const Center(
+                          child: PulsEmptyState(
+                            icon: Icons.filter_list_off_rounded,
+                            title: 'No predictions found',
+                            message: 'Try a different category or check back later.',
+                            compact: true,
                           ),
                         )
                       : ListView.builder(
@@ -1270,7 +1252,7 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                           itemBuilder: (context, index) {
                             final market =
                                 filteredMarkets[index % filteredMarkets.length];
-                            return Center(
+                            final item = Center(
                               child: ConstrainedBox(
                                 constraints:
                                     const BoxConstraints(maxWidth: 600),
@@ -1301,6 +1283,10 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                                 ),
                               ),
                             );
+                            if (context.reduceMotion) return item;
+                            return item.animate()
+                                .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
+                                .slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOutCubic);
                           },
                         ),
                 ),

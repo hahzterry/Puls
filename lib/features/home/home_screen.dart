@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/widgets/puls_page_route.dart';
 import '../../core/widgets/skeleton.dart';
+import '../../core/widgets/state_views.dart';
 import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
 import '../market/market_detail_screen.dart';
@@ -15,7 +16,6 @@ import '../market/trade_preview_sheet.dart';
 import '../shell/web_layout.dart';
 import '../shell/shell_nav.dart';
 import '../onboarding/help_button.dart';
-import '../onboarding/puls_tour_overlay.dart';
 import '../../core/tour_keys.dart';
 import '../wallet/wallet_service.dart';
 import '../agent/agent_screen.dart' show agentSubTabRequest;
@@ -59,31 +59,14 @@ class _WebHomeScreen extends StatelessWidget {
     }
 
     if (appState.markets.isEmpty) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: Colors.transparent,
         body: WebLayout(
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.trending_up_rounded, size: 48, color: t.textMuted),
-                const SizedBox(height: 16),
-                Text(
-                  'Markets are warming up — check back soon.',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(color: t.text),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Check back soon or activate a market to start trading.',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: t.textMuted),
-                ),
-              ],
+            child: PulsEmptyState(
+              icon: Icons.trending_up_rounded,
+              title: 'Markets are warming up',
+              message: 'Check back soon or activate a market to start trading.',
             ),
           ),
         ),
@@ -619,7 +602,7 @@ class _WebWalletBox extends StatelessWidget {
           const SizedBox(height: 14),
           if (ws.userId == null) ...[
             Text(
-                'Connect your wallet via the Profile tab to enable predicting on Arc Testnet.',
+                'Connect your wallet via the Profile tab to enable predicting on Arc.',
                 style:
                     TextStyle(color: t.textMuted, fontSize: 12, height: 1.5)),
           ] else ...[

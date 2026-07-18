@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
+import 'package:puls/core/utils/formatters.dart';
 
 /// A horizontal "live markets" marquee for the feed. Uses a time-based
 /// Transform.translate over a fixed-width tape (not a ScrollController +
@@ -139,7 +140,7 @@ class _TickerChip extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            'YES ${(yesPrice * 100).toStringAsFixed(0)}¢',
+            'YES ${formatCents(yesPrice )}',
             style: const TextStyle(
               color: PulsColors.brandMint,
               fontSize: 12,

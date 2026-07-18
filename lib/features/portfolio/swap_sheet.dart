@@ -174,7 +174,7 @@ class _SwapSheetState extends State<SwapSheet> {
               ),
             ),
             const SizedBox(height: 8),
-            Text('Testnet — Arc swap liquidity can be thin; quotes update as you type.',
+            Text('Arc swap liquidity can be thin; quotes update as you type.',
                 style: TextStyle(color: t.textSubtle, fontSize: 11)),
           ],
         ],

@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/config.dart';
 import '../../app/puls_app.dart';
+import '../../core/widgets/puls_avatar.dart';
 import 'user_chat_screen.dart';
 
 class InboxScreen extends StatefulWidget {
@@ -96,10 +97,7 @@ class _InboxScreenState extends State<InboxScreen> {
 
                         return ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          leading: CircleAvatar(
-                            backgroundColor: t.surfaceRaised,
-                            backgroundImage: NetworkImage(proxifyImageUrl('https://api.dicebear.com/7.x/identicon/png?seed=$partnerId&size=64')),
-                          ),
+                          leading: PulsAvatar(url: null, name: partnerId, size: 48),
                           title: Text(partnerId, style: TextStyle(color: t.text, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                           subtitle: Row(
                             children: [

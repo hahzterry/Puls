@@ -9,13 +9,14 @@ import '../../core/tour_keys.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/lazy_indexed_stack.dart';
 import '../../core/widgets/puls_footer.dart';
-import '../discover/discover_screen.dart';
-import '../feed/feed_screen.dart';
-import '../home/home_screen.dart';
-import '../portfolio/portfolio_screen.dart';
-import '../profile/profile_screen.dart';
-import '../profile/leaderboard_screen.dart';
-import '../agent/agent_screen.dart';
+import '../../core/widgets/deferred_tab_builder.dart';
+import '../discover/discover_screen.dart' deferred as discover;
+import '../feed/feed_screen.dart' deferred as feed;
+import '../home/home_screen.dart' deferred as home;
+import '../portfolio/portfolio_screen.dart' deferred as portfolio;
+import '../profile/profile_screen.dart' deferred as profile;
+import '../profile/leaderboard_screen.dart' deferred as leaderboard;
+import '../agent/agent_screen.dart' deferred as agent;
 import '../agent/agent_inbox_widget.dart';
 import '../onboarding/onboarding_sheet.dart';
 import '../market/screens/market_terminal_screen.dart';
@@ -34,14 +35,35 @@ class _WebShellState extends State<WebShell>
   late final AnimationController _transCtrl;
   late final Animation<double> _fadeAnim;
 
-  static const _pages = [
-    FeedScreen(),
-    DiscoverScreen(),
-    HomeScreen(),
-    PortfolioScreen(),
-    LeaderboardScreen(),
-    AgentScreen(),
-    ProfileScreen(),
+  final _pages = [
+    DeferredTabBuilder(
+      loadLibrary: feed.loadLibrary,
+      builder: (context) => feed.FeedScreen(),
+    ),
+    DeferredTabBuilder(
+      loadLibrary: discover.loadLibrary,
+      builder: (context) => discover.DiscoverScreen(),
+    ),
+    DeferredTabBuilder(
+      loadLibrary: home.loadLibrary,
+      builder: (context) => home.HomeScreen(),
+    ),
+    DeferredTabBuilder(
+      loadLibrary: portfolio.loadLibrary,
+      builder: (context) => portfolio.PortfolioScreen(),
+    ),
+    DeferredTabBuilder(
+      loadLibrary: leaderboard.loadLibrary,
+      builder: (context) => leaderboard.LeaderboardScreen(),
+    ),
+    DeferredTabBuilder(
+      loadLibrary: agent.loadLibrary,
+      builder: (context) => agent.AgentScreen(),
+    ),
+    DeferredTabBuilder(
+      loadLibrary: profile.loadLibrary,
+      builder: (context) => profile.ProfileScreen(),
+    ),
   ];
 
   static final _items = [
@@ -165,7 +187,9 @@ class _WebShellState extends State<WebShell>
               ),
             ),
             Positioned.fill(
-              child: CustomPaint(painter: _DotGridPainter(color: dotColor)),
+              child: RepaintBoundary(
+                child: CustomPaint(painter: _DotGridPainter(color: dotColor)),
+              ),
             ),
             // ── Shell: top island nav · content · footer ───────────────────
             Column(
@@ -337,8 +361,7 @@ class _Island extends StatefulWidget {
 }
 
 class _IslandState extends State<_Island> {
-  double _tiltX = 0.0;
-  double _tiltY = 0.0;
+  final _tilt = ValueNotifier<Offset>(Offset.zero);
 
   void _onHover(PointerEvent event, Size size) {
     final x = event.localPosition.dx;
@@ -346,17 +369,20 @@ class _IslandState extends State<_Island> {
     final centerX = size.width / 2;
     final centerY = size.height / 2;
     const maxTilt = 0.05; // perspective tilt limit
-    setState(() {
-      _tiltX = ((y - centerY) / centerY).clamp(-1.0, 1.0) * -maxTilt;
-      _tiltY = ((x - centerX) / centerX).clamp(-1.0, 1.0) * maxTilt;
-    });
+    _tilt.value = Offset(
+      ((y - centerY) / centerY).clamp(-1.0, 1.0) * -maxTilt,
+      ((x - centerX) / centerX).clamp(-1.0, 1.0) * maxTilt,
+    );
   }
 
   void _onExit() {
-    setState(() {
-      _tiltX = 0.0;
-      _tiltY = 0.0;
-    });
+    _tilt.value = Offset.zero;
+  }
+
+  @override
+  void dispose() {
+    _tilt.dispose();
+    super.dispose();
   }
 
   @override
@@ -372,20 +398,26 @@ class _IslandState extends State<_Island> {
         return MouseRegion(
           onHover: (e) => _onHover(e, size),
           onExit: (_) => _onExit(),
-          child: TweenAnimationBuilder<Matrix4>(
-            duration: const Duration(milliseconds: 140),
-            curve: Curves.easeOutCubic,
-            tween: Matrix4Tween(
-              begin: Matrix4.identity(),
-              end: Matrix4.identity()
-                ..setEntry(3, 2, 0.001)
-                ..rotateX(_tiltX)
-                ..rotateY(_tiltY),
-            ),
-            builder: (context, matrix, child) {
-              return Transform(
-                transform: matrix,
-                alignment: Alignment.center,
+          child: ValueListenableBuilder<Offset>(
+            valueListenable: _tilt,
+            builder: (context, tilt, child) {
+              return TweenAnimationBuilder<Matrix4>(
+                duration: const Duration(milliseconds: 140),
+                curve: Curves.easeOutCubic,
+                tween: Matrix4Tween(
+                  begin: Matrix4.identity(),
+                  end: Matrix4.identity()
+                    ..setEntry(3, 2, 0.001)
+                    ..rotateX(tilt.dx)
+                    ..rotateY(tilt.dy),
+                ),
+                builder: (context, matrix, child) {
+                  return Transform(
+                    transform: matrix,
+                    alignment: Alignment.center,
+                    child: child,
+                  );
+                },
                 child: child,
               );
             },
@@ -497,13 +529,29 @@ class _NavPillState extends State<_NavPill> with SingleTickerProviderStateMixin 
     final idleIcon =
         widget.isDark ? const Color(0xFF8181AA) : const Color(0xFF9A9A94);
 
-    final pill = AnimatedBuilder(
-      animation: _pulseCtrl,
-      builder: (context, child) {
-        return AnimatedContainer(
+    final pill = Container(
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+      child: AnimatedBuilder(
+        animation: _pulseCtrl,
+        builder: (context, child) {
+          return DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                if (selected)
+                  BoxShadow(
+                    color: t.brand.withValues(alpha: 0.35 + (_pulseCtrl.value * 0.25)),
+                    blurRadius: 8 + (_pulseCtrl.value * 10),
+                    spreadRadius: _pulseCtrl.value * 1.2,
+                  ),
+              ],
+            ),
+            child: child,
+          );
+        },
+        child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
-          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
           padding: EdgeInsets.symmetric(
             horizontal: widget.showLabel ? 14 : 11,
             vertical: 8,
@@ -517,44 +565,35 @@ class _NavPillState extends State<_NavPill> with SingleTickerProviderStateMixin 
                         : t.surfaceRaised)
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              if (selected)
-                BoxShadow(
-                  color: t.brand.withValues(alpha: 0.35 + (_pulseCtrl.value * 0.25)),
-                  blurRadius: 8 + (_pulseCtrl.value * 10),
-                  spreadRadius: _pulseCtrl.value * 1.2,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedScale(
+                scale: selected ? 1.08 : 1.0,
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                child: Picon(
+                  widget.item.icon,
+                  size: 18,
+                  color: selected ? Colors.white : idleIcon,
                 ),
+              ),
+              if (widget.showLabel) ...[
+                const SizedBox(width: 8),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 220),
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: selected ? Colors.white : t.textMuted,
+                  ),
+                  child: Text(widget.item.label),
+                ),
+              ],
             ],
           ),
-          child: child,
-        );
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedScale(
-            scale: selected ? 1.08 : 1.0,
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            child: Picon(
-              widget.item.icon,
-              size: 18,
-              color: selected ? Colors.white : idleIcon,
-            ),
-          ),
-          if (widget.showLabel) ...[
-            const SizedBox(width: 8),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 220),
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected ? Colors.white : t.textMuted,
-              ),
-              child: Text(widget.item.label),
-            ),
-          ],
-        ],
+        ),
       ),
     );
 
@@ -696,7 +735,7 @@ class _NetworkBadge extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            'Arc Testnet',
+            'Arc',
             style: TextStyle(
               color: t.textMuted,
               fontSize: 12.5,
@@ -806,16 +845,16 @@ class _NavItem {
 }
 
 class _DotGridPainter extends CustomPainter {
-  const _DotGridPainter({required this.color});
+  _DotGridPainter({required this.color}) : _paint = Paint()..color = color;
   final Color color;
+  final Paint _paint;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
     const spacing = 32.0;
     for (double x = 0; x < size.width; x += spacing) {
       for (double y = 0; y < size.height; y += spacing) {
-        canvas.drawCircle(Offset(x, y), 1, paint);
+        canvas.drawCircle(Offset(x, y), 1, _paint);
       }
     }
   }

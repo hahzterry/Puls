@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/motion.dart';
 import '../../core/widgets/puls_loader.dart';
+import '../../core/widgets/state_views.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/utils/image_util.dart';
 import '../../core/widgets/market_hero.dart';
@@ -25,7 +26,6 @@ import 'ai_insight_card.dart';
 import 'resolution_panel.dart';
 import 'market_detail_tabs.dart';
 import 'ai_oracle_panel.dart';
-import 'package:puls/core/config.dart';
 
 class MarketDetailScreen extends StatefulWidget {
   const MarketDetailScreen({required this.marketId, super.key});
@@ -78,7 +78,11 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
         appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0,
           leading: BackButton(color: t.text)),
         body: Center(child: _marketNotFound
-            ? Text('Market not found', style: TextStyle(color: t.textMuted, fontSize: 14))
+            ? const PulsEmptyState(
+                title: 'Market not found',
+                message: 'This market may have been removed or does not exist.',
+                icon: Icons.search_off_rounded,
+              )
             : const PulsLoader()),
       );
     }
@@ -558,9 +562,9 @@ class _ChartSectionState extends State<_ChartSection> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('${(widget.history.first * 100).toStringAsFixed(0)}¢ open',
+                Text('${formatCents(widget.history.first )} open',
                     style: TextStyle(color: t.textSubtle, fontSize: 11, fontFeatures: PulsColors.tabularFigures)),
-                Text('${(widget.history.last * 100).toStringAsFixed(0)}¢ now',
+                Text('${formatCents(widget.history.last )} now',
                     style: TextStyle(color: widget.trendColor, fontSize: 11, fontWeight: FontWeight.w700, fontFeatures: PulsColors.tabularFigures)),
               ],
             ),
@@ -629,7 +633,7 @@ class _FullChart extends StatelessWidget {
               reservedSize: 32,
               interval: 0.25,
               getTitlesWidget: (v, _) => Text(
-                '${(v * 100).toStringAsFixed(0)}¢',
+                formatCents(v ),
                 style: TextStyle(color: t.textSubtle, fontSize: 9),
               ),
             ),
@@ -641,7 +645,7 @@ class _FullChart extends StatelessWidget {
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
             getTooltipItems: (spots) => spots.map((s) => LineTooltipItem(
-              '${(s.y * 100).toStringAsFixed(0)}¢',
+              formatCents(s.y ),
               TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
             )).toList(),
           ),
@@ -720,11 +724,11 @@ class _BidAskPanel extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _OrderCell(label: 'Best Bid', value: '${(market.bestBid * 100).toStringAsFixed(0)}¢', color: t.yes, t: t)),
-              const SizedBox(width: 10),
-              Expanded(child: _OrderCell(label: 'Best Ask', value: '${(market.bestAsk * 100).toStringAsFixed(0)}¢', color: t.no, t: t)),
-              const SizedBox(width: 10),
-              Expanded(child: _OrderCell(label: 'Spread', value: '${(market.spread * 100).toStringAsFixed(0)}¢', color: t.textMuted, t: t)),
+              Expanded(child: _OrderCell(label: 'Best Bid', value: formatCents(market.bestBid), color: t.yes, t: t)),
+              const SizedBox(width: 8),
+              Expanded(child: _OrderCell(label: 'Best Ask', value: formatCents(market.bestAsk), color: t.no, t: t)),
+              const SizedBox(width: 8),
+              Expanded(child: _OrderCell(label: 'Spread', value: formatCents(market.spread), color: t.textMuted, t: t)),
             ],
           ),
           if (market.competitive > 0) ...[

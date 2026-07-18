@@ -14,7 +14,6 @@ import '../../core/widgets/puls_sheet.dart';
 import '../onboarding/onboarding_flags.dart';
 import 'wallet_service.dart';
 
-import '../../core/config.dart' show backendUrl, appBaseUrl;
 const _backendUrl = backendUrl;
 
 enum TxStatus { pending, complete, failed }
@@ -141,8 +140,8 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
         _elapsedSeconds != null ? _elapsedSeconds!.toStringAsFixed(2) : '0.45';
     final text = widget.isBuy
         ? 'I just went ${widget.side} with \$${widget.amount.toStringAsFixed(2)} USDC on Puls 👀\n'
-            'Confirmed on Arc Testnet in ${secs}s — gas paid in USDC, no ETH. 🚀'
-        : 'Just closed a ${widget.side} position on Puls — settled on Arc Testnet in ${secs}s. 🚀';
+            'Confirmed on Arc in ${secs}s — gas paid in USDC, no ETH. 🚀'
+        : 'Just closed a ${widget.side} position on Puls — settled on Arc in ${secs}s. 🚀';
     final intent = Uri.parse('https://twitter.com/intent/tweet'
         '?text=${Uri.encodeComponent(text)}&url=${Uri.encodeComponent(appBaseUrl)}');
     await launchUrl(intent, mode: LaunchMode.externalApplication);
@@ -228,12 +227,12 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
           Text(
             _status == TxStatus.pending
                 ? (widget.isBuy
-                    ? 'Your USDC is being sent to Arc Testnet'
-                    : 'Selling your ${widget.side} shares on Arc Testnet')
+                    ? 'Your USDC is being sent to Arc'
+                    : 'Selling your ${widget.side} shares on Arc')
                 : _status == TxStatus.complete
                     ? (widget.isBuy
-                        ? 'You bought \$${widget.amount.toStringAsFixed(2)} ${widget.side} on Arc Testnet'
-                        : 'You sold ${_formatShares(widget.amount)} ${widget.side} shares on Arc Testnet')
+                        ? 'You bought \$${widget.amount.toStringAsFixed(2)} ${widget.side} on Arc'
+                        : 'You sold ${_formatShares(widget.amount)} ${widget.side} shares on Arc')
                     : 'Transaction was not completed',
             style: Theme.of(context).textTheme.bodyMedium,
             textAlign: TextAlign.center,

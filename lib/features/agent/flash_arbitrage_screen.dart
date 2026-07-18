@@ -630,7 +630,7 @@ class _FlashArbitrageScreenState extends State<FlashArbitrageScreen>
                             Icon(Icons.check_circle_rounded,
                                 color: t.yes, size: 18)
                           else if (i == _execStep)
-                            SizedBox(
+                            const SizedBox(
                               height: 16,
                               width: 16,
                               child: CircularProgressIndicator(
@@ -827,7 +827,7 @@ class _ArbCard extends StatelessWidget {
                         letterSpacing: 0.3,
                       ),
                     ),
-                    Text(
+                    const Text(
                       'RISK-FREE ARB DETECTED',
                       style: TextStyle(
                         color: PulsColors.brandMint,

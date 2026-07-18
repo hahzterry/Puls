@@ -241,7 +241,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Widget _buildContent(PulsThemeColors t, bool isDesktop) {
     final name = _profileDisplayName(_profile, widget.userId);
-    final bio = _profile?['bio'] ?? 'Trading prediction markets on Arc Testnet.';
+    final bio = _profile?['bio'] ?? 'Trading prediction markets on Arc.';
     final avatarUrl = _profile?['avatar_url'] as String?;
 
     // Creator-economy enrichments (all graceful — backend may not send them yet).

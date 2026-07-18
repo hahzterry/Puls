@@ -203,7 +203,7 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Icon(Icons.verified_rounded,
+                    const Icon(Icons.verified_rounded,
                         color: PulsColors.brandMint, size: 17),
                   ],
                 ),
@@ -629,7 +629,7 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.pie_chart_rounded,
+              const Icon(Icons.pie_chart_rounded,
                   color: PulsColors.brandMint, size: 15),
               const SizedBox(width: 6),
               Text(
@@ -829,9 +829,9 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
               ],
             ),
             child: _delegating
-                ? Row(
+                ? const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       SizedBox(
                         height: 18,
                         width: 18,

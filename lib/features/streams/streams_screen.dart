@@ -179,7 +179,7 @@ class _StreamsScreenState extends State<StreamsScreen> {
         ),
       ]),
       const SizedBox(height: 8),
-      _row(t, 'Network', '${c['network'] ?? 'Arc Testnet'}'),
+      _row(t, 'Network', '${c['network'] ?? 'Arc'}'),
       _row(t, 'Settle threshold', _usd(c['settleThresholdUsdc'] ?? 0.01)),
       _row(t, 'Auto-pause after', '${c['staleSec'] ?? 45}s idle'),
     ]);

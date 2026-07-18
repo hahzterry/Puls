@@ -10,6 +10,7 @@ import '../../core/widgets/puls_snack.dart';
 import '../../core/config.dart' show appBaseUrl;
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/image_saver.dart';
+import 'package:puls/core/utils/formatters.dart';
 
 /// Premium, shareable P&L card for a position — Polymarket-style. Shows the
 /// brand logo, the market, the side + entry, a hero P&L with % return, and a
@@ -257,7 +258,7 @@ class _ShareBetCardDialogState extends State<ShareBetCardDialog> {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              'Entry ${(entryPrice * 100).toStringAsFixed(0)}¢',
+                              'Entry ${formatCents(entryPrice )}',
                               style: const TextStyle(
                                 color: Colors.white60,
                                 fontSize: 12,

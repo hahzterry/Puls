@@ -100,7 +100,7 @@ class _FundsSheetState extends State<FundsSheet> {
                   borderRadius: BorderRadius.circular(7),
                   border: Border.all(color: t.brand.withValues(alpha: 0.30)),
                 ),
-                child: Text('Arc Testnet · USDC',
+                child: Text('Arc Network · USDC',
                     style: TextStyle(color: t.brand, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.2)),
               ),
             ]),

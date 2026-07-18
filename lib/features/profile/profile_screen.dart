@@ -224,25 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            IconButton.filled(
-                              onPressed: () {
-                                final rand =
-                                    'trader_${DateTime.now().millisecondsSinceEpoch}';
-                                final seedType = ws.isExternalWallet
-                                    ? 'identicon'
-                                    : 'bottts';
-                                avatarController.text =
-                                    'https://api.dicebear.com/7.x/$seedType/png?seed=$rand&size=128';
-                              },
-                              style: IconButton.styleFrom(
-                                backgroundColor: t.brand,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)),
-                              ),
-                              icon: const Icon(Icons.casino_rounded,
-                                  color: Colors.white, size: 18),
-                            ),
+
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -515,6 +497,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           t: t,
                           onTap: () => launchUrl(
                             Uri.parse('https://polymarket.com'),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          trailing: Icon(Icons.open_in_new_rounded,
+                              size: 14, color: t.textSubtle),
+                        ),
+                        _Row(
+                          icon: Icons.shield_outlined,
+                          title: 'Security & Audits',
+                          subtitle: 'Smart contract security reports',
+                          t: t,
+                          onTap: () => launchUrl(
+                            Uri.parse('https://docs.pulsmarket.tech/security'),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          trailing: Icon(Icons.open_in_new_rounded,
+                              size: 14, color: t.textSubtle),
+                        ),
+                        _Row(
+                          icon: Icons.info_outline_rounded,
+                          title: 'About Puls',
+                          subtitle: 'Manifesto & team',
+                          t: t,
+                          onTap: () => launchUrl(
+                            Uri.parse('https://docs.pulsmarket.tech/about'),
                             mode: LaunchMode.externalApplication,
                           ),
                           trailing: Icon(Icons.open_in_new_rounded,
@@ -1486,7 +1492,7 @@ class _WalletCard extends StatelessWidget {
             const SizedBox(height: 10),
             _FeatureRow(
                 icon: Icons.speed_rounded,
-                text: 'Sub-second finality on Arc Testnet',
+                text: 'Sub-second finality on Arc',
                 t: t),
             const SizedBox(height: 28),
             // Google button
@@ -1607,7 +1613,7 @@ class _WalletCard extends StatelessWidget {
                     Text(
                       ws.isExternalWallet
                           ? 'Web3 Wallet (MetaMask)'
-                          : 'Arc Testnet Wallet',
+                          : 'Arc Wallet',
                       style: TextStyle(
                           color: t.text,
                           fontWeight: FontWeight.w800,
@@ -1889,7 +1895,7 @@ class _WalletCard extends StatelessWidget {
           children: [
             Text('Technical Details', style: TextStyle(color: t.text, fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 16),
-            _InfoRow('Target Network', 'Arc Testnet L1', t),
+            _InfoRow('Target Network', 'Arc L1', t),
             _InfoRow('Chain ID', '5042002', t),
             _InfoRow('Gas Fee Asset', 'USDC (Native gas)', t),
             _InfoRow(

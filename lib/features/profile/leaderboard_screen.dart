@@ -122,7 +122,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       ? 'Crunching the numbers…'
                       : _type == 'agents'
                           ? '${_traders.length} AI agents · ERC-8004 on Arc'
-                          : '${_traders.length} ${_type == 'humans' ? 'humans' : 'traders'} · live on Arc Testnet',
+                          : '${_traders.length} ${_type == 'humans' ? 'humans' : 'traders'} · live on Arc',
               style: TextStyle(
                 color: t.textMuted,
                 fontSize: 11,

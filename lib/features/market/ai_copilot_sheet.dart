@@ -55,7 +55,7 @@ class _AiCopilotSheetState extends State<AiCopilotSheet> {
     // Add welcome message
     _msgs.add(CopilotMsg(
       false,
-      "Hello! I am your AI Trading Copilot. Ask me anything about the **${widget.market.question}** market. I can analyze recent news, market sentiment, or propose a tailored trading strategy for you.",
+      'Hello! I am your AI Trading Copilot. Ask me anything about the **${widget.market.question}** market. I can analyze recent news, market sentiment, or propose a tailored trading strategy for you.',
     ));
   }
 
@@ -328,9 +328,9 @@ class _AiCopilotSheetState extends State<AiCopilotSheet> {
 
   Widget _suggestions(PulsThemeColors t) {
     final items = [
-      "What is the sentiment?",
-      "Summarize recent news",
-      "Propose trading strategy",
+      'What is the sentiment?',
+      'Summarize recent news',
+      'Propose trading strategy',
     ];
     return Container(
       width: double.infinity,

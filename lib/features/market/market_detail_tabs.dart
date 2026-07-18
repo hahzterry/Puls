@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/agent_pfp.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/puls_loader.dart';
+import '../../core/widgets/state_views.dart';
 import '../comments/comment_thread.dart';
 
 /// Tabbed section for Market Detail: Activity, Top Holders, Positions, Comments.
@@ -149,15 +150,11 @@ class _ActivityTab extends StatelessWidget {
   Widget build(BuildContext context) {
     if (loading) return const PulsLoader();
     if (trades.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.history_rounded, color: t.textMuted, size: 32),
-            const SizedBox(height: 8),
-            Text('No trades yet on this market.', style: TextStyle(color: t.textMuted, fontSize: 13)),
-          ],
-        ),
+      return _emptyState(
+        t,
+        icon: Icons.history_rounded,
+        title: 'No trades yet on this market.',
+        sub: 'Be the first to take a position.',
       );
     }
 
@@ -224,7 +221,7 @@ class _ActivityTab extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      'at ${(price * 100).toStringAsFixed(0)}¢',
+                      'at ${formatCents(price )}',
                       style: TextStyle(color: t.textMuted, fontSize: 11),
                     ),
                   ],
@@ -465,17 +462,13 @@ class _PositionsTab extends StatelessWidget {
 
 Widget _emptyState(PulsThemeColors t,
     {required IconData icon, required String title, required String sub}) {
-  return Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: t.textMuted, size: 32),
-        const SizedBox(height: 8),
-        Text(title, style: TextStyle(color: t.textMuted, fontSize: 13)),
-        const SizedBox(height: 4),
-        Text(sub, textAlign: TextAlign.center,
-            style: TextStyle(color: t.textSubtle, fontSize: 11)),
-      ],
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: PulsEmptyState(
+      title: title,
+      message: sub,
+      icon: icon,
+      compact: true,
     ),
   );
 }

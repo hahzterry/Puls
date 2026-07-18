@@ -7,7 +7,6 @@ import '../../app/puls_app_state.dart';
 import '../../core/config.dart' show appBaseUrl;
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
-import '../../core/utils/trade_math.dart';
 import '../../data/models/creator_signal.dart';
 
 /// Compact "researched Xh ago" freshness label from publishedAt.
@@ -74,7 +73,7 @@ class SignalLiveOdds extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
             decoration: BoxDecoration(color: mc.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(5)),
-            child: Text(inMoney ? 'in the money' : '${(sidePrice * 100).round()}¢ ${signal.stance}',
+            child: Text(inMoney ? 'in the money' : '${formatCents(sidePrice )} ${signal.stance}',
                 style: TextStyle(color: mc, fontSize: 9.5, fontWeight: FontWeight.w800)),
           ),
         ],

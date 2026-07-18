@@ -2,7 +2,6 @@ import 'package:puls/core/config.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import '../../core/config.dart' show backendUrl;
 import '../../core/utils/formatters.dart';
 import '../models/market.dart';
 

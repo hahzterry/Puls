@@ -8,9 +8,11 @@ import '../../../core/motion.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_text.dart';
+import '../../../core/widgets/puls_avatar.dart';
 import '../../agent/widgets/decision_log_panel.dart';
 import '../../agent/widgets/swarm_visualizer.dart';
 import '../../../app/puls_app.dart';
+import '../../../app/puls_app_state.dart';
 import '../widgets/terminal_event_binder.dart';
 
 /// Cyberpunk high-tech grid background with neon color blobs
@@ -129,19 +131,23 @@ class _TerminalGridBackgroundState extends State<_TerminalGridBackground>
 }
 
 class _GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+  _GridPainter() {
+    _paint = Paint()
       ..color = const Color(0xFF2E3B5D).withValues(alpha: 0.07)
       ..strokeWidth = 0.8;
+  }
 
+  late final Paint _paint;
+
+  @override
+  void paint(Canvas canvas, Size size) {
     const double step = 32.0;
 
     for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), _paint);
     }
     for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), _paint);
     }
   }
 
@@ -151,30 +157,40 @@ class _GridPainter extends CustomPainter {
 
 /// Mini Sparkline Graph Custom Painter
 class _SparklinePainter extends CustomPainter {
-  _SparklinePainter(this.points, this.color);
-  final List<double> points;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (points.isEmpty) return;
-    final paint = Paint()
+  _SparklinePainter(this.points, this.color) {
+    _linePaint = Paint()
       ..color = color.withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
       ..strokeCap = StrokeCap.round;
+    
+    _fillPaint = Paint();
+    _path = Path();
+    _fillPath = Path();
+  }
 
-    final fillPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          color.withValues(alpha: 0.15),
-          color.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+  final List<double> points;
+  final Color color;
+  
+  late final Paint _linePaint;
+  late final Paint _fillPaint;
+  late final Path _path;
+  late final Path _fillPath;
 
-    final path = Path();
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (points.isEmpty) return;
+    
+    _fillPaint.shader = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        color.withValues(alpha: 0.15),
+        color.withValues(alpha: 0.0),
+      ],
+    ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    _path.reset();
     final stepX = size.width / (points.length - 1);
     
     double minY = points[0];
@@ -189,19 +205,20 @@ class _SparklinePainter extends CustomPainter {
       final x = i * stepX;
       final y = size.height - ((points[i] - minY) / rangeY) * size.height * 0.8 - size.height * 0.1;
       if (i == 0) {
-        path.moveTo(x, y);
+        _path.moveTo(x, y);
       } else {
-        path.lineTo(x, y);
+        _path.lineTo(x, y);
       }
     }
 
-    final fillPath = Path.from(path)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
+    _fillPath.reset();
+    _fillPath.addPath(_path, Offset.zero);
+    _fillPath.lineTo(size.width, size.height);
+    _fillPath.lineTo(0, size.height);
+    _fillPath.close();
 
-    canvas.drawPath(fillPath, fillPaint);
-    canvas.drawPath(path, paint);
+    canvas.drawPath(_fillPath, _fillPaint);
+    canvas.drawPath(_path, _linePaint);
   }
 
   @override
@@ -223,8 +240,9 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
   int _selectedMarketIdx = 0;
   List<_AgentInfo> _agents = [];
   bool _loadingAgents = true;
+  List<_Market> _terminalMarkets = [];
 
-  static const _markets = [
+  static const _fallbackMarkets = [
     _Market(
       slug: 'btc-100k',
       question: 'Will BTC hit \$100k by August?',
@@ -272,7 +290,31 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAgentsData());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAgentsData();
+      _loadMarketsData();
+    });
+  }
+
+  void _loadMarketsData() {
+    final state = PulsAppState.instance;
+    if (state != null && state.feedMarkets.isNotEmpty) {
+      final realMarkets = state.feedMarkets.take(15).map((m) {
+        return _Market(
+          slug: m.slug,
+          question: m.question,
+          yesPrice: m.yesPrice,
+          volume: m.volumeNum,
+          activeAgents: ['Vega ⚡', 'Lyra 💠', 'Antigravity 🪐', 'Orion 🛰️', 'Sirius 🌠']
+              .toList()
+            ..shuffle()
+            ..take(math.Random().nextInt(3) + 1),
+        );
+      }).toList();
+      if (mounted) setState(() => _terminalMarkets = realMarkets);
+    } else {
+      if (mounted) setState(() => _terminalMarkets = List.from(_fallbackMarkets));
+    }
   }
 
   Future<void> _loadAgentsData() async {
@@ -343,7 +385,7 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
           body: SafeArea(
             child: Column(
               children: [
-                _TerminalHeader(),
+                const _TerminalHeader(),
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, c) {
@@ -376,7 +418,7 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
             child: GlassCard(
               padding: const EdgeInsets.all(0),
               child: _MarketList(
-                markets: _markets,
+                markets: _terminalMarkets,
                 selectedIdx: _selectedMarketIdx,
                 onSelect: (i) => setState(() => _selectedMarketIdx = i),
               ),
@@ -389,8 +431,8 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: GlassCard(
               padding: const EdgeInsets.all(20),
-              child: _SwarmAnalyticsPanel(
-                market: _markets[_selectedMarketIdx],
+              child: _terminalMarkets.isEmpty ? const SizedBox.shrink() : _SwarmAnalyticsPanel(
+                market: _terminalMarkets[_selectedMarketIdx],
                 agents: _agents,
                 loading: _loadingAgents,
               ),
@@ -432,7 +474,7 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
             child: GlassCard(
               padding: EdgeInsets.zero,
               child: _MarketList(
-                markets: _markets,
+                markets: _terminalMarkets,
                 selectedIdx: _selectedMarketIdx,
                 onSelect: (i) => setState(() => _selectedMarketIdx = i),
               ),
@@ -443,17 +485,17 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
             height: 480,
             child: GlassCard(
               padding: const EdgeInsets.all(20),
-              child: _SwarmAnalyticsPanel(
-                market: _markets[_selectedMarketIdx],
+              child: _terminalMarkets.isEmpty ? const SizedBox.shrink() : _SwarmAnalyticsPanel(
+                market: _terminalMarkets[_selectedMarketIdx],
                 agents: _agents,
                 loading: _loadingAgents,
               ),
             ),
           ),
           const SizedBox(height: 12),
-          SizedBox(
+          const SizedBox(
             height: 320,
-            child: const DecisionLogPanel(),
+            child: DecisionLogPanel(),
           ),
         ],
       ),
@@ -518,85 +560,87 @@ class _TerminalHeaderState extends State<_TerminalHeader> {
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
-    return Container(
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: t.surface.withValues(alpha: 0.8),
-        border: Border(bottom: BorderSide(color: t.border)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.terminal_rounded, size: 20, color: t.brand),
-          const SizedBox(width: 10),
-          const AnimatedGradientText(
-            'PULS // TERMINAL',
-            style: TextStyle(
-              fontFamily: PulsColors.fontMono,
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 2.2,
+    return RepaintBoundary(
+      child: Container(
+        height: 52,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: t.surface.withValues(alpha: 0.8),
+          border: Border(bottom: BorderSide(color: t.border)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.terminal_rounded, size: 20, color: t.brand),
+            const SizedBox(width: 10),
+            const AnimatedGradientText(
+              'PULS // TERMINAL',
+              style: TextStyle(
+                fontFamily: PulsColors.fontMono,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2.2,
+              ),
             ),
-          ),
-          const SizedBox(width: 20),
-          // High-tech Clock
-          Text(
-            _formatTime(_now),
-            style: TextStyle(
-              color: t.textSubtle,
-              fontFamily: PulsColors.fontMono,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+            const SizedBox(width: 20),
+            // High-tech Clock
+            Text(
+              _formatTime(_now),
+              style: TextStyle(
+                color: t.textSubtle,
+                fontFamily: PulsColors.fontMono,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          const Spacer(),
-          // High-tech network statistics
-          _StatusChip(label: 'BLOCK #$_block', color: t.textSubtle),
-          const SizedBox(width: 8),
-          _StatusChip(label: 'GAS: $_gas GWEI', color: t.yes),
-          const SizedBox(width: 8),
-          _StatusChip(label: 'TPS: $_tps/s', color: t.brand),
-          const SizedBox(width: 8),
-          // Live pulse badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: PulsColors.red.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: PulsColors.red.withValues(alpha: 0.4), width: 0.6),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: _blink ? PulsColors.red : PulsColors.red.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
+            const Spacer(),
+            // High-tech network statistics
+            _StatusChip(label: 'BLOCK #$_block', color: t.textSubtle),
+            const SizedBox(width: 8),
+            _StatusChip(label: 'GAS: $_gas GWEI', color: t.yes),
+            const SizedBox(width: 8),
+            _StatusChip(label: 'TPS: $_tps/s', color: t.brand),
+            const SizedBox(width: 8),
+            // Live pulse badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: PulsColors.red.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: PulsColors.red.withValues(alpha: 0.4), width: 0.6),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: _blink ? PulsColors.red : PulsColors.red.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 5),
-                const Text(
-                  'LIVE',
-                  style: TextStyle(
-                    color: PulsColors.red,
-                    fontFamily: PulsColors.fontMono,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1,
+                  const SizedBox(width: 5),
+                  const Text(
+                    'LIVE',
+                    style: TextStyle(
+                      color: PulsColors.red,
+                      fontFamily: PulsColors.fontMono,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          GestureDetector(
-            onTap: () => Navigator.of(context).maybePop(),
-            child: Icon(Icons.close_rounded, size: 20, color: t.textMuted),
-          ),
-        ],
+            const SizedBox(width: 12),
+            GestureDetector(
+              onTap: () => Navigator.of(context).maybePop(),
+              child: Icon(Icons.close_rounded, size: 20, color: t.textMuted),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -682,18 +726,24 @@ class _MarketList extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            itemCount: markets.length,
-            itemBuilder: (context, i) {
-              final m = markets[i];
-              final selected = i == selectedIdx;
-              return _MarketRow(
-                market: m,
-                selected: selected,
-                onTap: () => onSelect(i),
-              );
-            },
+          child: CustomScrollView(
+            slivers: [
+              SliverFixedExtentList(
+                itemExtent: 84.0,
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) {
+                    final m = markets[i];
+                    final selected = i == selectedIdx;
+                    return _MarketRow(
+                      market: m,
+                      selected: selected,
+                      onTap: () => onSelect(i),
+                    );
+                  },
+                  childCount: markets.length,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -968,10 +1018,10 @@ class _SwarmAnalyticsPanelState extends State<_SwarmAnalyticsPanel> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
+                        const Text(
                           'LIVE & TRADING',
                           style: TextStyle(
-                            color: const Color(0xFF2DD4BF),
+                            color: Color(0xFF2DD4BF),
                             fontFamily: PulsColors.fontMono,
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
@@ -1076,16 +1126,23 @@ class _SwarmAnalyticsPanelState extends State<_SwarmAnalyticsPanel> {
                     style: TextStyle(color: t.textMuted, fontSize: 13),
                   ),
                 )
-              : ListView.builder(
-                  itemCount: displayedAgents.length,
-                  itemBuilder: (context, i) {
-                    final agent = displayedAgents[i];
-                    return _AgentDashboardCard(
-                      agent: agent,
-                      selectedMarket: widget.market,
-                      showMarketOnly: _showMarketOnly,
-                    );
-                  },
+              : CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.only(top: 8),
+                      sliver: SliverList.builder(
+                        itemCount: displayedAgents.length,
+                        itemBuilder: (context, i) {
+                          final agent = displayedAgents[i];
+                          return _AgentDashboardCard(
+                            agent: agent,
+                            selectedMarket: widget.market,
+                            showMarketOnly: _showMarketOnly,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
         ),
       ],
@@ -1146,10 +1203,10 @@ class _AgentDashboardCardState extends State<_AgentDashboardCard> {
           ListTile(
             onTap: () => setState(() => _expanded = !_expanded),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: CircleAvatar(
-              radius: 20,
-              backgroundColor: agent.color.withValues(alpha: 0.12),
-              child: Text(agent.avatar, style: const TextStyle(fontSize: 18)),
+            leading: PulsAvatar(
+              url: agent.avatar.isNotEmpty ? agent.avatar : null,
+              name: agent.name,
+              size: 40,
             ),
             title: Row(
               children: [
@@ -1321,9 +1378,9 @@ class _AgentDashboardCardState extends State<_AgentDashboardCard> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    _AgentPositionRow(label: 'btc-100k (YES)', pct: 40, color: const Color(0xFF2DD4BF)),
-                    _AgentPositionRow(label: 'eth-flip (NO)', pct: 25, color: const Color(0xFFEC4899)),
-                    _AgentPositionRow(label: 'arc-tvl-1b (YES)', pct: 35, color: const Color(0xFFEAB308)),
+                    const _AgentPositionRow(label: 'btc-100k (YES)', pct: 40, color: Color(0xFF2DD4BF)),
+                    const _AgentPositionRow(label: 'eth-flip (NO)', pct: 25, color: Color(0xFFEC4899)),
+                    const _AgentPositionRow(label: 'arc-tvl-1b (YES)', pct: 35, color: Color(0xFFEAB308)),
                   ],
                   
                   const SizedBox(height: 12),

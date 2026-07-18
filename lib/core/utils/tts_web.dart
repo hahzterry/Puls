@@ -97,7 +97,7 @@ class PulsTts {
     final out = <String>[];
     var cur = '';
     for (final s in sentences) {
-      if ((cur + ' ' + s).length > maxLen) {
+      if (('$cur $s').length > maxLen) {
         if (cur.isNotEmpty) out.add(cur.trim());
         cur = s;
       } else {

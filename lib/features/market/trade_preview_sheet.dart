@@ -480,8 +480,8 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                       child: Text(
                         hasRealWallet
                             ? (widget.market.contractAddress != null
-                                ? '⚡ Instant trade — already on Arc Testnet · \$${ws.usdcBalance}'
-                                : 'Real USDC trade on Arc Testnet · Balance: \$${ws.usdcBalance}')
+                                ? '⚡ Instant trade — already on Arc · \$${ws.usdcBalance}'
+                                : 'Real USDC trade on Arc · Balance: \$${ws.usdcBalance}')
                             : 'Demo only — connect wallet in Profile for real trades.',
                         style: TextStyle(
                           color: hasRealWallet

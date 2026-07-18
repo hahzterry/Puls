@@ -295,5 +295,9 @@ class _ParticlePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ParticlePainter old) => true;
+  bool shouldRepaint(covariant _ParticlePainter old) {
+    return old.morphProgress != morphProgress ||
+           old.breathe != breathe ||
+           old.isDark != isDark;
+  }
 }

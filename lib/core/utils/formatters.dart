@@ -37,10 +37,16 @@ String timeAgoShort(
   return '${d.inDays}d';
 }
 
-/// Formats an integer with thousands separators, e.g. 1234567 -> "1,234,567".
+/// Formats an integer with thousands separators, e.g. 1234567 -> "1.2M".
 String withThousands(int value) {
+  final absValue = value.abs();
+  if (absValue >= 1000000) {
+    final formatted = (absValue / 1000000).toStringAsFixed(1);
+    final str = trimTrailingZeros(formatted);
+    return value < 0 ? '-${str}M' : '${str}M';
+  }
   final negative = value < 0;
-  final s = value.abs().toString();
+  final s = absValue.toString();
   final b = StringBuffer();
   for (var i = 0; i < s.length; i++) {
     if (i > 0 && (s.length - i) % 3 == 0) b.write(',');
@@ -57,6 +63,11 @@ String compactUsd(double v, {bool dashForZero = false}) {
   if (v >= 1e6) return '\$${(v / 1e6).toStringAsFixed(1)}M';
   if (v >= 1e3) return '\$${(v / 1e3).toStringAsFixed(0)}K';
   return '\$${v.toStringAsFixed(0)}';
+}
+
+/// Formats a probability or price (0.0 to 1.0) as cents, e.g. 0.62 -> "62¢".
+String formatCents(double value) {
+  return '${(value * 100).round()}¢';
 }
 
 /// Removes trailing zeros (and a dangling decimal point) from a fixed-decimal

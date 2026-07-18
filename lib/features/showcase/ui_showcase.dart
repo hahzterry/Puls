@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_theme.dart';
@@ -526,8 +525,9 @@ class _PulsePainter extends CustomPainter {
     final dotX = w * 0.85;
     final dotT = (dotX / w + phase) % 1.0;
     double dotY = 0;
-    if (dotT < 0.1) dotY = 0;
-    else if (dotT < 0.15) dotY = -0.3 * amplitude * ((dotT - 0.1) / 0.05);
+    if (dotT < 0.1) {
+      dotY = 0;
+    } else if (dotT < 0.15) dotY = -0.3 * amplitude * ((dotT - 0.1) / 0.05);
     else if (dotT < 0.2) dotY = -0.3 * amplitude + 0.3 * amplitude * ((dotT - 0.15) / 0.05);
     else if (dotT < 0.25) dotY = 0;
     else if (dotT < 0.3) dotY = -amplitude * ((dotT - 0.25) / 0.05);

@@ -152,7 +152,7 @@ class SwarmPainter extends CustomPainter {
       final py = fy + (ty - fy) * p.progress;
 
       // Trailing glow: a few points behind the head, fading out.
-      final trailLen = 6;
+      const trailLen = 6;
       for (var k = 0; k < trailLen; k++) {
         final back = p.progress - k * 0.02;
         if (back < 0) break;
@@ -258,10 +258,10 @@ class SwarmRenderCache {
     final creators = nodes.where((n) => n.role == 'creator').toList();
     final traders = nodes.where((n) => n.role != 'creator').toList();
 
-    final cx = 0.5;
-    final cy = 0.5;
-    final innerR = 0.18;
-    final outerR = 0.36;
+    const cx = 0.5;
+    const cy = 0.5;
+    const innerR = 0.18;
+    const outerR = 0.36;
 
     for (var i = 0; i < creators.length; i++) {
       final angle = (i / creators.length) * math.pi * 2 - math.pi / 2;

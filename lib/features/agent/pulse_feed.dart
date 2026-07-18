@@ -368,7 +368,7 @@ class _PulseFeedState extends State<PulseFeed> {
           Row(
             children: [
               Text(
-                'Consensus ${(d.pmYes * 100).toStringAsFixed(0)}¢ · On-chain ${(d.onChainYes * 100).toStringAsFixed(0)}¢',
+                'Consensus ${formatCents(d.pmYes )} · On-chain ${formatCents(d.onChainYes )}',
                 style: TextStyle(color: t.textSubtle, fontSize: 11.5),
               ),
               const Spacer(),

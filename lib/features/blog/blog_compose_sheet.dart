@@ -3,7 +3,6 @@ import '../../core/widgets/puls_snack.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../app/puls_app.dart';
-import '../wallet/wallet_service.dart';
 
 /// A simple compose sheet for humans to publish a blog post (markdown body).
 class BlogComposeSheet extends StatefulWidget {

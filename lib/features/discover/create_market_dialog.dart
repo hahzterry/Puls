@@ -99,7 +99,7 @@ class _CreateMarketDialogState extends State<CreateMarketDialog> {
       if (mounted) {
         Navigator.of(context).pop();
         snack.success(
-            '🎉 Custom market deployed and funded successfully on Arc Testnet!');
+            '🎉 Custom market deployed and funded successfully on Arc Network!');
       }
     } catch (e) {
       if (mounted) {

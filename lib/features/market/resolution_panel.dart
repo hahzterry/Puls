@@ -12,7 +12,7 @@ import '../../data/models/market.dart';
 /// "How this market resolves" — resolution transparency panel.
 ///
 /// Shows whether a market resolves via the legacy Polymarket-consensus path
-/// or through UMA's Optimistic Oracle V2 on Arc Testnet (with live oracle
+/// or through UMA's Optimistic Oracle V2 on Arc (with live oracle
 /// state, dispute window and bond), plus an Arcscan link to the contract.
 class ResolutionPanel extends StatefulWidget {
   const ResolutionPanel({required this.market, super.key});
@@ -122,7 +122,7 @@ class _ResolutionPanelState extends State<ResolutionPanel> {
             Text(
               'After the deadline, this market resolves automatically based on the '
               'official outcome of the matching Polymarket market. The result is '
-              'written on-chain on Arc Testnet and winners can claim instantly.',
+              'written on-chain on Arc and winners can claim instantly.',
               style: TextStyle(color: t.textMuted, fontSize: 12, height: 1.5),
             ),
           ],

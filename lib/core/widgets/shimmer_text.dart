@@ -86,7 +86,7 @@ class _ShimmerTextState extends State<ShimmerText>
     final base = widget.baseColor ?? t.textSubtle;
     final highlight = widget.highlightColor ?? t.text;
     final style = (widget.style ??
-            TextStyle(
+            const TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
               height: 1.2,

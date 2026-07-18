@@ -677,7 +677,7 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
                     color: _chatLoading ? t.surfaceRaised : t.brand,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.send_rounded, color: Colors.white, size: 16),
+                  child: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
                 ),
               ),
             ],

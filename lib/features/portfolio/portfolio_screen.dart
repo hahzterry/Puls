@@ -12,8 +12,10 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../app/puls_app.dart';
+import '../../core/motion.dart';
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../shell/web_layout.dart';
@@ -496,15 +498,14 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     if (ws.userId == null) {
       body = Padding(
         padding: const EdgeInsets.all(24),
-        child: _Empty(
+        child: PulsEmptyState(
           icon: Icons.account_balance_wallet_outlined,
-          message: 'Sign in to see your portfolio',
-          sub:
-              'One tap — a Circle MPC wallet on Arc Testnet is created for you automatically.',
-          t: t,
-          ctaLabel: 'Connect with Google',
-          ctaIcon: Icons.login_rounded,
-          onCta: () => WalletServiceScope.of(context).signInWithGoogle(),
+          title: 'Sign in to see your portfolio',
+          message:
+              'One tap — a Circle MPC wallet on Arc Network is created for you automatically.',
+          actionLabel: 'Connect with Google',
+          actionIcon: Icons.login_rounded,
+          onAction: () => WalletServiceScope.of(context).signInWithGoogle(),
         ),
       );
     } else if (_loading) {
@@ -512,14 +513,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     } else if (_error != null) {
       body = Padding(
         padding: const EdgeInsets.all(24),
-        child: _Empty(
+        child: PulsErrorState(
           icon: Icons.wifi_off_rounded,
-          message: 'Could not load portfolio',
-          sub: _error!,
-          t: t,
-          ctaLabel: 'Retry',
-          ctaIcon: Icons.refresh_rounded,
-          onCta: _load,
+          title: 'Could not load portfolio',
+          message: _error!,
+          retryLabel: 'Retry',
+          onRetry: _load,
         ),
       );
     } else {
@@ -601,60 +600,70 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                     Expanded(
                       child: _showOrdersTab
                           ? _limitOrders.isEmpty
-                              ? _Empty(
+                              ? const PulsEmptyState(
                                   icon: Icons.history_rounded,
-                                  message: 'No pending orders',
-                                  sub:
+                                  title: 'No pending orders',
+                                  message:
                                       'Place a limit order on any prediction to see it here.',
-                                  t: t,
                                 )
                               : CustomScrollView(
                                   slivers: [
                                     SliverList.builder(
                                       itemCount: _limitOrders.length,
-                                      itemBuilder: (context, i) => Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 12),
-                                        child: _LimitOrderCard(
-                                          order: _limitOrders[i],
-                                          t: t,
-                                          appState: appState,
-                                          onCancel: () => _cancelLimitOrder(
-                                            _limitOrders[i]['id'] as String,
+                                      itemBuilder: (context, i) {
+                                        final item = Padding(
+                                          padding:
+                                              const EdgeInsets.only(bottom: 12),
+                                          child: _LimitOrderCard(
+                                            order: _limitOrders[i],
+                                            t: t,
+                                            appState: appState,
+                                            onCancel: () => _cancelLimitOrder(
+                                              _limitOrders[i]['id'] as String,
+                                            ),
                                           ),
-                                        ),
-                                      ),
+                                        );
+                                        if (context.reduceMotion) return item;
+                                        return item.animate(delay: (i * 30).ms)
+                                            .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
+                                            .slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOutCubic);
+                                      },
                                     ),
                                   ],
                                 )
                           : _positions.isEmpty
-                              ? _Empty(
+                              ? PulsEmptyState(
                                   icon: Icons.bar_chart_rounded,
-                                  message:
+                                  title:
                                       'No positions yet — swipe on a market to start.',
-                                  sub:
+                                  message:
                                       'Buy YES or NO on any prediction to get started.',
-                                  t: t,
-                                  ctaLabel: 'Browse markets',
-                                  ctaIcon: Icons.explore_rounded,
-                                  onCta: () => ShellNavScope.maybeOf(context)
+                                  actionLabel: 'Browse markets',
+                                  actionIcon: Icons.explore_rounded,
+                                  onAction: () => ShellNavScope.maybeOf(context)
                                       ?.goToTab(PulsTab.feed),
                                 )
                               : CustomScrollView(
                                   slivers: [
                                     SliverList.builder(
                                       itemCount: _positions.length,
-                                      itemBuilder: (context, i) => Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 12),
-                                        child: _PositionCard(
-                                          position: _positions[i],
-                                          t: t,
-                                          appState: appState,
-                                          walletService: walletService,
-                                          onRefresh: _load,
-                                        ),
-                                      ),
+                                      itemBuilder: (context, i) {
+                                        final item = Padding(
+                                          padding:
+                                              const EdgeInsets.only(bottom: 12),
+                                          child: _PositionCard(
+                                            position: _positions[i],
+                                            t: t,
+                                            appState: appState,
+                                            walletService: walletService,
+                                            onRefresh: _load,
+                                          ),
+                                        );
+                                        if (context.reduceMotion) return item;
+                                        return item.animate(delay: (i * 30).ms)
+                                            .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
+                                            .slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOutCubic);
+                                      },
                                     ),
                                   ],
                                 ),
@@ -726,15 +735,14 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             ),
             if (_showOrdersTab)
               if (_limitOrders.isEmpty)
-                SliverToBoxAdapter(
+                const SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _Empty(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: PulsEmptyState(
                       icon: Icons.history_rounded,
-                      message: 'No pending orders',
-                      sub:
+                      title: 'No pending orders',
+                      message:
                           'Place a limit order on any prediction to see it here.',
-                      t: t,
                     ),
                   ),
                 )
@@ -743,33 +751,36 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
                   sliver: SliverList.builder(
                     itemCount: _limitOrders.length,
-                    itemBuilder: (context, i) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _LimitOrderCard(
-                        order: _limitOrders[i],
-                        t: t,
-                        appState: appState,
-                        onCancel: () => _cancelLimitOrder(
-                          _limitOrders[i]['id'] as String,
+                    itemBuilder: (context, i) {
+                      final item = Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _LimitOrderCard(
+                          order: _limitOrders[i],
+                          t: t,
+                          appState: appState,
+                          onCancel: () => _cancelLimitOrder(
+                            _limitOrders[i]['id'] as String,
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                      if (context.reduceMotion) return item;
+                      return item.animate(delay: (i * 30).ms)
+                          .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
+                          .slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOutCubic);
+                    },
                   ),
                 )
             else if (_positions.isEmpty)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _Empty(
+                  child: PulsEmptyState(
                     icon: Icons.bar_chart_rounded,
-                    message: 'No positions yet — swipe on a market to start.',
-                    sub: 'Buy YES or NO on any prediction to get started.',
-                    t: t,
-                    imageUrl:
-                        proxifyImageUrl('https://img.icons8.com/?id=4xcZGzia5Blf&format=png&size=256'),
-                    ctaLabel: 'Browse markets',
-                    ctaIcon: Icons.explore_rounded,
-                    onCta: () =>
+                    title: 'No positions yet — swipe on a market to start.',
+                    message: 'Buy YES or NO on any prediction to get started.',
+                    actionLabel: 'Browse markets',
+                    actionIcon: Icons.explore_rounded,
+                    onAction: () =>
                         ShellNavScope.maybeOf(context)?.goToTab(PulsTab.feed),
                   ),
                 ),
@@ -784,16 +795,22 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
                 sliver: SliverList.builder(
                   itemCount: _positions.length,
-                  itemBuilder: (context, i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _PositionCard(
-                      position: _positions[i],
-                      t: t,
-                      appState: appState,
-                      walletService: walletService,
-                      onRefresh: _load,
-                    ),
-                  ),
+                  itemBuilder: (context, i) {
+                    final item = Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _PositionCard(
+                        position: _positions[i],
+                        t: t,
+                        appState: appState,
+                        walletService: walletService,
+                        onRefresh: _load,
+                      ),
+                    );
+                    if (context.reduceMotion) return item;
+                    return item.animate(delay: (i * 30).ms)
+                        .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
+                        .slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOutCubic);
+                  },
                 ),
               ),
           ],
@@ -1041,7 +1058,7 @@ class _HeroCard extends StatelessWidget {
                         children: [
                           CircleAvatar(radius: 3, backgroundColor: t.yes),
                           const SizedBox(width: 5),
-                          Text('Arc Testnet',
+                          Text('Arc Network',
                               style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.9),
                                   fontSize: 10,
@@ -1312,29 +1329,12 @@ class _PositionCardState extends State<_PositionCard> {
         stateLabel = 'Pending';
     }
 
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            t.surfaceRaised,
-            Color.alphaBlend(sideFg.withValues(alpha: 0.05), t.surfaceRaised),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: userWon ? t.yes.withValues(alpha: 0.45) : t.border),
-        boxShadow: [
-          BoxShadow(
-            color: (userWon ? t.yes : const Color(0xFFEC4899))
-                .withValues(alpha: userWon ? 0.10 : 0.04),
-            blurRadius: userWon ? 16 : 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      radius: 16,
+      borderAlpha: userWon ? 0.35 : 0.12,
+      fillAlpha: userWon ? 0.1 : 0.05,
+      elevation: userWon ? 1 : 0,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1447,14 +1447,14 @@ class _PositionCardState extends State<_PositionCard> {
             const SizedBox(height: 6),
             Row(
               children: [
-                Text('Entry ${(entryPrice * 100).toStringAsFixed(0)}¢',
+                Text('Entry ${formatCents(entryPrice )}',
                     style: TextStyle(color: t.textSubtle, fontSize: 11)),
                 if (currentPrice != null) ...[
                   const SizedBox(width: 6),
                   Icon(Icons.arrow_forward_rounded,
                       size: 10, color: t.textSubtle),
                   const SizedBox(width: 6),
-                  Text('Now ${(currentPrice * 100).toStringAsFixed(0)}¢',
+                  Text('Now ${formatCents(currentPrice )}',
                       style: TextStyle(
                         color: (currentPrice - entryPrice).abs() < 0.01
                             ? t.textSubtle
@@ -1644,38 +1644,7 @@ class _StatBox extends StatelessWidget {
   }
 }
 
-class _Empty extends StatelessWidget {
-  const _Empty({
-    required this.icon,
-    required this.message,
-    required this.sub,
-    required this.t,
-    this.imageUrl,
-    this.ctaLabel,
-    this.ctaIcon,
-    this.onCta,
-  });
-  final IconData icon;
-  final String message;
-  final String sub;
-  final PulsThemeColors t;
-  final String? imageUrl;
-  final String? ctaLabel;
-  final IconData? ctaIcon;
-  final VoidCallback? onCta;
 
-  @override
-  Widget build(BuildContext context) {
-    return PulsEmptyState(
-      title: message,
-      message: sub,
-      icon: icon,
-      actionLabel: ctaLabel,
-      actionIcon: ctaIcon,
-      onAction: onCta,
-    );
-  }
-}
 
 class _LimitOrderCard extends StatelessWidget {
   const _LimitOrderCard({
@@ -1734,13 +1703,9 @@ class _LimitOrderCard extends StatelessWidget {
         statusColor = t.no;
     }
 
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: t.surfaceRaised,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: t.border),
-      ),
+      radius: 16,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1784,7 +1749,7 @@ class _LimitOrderCard extends StatelessWidget {
                             color: t.text,
                             fontWeight: FontWeight.w800,
                             fontSize: 14)),
-                  Text('Limit: ${(targetPrice * 100).toStringAsFixed(0)}¢',
+                  Text('Limit: ${formatCents(targetPrice )}',
                       style: TextStyle(
                           color: t.textSubtle,
                           fontWeight: FontWeight.w600,

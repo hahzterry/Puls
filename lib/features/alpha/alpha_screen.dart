@@ -52,10 +52,12 @@ class _AlphaScreenState extends State<AlphaScreen> {
   }
 
   Future<void> _load() async {
-    if (mounted) setState(() {
+    if (mounted) {
+      setState(() {
       _loading = true;
       _error = null;
     });
+    }
     try {
       final data = await WalletServiceScope.of(context).getAlphaList();
       if (!mounted) return;

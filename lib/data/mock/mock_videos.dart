@@ -174,7 +174,7 @@ const mockVideos = [
     id: 'v5',
     username: '@pulsmarket',
     avatar: 'P',
-    caption: 'Live prediction markets on Arc Testnet — trade YES or NO in seconds 🔥',
+    caption: 'Live prediction markets on Arc — trade YES or NO in seconds 🔥',
     videoUrl: 'https://wmgdkgzrhgmdkcblcqdn.supabase.co/storage/v1/object/public/videos/video_2026-04-21_12-51-53.mp4',
     isAsset: false,
     likes: 3100,

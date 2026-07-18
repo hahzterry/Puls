@@ -5,18 +5,10 @@ import '../theme/app_theme.dart';
 import '../utils/agent_pfp.dart';
 import 'package:puls/core/config.dart';
 
-/// Normalizes avatar URLs so they can actually render in Flutter.
-///
-/// DiceBear URLs are generated as `/svg` by the backend, but Flutter's
-/// `Image.network` cannot decode SVG — which silently broke every avatar in
-/// the leaderboard and profiles. DiceBear serves the same art as PNG, so we
-/// rewrite `/svg` → `/png` and pin a crisp raster size.
-String normalizeAvatarUrl(String url, {int size = 128}) {
-  if (url.contains('api.dicebear.com') && url.contains('/svg')) {
-    final png = url.replaceFirst('/svg', '/png');
-    return png.contains('?') ? '$png&size=$size' : '$png?size=$size';
-  }
-  return url;
+/// Filters out DiceBear URLs which were previously used as placeholders,
+/// replacing them with the branded monogram fallback.
+bool isPlaceholderUrl(String url) {
+  return url.contains('api.dicebear.com');
 }
 
 /// Avatar that never shows a broken image: renders the (normalized) network
@@ -42,13 +34,23 @@ class PulsAvatar extends StatelessWidget {
     final t = context.puls;
     final r = radius ?? size / 2;
 
+    String fallbackChar = 'P';
+    if (name.isNotEmpty) {
+      final match = RegExp(r'[a-zA-Z0-9]').firstMatch(name);
+      if (match != null) {
+        fallbackChar = match.group(0)!.toUpperCase();
+      } else {
+        fallbackChar = name.characters.first.toUpperCase();
+      }
+    }
+
     Widget fallback = Container(
       width: size,
       height: size,
       color: t.brandSubtle,
       alignment: Alignment.center,
       child: Text(
-        name.isNotEmpty ? name.characters.first.toUpperCase() : 'P',
+        fallbackChar,
         style: TextStyle(
           color: t.brand,
           fontSize: size * 0.42,
@@ -56,9 +58,6 @@ class PulsAvatar extends StatelessWidget {
         ),
       ),
     );
-
-    final seed = name.isNotEmpty ? Uri.encodeComponent(name) : 'human';
-    final fallbackUrl = 'https://api.dicebear.com/9.x/notionists/png?seed=$seed&size=${(size * 2).round().clamp(64, 256)}';
 
     Widget child;
     final pfp = agentPfpAsset(name);
@@ -71,20 +70,15 @@ class PulsAvatar extends StatelessWidget {
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) => fallback,
       );
-    } else if (url != null && url!.isNotEmpty) {
-      child = CachedNetworkImage(imageUrl: proxifyImageUrl(normalizeAvatarUrl(url!, size: (size * 2).round().clamp(64, 256))),
+    } else if (url != null && url!.isNotEmpty && !isPlaceholderUrl(url!)) {
+      child = CachedNetworkImage(imageUrl: proxifyImageUrl(url!),
         width: size,
         height: size,
         fit: BoxFit.cover,
         errorWidget: (_, __, ___) => fallback,
       );
     } else {
-      child = CachedNetworkImage(imageUrl: proxifyImageUrl(fallbackUrl),
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        errorWidget: (_, __, ___) => fallback,
-      );
+      child = fallback;
     }
 
     return ClipRRect(

@@ -113,7 +113,7 @@ class _LiveActivitySectionState extends State<LiveActivitySection> {
                     ? 'Real trades by real users — every one verifiable on Arcscan.'
                     : '${_fmtInt(_stats!['trades'] as num?)} trades · '
                         '\$${_fmtInt(_stats!['volumeUsdc'] as num?)} USDC volume · '
-                        '${_fmtInt(_stats!['marketsDeployed'] as num?)} markets deployed on Arc Testnet',
+                        '${_fmtInt(_stats!['marketsDeployed'] as num?)} markets deployed on Arc',
                 textAlign: TextAlign.center,
                 style:
                     TextStyle(color: t.textMuted, fontSize: isMobile ? 13 : 15),

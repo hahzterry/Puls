@@ -100,7 +100,7 @@ class _HumansVsAgentsCardState extends State<HumansVsAgentsCard> {
             ],
           ),
           const SizedBox(height: 4),
-          Text('Live win rate · Arc Testnet',
+          Text('Live win rate · Arc',
               style: TextStyle(color: t.textMuted, fontSize: 11)),
           const SizedBox(height: 14),
           Row(

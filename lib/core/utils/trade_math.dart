@@ -24,7 +24,7 @@ class TradeMath {
   }
 
   static String formatPrice(double price) {
-    return '${(price * 100).round()}c';
+    return '${(price * 100).round()}¢';
   }
 
   static String formatPercent(double value) {

@@ -110,7 +110,9 @@ class _SwarmVisualizerState extends State<SwarmVisualizer>
     if (_nodes.length < 2) return;
     final fromIdx = _rnd.nextInt(_nodes.length);
     var toIdx = _rnd.nextInt(_nodes.length);
-    while (toIdx == fromIdx) toIdx = _rnd.nextInt(_nodes.length);
+    while (toIdx == fromIdx) {
+      toIdx = _rnd.nextInt(_nodes.length);
+    }
     final from = _nodes[fromIdx];
     final to = _nodes[toIdx];
     final colors = [

@@ -6,7 +6,6 @@ import '../../core/widgets/puls_snack.dart';
 import '../../core/widgets/glass_card.dart';
 import 'package:flutter_web_scroll/flutter_web_scroll.dart';
 
-import 'hero_market_stack.dart';
 import 'live_activity.dart';
 import 'live_ticker.dart';
 import 'meet_the_agents.dart';
@@ -16,6 +15,7 @@ import 'landing_kit.dart';
 import 'accountable_ai.dart';
 import 'phone_demo.dart';
 import 'package:flutter/services.dart';
+import 'mac_window_frame.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -481,7 +481,7 @@ class _HeroContent extends StatelessWidget {
               child: _HeroCopy(phrase: phrase, phraseIndex: phraseIndex, centered: true),
             ),
             const SizedBox(height: 40),
-            const Center(child: HeroMarketStack(compact: true)),
+            Center(child: liveAppPreview(screen: const PulsApp())),
             const SizedBox(height: 36),
             const _TrustStrip(),
             const SizedBox(height: 32),
@@ -507,9 +507,9 @@ class _HeroContent extends StatelessWidget {
                     child: _HeroCopy(phrase: phrase, phraseIndex: phraseIndex, centered: false),
                   ),
                   const SizedBox(width: 48),
-                  const Expanded(
+                  Expanded(
                     flex: 9,
-                    child: Center(child: HeroMarketStack()),
+                    child: Center(child: liveAppPreview(screen: const PulsApp())),
                   ),
                 ],
               ),
@@ -560,7 +560,7 @@ class _HeroCopy extends StatelessWidget {
               _PulsingDot(color: t.brand),
               const SizedBox(width: 8),
               Text(
-                'LIVE ON ARC™ NETWORK TESTNET',
+                'LIVE ON ARC™ NETWORK',
                 style: TextStyle(
                     color: t.brand,
                     fontSize: 11,
@@ -635,7 +635,7 @@ class _HeroCopy extends StatelessWidget {
             Builder(builder: (context) {
               final wallet = WalletServiceScope.of(context);
               return _PrimaryButton(
-                label: wallet.state.isLoading ? 'Connecting…' : 'Try it free — Testnet USDC',
+                label: wallet.state.isLoading ? 'Connecting…' : 'Get started free',
                 onTap: wallet.state.isLoading ? null : wallet.signInWithGoogle,
               );
             }),
@@ -670,7 +670,7 @@ class _HeroCopy extends StatelessWidget {
             Icon(Icons.android_rounded, size: 15, color: t.textSubtle),
             const SizedBox(width: 6),
             const _InlineLink(label: 'Get the Android app', url: kAndroidApkUrl),
-            Text('  ·  Free testnet USDC. Zero risk.',
+            Text('  ·  No wallet, no seed phrase, no risk.',
                 style: TextStyle(color: t.textSubtle, fontSize: 12.5)),
           ],
         ).animate().fadeIn(duration: 600.ms, delay: 450.ms),
@@ -992,7 +992,7 @@ class _HowItWorksSection extends StatelessWidget {
         Icons.water_drop_rounded,
         '2',
         'Fund with USDC',
-        'Claim free testnet USDC. On Arc, USDC is the gas token — one token pays for everything.',
+        'Claim free USDC. On Arc, USDC is the gas token — one token pays for everything.',
       ),
       (
         Icons.swipe_rounded,
@@ -2754,7 +2754,7 @@ class _StatsSection extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Real bonds. Real trades. Real accountability. Testnet.',
+                'Real bonds. Real trades. Real accountability.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: t.textMuted, fontSize: isMobile ? 14 : 16),
               ),
@@ -2765,7 +2765,7 @@ class _StatsSection extends StatelessWidget {
                   spacing: isMobile ? 12 : 20, runSpacing: isMobile ? 12 : 20,
                   children: [
                     _statCard('100+', 'Live Markets', 'From Polymarket Gamma API', t.brand, 'https://img.icons8.com/?id=KslJGdGlJFNz&format=png&size=256', constraints, cols, t),
-                    _statCard('< 1s', 'Trade Speed', 'Arc Testnet sub-second finality', t.yes, 'https://img.icons8.com/?id=XTqUA8keYxec&format=png&size=256', constraints, cols, t),
+                    _statCard('< 1s', 'Trade Speed', 'Arc sub-second finality', t.yes, 'https://img.icons8.com/?id=XTqUA8keYxec&format=png&size=256', constraints, cols, t),
                     _statCard('\$0 ETH', 'Gas Cost', 'USDC is the native gas token', PulsColors.amber, 'https://img.icons8.com/?id=rcnetj6T68lY&format=png&size=256', constraints, cols, t),
                     _statCard('MPC', 'Wallet Type', 'Circle developer-controlled wallets', const Color(0xFF0EA5E9), 'https://img.icons8.com/?id=hkkfYNNRoACe&format=png&size=256', constraints, cols, t),
                   ],
@@ -2845,7 +2845,7 @@ class _StatsSection extends StatelessWidget {
                                   children: [
                                     Flexible(
                                       child: Text(
-                                        'LMSRMarketFactory.sol — Arc Testnet',
+                                        'LMSRMarketFactory.sol — Arc',
                                         style: TextStyle(color: t.text, fontSize: 15, fontWeight: FontWeight.w700),
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -3013,7 +3013,7 @@ class _FinalCtaSection extends StatelessWidget {
           const SizedBox(height: 18),
           Text(
             'Trade alongside AI agents that stake real USDC on every call. '
-            'Free testnet USDC, one-tap wallet — you\'re trading in under a minute.',
+            'One-tap wallet — you\'re trading in under a minute.',
             textAlign: TextAlign.center,
             style: TextStyle(color: t.textMuted, fontSize: isMobile ? 14 : 16, height: 1.6),
           ),
@@ -3167,7 +3167,7 @@ class _FooterSection extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Built on Arc Testnet · Circle MPC Wallets',
+                          '© 2026 Puls · Built on Arc Network',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: t.textSubtle, fontSize: 12, fontWeight: FontWeight.w500),
                         ),
@@ -3183,11 +3183,13 @@ class _FooterSection extends StatelessWidget {
                           spacing: 20,
                           runSpacing: 10,
                           children: [
+                            _FooterLink('X/Twitter', 'https://x.com/rdmnad'),
                             _FooterLink('Docs', 'https://docs.pulsmarket.tech'),
                             _FooterLink('GitHub', 'https://github.com/rdmbtc/Puls'),
                             _FooterLink('Explorer', 'https://testnet.arcscan.app/address/$factoryAddress'),
-                            _FooterLink('Faucet', 'https://faucet.circle.com'),
                             _FooterLink('Android app', kAndroidApkUrl),
+                            _FooterLink('Terms', 'https://pulsmarket.tech/terms'),
+                            _FooterLink('Privacy', 'https://pulsmarket.tech/privacy'),
                           ],
                         ),
                       ],
@@ -3214,7 +3216,7 @@ class _FooterSection extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                              'Built on Arc Testnet · Circle MPC Wallets',
+                              '© 2026 Puls · Built on Arc Network',
                               style: TextStyle(color: t.textSubtle, fontSize: 12, fontWeight: FontWeight.w500),
                             ),
                             const SizedBox(height: 4),
@@ -3225,13 +3227,15 @@ class _FooterSection extends StatelessWidget {
                           ],
                         ),
                         const Spacer(),
+                        const _FooterLink('X/Twitter', 'https://x.com/rdmnad'),
+                        const SizedBox(width: 20),
                         const _FooterLink('Docs', 'https://docs.pulsmarket.tech'),
                         const SizedBox(width: 20),
                         const _FooterLink('GitHub', 'https://github.com/rdmbtc/Puls'),
                         const SizedBox(width: 20),
-                        const _FooterLink('Explorer', 'https://testnet.arcscan.app/address/$factoryAddress'),
+                        const _FooterLink('Terms', 'https://pulsmarket.tech/terms'),
                         const SizedBox(width: 20),
-                        const _FooterLink('Faucet', 'https://faucet.circle.com'),
+                        const _FooterLink('Privacy', 'https://pulsmarket.tech/privacy'),
                       ],
                     ),
             ],

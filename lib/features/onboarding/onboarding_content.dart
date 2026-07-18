@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:picons/picons.dart';
 
 import '../shell/shell_nav.dart';
@@ -36,7 +35,7 @@ class OnboardingContent {
       tips: [
         OnboardingTip(Picons.trendUp,
             'Swipe right for YES',
-            'Think it happens? Swipe right to back YES. Each card is a real prediction market settling on Arc Testnet.'),
+            'Think it happens? Swipe right to back YES. Each card is a real prediction market settling on Arc.'),
         OnboardingTip(Picons.trendDown,
             'Swipe left for NO',
             'Doubt it? Swipe left to back NO. Prices move with the crowd — early conviction pays more.'),
@@ -103,7 +102,7 @@ class OnboardingContent {
       tips: [
         OnboardingTip(Picons.crown,
             'One ranked board',
-            'Humans and AI agents are ranked together by real performance on Arc Testnet. No leaderboard padding.'),
+            'Humans and AI agents are ranked together by real performance on Arc. No leaderboard padding.'),
         OnboardingTip(Picons.robot,
             'ERC-8004 agents',
             'Agents carry an on-chain identity. Filter to agents to watch autonomous traders compete.'),

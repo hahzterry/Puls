@@ -232,7 +232,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
               child: Container(
                 decoration: BoxDecoration(
                   color: t.surfaceRaised,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: progress > 0.1
                         ? swipeColor.withValues(alpha: progress * 0.5)
@@ -254,7 +254,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                     if (progress > 0)
                       Positioned.fill(
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(16),
                           child: Align(
                             alignment: Alignment.bottomCenter,
                             child: AnimatedContainer(
@@ -416,21 +416,30 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                             decoration: BoxDecoration(
                               border: Border.all(color: t.border.withValues(alpha: 0.5)),
                             ),
-                            child: Image.network(proxifyImageUrl(_proxied(market.imageUrl.isNotEmpty ? market.imageUrl : _getTopicImage(market.category, market.id))),
-                              height: 130,
-                              width: double.infinity,
-                              cacheHeight: 260,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return const Skeleton(height: 130, radius: 0);
-                              },
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                height: 130,
-                                color: t.surface,
-                                child: Icon(Icons.image_outlined, color: t.textSubtle),
-                              ),
-                            ),
+                            child: market.imageUrl.isNotEmpty
+                                ? Image.network(
+                                    proxifyImageUrl(_proxied(market.imageUrl)),
+                                    height: 130,
+                                    width: double.infinity,
+                                    cacheHeight: 260,
+                                    fit: BoxFit.cover,
+                                    loadingBuilder: (context, child, progress) {
+                                      if (progress == null) return child;
+                                      return const Skeleton(height: 130, radius: 0);
+                                    },
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      height: 130,
+                                      width: double.infinity,
+                                      decoration: const BoxDecoration(gradient: PulsColors.pulseGradient),
+                                    ),
+                                  )
+                                : Container(
+                                    height: 130,
+                                    width: double.infinity,
+                                    decoration: const BoxDecoration(
+                                      gradient: PulsColors.pulseGradient,
+                                    ),
+                                  ),
                           ),
                         ),
                       ),
@@ -493,7 +502,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                                   const SizedBox(width: 8),
                                   _Stat(
                                     icon: Picons.arrowsLeftRight,
-                                    label: 'Spread ${(market.spread * 100).toStringAsFixed(0)}¢',
+                                    label: 'Spread ${formatCents(market.spread )}',
                                     color: t.textMuted,
                                   ),
                                 ],
@@ -787,56 +796,7 @@ class _Tag extends StatelessWidget {
   }
 }
 
-String _getTopicImage(String category, String id) {
-  final cat = category.toLowerCase();
-  if (cat.contains('world cup') || cat.contains('fifa')) {
-    return 'https://loremflickr.com/600/400/soccer,worldcup?lock=1';
-  }
-  if (cat.contains('baseball') || cat.contains('mlb')) {
-    return 'https://loremflickr.com/600/400/baseball?lock=2';
-  }
-  if (cat.contains('combat sports') || cat.contains('mma') || cat.contains('ufc') || cat.contains('boxing')) {
-    return 'https://loremflickr.com/600/400/boxing,mma?lock=3';
-  }
-  if (cat.contains('football') || cat.contains('nfl')) {
-    return 'https://loremflickr.com/600/400/football,nfl?lock=4';
-  }
-  if (cat.contains('soccer') || cat.contains('premier league') || cat.contains('champions league')) {
-    return 'https://loremflickr.com/600/400/soccer?lock=5';
-  }
-  if (cat.contains('politics') || cat.contains('election') || cat.contains('vote')) {
-    return 'https://loremflickr.com/600/400/politics?lock=6';
-  }
-  if (cat.contains('crypto') || cat.contains('bitcoin') || cat.contains('ethereum') || cat.contains('solana')) {
-    return 'https://loremflickr.com/600/400/crypto,blockchain?lock=7';
-  }
-  if (cat.contains('finance') || cat.contains('macro') || cat.contains('fed') || cat.contains('rate') || cat.contains('stock')) {
-    return 'https://loremflickr.com/600/400/finance,stockmarket?lock=8';
-  }
-  if (cat.contains('tech') || cat.contains('ai') || cat.contains('openai') || cat.contains('gpt') || cat.contains('agents')) {
-    return 'https://loremflickr.com/600/400/technology,ai?lock=9';
-  }
-  if (cat.contains('sports') || cat.contains('basketball')) {
-    return 'https://loremflickr.com/600/400/sports?lock=10';
-  }
-  if (cat.contains('entertainment') || cat.contains('culture') || cat.contains('movie') || cat.contains('film') || cat.contains('show')) {
-    return 'https://loremflickr.com/600/400/entertainment,movie?lock=11';
-  }
-  if (cat.contains('science') || cat.contains('climate') || cat.contains('weather')) {
-    return 'https://loremflickr.com/600/400/science,laboratory?lock=12';
-  }
-  if (cat.contains('general')) {
-    return 'https://loremflickr.com/600/400/news,general?lock=13';
-  }
-  final idx = id.hashCode.abs() % 4;
-  final fallbacks = [
-    'https://loremflickr.com/600/400/news,world?lock=101',
-    'https://loremflickr.com/600/400/news,world?lock=102',
-    'https://loremflickr.com/600/400/news,world?lock=103',
-    'https://loremflickr.com/600/400/news,world?lock=104',
-  ];
-  return fallbacks[idx];
-}
+
 
 String _proxied(String url) {
   if (!kIsWeb || url.isEmpty) return url;

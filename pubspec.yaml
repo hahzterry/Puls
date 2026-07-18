@@ -31,6 +31,9 @@ dependencies:
   cached_network_image: ^3.4.1
   socket_io_client: ^3.0.0
 
+  markdown: any
+  flutter_web_plugins:
+    sdk: flutter
 dev_dependencies:
   flutter_test:
     sdk: flutter
