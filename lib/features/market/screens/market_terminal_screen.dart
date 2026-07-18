@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,10 +8,8 @@ import '../../../core/motion.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_text.dart';
-import '../../../core/widgets/puls_snack.dart';
 import '../../agent/widgets/decision_log_panel.dart';
 import '../../agent/widgets/swarm_visualizer.dart';
-import '../../wallet/wallet_service.dart';
 import '../../../app/puls_app.dart';
 import '../widgets/terminal_event_binder.dart';
 
@@ -721,19 +718,6 @@ class _MarketRow extends StatefulWidget {
 
 class _MarketRowState extends State<_MarketRow> {
   bool _hovered = false;
-  late List<double> _sparkPoints;
-
-  @override
-  void initState() {
-    super.initState();
-    // Pseudo-random chart points walk based on slug question hash
-    final rand = math.Random(widget.market.slug.hashCode);
-    double cur = widget.market.yesPrice;
-    _sparkPoints = List.generate(12, (index) {
-      cur = (cur + (rand.nextDouble() * 0.16 - 0.08)).clamp(0.02, 0.98);
-      return cur;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
