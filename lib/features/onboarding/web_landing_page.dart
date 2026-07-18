@@ -20,7 +20,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/puls_app_state.dart';
-import '../../app/puls_app.dart';
+import 'hero_market_stack.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/motion.dart';
 import '../../core/config.dart';
@@ -481,7 +481,7 @@ class _HeroContent extends StatelessWidget {
               child: _HeroCopy(phrase: phrase, phraseIndex: phraseIndex, centered: true),
             ),
             const SizedBox(height: 40),
-            Center(child: liveAppPreview(screen: const PulsApp())),
+            const Center(child: HeroMarketStack(compact: true)),
             const SizedBox(height: 36),
             const _TrustStrip(),
             const SizedBox(height: 32),
@@ -507,9 +507,9 @@ class _HeroContent extends StatelessWidget {
                     child: _HeroCopy(phrase: phrase, phraseIndex: phraseIndex, centered: false),
                   ),
                   const SizedBox(width: 48),
-                  Expanded(
+                  const Expanded(
                     flex: 9,
-                    child: Center(child: liveAppPreview(screen: const PulsApp())),
+                    child: Center(child: HeroMarketStack()),
                   ),
                 ],
               ),
