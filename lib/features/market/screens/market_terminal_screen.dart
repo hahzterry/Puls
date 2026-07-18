@@ -13,6 +13,7 @@ import '../../../core/widgets/puls_snack.dart';
 import '../../agent/widgets/decision_log_panel.dart';
 import '../../agent/widgets/swarm_visualizer.dart';
 import '../../wallet/wallet_service.dart';
+import '../../../app/puls_app.dart';
 import '../widgets/terminal_event_binder.dart';
 
 /// Cyberpunk high-tech grid background with neon color blobs
