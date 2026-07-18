@@ -20,16 +20,7 @@ class PhoneDemoSection extends StatelessWidget {
     final copy = _Copy(isMobile: isMobile);
     final phone = Center(
       child: liveAppPreview(
-        screen: Scaffold(
-          backgroundColor: t.bg,
-          appBar: AppBar(
-            backgroundColor: t.bg,
-            elevation: 0,
-            title: Text('Puls Feed', style: TextStyle(color: t.text)),
-            centerTitle: true,
-          ),
-          body: const FeedScreen(),
-        ),
+        screen: const FeedScreen(),
         width: 390,
         height: 800,
       ),
