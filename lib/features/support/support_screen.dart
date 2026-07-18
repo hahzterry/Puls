@@ -11,6 +11,8 @@ import '../../core/widgets/puls_sheet.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/widgets/puls_loader.dart';
 
+import '../shell/web_layout.dart';
+
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key});
 
@@ -171,7 +173,9 @@ class _SupportScreenState extends State<SupportScreen> {
         label: const Text('New Ticket',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       ),
-      body: _loading
+      body: WebLayout(
+        maxWidth: 720,
+        child: _loading
           ? const PulsLoader()
           : _error != null
               ? Center(
@@ -186,6 +190,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   onRefresh: _fetch,
                   child: _tickets.isEmpty ? _buildEmpty(t) : _buildList(t),
                 ),
+      ),
     );
   }
 
@@ -525,7 +530,9 @@ class _TicketDetailScreenState extends State<_TicketDetailScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Column(
+      body: WebLayout(
+        maxWidth: 720,
+        child: Column(
         children: [
           Expanded(
             child: _loading
@@ -620,6 +627,7 @@ class _TicketDetailScreenState extends State<_TicketDetailScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

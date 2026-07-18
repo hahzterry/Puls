@@ -8,6 +8,8 @@ import '../../core/widgets/puls_snack.dart';
 import '../../core/config.dart';
 import '../../app/puls_app.dart';
 
+import '../shell/web_layout.dart';
+
 class UserChatScreen extends StatefulWidget {
   final String targetUserId;
   final String? targetUserName;
@@ -150,7 +152,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
         elevation: 0,
         shape: Border(bottom: BorderSide(color: t.border)),
       ),
-      body: Column(
+      body: WebLayout(
+        maxWidth: 720,
+        child: Column(
         children: [
           Expanded(
             child: _loading 
@@ -230,6 +234,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
             ),
           )
         ],
+      ),
       ),
     );
   }
