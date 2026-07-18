@@ -863,7 +863,6 @@ class _PortfolioChart extends StatelessWidget {
               touchTooltipData: LineTouchTooltipData(
                 getTooltipColor: (_) => t.surface.withValues(alpha: 0.92),
                 tooltipBorder: BorderSide(color: color.withValues(alpha: 0.5), width: 0.8),
-                tooltipRoundedRadius: 8,
                 getTooltipItems: (touchedSpots) {
                   return touchedSpots.map((spot) {
                     return LineTooltipItem(

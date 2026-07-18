@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../core/widgets/puls_snack.dart';
 import '../../core/widgets/tactile.dart';
 import '../../core/widgets/puls_page_route.dart';
+import '../../core/widgets/glass_card.dart';
 
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';

@@ -9,9 +9,9 @@ import '../../../core/motion.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_text.dart';
-import '../../../core/widgets/puls_snack.dart';
 import '../../agent/widgets/decision_log_panel.dart';
 import '../../agent/widgets/swarm_visualizer.dart';
+import '../widgets/terminal_event_binder.dart';
 
 /// Cyberpunk high-tech grid background with neon color blobs
 class _TerminalGridBackground extends StatefulWidget {
@@ -233,14 +233,19 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return _TerminalGridBackground(
+    final t = context.puls;
+    // TerminalEventBinder subscribes to the WebSocket event stream and
+    // dispatches to SwarmVisualizer + DecisionLogPanel + CameraShake. Wrap
+    // it AROUND CameraShake so triggerCameraShake(context) finds the shake
+    // state, and inside Scaffold so it finds the viz/log panel descendants.
+    return TerminalEventBinder(
       child: CameraShake(
         child: Scaffold(
-          backgroundColor: Colors.transparent,
+          backgroundColor: t.bg,
           body: SafeArea(
             child: Column(
               children: [
-                const _TerminalHeader(),
+                _TerminalHeader(),
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, c) {
