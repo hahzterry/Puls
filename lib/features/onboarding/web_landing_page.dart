@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../../core/widgets/puls_snack.dart';
+import '../../core/widgets/glass_card.dart';
 import 'package:flutter_web_scroll/flutter_web_scroll.dart';
 
 import 'hero_market_stack.dart';
@@ -74,8 +75,8 @@ class _WebLandingPageState extends State<WebLandingPage>
     }
 
     final dotColor = isDark
-        ? Colors.white.withValues(alpha: 0.03)
-        : const Color(0xFFEC4899).withValues(alpha: 0.03);
+        ? PulsColors.brandMint.withValues(alpha: 0.045)
+        : PulsColors.brandPink.withValues(alpha: 0.04);
 
     // Scroll progress (0..1) for the top progress bar.
     final maxExtent = _scrollCtrl.hasClients &&
@@ -1429,18 +1430,21 @@ class _BentoCellState extends State<_BentoCell> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
-          child: Stack(
-            children: [
-              if (_hovered)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: CustomPaint(
-                      painter: _SpotlightPainter(center: _cursor, color: a),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Stack(
+              children: [
+                if (_hovered)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: _SpotlightPainter(center: _cursor, color: a),
+                      ),
                     ),
                   ),
-                ),
-              Padding(padding: EdgeInsets.all(pad), child: content),
-            ],
+                Padding(padding: EdgeInsets.all(pad), child: content),
+              ],
+            ),
           ),
         ),
       ),
@@ -2760,16 +2764,12 @@ class _StatsSection extends StatelessWidget {
               }),
               SizedBox(height: isMobile ? 32 : 52),
               // Contract address widget
-              Container(
+              GlassCard(
+                radius: 16,
+                blur: 10,
+                fillAlpha: 0.05,
+                borderAlpha: 0.12,
                 padding: EdgeInsets.all(isMobile ? 14 : 22),
-                decoration: BoxDecoration(
-                  color: t.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: t.border),
-                  boxShadow: [
-                    BoxShadow(color: const Color(0xFFEC4899).withValues(alpha: 0.03), blurRadius: 10)
-                  ],
-                ),
                 child: isMobile
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2884,13 +2884,12 @@ class _StatsSection extends StatelessWidget {
     final spacing = isMobile ? 12.0 : 20.0;
     return SizedBox(
       width: (constraints.maxWidth - (cols - 1) * spacing) / cols,
-      child: Container(
+      child: GlassCard(
+        radius: 18,
+        blur: 10,
+        fillAlpha: 0.05,
+        borderAlpha: 0.12,
         padding: EdgeInsets.all(isMobile ? 12 : 24),
-        decoration: BoxDecoration(
-          color: t.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: t.border),
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -3059,9 +3058,17 @@ class _AuroraPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final t = progress * 2 * math.pi;
     final blobs = isDark
-        ? const [Color(0xFF1B2236), Color(0xFF2A1233), Color(0xFF0E2E2A)]
-        : const [Color(0xFFFCE7F3), Color(0xFFFDF2F8), Color(0xFFE6FAF6)];
-    final alpha = isDark ? 0.55 : 0.75;
+        ? const [
+            PulsColors.brandWashDark, // Deep plum
+            PulsColors.brandPinkDark, // Neon Pink
+            PulsColors.brandMint,     // Neon Mint
+          ]
+        : const [
+            PulsColors.brandWashLight, // Frosted pink
+            Color(0xFFFDF2F8),         // Soft glow
+            Color(0xFFE6FAF6),         // Frosted mint
+          ];
+    final alpha = isDark ? 0.16 : 0.35;
 
     canvas.drawRect(Offset.zero & size, Paint()..color = bg);
 

@@ -14,9 +14,42 @@ import '../../agent/widgets/decision_log_panel.dart';
 import '../../agent/widgets/swarm_visualizer.dart';
 
 /// Cyberpunk high-tech grid background with neon color blobs
-class _TerminalGridBackground extends StatelessWidget {
+class _TerminalGridBackground extends StatefulWidget {
   const _TerminalGridBackground({required this.child});
   final Widget child;
+
+  @override
+  State<_TerminalGridBackground> createState() => _TerminalGridBackgroundState();
+}
+
+class _TerminalGridBackgroundState extends State<_TerminalGridBackground>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 24),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) {
+      if (_ctrl.isAnimating) _ctrl.stop();
+    } else {
+      if (!_ctrl.isAnimating) _ctrl.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,41 +61,60 @@ class _TerminalGridBackground extends StatelessWidget {
             color: const Color(0xFF060913),
           ),
         ),
-        // Neon radial gradient blob 1 (top-left)
-        Positioned(
-          top: -150,
-          left: -150,
-          child: Container(
-            width: 450,
-            height: 450,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  const Color(0xFF2DD4BF).withValues(alpha: 0.12),
-                  const Color(0xFF2DD4BF).withValues(alpha: 0.0),
-                ],
-              ),
-            ),
-          ),
-        ),
-        // Neon radial gradient blob 2 (bottom-right)
-        Positioned(
-          bottom: -200,
-          right: -100,
-          child: Container(
-            width: 550,
-            height: 550,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  const Color(0xFFEC4899).withValues(alpha: 0.1),
-                  const Color(0xFFEC4899).withValues(alpha: 0.0),
-                ],
-              ),
-            ),
-          ),
+        // Animated gradient blobs
+        AnimatedBuilder(
+          animation: _ctrl,
+          builder: (context, child) {
+            final progress = _ctrl.value * 2 * math.pi;
+            final offset1 = Offset(
+              math.sin(progress) * 45,
+              math.cos(progress * 0.8) * 35,
+            );
+            final offset2 = Offset(
+              math.cos(progress * 0.9) * 55,
+              math.sin(progress * 0.7) * 45,
+            );
+            return Stack(
+              children: [
+                // Neon radial gradient blob 1 (top-left)
+                Positioned(
+                  top: -150 + offset1.dy,
+                  left: -150 + offset1.dx,
+                  child: Container(
+                    width: 450,
+                    height: 450,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          const Color(0xFF2DD4BF).withValues(alpha: 0.12),
+                          const Color(0xFF2DD4BF).withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Neon radial gradient blob 2 (bottom-right)
+                Positioned(
+                  bottom: -200 + offset2.dy,
+                  right: -100 + offset2.dx,
+                  child: Container(
+                    width: 550,
+                    height: 550,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          const Color(0xFFEC4899).withValues(alpha: 0.1),
+                          const Color(0xFFEC4899).withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         // High-tech grid pattern
         Positioned.fill(
@@ -70,7 +122,7 @@ class _TerminalGridBackground extends StatelessWidget {
             painter: _GridPainter(),
           ),
         ),
-        Positioned.fill(child: child),
+        Positioned.fill(child: widget.child),
       ],
     );
   }
