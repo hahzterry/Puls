@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/motion.dart';
 import '../feed/feed_screen.dart';
+import '../market/screens/market_terminal_screen.dart';
 import 'mac_window_frame.dart';
 
 /// A floating, tilted stack of REAL live markets — the hero visual.
@@ -49,8 +50,8 @@ class _HeroMarketStackState extends State<HeroMarketStack>
   @override
   Widget build(BuildContext context) {
     final compact = widget.compact;
-    final w = compact ? 300.0 : 380.0;
-    final h = compact ? 320.0 : 420.0;
+    final w = compact ? 400.0 : 640.0;
+    final h = compact ? 300.0 : 440.0;
     final totalW = w + 70;
     final reduce = context.reduceMotion;
 
@@ -66,9 +67,9 @@ class _HeroMarketStackState extends State<HeroMarketStack>
             child: Transform.translate(
               offset: Offset(0, 8 * math.sin(t)),
               child: liveAppPreview(
-                screen: const FeedScreen(),
-                width: 400,
-                height: 600,
+                screen: const MarketTerminalScreen(),
+                width: 1024,
+                height: 700,
               ),
             ),
           );

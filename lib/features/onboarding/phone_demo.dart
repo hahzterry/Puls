@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
-import '../agent/pulse_feed.dart';
+import '../feed/feed_screen.dart';
 import 'landing_kit.dart';
 import 'mac_window_frame.dart';
 
@@ -25,10 +25,10 @@ class PhoneDemoSection extends StatelessWidget {
           appBar: AppBar(
             backgroundColor: t.bg,
             elevation: 0,
-            title: Text('Pulse Agent', style: TextStyle(color: t.text)),
+            title: Text('Puls Feed', style: TextStyle(color: t.text)),
             centerTitle: true,
           ),
-          body: const PulseFeed(),
+          body: const FeedScreen(),
         ),
         width: 390,
         height: 800,
