@@ -6,6 +6,7 @@ import '../core/utils/puls_emoji.dart';
 import '../core/widgets/puls_page_route.dart';
 import '../data/mock/mock_market_repository.dart';
 import '../features/market/market_detail_screen.dart' deferred as market_detail;
+import '../features/market/screens/market_terminal_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/shell/puls_shell.dart';
 import '../features/wallet/wallet_service.dart';
@@ -108,7 +109,7 @@ class _PulsAppState extends State<PulsApp> {
               theme: PulsTheme.light(),
               darkTheme: PulsTheme.dark(),
               themeMode: _state.themeMode,
-              home: shellVisible ? const PulsShell() : const OnboardingScreen(),
+              home: const MarketTerminalScreen(), // shellVisible ? const PulsShell() : const OnboardingScreen(),
             ),
           ),
         );
