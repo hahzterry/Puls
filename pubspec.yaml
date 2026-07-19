@@ -30,6 +30,7 @@ dependencies:
   flutter_svg: ^2.3.0
   cached_network_image: ^3.4.1
   socket_io_client: ^3.0.0
+  sentry_flutter: ^8.13.2
 
   markdown: any
   flutter_web_plugins:

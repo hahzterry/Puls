@@ -1,9 +1,11 @@
 #!/bin/bash
 set -e
 
-# Generate secrets.dart from Vercel environment variables
-printf "const supabaseUrl = '%s';\nconst supabaseAnonKey = '%s';\n" \
-  "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > lib/core/secrets.dart
+# Generate secrets.dart from Vercel environment variables.
+# SENTRY_DSN is optional — when unset, the empty default makes Sentry.init a
+# safe no-op (useful for preview deploys where we don't want crash telemetry).
+printf "const supabaseUrl = '%s';\nconst supabaseAnonKey = '%s';\nconst sentryDsn = '%s';\n" \
+  "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "${SENTRY_DSN:-}" > lib/core/secrets.dart
 
 echo "Generated secrets.dart"
 

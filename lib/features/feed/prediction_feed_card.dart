@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:haptic_kit/haptic_kit.dart';
 import 'package:picons/picons.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/puls_emoji_text.dart';
@@ -417,17 +418,14 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                               border: Border.all(color: t.border.withValues(alpha: 0.5)),
                             ),
                             child: market.imageUrl.isNotEmpty
-                                ? Image.network(
-                                    proxifyImageUrl(_proxied(market.imageUrl)),
+                                ? CachedNetworkImage(
+                                    imageUrl: proxifyImageUrl(_proxied(market.imageUrl)),
                                     height: 130,
                                     width: double.infinity,
-                                    cacheHeight: 260,
+                                    memCacheHeight: 260,
                                     fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, progress) {
-                                      if (progress == null) return child;
-                                      return const Skeleton(height: 130, radius: 0);
-                                    },
-                                    errorBuilder: (context, error, stackTrace) => Container(
+                                    placeholder: (context, url) => const Skeleton(height: 130, radius: 0),
+                                    errorWidget: (context, url, error) => Container(
                                       height: 130,
                                       width: double.infinity,
                                       decoration: const BoxDecoration(gradient: PulsColors.pulseGradient),
