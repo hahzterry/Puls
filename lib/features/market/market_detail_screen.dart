@@ -21,7 +21,7 @@ import '../shell/web_layout.dart';
 import 'trade_preview_sheet.dart';
 import 'ai_copilot_sheet.dart';
 import 'share_market_sheet.dart';
-import 'advanced_charts.dart';
+import 'advanced_charts.dart' deferred as charts;
 import 'ai_insight_card.dart';
 import 'resolution_panel.dart';
 import 'market_detail_tabs.dart';
@@ -40,10 +40,17 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
   bool _historyLoading = true;
   bool _marketLoading = false;
   bool _marketNotFound = false;
+  bool _chartsLoaded = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (!_chartsLoaded) {
+      _chartsLoaded = true;
+      charts.loadLibrary().then((_) {
+        if (mounted) setState(() {});
+      });
+    }
     final appState = PulsStateScope.of(context);
     final market = appState.marketById(widget.marketId);
     if (market != null) {
@@ -486,14 +493,14 @@ class _ChartSectionState extends State<_ChartSection> {
     } else {
       switch (_activeTab) {
         case 'candle':
-          chartWidget = CandlestickChart(
+          chartWidget = charts.CandlestickChart(
             prices: widget.history,
             upColor: t.yes,
             downColor: t.no,
           );
           break;
         case 'depth':
-          chartWidget = DepthChart(
+          chartWidget = charts.DepthChart(
             currentPrice: widget.market.yesPrice,
             t: t,
           );

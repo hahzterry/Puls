@@ -24,8 +24,8 @@ import '../shell/web_layout.dart';
 import '../shell/shell_nav.dart';
 import '../onboarding/help_button.dart';
 import 'agent_sponsorship_screen.dart';
-import 'flash_arbitrage_screen.dart';
-import 'gladiator_arena_screen.dart';
+import 'flash_arbitrage_screen.dart' deferred as flash_arb;
+import 'gladiator_arena_screen.dart' deferred as gladiator;
 import 'live_swarm_view.dart';
 import 'proof_view.dart';
 import '../market/signals_marketplace.dart';
@@ -538,16 +538,24 @@ class _AgentScreenState extends State<AgentScreen>
           IconButton(
             tooltip: 'Gladiator Arena — 24h AI trading tournament',
             icon: Icon(Icons.sports_mma_rounded, color: t.brand),
-            onPressed: () => Navigator.of(context).push(
-              pulsRoute(context, builder: (_) => const GladiatorArenaScreen()),
-            ),
+            onPressed: () async {
+              await gladiator.loadLibrary();
+              if (!context.mounted) return;
+              Navigator.of(context).push(
+                pulsRoute(context, builder: (_) => gladiator.GladiatorArenaScreen()),
+              );
+            },
           ),
           IconButton(
             tooltip: 'Flash Arbitrage — approve agent-found arbs',
             icon: Icon(Icons.radar_rounded, color: t.brand),
-            onPressed: () => Navigator.of(context).push(
-              pulsRoute(context, builder: (_) => const FlashArbitrageScreen()),
-            ),
+            onPressed: () async {
+              await flash_arb.loadLibrary();
+              if (!context.mounted) return;
+              Navigator.of(context).push(
+                pulsRoute(context, builder: (_) => flash_arb.FlashArbitrageScreen()),
+              );
+            },
           ),
           IconButton(
             tooltip: 'Puls Streams — pay-per-second',

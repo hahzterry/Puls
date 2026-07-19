@@ -13,8 +13,8 @@ import '../../core/widgets/puls_sheet.dart';
 import '../../core/widgets/puls_loader.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/gradient_text.dart';
-import 'agent_brain_visualizer.dart';
-import '../analytics/swarm_analytics_dashboard.dart';
+import 'agent_brain_visualizer.dart' deferred as brain;
+import '../analytics/swarm_analytics_dashboard.dart' deferred as analytics;
 import '../market/market_detail_screen.dart';
 import 'colony_feed.dart';
 
@@ -202,12 +202,14 @@ class _SwarmViewState extends State<SwarmView> {
         ),
         const SizedBox(width: 8),
         InkWell(
-          onTap: () {
+          onTap: () async {
+            await analytics.loadLibrary();
+            if (!context.mounted) return;
             PulsSheet.show<void>(
               context,
-              builder: (_) => const PulsSheetSurface(
+              builder: (_) => PulsSheetSurface(
                 scrollable: true,
-                child: SwarmAnalyticsDashboard(),
+                child: analytics.SwarmAnalyticsDashboard(),
               ),
             );
           },
@@ -729,21 +731,23 @@ class AgentDetailSheet extends StatelessWidget {
               ),
             if (reasoning.isNotEmpty)
               InkWell(
-                onTap: () {
+                onTap: () async {
+                  await brain.loadLibrary();
+                  if (!context.mounted) return;
                   PulsSheet.show<void>(
                     context,
                     builder: (_) => PulsSheetSurface(
                       scrollable: true,
-                      child: AgentBrainVisualizer(
-                        decision: AgentDecision(
+                      child: brain.AgentBrainVisualizer(
+                        decision: brain.AgentDecision(
                           question: question.isNotEmpty
                               ? question
                               : (slug ?? 'Market Decision'),
                           sources: const [],
                           reasoning: reasoning,
                           side: side == 'YES'
-                              ? DecisionSide.yes
-                              : DecisionSide.no,
+                              ? brain.DecisionSide.yes
+                              : brain.DecisionSide.no,
                           amountUsdc: amount ?? 0,
                         ),
                       ),
