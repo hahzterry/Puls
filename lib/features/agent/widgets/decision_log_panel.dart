@@ -44,6 +44,7 @@ class DecisionLogPanel extends StatefulWidget {
     this.autoScroll = true,
     this.stream,
     this.demo = false,
+    this.initialLogs = const [],
   });
 
   final String title;
@@ -59,6 +60,10 @@ class DecisionLogPanel extends StatefulWidget {
   /// When true, generates demo log lines on a timer (for standalone preview).
   /// When false (default), the panel only shows real events pushed via log().
   final bool demo;
+
+  /// Initial log entries to seed the panel with (e.g. historical agent
+  /// decisions loaded from the backend). These are added once in initState.
+  final List<DecisionLog> initialLogs;
 
   /// Push a log line programmatically (e.g. from an event-bus listener).
   static void log(BuildContext context, DecisionLog entry) {
@@ -110,8 +115,10 @@ class _DecisionLogPanelState extends State<DecisionLogPanel> {
   @override
   void initState() {
     super.initState();
-    // Seed with a few demo lines ONLY when demo mode is enabled.
-    if (widget.demo) {
+    // Seed with initial logs (from backend) or demo lines.
+    if (widget.initialLogs.isNotEmpty) {
+      _logs.addAll(widget.initialLogs);
+    } else if (widget.demo) {
       for (var i = 0; i < 8; i++) {
         _logs.add(_demoLine(i));
       }
