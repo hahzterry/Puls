@@ -58,6 +58,15 @@ class _PulsAppState extends State<PulsApp> {
     _state.addListener(_onStateChanged);
     _walletService.addListener(_onWalletChanged);
     _registerPopStateListener();
+    // Fix: on a cold load where _shellVisible is already correct on the very
+    // first frame (e.g. already-authenticated user on app.pulsmarket.tech/m/<slug>),
+    // there's no false→true flip for the change listeners to detect, so the
+    // deep-link callback never fires. Add an explicit call after the first
+    // frame so cold loads of deep-linked routes actually resolve.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeOpenDeepLink(_shellVisible.value);
+      _maybeOpenTerminal(_shellVisible.value);
+    });
   }
 
   void _onStateChanged() {
@@ -101,10 +110,18 @@ class _PulsAppState extends State<PulsApp> {
     final isLandingHost = kIsWeb &&
         (Uri.base.host == 'pulsmarket.tech' ||
             Uri.base.host == 'www.pulsmarket.tech');
+    // On the landing host, the full app shell is NEVER visible. Public routes
+    // (/agent, /pulse, /versus, /explorer, /m/<slug>, /u/<handle>) render as
+    // standalone previews via PublicPreviewHost, and everything else renders
+    // the landing page (OnboardingScreen → WebLandingPage). Previously,
+    // _pendingDeepLink != null forced PulsShell onto the marketing domain,
+    // which dropped unauthenticated visitors into the full logged-in product.
+    if (isLandingHost) return false;
+    // On the app host (or local dev), a pending deep link makes the shell
+    // visible so the deep-linked screen can be pushed on top of it.
     return _pendingDeepLink != null ||
-        (!isLandingHost &&
-            (_state.onboardingComplete ||
-                _walletService.state.userId != null));
+        (_state.onboardingComplete ||
+            _walletService.state.userId != null);
   }
 
   void _maybeOpenDeepLink(bool shellVisible) {
@@ -202,6 +219,31 @@ class _PulsAppState extends State<PulsApp> {
     super.dispose();
   }
 
+  /// Resolve the MaterialApp's `home:` widget. Three branches:
+  ///
+  /// 1. Landing host + pending deep link → [PublicPreviewHost]: a standalone
+  ///    public preview with a lightweight header bar (logo + back to landing).
+  ///    No app shell, no sign-in required. This is what makes
+  ///    pulsmarket.tech/agent, /pulse, /versus, /explorer render as real
+  ///    standalone pages instead of redirecting back to the landing.
+  ///
+  /// 2. App host (or local dev) + shellVisible → [PulsShell]: the full
+  ///    authenticated app with bottom nav, wallet balance, portfolio tab, etc.
+  ///
+  /// 3. Otherwise → [OnboardingScreen]: the onboarding slides (or the
+  ///    WebLandingPage on the landing host).
+  Widget _resolveHome(bool shellVisible) {
+    if (kIsWeb) {
+      final isLandingHost =
+          Uri.base.host == 'pulsmarket.tech' ||
+              Uri.base.host == 'www.pulsmarket.tech';
+      if (isLandingHost && _pendingDeepLink != null) {
+        return PublicPreviewHost(link: _pendingDeepLink!);
+      }
+    }
+    return shellVisible ? const PulsShell() : const OnboardingScreen();
+  }
+
   @override
   Widget build(BuildContext context) {
     // Two narrow ValueListenableBuilders replace Listenable.merge([_state, _walletService]).
@@ -229,9 +271,7 @@ class _PulsAppState extends State<PulsApp> {
                   theme: PulsTheme.light(),
                   darkTheme: PulsTheme.dark(),
                   themeMode: themeMode,
-                  home: shellVisible
-                      ? const PulsShell()
-                      : const OnboardingScreen(),
+                  home: _resolveHome(shellVisible),
                 ),
               ),
             );

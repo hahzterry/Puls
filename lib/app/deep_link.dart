@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_theme.dart';
+import '../core/utils/web_reload.dart';
+import '../core/utils/web_url.dart';
 import '../core/widgets/puls_page_route.dart';
 import '../features/agent/agent_screen.dart' deferred as agent;
 import '../features/agent/pulse_feed.dart' deferred as pulse_feed;
@@ -9,7 +12,6 @@ import '../features/agent/economy_feed.dart' deferred as economy;
 import '../features/market/market_detail_screen.dart' deferred as market_detail;
 import '../features/profile/user_profile_screen.dart' deferred as user_profile;
 import '../features/onboarding/live_traction.dart';
-import '../core/utils/web_url.dart';
 
 /// A deep link parsed from an inbound URL (or constructed in-app for
 /// `history.pushState` sync). Each subclass corresponds to a route that's
@@ -150,7 +152,7 @@ class UserProfileDeepLink extends DeepLink {
 /// `/pulse`, `/versus`, `/explorer`, `/stats`, `/agent` — named flagship routes
 /// that map to a specific Flutter screen. Each is independently shareable.
 class NamedRouteDeepLink extends DeepLink {
-  const NamedRouteDeepLink._(this.name, this._title);
+  const NamedRouteDeepLink._(this.name, this.title);
   const NamedRouteDeepLink.agent() : this._('agent', 'Agent — Puls');
   const NamedRouteDeepLink.pulse() : this._('pulse', 'Pulse — the autonomous house agent');
   const NamedRouteDeepLink.versus() : this._('versus', 'Agents vs Humans — live PnL scoreboard');
@@ -158,7 +160,7 @@ class NamedRouteDeepLink extends DeepLink {
   const NamedRouteDeepLink.stats() : this._('stats', 'Live Traction — Puls');
 
   final String name;
-  final String _title;
+  final String title;
 
   @override
   Future<String?> open(GlobalKey<NavigatorState> navKey) async {
@@ -175,7 +177,7 @@ class NamedRouteDeepLink extends DeepLink {
             navKey.currentContext,
             settings: RouteSettings(name: routeName),
             builder: (_) => _NamedRouteScreen(
-              title: _title,
+              title: title,
               routeName: routeName,
               child: pulse_feed.PulseFeed(),
             ),
@@ -189,7 +191,7 @@ class NamedRouteDeepLink extends DeepLink {
             navKey.currentContext,
             settings: RouteSettings(name: routeName),
             builder: (_) => _NamedRouteScreen(
-              title: _title,
+              title: title,
               routeName: routeName,
               child: gladiator.GladiatorArenaScreen(),
             ),
@@ -203,7 +205,7 @@ class NamedRouteDeepLink extends DeepLink {
             navKey.currentContext,
             settings: RouteSettings(name: routeName),
             builder: (_) => _NamedRouteScreen(
-              title: _title,
+              title: title,
               routeName: routeName,
               child: economy.EconomyFeed(),
             ),
@@ -220,7 +222,7 @@ class NamedRouteDeepLink extends DeepLink {
             navKey.currentContext,
             settings: RouteSettings(name: routeName),
             builder: (_) => _NamedRouteScreen(
-              title: _title,
+              title: title,
               routeName: routeName,
               child: const LiveTractionSection(),
             ),
@@ -234,7 +236,7 @@ class NamedRouteDeepLink extends DeepLink {
             navKey.currentContext,
             settings: RouteSettings(name: routeName),
             builder: (_) => _NamedRouteScreen(
-              title: _title,
+              title: title,
               routeName: routeName,
               child: agent.AgentScreen(),
             ),
@@ -250,16 +252,25 @@ class NamedRouteDeepLink extends DeepLink {
 /// browser URL + document.title in sync via [web_url]. Used by
 /// [NamedRouteDeepLink.open] so all the named flagship routes share the same
 /// URL-sync behaviour.
+///
+/// When [isStandalone] is true (landing-host root widget), the screen gets
+/// a lightweight header bar with the Puls logo + a back-to-landing button —
+/// enough chrome for an unauthenticated visitor to find their way back without
+/// looking like they're inside the full logged-in product. When false
+/// (default, pushed on top of PulsShell on the app host), no chrome is added
+/// — the child widget or the shell beneath it provides the surrounding UI.
 class _NamedRouteScreen extends StatefulWidget {
   const _NamedRouteScreen({
     required this.title,
     required this.routeName,
     required this.child,
+    this.isStandalone = false,
   });
 
   final String title;
   final String routeName;
   final Widget child;
+  final bool isStandalone;
 
   @override
   State<_NamedRouteScreen> createState() => _NamedRouteScreenState();
@@ -269,7 +280,10 @@ class _NamedRouteScreenState extends State<_NamedRouteScreen> {
   @override
   void initState() {
     super.initState();
-    if (kIsWeb) {
+    if (kIsWeb && !widget.isStandalone) {
+      // Push case: sync the browser URL with the route name. In standalone
+      // mode the URL is already correct (the user navigated to it directly),
+      // so no pushState/replaceState is needed.
       pushUrl(widget.routeName, title: widget.title);
     }
   }
@@ -286,5 +300,223 @@ class _NamedRouteScreenState extends State<_NamedRouteScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    if (!widget.isStandalone) {
+      // Pushed case: no chrome — the child widget's own Scaffold (or the
+      // PulsShell beneath it) provides the surrounding UI.
+      return widget.child;
+    }
+
+    // Standalone case (landing host root): a lightweight header bar with the
+    // Puls logo + a back-to-landing button. This is NOT the full app shell
+    // — no bottom nav, no wallet balance, no portfolio tab. An unauthenticated
+    // visitor landing here should see the content, not the logged-in product.
+    final t = Theme.of(context).extension<PulsThemeColors>()!;
+    return Scaffold(
+      backgroundColor: t.bg,
+      appBar: AppBar(
+        backgroundColor: t.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          color: t.text,
+          onPressed: _backToLanding,
+        ),
+        title: GestureDetector(
+          onTap: _backToLanding,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset('assets/logo.png', width: 24, height: 24),
+              const SizedBox(width: 8),
+              Text(
+                'Puls',
+                style: TextStyle(
+                  fontFamily: PulsColors.fontDisplay,
+                  color: t.text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: widget.child,
+    );
+  }
+
+  void _backToLanding() {
+    if (kIsWeb) {
+      // Standalone context: go to the landing page, not Navigator.pop
+      // (there may be nothing beneath this route to pop to).
+      replaceUrl('/');
+      reloadApp();
+    } else {
+      Navigator.of(context).maybePop();
+    }
+  }
+}
+
+/// Renders a deep-linked screen as a standalone public preview on the landing
+/// host (pulsmarket.tech). No app shell, no sign-in required — just the content
+/// with a lightweight header bar (logo + back to landing).
+///
+/// Used as the MaterialApp's `home:` widget when the landing host has a pending
+/// deep link (e.g. pulsmarket.tech/agent, /pulse, /versus, /explorer,
+/// /m/<slug>, /u/<handle>). On the app host (app.pulsmarket.tech), the existing
+/// deep-link mechanism (PulsShell → _maybeOpenDeepLink → push) is untouched.
+///
+/// For [NamedRouteDeepLink], the content is wrapped in [_NamedRouteScreen] with
+/// `isStandalone: true` so it gets the lightweight header bar. For other deep
+/// link types (MarketDeepLink, UserProfileDeepLink, AgentTraceDeepLink), the
+/// screens already have their own Scaffold + AppBar, so they're also wrapped
+/// to provide a consistent back-to-landing affordance.
+class PublicPreviewHost extends StatefulWidget {
+  const PublicPreviewHost({required this.link, super.key});
+
+  final DeepLink link;
+
+  @override
+  State<PublicPreviewHost> createState() => _PublicPreviewHostState();
+}
+
+class _PublicPreviewHostState extends State<PublicPreviewHost> {
+  Widget? _content;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContent();
+  }
+
+  Future<void> _loadContent() async {
+    final link = widget.link;
+    try {
+      if (link is NamedRouteDeepLink) {
+        final named = link;
+        final routeName = '/${named.name}';
+        switch (named.name) {
+          case 'pulse':
+            await pulse_feed.loadLibrary();
+            if (!mounted) return;
+            setState(() {
+              _content = _NamedRouteScreen(
+                title: named.title,
+                routeName: routeName,
+                isStandalone: true,
+                child: pulse_feed.PulseFeed(),
+              );
+              _loading = false;
+            });
+          case 'versus':
+            await gladiator.loadLibrary();
+            if (!mounted) return;
+            setState(() {
+              _content = _NamedRouteScreen(
+                title: named.title,
+                routeName: routeName,
+                isStandalone: true,
+                child: gladiator.GladiatorArenaScreen(),
+              );
+              _loading = false;
+            });
+          case 'explorer':
+            await economy.loadLibrary();
+            if (!mounted) return;
+            setState(() {
+              _content = _NamedRouteScreen(
+                title: named.title,
+                routeName: routeName,
+                isStandalone: true,
+                child: economy.EconomyFeed(),
+              );
+              _loading = false;
+            });
+          case 'stats':
+            if (!mounted) return;
+            setState(() {
+              _content = _NamedRouteScreen(
+                title: named.title,
+                routeName: routeName,
+                isStandalone: true,
+                child: const LiveTractionSection(),
+              );
+              _loading = false;
+            });
+          case 'agent':
+            await agent.loadLibrary();
+            if (!mounted) return;
+            setState(() {
+              _content = _NamedRouteScreen(
+                title: named.title,
+                routeName: routeName,
+                isStandalone: true,
+                child: agent.AgentScreen(),
+              );
+              _loading = false;
+            });
+          default:
+            if (mounted) setState(() => _loading = false);
+        }
+      } else if (link is MarketDeepLink) {
+        await market_detail.loadLibrary();
+        if (!mounted) return;
+        setState(() {
+          _content = _NamedRouteScreen(
+            title: 'Market — Puls',
+            routeName: '/m/${link.slug}',
+            isStandalone: true,
+            child: market_detail.MarketDetailScreen(marketId: link.slug),
+          );
+          _loading = false;
+        });
+      } else if (link is UserProfileDeepLink) {
+        await user_profile.loadLibrary();
+        if (!mounted) return;
+        setState(() {
+          _content = _NamedRouteScreen(
+            title: 'Trader — Puls',
+            routeName: '/u/${link.handle}',
+            isStandalone: true,
+            child: user_profile.UserProfileScreen(userId: link.handle),
+          );
+          _loading = false;
+        });
+      } else if (link is AgentTraceDeepLink) {
+        await agent.loadLibrary();
+        if (!mounted) return;
+        setState(() {
+          _content = _NamedRouteScreen(
+            title: 'Agent — Puls',
+            routeName: '/agent/${link.agentId}',
+            isStandalone: true,
+            child: agent.AgentScreen(initialAgentId: link.agentId),
+          );
+          _loading = false;
+        });
+      } else {
+        if (mounted) setState(() => _loading = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      final t = Theme.of(context).extension<PulsThemeColors>()!;
+      return Scaffold(
+        backgroundColor: t.bg,
+        body: Center(
+          child: CircularProgressIndicator(color: t.brand),
+        ),
+      );
+    }
+    return _content ?? const SizedBox.shrink();
+  }
 }
