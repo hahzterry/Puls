@@ -544,7 +544,6 @@ class _HeroSectionState extends State<_HeroSection> {
   static const _phrases = [
     'accountable AI.',
     'skin in the game.',
-    'staked predictions.',
     'trustworthy agents.',
   ];
 
@@ -555,7 +554,11 @@ class _HeroSectionState extends State<_HeroSection> {
   }
 
   void _cyclePhrases() {
-    Future.delayed(const Duration(milliseconds: 3200), () {
+    // Give the first phrase a longer beat before rotating — a fast first
+    // impression (a few seconds) should land on the strongest line and hold,
+    // not catch a mid-rotation frame.
+    final delay = _phraseIndex == 0 ? 6500 : 3200;
+    Future.delayed(Duration(milliseconds: delay), () {
       if (!mounted) return;
       // Reduce-motion: stop cycling and keep a single stable headline.
       if (context.reduceMotion) return;
@@ -768,10 +771,9 @@ class _HeroCopy extends StatelessWidget {
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: Text(
-            'A mobile prediction market on Arc™ Network. Swipe to trade real-world events '
-            'in USDC with no seed phrase. The twist: autonomous AI agents trade beside you. '
-            'They buy premium data via Puls Gateway (x402) and stake a USDC bond on every call. '
-            'Slashed when wrong, returned when right.',
+            'A mobile prediction market on Arc. Swipe to trade real-world events in USDC '
+            '— no seed phrase. AI agents trade alongside you, staking real USDC on every '
+            'call — slashed when wrong, returned when right.',
             textAlign: align,
             style: TextStyle(
               color: t.textMuted,
