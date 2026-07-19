@@ -1,16 +1,14 @@
-import 'dart:async';
-import 'dart:ui' show PlatformDispatcher;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../core/theme/app_theme.dart';
+import '../core/utils/web_reload.dart';
 
 /// Wires up crash visibility for the running app.
 ///
-/// Call [install] once at startup (after the binding is initialised, before
-/// `runApp`) to register:
+/// Call [installErrorHandlers] once at startup (after the binding is
+/// initialised, before `runApp`) to register:
 ///
 /// * [FlutterError.onError] — catches errors thrown during a build/layout/
 ///   paint pass. The default handler only dumps to console in debug; we also
@@ -31,6 +29,15 @@ void installErrorHandlers() {
   PlatformDispatcher.instance.onError = (error, stack) {
     Sentry.captureException(error, stackTrace: stack);
     return true;
+  };
+
+  // Replace Flutter's red error screen with a calm fallback card. This is
+  // only visible when a widget actually throws in release — the one time it
+  // matters most for "feels like a real product". In debug the assertion
+  // stack is still shown (see [PulsErrorFallback]).
+  ErrorWidget.builder = (details) {
+    Sentry.captureException(details.exception, stackTrace: details.stack);
+    return PulsErrorFallback(errorDetails: details);
   };
 }
 
@@ -102,8 +109,8 @@ class PulsErrorFallback extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'The page hit an unexpected error. Reload to try again — '
-                      'our team has already been notified.',
+                      'The page hit an unexpected error. Reload to try '
+                      'again — our team has already been notified.',
                       style: TextStyle(
                         color: colors.textMuted,
                         fontSize: 13.5,
@@ -168,16 +175,16 @@ class _ReloadButtonState extends State<_ReloadButton> {
         onTapDown: (_) => setState(() => _pressing = true),
         onTapUp: (_) => setState(() => _pressing = false),
         onTapCancel: () => setState(() => _pressing = false),
-        onTap: _reload,
+        onTap: reloadApp,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
           curve: Curves.easeOutCubic,
           transform: _pressing
-              ? (Matrix4.identity()..scale(0.97))
+              ? Matrix4.diagonal3Values(0.97, 0.97, 1.0)
               : Matrix4.identity(),
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: PulsColors.pulseGradientColors),
+            gradient: PulsColors.pulseGradient,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               if (_hovered)
@@ -188,11 +195,11 @@ class _ReloadButtonState extends State<_ReloadButton> {
                 ),
             ],
           ),
-          child: Row(
+          child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.refresh_rounded, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 'Reload page',
                 style: TextStyle(
@@ -206,22 +213,5 @@ class _ReloadButtonState extends State<_ReloadButton> {
         ),
       ),
     );
-  }
-
-  void _reload() {
-    // Use the platform dispatcher so this works on web (reloads the tab) and
-    // is otherwise a no-op rather than crashing on platforms without a
-    // `window.location` analogue.
-    try {
-      // ignore: avoid_print
-      debugPrint('[Puls] User tapped reload on error fallback.');
-      // On web, `dart:js_interop` / `package:web` would be the clean call,
-      // but a trip through PlatformDispatcher keeps this file free of web-only
-      // imports. The actual reload happens via the DOM (see index.html) when
-      // the user clicks the button — for non-web, this is intentionally a
-      // no-op (the engine can't hot-restart a release build anyway).
-    } catch (_) {
-      // Never throw from a tap handler in the error fallback.
-    }
   }
 }

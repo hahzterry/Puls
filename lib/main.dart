@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 
+import 'app/error_reporting.dart';
 import 'app/puls_app.dart';
 import 'core/secrets.dart';
 import 'core/utils/kv_store.dart';
 
-void main() async {
+Future<void> main() async {
+  // Preserve the referral-capture ordering: binding first, then url strategy,
+  // then Sentry init (which wraps runApp so the SDK can install its zone guard
+  // before any widget is built).
   WidgetsFlutterBinding.ensureInitialized();
   usePathUrlStrategy();
 
@@ -23,7 +28,26 @@ void main() async {
     ),
   );
 
-  runApp(const PulsApp());
+  // Sentry init must happen before runApp so the SDK can install its zone
+  // guard. An empty DSN is a safe no-op (the SDK short-circuits when no DSN
+  // is configured, so no events are sent and no network traffic is generated),
+  // which is the right default for local dev.
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = sentryDsn;
+      // PII redaction: don't ship user IPs to Sentry by default.
+      options.sendDefaultPii = false;
+      // Sample 100% of sessions in release builds so we actually see the
+      // crash rate. Drop to e.g. 0.2 once volume justifies it.
+      options.tracesSampleRate = 1.0;
+    },
+    appRunner: () {
+      // Install the framework-level error handlers BEFORE runApp so any error
+      // thrown during the first build is captured.
+      installErrorHandlers();
+      runApp(const PulsApp());
+    },
+  );
 }
 
 void _captureReferralCode() {
