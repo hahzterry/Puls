@@ -43,6 +43,7 @@ class DecisionLogPanel extends StatefulWidget {
     this.maxLines = 200,
     this.autoScroll = true,
     this.stream,
+    this.demo = false,
   });
 
   final String title;
@@ -50,8 +51,14 @@ class DecisionLogPanel extends StatefulWidget {
   final bool autoScroll;
 
   /// Optional external stream of logs to subscribe to (production wiring).
-  /// When null, the panel runs in demo mode (generates sample lines on a timer).
+  /// When null + [demo] is true, the panel runs in demo mode (generates
+  /// sample lines on a timer). When null + [demo] is false, the panel is
+  /// empty and waits for real events via [DecisionLogPanel.log()].
   final Stream<DecisionLog>? stream;
+
+  /// When true, generates demo log lines on a timer (for standalone preview).
+  /// When false (default), the panel only shows real events pushed via log().
+  final bool demo;
 
   /// Push a log line programmatically (e.g. from an event-bus listener).
   static void log(BuildContext context, DecisionLog entry) {
@@ -103,9 +110,11 @@ class _DecisionLogPanelState extends State<DecisionLogPanel> {
   @override
   void initState() {
     super.initState();
-    // Seed with a few lines so the panel isn't empty on first paint.
-    for (var i = 0; i < 8; i++) {
-      _logs.add(_demoLine(i));
+    // Seed with a few demo lines ONLY when demo mode is enabled.
+    if (widget.demo) {
+      for (var i = 0; i < 8; i++) {
+        _logs.add(_demoLine(i));
+      }
     }
   }
 
@@ -114,7 +123,7 @@ class _DecisionLogPanelState extends State<DecisionLogPanel> {
     super.didChangeDependencies();
     if (widget.stream != null && _sub == null) {
       _sub = widget.stream!.listen((log) => _append(log));
-    } else if (widget.stream == null && _demoTimer == null) {
+    } else if (widget.stream == null && widget.demo && _demoTimer == null) {
       _demoTimer = Timer.periodic(const Duration(milliseconds: 1100), (_) {
         if (!mounted) return;
         _append(_demoLine(_logs.length));
