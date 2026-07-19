@@ -498,9 +498,23 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
               SizedBox(
                 width: double.infinity,
                 height: 52,
-                child: TextButton(
-                  onPressed: (_amount > 0 && !_isExecuting)
-                      ? () async {
+                child: Semantics(
+                  // The confirm-trade button moves real USDC. Announce it as a
+                  // button with an explicit label that includes the side +
+                  // amount, so screen-reader users can confirm what they're
+                  // committing to before double-tapping.
+                  button: true,
+                  enabled: _amount > 0 && !_isExecuting,
+                  label: _isBuy
+                      ? 'Buy ${widget.side == MarketSide.yes ? 'YES' : 'NO'} for \$${_amount.toStringAsFixed(2)} USDC'
+                      : 'Sell ${_amount.toStringAsFixed(2)} ${widget.side == MarketSide.yes ? 'YES' : 'NO'} shares for USDC',
+                  hint: _isBuy
+                      ? 'Commits a real USDC trade. Cannot be undone.'
+                      : 'Sells shares from your portfolio for USDC.',
+                  excludeSemantics: true,
+                  child: TextButton(
+                    onPressed: (_amount > 0 && !_isExecuting)
+                        ? () async {
                           final snack = PulsSnack.of(context);
                           setState(() {
                             _isExecuting = true;
@@ -629,6 +643,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                               fontWeight: FontWeight.w700,
                               fontSize: 15),
                         ),
+                  ),
                 ),
               ),
             ],

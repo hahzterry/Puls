@@ -179,29 +179,54 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
     final t = context.puls;
     final market = widget.market;
 
-    return RepaintBoundary(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-      onHorizontalDragStart: (_) {
-        _cancelSwipeHint();
-        _releaseCtrl?.dispose();
-        _releaseCtrl = null;
-        _flinging = false;
-        _dragX.value = 0.0;
-      },
-      onHorizontalDragUpdate: (d) {
-        if (_flinging) return;
-        _dragX.value = (_dragX.value + d.delta.dx).clamp(-180.0, 180.0);
-        final absDrag = _dragX.value.abs();
-        if (absDrag > 82) {
-          if (!_hasTriggeredHaptic) {
-            // Crossed the commit threshold — a firm "you're about to trade" cue.
-            Haptics.impact(HapticImpactStyle.medium);
-            _hasTriggeredHaptic = true;
-          }
-        } else {
-          if (_hasTriggeredHaptic) {
-            _hasTriggeredHaptic = false;
+    // Yes price formatted as cents (e.g. "62¢") for a concise screen-reader
+    // summary — the same compact form sighted users get from the odds bar.
+    final yesCents = (market.yesPrice * 100).round();
+    final noCents = 100 - yesCents;
+    final yesPct = '$yesCents%';
+    final noPct = '$noCents%';
+
+    return Semantics(
+      // Container so screen readers announce the card as a single labelled
+      // group, then the actionable children (YES/NO buttons, Details link,
+      // bookmark) get their own labels. Without this, VoiceOver/TalkBack would
+      // read every Text node in the card in sequence, with no context for
+      // what the swipe gesture does.
+      container: true,
+      label:
+          'Prediction market: ${market.question}. '
+          'Yes $yesPct, No $noPct. '
+          'Swipe right to buy Yes, swipe left to buy No.',
+      hint: 'Swipe right for Yes, swipe left for No. '
+          'Double-tap Details for the full market.',
+      // Exclude the drag gesture from semantics — the YES/NO buttons below
+      // are the accessible fallback for screen-reader users (a swipe gesture
+      // has no canonical screen-reader representation). The drag itself is
+      // excluded so the reader doesn't announce a meaningless "custom" action.
+      excludeSemantics: false,
+      child: RepaintBoundary(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+        onHorizontalDragStart: (_) {
+          _cancelSwipeHint();
+          _releaseCtrl?.dispose();
+          _releaseCtrl = null;
+          _flinging = false;
+          _dragX.value = 0.0;
+        },
+        onHorizontalDragUpdate: (d) {
+          if (_flinging) return;
+          _dragX.value = (_dragX.value + d.delta.dx).clamp(-180.0, 180.0);
+          final absDrag = _dragX.value.abs();
+          if (absDrag > 82) {
+            if (!_hasTriggeredHaptic) {
+              // Crossed the commit threshold — a firm "you're about to trade" cue.
+              Haptics.impact(HapticImpactStyle.medium);
+              _hasTriggeredHaptic = true;
+            }
+          } else {
+            if (_hasTriggeredHaptic) {
+              _hasTriggeredHaptic = false;
           }
         }
       },
@@ -377,18 +402,28 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                                   },
                                 ),
                                 const SizedBox(width: 8),
-                                Tactile(
-                                  onTap: widget.onWatchlist,
-                                  child: Container(
-                                    width: 48,
-                                    height: 48,
-                                    alignment: Alignment.centerRight,
-                                    child: Icon(
-                                      Icons.bookmark_rounded,
-                                      size: 20,
-                                      color: widget.isWatchlisted
-                                          ? PulsColors.amber
-                                          : t.textSubtle,
+                                Semantics(
+                                  button: true,
+                                  toggled: widget.isWatchlisted,
+                                  label: widget.isWatchlisted
+                                      ? 'Remove from watchlist'
+                                      : 'Add to watchlist',
+                                  hint: 'Saves this market to your watchlist '
+                                      'so you can find it later.',
+                                  excludeSemantics: true,
+                                  child: Tactile(
+                                    onTap: widget.onWatchlist,
+                                    child: Container(
+                                      width: 48,
+                                      height: 48,
+                                      alignment: Alignment.centerRight,
+                                      child: Icon(
+                                        Icons.bookmark_rounded,
+                                        size: 20,
+                                        color: widget.isWatchlisted
+                                            ? PulsColors.amber
+                                            : t.textSubtle,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -505,24 +540,31 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                                   ),
                                 ],
                                 const SizedBox(width: 8),
-                                Tactile(
-                                  onTap: widget.onDetails,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                                    child: Row(
-                                      children: [
-                                        Text('Details',
-                                            style: TextStyle(
-                                                color: t.brand,
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w600)),
-                                        const SizedBox(width: 2),
+                                Semantics(
+                                  button: true,
+                                  label: 'View details for ${market.question}',
+                                  hint: 'Opens the full market page with '
+                                      'charts, analysis and trade options.',
+                                  excludeSemantics: true,
+                                  child: Tactile(
+                                    onTap: widget.onDetails,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                                      child: Row(
+                                        children: [
+                                          Text('Details',
+                                              style: TextStyle(
+                                                  color: t.brand,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600)),
+                                          const SizedBox(width: 2),
                                         Icon(Icons.arrow_forward_rounded,
                                             size: 14, color: t.brand),
                                       ],
                                     ),
                                   ),
                                 ),
+                              ),
                               ],
                             ),
                             const SizedBox(height: 10),
@@ -589,7 +631,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                   ),
                 ),
       ),
-    ))
+    )))
         .animate()
         .fadeIn(duration: 200.ms)
         .slideY(begin: 0.04, duration: 200.ms, curve: Curves.easeOut);

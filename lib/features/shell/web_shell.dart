@@ -601,11 +601,24 @@ class _NavPillState extends State<_NavPill> with SingleTickerProviderStateMixin 
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: widget.showLabel
-            ? pill
-            : Tooltip(message: widget.item.label, child: pill),
+      child: Semantics(
+        // The pill is icon-only on narrow screens (Tooltip shows the label on
+        // hover, but Tooltip isn't announced by screen readers). Announce it
+        // as a button with the nav label + selected state so keyboard / AT
+        // users can navigate the top nav.
+        button: true,
+        selected: widget.selected,
+        label: widget.item.label,
+        hint: widget.selected
+            ? 'Currently on ${widget.item.label} tab'
+            : 'Switch to ${widget.item.label} tab',
+        excludeSemantics: true,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: widget.showLabel
+              ? pill
+              : Tooltip(message: widget.item.label, child: pill),
+        ),
       ),
     );
   }
@@ -705,6 +718,7 @@ class _WalletChip extends StatelessWidget {
             icon: Icons.logout_rounded,
             color: t.textSubtle,
             onTap: wallet.signOut,
+            semanticLabel: 'Sign out',
           ),
         ],
       ),
@@ -772,25 +786,30 @@ class _ThemeToggleState extends State<_ThemeToggle> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: widget.onToggle,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: _hovered ? t.surface : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: _hovered ? t.border : Colors.transparent),
-          ),
-          child: Center(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: Picon(
-                key: ValueKey(widget.isDark),
-                widget.isDark ? Picons.sun : Picons.moon,
-                size: 18,
-                color: t.textMuted,
+      child: Semantics(
+        button: true,
+        label: widget.isDark ? 'Switch to light theme' : 'Switch to dark theme',
+        excludeSemantics: true,
+        child: GestureDetector(
+          onTap: widget.onToggle,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: _hovered ? t.surface : Colors.transparent,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: _hovered ? t.border : Colors.transparent),
+            ),
+            child: Center(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: Picon(
+                  key: ValueKey(widget.isDark),
+                  widget.isDark ? Picons.sun : Picons.moon,
+                  size: 18,
+                  color: t.textMuted,
+                ),
               ),
             ),
           ),
@@ -801,10 +820,16 @@ class _ThemeToggleState extends State<_ThemeToggle> {
 }
 
 class _IconBtn extends StatefulWidget {
-  const _IconBtn({required this.icon, required this.color, required this.onTap});
+  const _IconBtn({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    this.semanticLabel,
+  });
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
+  final String? semanticLabel;
 
   @override
   State<_IconBtn> createState() => _IconBtnState();
@@ -815,21 +840,31 @@ class _IconBtnState extends State<_IconBtn> {
 
   @override
   Widget build(BuildContext context) {
+    final label = widget.semanticLabel;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Container(
-          width: 26,
-          height: 26,
-          decoration: BoxDecoration(
-            color: _hovered ? context.puls.surfaceRaised : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(
-            child: Icon(widget.icon, size: 14, color: widget.color),
+      child: Semantics(
+        // An icon-only button without a label is announced by screen readers
+        // as a bare "button" with no context. The sign-out button (logout
+        // icon) is the critical one — without this label, an AT user can't
+        // tell what it does.
+        button: true,
+        label: label,
+        excludeSemantics: label == null,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              color: _hovered ? context.puls.surfaceRaised : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Icon(widget.icon, size: 14, color: widget.color),
+            ),
           ),
         ),
       ),
@@ -883,36 +918,42 @@ class _TerminalToggleState extends State<_TerminalToggle> {
     final t = widget.t;
     return Tooltip(
       message: 'AI Bloomberg Terminal',
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: GestureDetector(
-          onTap: () async {
-            await terminal.loadLibrary();
-            if (!context.mounted) return;
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => terminal.MarketTerminalScreen(),
+      child: Semantics(
+        button: true,
+        label: 'Open AI Bloomberg Terminal',
+        hint: 'Real-time agent trading terminal with live market events.',
+        excludeSemantics: true,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: GestureDetector(
+            onTap: () async {
+              await terminal.loadLibrary();
+              if (!context.mounted) return;
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => terminal.MarketTerminalScreen(),
+                ),
+              );
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: _hovered ? t.brand.withValues(alpha: 0.12) : Colors.transparent,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: _hovered ? t.brand.withValues(alpha: 0.4) : Colors.transparent,
+                ),
               ),
-            );
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: _hovered ? t.brand.withValues(alpha: 0.12) : Colors.transparent,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(
-                color: _hovered ? t.brand.withValues(alpha: 0.4) : Colors.transparent,
-              ),
-            ),
-            child: Center(
-              child: Icon(
-                Icons.terminal_rounded,
-                size: 18,
-                color: _hovered ? t.brand : t.textMuted,
+              child: Center(
+                child: Icon(
+                  Icons.terminal_rounded,
+                  size: 18,
+                  color: _hovered ? t.brand : t.textMuted,
+                ),
               ),
             ),
           ),

@@ -188,49 +188,63 @@ class _NavCellState extends State<_NavCell> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _scale = 0.92),
-        onTapUp: (_) => setState(() => _scale = 1.0),
-        onTapCancel: () => setState(() => _scale = 1.0),
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _scale,
-          duration: const Duration(milliseconds: 100),
-          curve: Curves.easeOutCubic,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedScale(
-                scale: selected ? 1.12 : 1.0,
-                duration: colorDuration,
-                curve: Curves.easeOutBack,
-                child: widget.item.isBrowse
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Picon(widget.item.icon, size: 20, color: iconColor),
-                          const SizedBox(width: 2),
-                          Icon(Icons.keyboard_arrow_down_rounded, size: 13, color: iconColor),
-                        ],
-                      )
-                    : Picon(
-                        widget.item.icon,
-                        size: 20,
-                        color: iconColor,
-                      ),
-              ),
-              const SizedBox(height: 2),
-              AnimatedDefaultTextStyle(
-                duration: colorDuration,
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
-                  color: labelColor,
+      child: Semantics(
+        // Announce the tab as a button with its label + selected state, so
+        // screen-reader users get the same context sighted users get from
+        // the gradient pill (which is purely visual — without this, the
+        // icon-only cell on wide screens would be announced as a bare icon
+        // with no label, leaving the user unable to navigate by tab).
+        button: true,
+        selected: selected,
+        label: widget.item.label,
+        hint: selected
+            ? 'Currently on ${widget.item.label} tab'
+            : 'Switch to ${widget.item.label} tab',
+        excludeSemantics: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (_) => setState(() => _scale = 0.92),
+          onTapUp: (_) => setState(() => _scale = 1.0),
+          onTapCancel: () => setState(() => _scale = 1.0),
+          onTap: widget.onTap,
+          child: AnimatedScale(
+            scale: _scale,
+            duration: const Duration(milliseconds: 100),
+            curve: Curves.easeOutCubic,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedScale(
+                  scale: selected ? 1.12 : 1.0,
+                  duration: colorDuration,
+                  curve: Curves.easeOutBack,
+                  child: widget.item.isBrowse
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Picon(widget.item.icon, size: 20, color: iconColor),
+                            const SizedBox(width: 2),
+                            Icon(Icons.keyboard_arrow_down_rounded, size: 13, color: iconColor),
+                          ],
+                        )
+                      : Picon(
+                          widget.item.icon,
+                          size: 20,
+                          color: iconColor,
+                        ),
                 ),
-                child: Text(widget.item.label),
-              ),
-            ],
+                const SizedBox(height: 2),
+                AnimatedDefaultTextStyle(
+                  duration: colorDuration,
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                    color: labelColor,
+                  ),
+                  child: Text(widget.item.label),
+                ),
+              ],
+            ),
           ),
         ),
       ),
