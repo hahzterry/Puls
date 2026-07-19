@@ -284,7 +284,7 @@ class _Navbar extends StatelessWidget {
           if (!isMobile) ...[
             _SecondaryButton(
               label: 'Terminal',
-              onTap: () => launchUrl(Uri.parse(_pageUrl('/cli')), mode: LaunchMode.externalApplication),
+              onTap: () => appState.dismissWebLanding(terminal: true),
               small: true,
             ),
             const SizedBox(width: 8),
