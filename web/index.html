@@ -74,10 +74,16 @@
   <link rel="apple-touch-icon" sizes="192x192" href="icons/Icon-192.png">
   <link rel="apple-touch-icon" sizes="512x512" href="icons/Icon-512.png">
 
-  <!-- Preconnects -->
+  <!-- Preconnects — warm DNS+TLS for every domain the first paint touches -->
   <link rel="preconnect" href="https://api.pulsmarket.tech">
   <link rel="dns-prefetch" href="https://polymarket-upload.s3.us-east-2.amazonaws.com">
+  <link rel="preconnect" href="https://api.dicebear.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="preload" href="assets/logo.png" as="image">
+
+  <!-- Font preloading — prevents FOUT / layout shift on first paint -->
+  <link rel="preload" as="font" type="font/ttf" href="assets/fonts/PlayfairDisplay-Bold.ttf" crossorigin>
+  <link rel="preload" as="font" type="font/ttf" href="assets/fonts/DMSans-Bold.ttf" crossorigin>
 
   <!-- Google Fonts — Editorial: Playfair Display + DM Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -363,8 +369,11 @@
     });
   </script>
 
-  <!-- WalletConnect JS Bridge for Flutter -->
+  <!-- WalletConnect JS Bridge for Flutter — deferred to post-first-paint -->
   <script>
+    // Defer WalletConnect/CCTP bridge init until after Flutter's first frame
+    // so the UI thread is never blocked during initial load.
+    window._initWalletBridge = function() {
     // Arc Testnet chain config
     const ARC_TESTNET = {
       chainId: 5042002,
@@ -707,6 +716,20 @@
         return JSON.stringify({ error: (e && e.message) ? e.message : 'Bridge failed' });
       }
     };
+    }; // end window._initWalletBridge
+    // Schedule bridge init after first paint + Flutter bootstrap, so it never
+    // blocks the initial WebGL/CanvasKit render.
+    window.addEventListener('flutter-first-frame', function() {
+      setTimeout(window._initWalletBridge, 100);
+    }, { once: true });
+    // Fallback: if flutter-first-frame already fired, init after DOMContentLoaded.
+    if (document.readyState !== 'loading') {
+      setTimeout(window._initWalletBridge, 500);
+    } else {
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(window._initWalletBridge, 500);
+      }, { once: true });
+    }
   </script>
 
   <script src="flutter_bootstrap.js" async></script>

@@ -19,7 +19,7 @@ import '../profile/leaderboard_screen.dart' deferred as leaderboard;
 import '../agent/agent_screen.dart' deferred as agent;
 import '../agent/agent_inbox_widget.dart';
 import '../onboarding/onboarding_sheet.dart';
-import '../market/screens/market_terminal_screen.dart';
+import '../market/screens/market_terminal_screen.dart' deferred as terminal;
 import 'shell_nav.dart';
 
 class WebShell extends StatefulWidget {
@@ -888,10 +888,12 @@ class _TerminalToggleState extends State<_TerminalToggle> {
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
         child: GestureDetector(
-          onTap: () {
+          onTap: () async {
+            await terminal.loadLibrary();
+            if (!context.mounted) return;
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => const MarketTerminalScreen(),
+                builder: (context) => terminal.MarketTerminalScreen(),
               ),
             );
           },

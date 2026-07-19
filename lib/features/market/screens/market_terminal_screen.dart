@@ -300,15 +300,14 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
     final state = PulsAppState.instance;
     if (state != null && state.feedMarkets.isNotEmpty) {
       final realMarkets = state.feedMarkets.take(15).map((m) {
+        final agentPool = ['Vega ⚡', 'Lyra 💠', 'Antigravity 🪐', 'Orion 🛰️', 'Sirius 🌠'];
+        agentPool.shuffle();
         return _Market(
           slug: m.slug,
           question: m.question,
           yesPrice: m.yesPrice,
           volume: m.volumeNum,
-          activeAgents: ['Vega ⚡', 'Lyra 💠', 'Antigravity 🪐', 'Orion 🛰️', 'Sirius 🌠']
-              .toList()
-            ..shuffle()
-            ..take(math.Random().nextInt(3) + 1),
+          activeAgents: agentPool.take(math.Random().nextInt(3) + 1).toList(),
         );
       }).toList();
       if (mounted) setState(() => _terminalMarkets = realMarkets);

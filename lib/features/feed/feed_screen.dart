@@ -36,6 +36,17 @@ import 'prediction_feed_card.dart';
 import 'ticker_strip.dart';
 import '../agent/agent_screen.dart' show agentSubTabRequest;
 
+/// Top-level JSON decoder for compute() — runs in a background isolate on
+/// non-web platforms, freeing the UI thread from per-trade decode overhead.
+/// Returns null on parse failure so the caller can skip gracefully.
+Map<String, dynamic>? _decodeTradeJson(String raw) {
+  try {
+    final decoded = jsonDecode(raw);
+    if (decoded is Map<String, dynamic>) return decoded;
+  } catch (_) {}
+  return null;
+}
+
 class FeedScreen extends StatelessWidget {
   const FeedScreen({super.key});
 
@@ -672,12 +683,16 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
             _pollingTimer?.cancel();
             _pollingTimer = null;
           }
-          try {
-            final Map<String, dynamic> trade = json.decode(event.toString());
-            _processSingleWebSocketTrade(trade);
-          } catch (err) {
+          // Move JSON decode off the UI thread for zero-jank scrolling.
+          // compute() spins up an isolate on non-web; on web it falls back to
+          // a microtask, still freeing the current call stack.
+          final raw = event.toString();
+          if (raw.isEmpty) return;
+          compute(_decodeTradeJson, raw).then((trade) {
+            if (trade != null && mounted) _processSingleWebSocketTrade(trade);
+          }).catchError((err) {
             debugPrint('[Feed WebSocket] parse error: $err');
-          }
+          });
         },
         onError: (err) {
           debugPrint('[Feed WebSocket] stream error: $err. Reconnecting...');
