@@ -151,6 +151,24 @@ class UserProfileDeepLink extends DeepLink {
 
 /// `/pulse`, `/versus`, `/explorer`, `/stats`, `/agent` — named flagship routes
 /// that map to a specific Flutter screen. Each is independently shareable.
+///
+/// NOTE: On `pulsmarket.tech` (the landing host), these five exact routes are
+/// served by **static HTML** at the Vercel hosting layer — see `vercel.json`
+/// rewrites (`/agent` → `/agent.html`, etc.) and `web/{agent,pulse,versus,
+/// explorer,stats}.html`. Vercel intercepts the request before Flutter even
+/// loads, so this class is NOT reachable for the bare `/agent`, `/pulse`,
+/// `/versus`, `/explorer`, `/stats` paths on `pulsmarket.tech`.
+///
+/// It IS still reachable:
+/// - On `app.pulsmarket.tech` (the app host), where the full app shell is the
+///   right experience — no static HTML equivalent there.
+/// - For `/agent/<id>` (via [AgentTraceDeepLink], NOT [NamedRouteDeepLink]),
+///   which the static `/agent.html` doesn't handle (it's a demo trace, not
+///   a per-agent view).
+///
+/// Keeping this class (rather than deleting it) means the Flutter deep-link
+/// parser stays complete — it handles every route the app knows about, whether
+/// or not the hosting layer intercepts a given path first.
 class NamedRouteDeepLink extends DeepLink {
   const NamedRouteDeepLink._(this.name, this.title);
   const NamedRouteDeepLink.agent() : this._('agent', 'Agent — Puls');
@@ -365,9 +383,15 @@ class _NamedRouteScreenState extends State<_NamedRouteScreen> {
 /// with a lightweight header bar (logo + back to landing).
 ///
 /// Used as the MaterialApp's `home:` widget when the landing host has a pending
-/// deep link (e.g. pulsmarket.tech/agent, /pulse, /versus, /explorer,
-/// /m/<slug>, /u/<handle>). On the app host (app.pulsmarket.tech), the existing
-/// deep-link mechanism (PulsShell → _maybeOpenDeepLink → push) is untouched.
+/// deep link (e.g. pulsmarket.tech/m/<slug>, /u/<handle>, /agent/<id>). On the
+/// app host (app.pulsmarket.tech), the existing deep-link mechanism
+/// (PulsShell → _maybeOpenDeepLink → push) is untouched.
+///
+/// NOTE: the five bare named routes (`/agent`, `/pulse`, `/versus`, `/explorer`,
+/// `/stats`) are served by **static HTML** at the Vercel hosting layer and
+/// never reach Flutter — see [NamedRouteDeepLink] for details. This widget is
+/// the fallback for ID-based routes (`/m/<slug>`, `/u/<handle>`, `/agent/<id>`)
+/// that the static HTML files don't handle.
 ///
 /// For [NamedRouteDeepLink], the content is wrapped in [_NamedRouteScreen] with
 /// `isStandalone: true` so it gets the lightweight header bar. For other deep
