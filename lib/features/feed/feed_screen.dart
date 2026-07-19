@@ -49,7 +49,9 @@ Map<String, dynamic>? _decodeTradeJson(String raw) {
 }
 
 class FeedScreen extends StatelessWidget {
-  const FeedScreen({super.key});
+  const FeedScreen({this.isDemoMode = false, super.key});
+  
+  final bool isDemoMode;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +64,7 @@ class FeedScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            _FeedHeader(t: t),
+            _FeedHeader(t: t, isDemoMode: isDemoMode),
             _PulseLine(color: t.brand),
             const SizedBox(height: 8),
             const Padding(
@@ -84,7 +86,7 @@ class FeedScreen extends StatelessWidget {
         bottom: false,
         child: Column(
           children: [
-            _FeedHeader(t: t),
+            _FeedHeader(t: t, isDemoMode: isDemoMode),
             _PulseLine(color: t.brand),
             Expanded(child: _FeedBody(appState: appState, t: t)),
           ],
@@ -260,8 +262,9 @@ class _FeedBody extends StatelessWidget {
 }
 
 class _FeedHeader extends StatelessWidget {
-  const _FeedHeader({required this.t});
+  const _FeedHeader({required this.t, this.isDemoMode = false});
   final PulsThemeColors t;
+  final bool isDemoMode;
 
   @override
   Widget build(BuildContext context) {
@@ -313,48 +316,50 @@ class _FeedHeader extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          const HelpButton(tab: PulsTab.feed),
-          const SizedBox(width: 8),
-          TextButton.icon(
-            onPressed: () {
-              buildPulsTour(
-                feedKey: tourFeedKey,
-                discoverKey: tourDiscoverKey,
-                homeKey: tourHomeKey,
-                portfolioKey: tourPortfolioKey,
-                creatorsKey: tourCreatorsKey,
-                agentKey: tourAgentKey,
-                profileKey: tourProfileKey,
-              ).start(context);
-            },
-            icon: Icon(Icons.help_outline_rounded, size: 16, color: t.brand),
-            label: Text('Take Tour',
-                style: TextStyle(
-                    color: t.brand,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600)),
-          ),
-          const SizedBox(width: 8),
-          TextButton.icon(
-            onPressed: () {
-              final appState = PulsStateScope.of(context);
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => SwipeDiscoveryScreen(
-                        markets: appState.markets,
-                        onSwipeYes: (m) => showTradePreviewSheet(
-                            context: context, market: m, side: MarketSide.yes),
-                        onSwipeNo: (m) => showTradePreviewSheet(
-                            context: context, market: m, side: MarketSide.no),
-                      )));
-            },
-            icon: Icon(Icons.swipe_rounded, size: 16, color: t.brand),
-            label: Text('Swipe Mode',
-                style: TextStyle(
-                    color: t.brand,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600)),
-          ),
-          const SizedBox(width: 8),
+          if (!isDemoMode) ...[
+            const HelpButton(tab: PulsTab.feed),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              onPressed: () {
+                buildPulsTour(
+                  feedKey: tourFeedKey,
+                  discoverKey: tourDiscoverKey,
+                  homeKey: tourHomeKey,
+                  portfolioKey: tourPortfolioKey,
+                  creatorsKey: tourCreatorsKey,
+                  agentKey: tourAgentKey,
+                  profileKey: tourProfileKey,
+                ).start(context);
+              },
+              icon: Icon(Icons.help_outline_rounded, size: 16, color: t.brand),
+              label: Text('Take Tour',
+                  style: TextStyle(
+                      color: t.brand,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600)),
+            ),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              onPressed: () {
+                final appState = PulsStateScope.of(context);
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => SwipeDiscoveryScreen(
+                          markets: appState.markets,
+                          onSwipeYes: (m) => showTradePreviewSheet(
+                              context: context, market: m, side: MarketSide.yes),
+                          onSwipeNo: (m) => showTradePreviewSheet(
+                              context: context, market: m, side: MarketSide.no),
+                        )));
+              },
+              icon: Icon(Icons.swipe_rounded, size: 16, color: t.brand),
+              label: Text('Swipe Mode',
+                  style: TextStyle(
+                      color: t.brand,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600)),
+            ),
+            const SizedBox(width: 8),
+          ],
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(

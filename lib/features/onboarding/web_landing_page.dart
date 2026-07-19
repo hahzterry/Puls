@@ -355,21 +355,49 @@ class _NavDropdownState extends State<_NavDropdown> {
     final t = context.puls;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
+      onEnter: (_) {
+        setState(() => _hovered = true);
+        if (!_controller.isOpen) _controller.open();
+      },
+      onExit: (_) {
+        setState(() => _hovered = false);
+        if (_controller.isOpen) _controller.close();
+      },
       child: MenuAnchor(
         controller: _controller,
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(t.surface),
+          elevation: const WidgetStatePropertyAll(12),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: t.border.withValues(alpha: 0.5)),
+            ),
+          ),
+          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 8)),
+        ),
         menuChildren: widget.items.map((item) {
           return MenuItemButton(
             onPressed: () => launchUrl(Uri.parse(item.$2), mode: LaunchMode.externalApplication),
-            child: Text(item.$1, style: TextStyle(color: t.text, fontSize: 13)),
+            style: ButtonStyle(
+              padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+              overlayColor: WidgetStatePropertyAll(t.brandSubtle.withValues(alpha: 0.5)),
+            ),
+            child: Text(
+              item.$1,
+              style: TextStyle(
+                color: t.text,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           );
         }).toList(),
         builder: (context, controller, child) {
           return GestureDetector(
             onTap: () => controller.isOpen ? controller.close() : controller.open(),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -377,14 +405,14 @@ class _NavDropdownState extends State<_NavDropdown> {
                     widget.label,
                     style: TextStyle(
                       color: _hovered || controller.isOpen ? t.brand : t.textMuted,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 4),
                   Icon(
                     Icons.keyboard_arrow_down_rounded,
-                    size: 16,
+                    size: 18,
                     color: _hovered || controller.isOpen ? t.brand : t.textMuted,
                   ),
                 ],

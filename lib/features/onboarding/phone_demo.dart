@@ -19,10 +19,23 @@ class PhoneDemoSection extends StatelessWidget {
 
     final copy = _Copy(isMobile: isMobile);
     final phone = Center(
-      child: liveAppPreview(
-        screen: const FeedScreen(),
+      child: Container(
         width: 390,
         height: 800,
+        decoration: BoxDecoration(
+          color: t.bg,
+          borderRadius: BorderRadius.circular(40),
+          border: Border.all(color: t.border.withValues(alpha: 0.5), width: 8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 40,
+              offset: const Offset(0, 20),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: const FeedScreen(isDemoMode: true),
       ),
     );
 
