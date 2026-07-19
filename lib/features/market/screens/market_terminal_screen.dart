@@ -16,6 +16,18 @@ import '../../agent/widgets/decision_log_panel.dart';
 import '../../agent/widgets/swarm_visualizer.dart';
 import '../../../app/puls_app_state.dart';
 import '../widgets/terminal_event_binder.dart';
+import '../widgets/live_trade_tape.dart';
+import '../widgets/market_depth_chart.dart';
+import '../widgets/battle_scoreboard.dart';
+import '../widgets/pnl_chart.dart';
+import '../widgets/x402_flow_tracker.dart';
+import '../widgets/resolution_timeline.dart';
+import '../widgets/agent_strategy_cards.dart';
+import '../widgets/agent_heatmap.dart';
+import '../widgets/bond_slash_feed.dart';
+import '../widgets/arbitrage_scanner.dart';
+import '../widgets/command_bar.dart';
+import '../widgets/onchain_inspector.dart';
 
 /// Cyberpunk high-tech grid background with neon color blobs
 class _TerminalGridBackground extends StatefulWidget {
@@ -240,6 +252,7 @@ class MarketTerminalScreen extends StatefulWidget {
 
 class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
   int _selectedMarketIdx = 0;
+  int _tab = 0; // 0=Overview, 1=Live, 2=Analytics, 3=Markets, 4=Agents
   List<_AgentInfo> _agents = [];
   bool _loadingAgents = true;
   List<_Market> _terminalMarkets = [];
@@ -550,11 +563,80 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: GlassCard(
-              padding: const EdgeInsets.all(20),
-              child: _terminalMarkets.isEmpty ? const SizedBox.shrink() : _SwarmAnalyticsPanel(
-                market: _terminalMarkets[_selectedMarketIdx],
-                agents: _agents,
-                loading: _loadingAgents,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // ── Tab bar ──────────────────────────────────────
+                  Row(
+                    children: [
+                      _TabBtn('OVERVIEW', _tab == 0, () => setState(() => _tab = 0)),
+                      const SizedBox(width: 6),
+                      _TabBtn('LIVE', _tab == 1, () => setState(() => _tab = 1)),
+                      const SizedBox(width: 6),
+                      _TabBtn('ANALYTICS', _tab == 2, () => setState(() => _tab = 2)),
+                      const SizedBox(width: 6),
+                      _TabBtn('MARKETS', _tab == 3, () => setState(() => _tab = 3)),
+                      const SizedBox(width: 6),
+                      _TabBtn('AGENTS', _tab == 4, () => setState(() => _tab = 4)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // ── Tab content ───────────────────────────────────
+                  Expanded(
+                    child: switch (_tab) {
+                      0 => _terminalMarkets.isEmpty
+                          ? const SizedBox.shrink()
+                          : _SwarmAnalyticsPanel(
+                              market: _terminalMarkets[_selectedMarketIdx],
+                              agents: _agents,
+                              loading: _loadingAgents,
+                            ),
+                      1 => Column(
+                          children: [
+                            const Expanded(flex: 3, child: LiveTradeTape()),
+                            const SizedBox(height: 8),
+                            const Expanded(flex: 2, child: OnchainInspector()),
+                          ],
+                        ),
+                      2 => Column(
+                          children: [
+                            const Expanded(flex: 2, child: BattleScoreboard()),
+                            const SizedBox(height: 8),
+                            const Expanded(flex: 3, child: PnlChart()),
+                            const SizedBox(height: 8),
+                            const Expanded(flex: 2, child: AgentHeatmap()),
+                          ],
+                        ),
+                      3 => Column(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: _terminalMarkets.isEmpty
+                                  ? const Center(child: Text('Select a market', style: TextStyle(color: Color(0xFF5E6A85))))
+                                  : MarketDepthChart(
+                                      yesPrice: _terminalMarkets[_selectedMarketIdx].yesPrice,
+                                    ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Expanded(flex: 2, child: ArbitrageScanner()),
+                            const SizedBox(height: 8),
+                            const Expanded(flex: 2, child: ResolutionTimeline()),
+                          ],
+                        ),
+                      _ => Column(
+                          children: [
+                            const Expanded(flex: 2, child: X40FlowTracker()),
+                            const SizedBox(height: 8),
+                            const Expanded(flex: 2, child: BondSlashFeed()),
+                            const SizedBox(height: 8),
+                            const Expanded(flex: 3, child: AgentStrategyCards()),
+                            const SizedBox(height: 8),
+                            const CommandBar(),
+                          ],
+                        ),
+                    },
+                  ),
+                ],
               ),
             ),
           ),
