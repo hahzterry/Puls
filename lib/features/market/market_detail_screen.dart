@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/utils/web_url.dart';
 import '../../core/motion.dart';
 import '../../core/widgets/puls_loader.dart';
 import '../../core/widgets/state_views.dart';

@@ -207,7 +207,6 @@ class _Navbar extends StatelessWidget {
     final isDark = context.isDark;
     final w = MediaQuery.sizeOf(context).width;
     final isMobile = w < 800;
-    final isWide = w >= 1024;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 48, vertical: isMobile ? 12 : 18),
@@ -239,27 +238,34 @@ class _Navbar extends StatelessWidget {
           ),
           const Spacer(),
           if (!isMobile) ...[
-            // Flagship agentic showcase — front and centre for judges.
-            _NavLink('Pulse', _pageUrl('/pulse')),
+            // ── Product dropdown ─────────────────────────────────────
+            _NavDropdown(
+              label: 'Product',
+              items: [
+                ('Pulse', _pageUrl('/pulse')),
+                ('Agent', _pageUrl('/agent')),
+                ('Versus', _pageUrl('/versus')),
+                ('Explorer', _pageUrl('/explorer')),
+              ],
+            ),
+            const SizedBox(width: 4),
+            // ── Developers dropdown ───────────────────────────────────
+            _NavDropdown(
+              label: 'Developers',
+              items: [
+                ('Docs', 'https://docs.pulsmarket.tech'),
+                ('CLI', _pageUrl('/cli')),
+                ('Build', _pageUrl('/build')),
+                ('GitHub', 'https://github.com/rdmbtc/Puls'),
+              ],
+            ),
             const SizedBox(width: 8),
-            _NavLink('Agent', _pageUrl('/agent')),
-            const SizedBox(width: 8),
-            _NavLink('Versus', _pageUrl('/versus')),
-            const SizedBox(width: 8),
-            _NavLink('CLI', _pageUrl('/cli')),
-            const SizedBox(width: 8),
-            _NavLink('Android', _pageUrl('/mobile-download')),
-            const SizedBox(width: 8),
-            const _NavLink('Docs', 'https://docs.pulsmarket.tech'),
-            // Utility links only when there's room — keeps mid-width tidy.
-            if (isWide) ...[
-              const SizedBox(width: 8),
-              _NavLink('Build', _pageUrl('/build')),
-              const SizedBox(width: 8),
-              _NavLink('Explorer', _pageUrl('/explorer')),
-              const SizedBox(width: 8),
-              const _NavLink('GitHub', 'https://github.com/rdmbtc/Puls'),
-            ],
+            // Android as a small icon-button (distribution channel, not primary nav)
+            _NavIcon(
+              icon: Icons.android_rounded,
+              url: _pageUrl('/mobile-download'),
+              tooltip: 'Download for Android',
+            ),
             const SizedBox(width: 16),
           ] else
             const _MobileNavMenu(),
@@ -322,6 +328,106 @@ class _NavLinkState extends State<_NavLink> {
               color: _hovered ? t.brand : t.textMuted,
               fontSize: 14,
               fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A dropdown nav item: shows [label] with a chevron, expands a menu of links on hover/tap.
+class _NavDropdown extends StatefulWidget {
+  const _NavDropdown({required this.label, required this.items});
+  final String label;
+  final List<(String, String)> items;
+
+  @override
+  State<_NavDropdown> createState() => _NavDropdownState();
+}
+
+class _NavDropdownState extends State<_NavDropdown> {
+  final _controller = MenuController();
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: MenuAnchor(
+        controller: _controller,
+        menuChildren: widget.items.map((item) {
+          return MenuItemButton(
+            onPressed: () => launchUrl(Uri.parse(item.$2), mode: LaunchMode.externalApplication),
+            child: Text(item.$1, style: TextStyle(color: t.text, fontSize: 13)),
+          );
+        }).toList(),
+        builder: (context, controller, child) {
+          return GestureDetector(
+            onTap: () => controller.isOpen ? controller.close() : controller.open(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.label,
+                    style: TextStyle(
+                      color: _hovered || controller.isOpen ? t.brand : t.textMuted,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                    color: _hovered || controller.isOpen ? t.brand : t.textMuted,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// A small icon-only nav button (used for the Android download link).
+class _NavIcon extends StatefulWidget {
+  const _NavIcon({required this.icon, required this.url, required this.tooltip});
+  final IconData icon;
+  final String url;
+  final String tooltip;
+
+  @override
+  State<_NavIcon> createState() => _NavIconState();
+}
+
+class _NavIconState extends State<_NavIcon> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return Tooltip(
+      message: widget.tooltip,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: GestureDetector(
+          onTap: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            child: Icon(
+              widget.icon,
+              size: 18,
+              color: _hovered ? t.brand : t.textMuted,
             ),
           ),
         ),
@@ -443,14 +549,16 @@ class _HeroSectionState extends State<_HeroSection> {
               ),
             ),
           ),
-          // Scroll cue (fades out as the hero scrolls away)
+          // Scroll cue — pinned to the very bottom, below the trust strip.
+          // Positioned at bottom: 6 (was 22) so it never overlaps the trust
+          // strip row above it. Fades out as the hero scrolls away.
           Positioned(
-            bottom: 22,
+            bottom: 6,
             left: 0,
             right: 0,
             child: IgnorePointer(
               child: Opacity(
-                opacity: heroOpacity,
+                opacity: heroOpacity * 0.7,
                 child: const Center(child: _ScrollCue()),
               ),
             ),

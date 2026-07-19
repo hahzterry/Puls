@@ -192,7 +192,14 @@ class _PipelineTrackerState extends State<_PipelineTracker>
 final ValueNotifier<int> agentSubTabRequest = ValueNotifier<int>(0);
 
 class AgentScreen extends StatefulWidget {
-  const AgentScreen({super.key});
+  const AgentScreen({super.key, this.initialAgentId});
+
+  /// Optional agent ID for deep-linking via `/agent/<id>`. When set, the
+  /// screen can pre-select / focus that specific agent rather than the
+  /// current user's own agent. Currently stored but not yet wired into the
+  /// chat fetch flow (which uses the user's session); a dedicated per-agent
+  /// decision-trace view can read this on mount.
+  final String? initialAgentId;
 
   @override
   State<AgentScreen> createState() => _AgentScreenState();

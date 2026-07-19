@@ -9,14 +9,9 @@
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/disclaimer", "destination": "/disclaimer.html" },
     { "source": "/about", "destination": "/about.html" },
-    { "source": "/stats", "destination": "/stats.html" },
-    { "source": "/agent", "destination": "/agent.html" },
-    { "source": "/pulse", "destination": "/pulse.html" },
-    { "source": "/versus", "destination": "/versus.html" },
     { "source": "/build", "destination": "/build.html" },
     { "source": "/cli", "destination": "/cli.html" },
     { "source": "/mobile-download", "destination": "/mobile-download.html" },
-    { "source": "/explorer", "destination": "/explorer.html" },
     { "source": "/((?!api/|_vercel/).*)", "destination": "/index.html" }
   ],
   "headers": [

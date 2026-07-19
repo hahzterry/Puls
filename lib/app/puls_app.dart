@@ -5,12 +5,12 @@ import '../core/theme/app_theme.dart';
 import '../core/utils/puls_emoji.dart';
 import '../core/widgets/puls_page_route.dart';
 import '../data/mock/mock_market_repository.dart';
-import '../features/market/market_detail_screen.dart' deferred as market_detail;
 import '../features/market/screens/market_terminal_screen.dart'
     deferred as terminal;
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/shell/puls_shell.dart';
 import '../features/wallet/wallet_service.dart';
+import 'deep_link.dart';
 import 'puls_app_state.dart';
 
 class PulsApp extends StatefulWidget {
@@ -25,10 +25,12 @@ class _PulsAppState extends State<PulsApp> {
   final _walletService = WalletService();
   final _navigatorKey = GlobalKey<NavigatorState>();
 
-  /// Slug from a share deep link (https://pulsmarket.tech/m/<slug> redirects
-  /// to /?m=<slug>). Held until the shell + market feed are ready, then the
-  /// market detail screen is pushed once.
-  String? _pendingDeepLinkSlug;
+  /// Deep link parsed from an inbound URL (e.g. `https://app.pulsmarket.tech/m/<slug>`
+  /// or `/agent/<id>` or `/u/<handle>` or one of the named routes `/pulse`,
+  /// `/versus`, `/explorer`, `/stats`, `/agent`). Held until the shell is ready,
+  /// then the corresponding screen is pushed once. See [DeepLink] for the full
+  /// list of supported routes.
+  DeepLink? _pendingDeepLink;
   bool _deepLinkOpening = false;
 
   // ── Granular reactivity (replaces Listenable.merge at the root) ────────
@@ -46,7 +48,7 @@ class _PulsAppState extends State<PulsApp> {
   void initState() {
     super.initState();
     _state = PulsAppState(mockRepo: MockMarketRepository());
-    _pendingDeepLinkSlug = _parseDeepLinkSlug(Uri.base);
+    _pendingDeepLink = DeepLink.parse(Uri.base);
     _themeMode = ValueNotifier<ThemeMode>(_state.themeMode);
     _shellVisible = ValueNotifier<bool>(_computeShellVisible());
     // Lightweight listeners — only notify when the derived value actually
@@ -84,40 +86,44 @@ class _PulsAppState extends State<PulsApp> {
     final isLandingHost = kIsWeb &&
         (Uri.base.host == 'pulsmarket.tech' ||
             Uri.base.host == 'www.pulsmarket.tech');
-    return _pendingDeepLinkSlug != null ||
+    return _pendingDeepLink != null ||
         (!isLandingHost &&
             (_state.onboardingComplete ||
                 _walletService.state.userId != null));
   }
 
-  static String? _parseDeepLinkSlug(Uri uri) {
-    final q = uri.queryParameters['m'];
-    if (q != null && q.trim().isNotEmpty) return q.trim();
-    final segs = uri.pathSegments;
-    if (segs.length >= 2 && segs[0] == 'm' && segs[1].trim().isNotEmpty) {
-      return segs[1].trim();
-    }
-    return null;
-  }
-
   void _maybeOpenDeepLink(bool shellVisible) {
-    final slug = _pendingDeepLinkSlug;
-    if (slug == null || _deepLinkOpening || !shellVisible) return;
-    if (_state.feedStatus == FeedStatus.loading) return;
+    final link = _pendingDeepLink;
+    if (link == null || _deepLinkOpening || !shellVisible) return;
+
+    // Market deep links wait for the feed to finish loading before pushing,
+    // so the user goes straight from feed → detail without seeing a loader on
+    // the detail screen (the existing behaviour from the /m/<slug> deep link).
+    // Other deep links push immediately — their screens handle their own
+    // loading states and don't depend on the feed being ready.
+    if (link is MarketDeepLink) {
+      if (_state.feedStatus == FeedStatus.loading) return;
+    }
+
     _deepLinkOpening = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       () async {
-        final market = await _state.ensureMarketBySlug(slug);
-        _pendingDeepLinkSlug = null;
-        if (market == null) return; // unknown slug — stay on the feed
-        await market_detail.loadLibrary();
-        _navigatorKey.currentState?.push(
-          pulsRoute<void>(
-            _navigatorKey.currentContext,
-            settings: RouteSettings(name: '/m/${market.slug}'),
-            builder: (_) => market_detail.MarketDetailScreen(marketId: market.id),
-          ),
-        );
+        // For market deep links, pre-resolve the slug via the app state so
+        // the detail screen gets a known-loaded market id (and skips its
+        // own loader). For unknown slugs, stay on the feed.
+        if (link is MarketDeepLink) {
+          final market = await _state.ensureMarketBySlug(link.slug);
+          _pendingDeepLink = null;
+          _deepLinkOpening = false;
+          if (market == null) return;
+          if (!mounted) return;
+          await link.open(_navigatorKey);
+          return;
+        }
+        _pendingDeepLink = null;
+        _deepLinkOpening = false;
+        if (!mounted) return;
+        await link.open(_navigatorKey);
       }();
     });
   }
