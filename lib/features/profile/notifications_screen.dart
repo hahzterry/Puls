@@ -6,6 +6,7 @@ import 'package:puls/core/widgets/gradient_text.dart';
 import 'package:puls/core/widgets/state_views.dart';
 import 'package:puls/core/widgets/puls_loader.dart';
 import 'package:puls/app/puls_app.dart';
+import '../shell/web_layout.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -107,9 +108,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ],
       ),
       body: SafeArea(
-        child: RefreshIndicator(
-          color: t.brand,
-          onRefresh: _load,
+        child: WebLayout(
+          maxWidth: 1000,
+          child: RefreshIndicator(
+            color: t.brand,
+            onRefresh: _load,
           child: _loading
               ? const PulsLoader()
               : _error != null
@@ -239,6 +242,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             );
                           },
                         ),
+          ),
         ),
       ),
     );
