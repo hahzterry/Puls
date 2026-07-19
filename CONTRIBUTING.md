@@ -29,5 +29,25 @@ This section guides you through submitting an enhancement suggestion.
 - We follow `eslint` for Node.js code.
 - Commits should follow conventional commits format (e.g. `feat: add new market filter`, `fix: correct wallet state issue`).
 
+## Static public pages (web/)
+
+`web/agent.html`, `pulse.html`, `versus.html`, `explorer.html`, `stats.html`
+are complete, self-contained static pages served directly by Vercel via
+`vercel.json` rewrites (same pattern as `/about`, `/terms`, `/privacy`). They
+are the production experience for those five routes on `pulsmarket.tech` —
+not just SEO scaffolding. Judges, crawlers, and real users all land on them.
+
+Because these pages make their own `fetch()` calls to the backend API inline
+(rather than sharing code with the Flutter app's API client), they need to be
+kept in sync manually when the live data shape changes:
+- New API fields → add inline rendering to the relevant static page if it
+  should display them.
+- Renamed/removed endpoints → update the static page's `fetch()` URL.
+- Response shape changes → update the inline JS that reads the response.
+
+The Flutter `PublicPreviewHost` (in `lib/app/deep_link.dart`) is the
+counterpart for ID-based routes (`/m/:slug`, `/u/:handle`, `/agent/:id`) that
+need per-instance dynamic data the static HTML files don't handle.
+
 ## Questions?
 If you have any questions, feel free to open a Discussion on GitHub.

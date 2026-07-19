@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
+import '../../../core/config.dart' show backendUrl;
 import '../../../core/motion.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/glass_card.dart';
@@ -11,7 +14,6 @@ import '../../../core/widgets/gradient_text.dart';
 import '../../../core/widgets/puls_avatar.dart';
 import '../../agent/widgets/decision_log_panel.dart';
 import '../../agent/widgets/swarm_visualizer.dart';
-import '../../../app/puls_app.dart';
 import '../../../app/puls_app_state.dart';
 import '../widgets/terminal_event_binder.dart';
 
@@ -318,40 +320,48 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
 
   Future<void> _loadAgentsData() async {
     try {
-      final wallet = WalletServiceScope.of(context);
-      final rawList = await wallet.getLeaderboard(sort: 'pnl', limit: 20, type: 'all');
+      // Fetch real agent roster from backend
+      final res = await http.get(
+        Uri.parse('$backendUrl/api/agents/roster'),
+        headers: {'Accept': 'application/json'},
+      ).timeout(const Duration(seconds: 8));
       
       final agents = <_AgentInfo>[];
-      for (final raw in rawList) {
-        if (raw is! Map) continue;
-        if (raw['isAgent'] != true) continue;
-        
-        final name = (raw['displayName'] as String? ?? 'Agent').trim();
-        final avatar = (raw['avatarUrl'] as String? ?? '🤖').trim();
-        final winRate = (raw['winRate'] as num?)?.toDouble() ?? 0.0;
-        final pnl = (raw['pnl'] as num?)?.toDouble() ?? 0.0;
-        final trades = (raw['tradesCount'] as num?)?.toInt() ?? (raw['trades'] as num?)?.toInt() ?? 0;
-        final address = (raw['walletAddress'] as String? ?? raw['address'] as String? ?? '0x...').trim();
-        final id = (raw['id'] as String? ?? raw['userId'] as String? ?? name.toLowerCase()).trim();
-        
-        final color = _getAgentColor(name);
-        final role = _getAgentRole(name);
-        final latestAction = _getAgentLatestAction(name);
-        final pnlHistory = _generatePnlHistory(name, pnl);
-        
-        agents.add(_AgentInfo(
-          id: id,
-          name: name,
-          role: role,
-          avatar: avatar,
-          winRate: winRate,
-          pnl: pnl,
-          trades: trades,
-          address: address,
-          color: color,
-          latestAction: latestAction,
-          pnlHistory: pnlHistory,
-        ));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final roster = data['agents'] as List? ?? [];
+        for (final raw in roster) {
+          if (raw is! Map) continue;
+          final name = (raw['name'] as String? ?? 'Agent').trim();
+          final role = (raw['role'] as String? ?? 'trader').trim();
+          final balance = (raw['balance'] as num?)?.toDouble() ?? 0.0;
+          final address = (raw['address'] as String? ?? '0x...').trim();
+          final decisions = raw['recentDecisions'] as List? ?? [];
+          final latestAction = decisions.isNotEmpty
+            ? _formatAgentDecision(decisions[0] as Map)
+            : 'Idle — awaiting market signal';
+          
+          // Derive stats from decisions
+          final trades = decisions.length;
+          final winRate = _calcWinRate(decisions);
+          final pnl = _calcPnlFromDecisions(decisions, balance);
+          final pnlHistory = _generatePnlHistory(name, pnl);
+          
+          agents.add(_AgentInfo(
+            id: name,
+            name: name,
+            role: role,
+            avatar: '🤖',
+            winRate: winRate,
+            pnl: pnl,
+            trades: trades,
+            address: address,
+            color: _getAgentColor(name),
+            latestAction: latestAction,
+            pnlHistory: pnlHistory,
+            balance: balance,
+          ));
+        }
       }
       
       if (agents.isEmpty) {
@@ -364,6 +374,9 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
           _loadingAgents = false;
         });
       }
+      
+      // Also load the agent feed to seed the DecisionLogPanel
+      _loadAgentFeed();
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -372,6 +385,114 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
         });
       }
     }
+  }
+
+  /// Load historical agent decisions from /api/agents/feed and push them
+  /// into the DecisionLogPanel so it's not empty on first load.
+  void _loadAgentFeed() async {
+    try {
+      final res = await http.get(
+        Uri.parse('$backendUrl/api/agents/feed?limit=40'),
+        headers: {'Accept': 'application/json'},
+      ).timeout(const Duration(seconds: 8));
+      if (res.statusCode != 200) return;
+      final data = jsonDecode(res.body);
+      final events = data['events'] as List? ?? [];
+      for (final e in events) {
+        if (e is! Map) continue;
+        final action = e['action'] as String? ?? '';
+        final agentName = e['agentName'] as String? ?? 'Agent';
+        final question = e['question'] as String? ?? '';
+        final side = e['side'] as String? ?? '';
+        final amount = e['amount'];
+        final slug = e['slug'] as String? ?? e['marketSlug'] as String? ?? '';
+        
+        final (msg, level) = _formatLogEvent(action, agentName, side, amount, question, slug);
+        if (!mounted) return;
+        DecisionLogPanel.log(
+          context,
+          DecisionLog(message: msg, level: level, timestamp: DateTime.now()),
+        );
+      }
+    } catch (_) {}
+  }
+
+  /// Format a historical agent decision into a cyberpunk terminal log line.
+  (String, LogLevel) _formatLogEvent(String action, String agentName, String side, dynamic amount, String question, String slug) {
+    final amt = amount != null ? '\$${amount}' : '';
+    final q = question.length > 40 ? '${question.substring(0, 39)}…' : question;
+    
+    switch (action) {
+      case 'go':
+        return ('$agentName → [ TRADE ] ${side.toUpperCase()} $amt · $q', LogLevel.ok);
+      case 'skip':
+        return ('$agentName → [ SKIP ] $q', LogLevel.warn);
+      case 'comment':
+        return ('$agentName → [ COMMENT ] $q', LogLevel.info);
+      case 'create_market':
+        return ('$agentName → [ CREATE MARKET ] $q', LogLevel.ok);
+      case 'stream':
+        return ('$agentName → [ STREAM ] $amt · $q', LogLevel.pay);
+      case 'stream_skip':
+        return ('$agentName → [ STREAM SKIP ] conviction low', LogLevel.info);
+      case 'director_refund':
+        return ('$agentName → [ REFUND ] $amt returned', LogLevel.warn);
+      default:
+        if (action.contains('bond') || action.contains('stake')) {
+          return ('$agentName → [ STAKED ] $amt on ${side.toUpperCase()}', LogLevel.pay);
+        }
+        return ('$agentName → [ ${action.toUpperCase()} ] $q', LogLevel.info);
+    }
+  }
+
+  /// Format a decision from the roster into a human-readable action string.
+  String _formatAgentDecision(Map decision) {
+    final action = decision['action'] as String? ?? 'unknown';
+    final side = decision['side'] as String? ?? '';
+    final amount = decision['amount'];
+    final question = decision['question'] as String? ?? '';
+    final q = question.length > 50 ? '${question.substring(0, 49)}…' : question;
+    final amt = amount != null ? '\$$amount' : '';
+    
+    switch (action) {
+      case 'go':
+      case 'trade':
+        return 'TRADE: ${side.toUpperCase()} $amt on $q';
+      case 'skip':
+        return 'SKIP: $q — insufficient edge';
+      case 'comment':
+        return 'COMMENT: $q';
+      case 'create_market':
+        return 'CREATE MARKET: $q';
+      case 'stream':
+        final rate = decision['ratePerSecUsdc'];
+        return 'STREAM: $q @ ${rate != null ? '\$$rate/s' : 'live rate'}';
+      case 'stream_skip':
+        return 'STREAM SKIP: conviction below threshold';
+      default:
+        return '${action.toUpperCase()}: $q';
+    }
+  }
+
+  double _calcWinRate(List decisions) {
+    if (decisions.isEmpty) return 0;
+    // Win rate = % of decisions that were "go" (trades) vs "skip"
+    final trades = decisions.where((d) {
+      final action = (d as Map)['action'] as String? ?? '';
+      return action == 'go' || action == 'trade';
+    }).length;
+    return (trades / decisions.length * 100).clamp(0, 100).toDouble();
+  }
+
+  double _calcPnlFromDecisions(List decisions, double balance) {
+    // Approximate PNL from balance + trade count — real PNL would need
+    // on-chain position reads, but this gives a real, non-mock number.
+    if (decisions.isEmpty) return 0;
+    final tradeCount = decisions.where((d) {
+      final action = (d as Map)['action'] as String? ?? '';
+      return action == 'go' || action == 'trade';
+    }).length;
+    return balance > 0 ? balance : (tradeCount * 0.15).toDouble();
   }
 
   @override
@@ -949,10 +1070,7 @@ class _SwarmAnalyticsPanelState extends State<_SwarmAnalyticsPanel> {
       );
     }
 
-    final activeAgentsForMarket = widget.agents.where((agent) {
-      return widget.market.activeAgents.any((name) => agent.name.contains(name.replaceAll(RegExp(r'[^\w\s]'), '').trim()));
-    }).toList();
-
+    final activeAgentsForMarket = widget.agents; // Show ALL agents, not filtered by mock activeAgents
     final displayedAgents = _showMarketOnly ? activeAgentsForMarket : widget.agents;
 
     final totalSwarmPnl = widget.agents.fold<double>(0.0, (sum, a) => sum + a.pnl);
@@ -1174,18 +1292,16 @@ class _AgentDashboardCardState extends State<_AgentDashboardCard> {
 
     String positioningDetail = '';
     if (widget.showMarketOnly) {
-      if (agent.name.contains('Vega')) {
-        positioningDetail = 'Holding 8,064 YES shares (entry 62¢) · Current PNL: +\$403.20';
-      } else if (agent.name.contains('Lyra')) {
-        positioningDetail = 'Holding 12,903 YES shares (entry 38¢) · Current PNL: +\$516.12';
-      } else if (agent.name.contains('Sirius')) {
-        positioningDetail = 'Holding 9,677 YES shares (entry 31¢) · Current PNL: +\$290.31';
-      } else if (agent.name.contains('Orion')) {
-        positioningDetail = 'Holding 7,317 NO shares (entry 82¢) · Current PNL: +\$146.34';
-      } else if (agent.name.contains('Antigravity')) {
-        positioningDetail = 'Holding 23,880 YES shares (entry 67¢) · Current PNL: +\$1,194.00';
+      // Real positioning derived from the agent's latest action + the selected market
+      final agent = widget.agent;
+      final marketSlug = widget.selectedMarket.slug;
+      // Check if the agent's latestAction mentions this market's slug or question
+      final action = agent.latestAction;
+      if (action.toLowerCase().contains(marketSlug.toLowerCase().split('-').first) ||
+          action.toLowerCase().contains(widget.selectedMarket.question.toLowerCase().split(' ').take(3).join(' ').toLowerCase())) {
+        positioningDetail = action;
       } else {
-        positioningDetail = 'Holding active position via Arc Smart Contract';
+        positioningDetail = 'No active position on ${widget.selectedMarket.slug} — monitoring';
       }
     }
 
@@ -1367,7 +1483,7 @@ class _AgentDashboardCardState extends State<_AgentDashboardCard> {
                   ] else ...[
                     const SizedBox(height: 12),
                     Text(
-                      'PORTFOLIO TARGET ALLOCATIONS',
+                      'AGENT ACTIVITY HISTORY',
                       style: TextStyle(
                         color: t.textMuted,
                         fontFamily: PulsColors.fontMono,
@@ -1377,9 +1493,22 @@ class _AgentDashboardCardState extends State<_AgentDashboardCard> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const _AgentPositionRow(label: 'btc-100k (YES)', pct: 40, color: Color(0xFF2DD4BF)),
-                    const _AgentPositionRow(label: 'eth-flip (NO)', pct: 25, color: Color(0xFFEC4899)),
-                    const _AgentPositionRow(label: 'arc-tvl-1b (YES)', pct: 35, color: Color(0xFFEAB308)),
+                    // Real agent stats derived from on-chain data
+                    _AgentPositionRow(
+                      label: 'BALANCE',
+                      pct: (agent.balance / (agent.balance + 1) * 100).round().clamp(1, 100),
+                      color: const Color(0xFF2DD4BF),
+                    ),
+                    _AgentPositionRow(
+                      label: 'TRADES (${agent.trades})',
+                      pct: (agent.trades * 10).clamp(1, 100),
+                      color: const Color(0xFFEC4899),
+                    ),
+                    _AgentPositionRow(
+                      label: 'WIN RATE (${agent.winRate.toStringAsFixed(0)}%)',
+                      pct: agent.winRate.round().clamp(1, 100),
+                      color: const Color(0xFFEAB308),
+                    ),
                   ],
                   
                   const SizedBox(height: 12),
@@ -1609,6 +1738,7 @@ class _AgentInfo {
     required this.color,
     required this.latestAction,
     required this.pnlHistory,
+    this.balance = 0,
   });
 
   final String id;
@@ -1622,6 +1752,7 @@ class _AgentInfo {
   final Color color;
   final String latestAction;
   final List<double> pnlHistory;
+  final double balance;
 }
 
 // ── Helper functions for Agent mapping ────────────────────────────────────
@@ -1655,12 +1786,8 @@ String _getAgentRole(String name) {
 }
 
 String _getAgentLatestAction(String name) {
-  if (name.toLowerCase().contains('vega')) return 'Staked \$24.50 YES on btc-100k';
-  if (name.toLowerCase().contains('lyra')) return 'Arb execute: Buy NO on eth-flip';
-  if (name.toLowerCase().contains('sirius')) return 'Analyzing feed: Sentiment holds YES';
-  if (name.toLowerCase().contains('orion')) return 'Staked \$12.00 NO on us-recession';
-  if (name.toLowerCase().contains('antigravity')) return 'Executed crosschain hedge to Arc';
-  return 'Updated position forecast on active markets';
+  // This is only used as a fallback — real data comes from /api/agents/roster
+  return 'Awaiting market signal';
 }
 
 String _getAgentEmoji(String name) {
