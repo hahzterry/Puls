@@ -349,20 +349,34 @@ class _NavDropdown extends StatefulWidget {
 class _NavDropdownState extends State<_NavDropdown> {
   final _controller = MenuController();
   bool _hovered = false;
+  Timer? _closeTimer;
+
+  void _handleEnter() {
+    _closeTimer?.cancel();
+    setState(() => _hovered = true);
+    if (!_controller.isOpen) _controller.open();
+  }
+
+  void _handleExit() {
+    setState(() => _hovered = false);
+    _closeTimer = Timer(const Duration(milliseconds: 200), () {
+      if (_controller.isOpen) _controller.close();
+    });
+  }
+
+  @override
+  void dispose() {
+    _closeTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      onEnter: (_) {
-        setState(() => _hovered = true);
-        if (!_controller.isOpen) _controller.open();
-      },
-      onExit: (_) {
-        setState(() => _hovered = false);
-        if (_controller.isOpen) _controller.close();
-      },
+      onEnter: (_) => _handleEnter(),
+      onExit: (_) => _handleExit(),
       child: MenuAnchor(
         controller: _controller,
         style: MenuStyle(
@@ -377,18 +391,22 @@ class _NavDropdownState extends State<_NavDropdown> {
           padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 8)),
         ),
         menuChildren: widget.items.map((item) {
-          return MenuItemButton(
-            onPressed: () => launchUrl(Uri.parse(item.$2), mode: LaunchMode.externalApplication),
-            style: ButtonStyle(
-              padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
-              overlayColor: WidgetStatePropertyAll(t.brandSubtle.withValues(alpha: 0.5)),
-            ),
-            child: Text(
-              item.$1,
-              style: TextStyle(
-                color: t.text,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+          return MouseRegion(
+            onEnter: (_) => _handleEnter(),
+            onExit: (_) => _handleExit(),
+            child: MenuItemButton(
+              onPressed: () => launchUrl(Uri.parse(item.$2), mode: LaunchMode.externalApplication),
+              style: ButtonStyle(
+                padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+                overlayColor: WidgetStatePropertyAll(t.brandSubtle.withValues(alpha: 0.5)),
+              ),
+              child: Text(
+                item.$1,
+                style: TextStyle(
+                  color: t.text,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           );
