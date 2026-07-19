@@ -366,11 +366,8 @@
     });
   </script>
 
-  <!-- WalletConnect JS Bridge for Flutter — deferred to post-first-paint -->
+  <!-- WalletConnect JS Bridge for Flutter -->
   <script>
-    // Defer WalletConnect/CCTP bridge init until after Flutter's first frame
-    // so the UI thread is never blocked during initial load.
-    window._initWalletBridge = function() {
     // Arc Testnet chain config
     const ARC_TESTNET = {
       chainId: 5042002,
@@ -713,20 +710,6 @@
         return JSON.stringify({ error: (e && e.message) ? e.message : 'Bridge failed' });
       }
     };
-    }; // end window._initWalletBridge
-    // Schedule bridge init after first paint + Flutter bootstrap, so it never
-    // blocks the initial WebGL/CanvasKit render.
-    window.addEventListener('flutter-first-frame', function() {
-      setTimeout(window._initWalletBridge, 100);
-    }, { once: true });
-    // Fallback: if flutter-first-frame already fired, init after DOMContentLoaded.
-    if (document.readyState !== 'loading') {
-      setTimeout(window._initWalletBridge, 500);
-    } else {
-      document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(window._initWalletBridge, 500);
-      }, { once: true });
-    }
   </script>
 
   <script src="flutter_bootstrap.js" async></script>
