@@ -42,6 +42,10 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
   bool _marketLoading = false;
   bool _marketNotFound = false;
   bool _chartsLoaded = false;
+  // Tracks whether the browser URL + OG tags have been synced for the current
+  // market. We only push history.replaceState once per market load — without
+  // this guard, every rebuild would re-push the URL and spam the back stack.
+  bool _metaSynced = false;
 
   @override
   void didChangeDependencies() {
@@ -55,6 +59,7 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
     final appState = PulsStateScope.of(context);
     final market = appState.marketById(widget.marketId);
     if (market != null) {
+      _syncShareMetadata(market);
       PriceHistoryService.fetchForMarket(market).then((h) {
         if (mounted) setState(() { _history = h; _historyLoading = false; });
       });
@@ -63,6 +68,7 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
       appState.ensureMarketBySlug(widget.marketId).then((m) {
         if (!mounted) return;
         if (m != null) {
+          _syncShareMetadata(m);
           PriceHistoryService.fetchForMarket(m).then((h) {
             if (mounted) setState(() { _history = h; _historyLoading = false; });
           });
@@ -72,6 +78,42 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
         }
       });
     }
+  }
+
+  /// Update the browser tab title + OG/Twitter meta tags so a shared link to
+  /// this market shows the market's question + odds as the preview card, not
+  /// the generic Puls logo. Also replaces the URL with the canonical
+  /// `/m/<slug>` form so refresh + share land back on this market.
+  void _syncShareMetadata(Market market) {
+    if (_metaSynced || !kIsWeb) return;
+    _metaSynced = true;
+    final routeName = '/m/${market.slug}';
+    final yesCents = (market.yesPrice * 100).round();
+    final odds = yesCents == 0
+        ? 'new'
+        : '$yesCents% YES / ${100 - yesCents}% NO';
+    final description =
+        '${market.context.isEmpty ? market.question : market.context} '
+        '— $odds · ${market.volume} volume on Puls.';
+    setShareMetadata(ShareMetadata(
+      title: '${market.question} — Puls',
+      ogTitle: '${market.question} — Puls',
+      ogDescription: description,
+      ogImage: market.imageUrl.isNotEmpty ? market.imageUrl : null,
+      ogUrl: 'https://pulsmarket.tech$routeName',
+    ));
+    // Replace (not push) so a refresh keeps the user on this market rather
+    // than stacking a duplicate history entry on top of the inbound URL.
+    replaceUrl(routeName);
+  }
+
+  @override
+  void dispose() {
+    // When leaving the market detail screen, reset the document title + OG
+    // tags to the site defaults so a subsequent share of the home/feed URL
+    // shows the generic Puls card, not the stale per-market one.
+    if (kIsWeb) resetShareMetadata();
+    super.dispose();
   }
 
   @override

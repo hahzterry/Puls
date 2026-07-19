@@ -1,5 +1,7 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import '../../core/utils/web_url.dart';
 import '../../core/widgets/puls_snack.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -51,6 +53,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   List<dynamic> _trades = [];
   String _segment = 'track'; // 'signals' | 'track' | 'discussion'
   final GlobalKey _copyKey = GlobalKey();
+  // Tracks whether the browser URL + OG tags have been synced for this
+  // profile. Synced once after the profile loads.
+  bool _metaSynced = false;
 
   @override
   void initState() {
@@ -122,6 +127,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           _trades = data['trades'] ?? [];
           _isLoading = false;
         });
+        _syncShareMetadata();
       }
     } catch (e) {
       if (mounted) {
@@ -131,6 +137,37 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         });
       }
     }
+  }
+
+  /// Update the browser tab title + OG/Twitter meta tags so a shared link to
+  /// this profile shows the trader's name + stats as the preview card, not
+  /// the generic Puls logo. Also replaces the URL with `/u/<handle>` so a
+  /// refresh lands back on this profile.
+  void _syncShareMetadata() {
+    if (_metaSynced || !kIsWeb) return;
+    _metaSynced = true;
+    final name = _profileDisplayName(_profile, widget.userId);
+    final routeName = '/u/${widget.userId}';
+    final pnl = _stats?['pnl']?.toString();
+    final rank = _stats?['rank']?.toString();
+    final descriptionParts = <String>['Puls trader'];
+    if (pnl != null && pnl.isNotEmpty) descriptionParts.add('PnL: \$$pnl');
+    if (rank != null && rank.isNotEmpty) descriptionParts.add('rank #$rank');
+    final description = descriptionParts.join(' · ');
+    setShareMetadata(ShareMetadata(
+      title: '$name — Puls',
+      ogTitle: '$name on Puls',
+      ogDescription: description,
+      ogUrl: 'https://pulsmarket.tech$routeName',
+    ));
+    replaceUrl(routeName);
+  }
+
+  @override
+  void dispose() {
+    // Reset OG tags to site defaults on leaving the profile screen.
+    if (kIsWeb) resetShareMetadata();
+    super.dispose();
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
 import '../core/utils/puls_emoji.dart';
+import '../core/utils/web_url.dart';
 import '../core/widgets/puls_page_route.dart';
 import '../data/mock/mock_market_repository.dart';
 import '../features/market/screens/market_terminal_screen.dart'
@@ -55,6 +56,7 @@ class _PulsAppState extends State<PulsApp> {
     // flips. This is O(1) per tick vs the old O(widget-tree) rebuild.
     _state.addListener(_onStateChanged);
     _walletService.addListener(_onWalletChanged);
+    _registerPopStateListener();
   }
 
   void _onStateChanged() {
@@ -155,6 +157,27 @@ class _PulsAppState extends State<PulsApp> {
     PulsEmoji.precacheAll(context);
   }
 
+  // Browser back/forward button disposer. Registered once in initState on web
+  // so the back button pops the in-app Navigator (matching what users expect
+  // from a real website). Without this, the browser back button would either
+  // navigate away from the app entirely or do nothing, since Flutter manages
+  // its own Navigator stack by default.
+  VoidCallback? _popStateDisposer;
+
+  void _registerPopStateListener() {
+    if (!kIsWeb) return;
+    _popStateDisposer = onPopState((path) {
+      // If the Navigator can still pop (there are routed screens above the
+      // shell), pop the in-app Navigator — this is the "back goes to the
+      // previous screen" behaviour users expect from a web app.
+      if (_navigatorKey.currentState?.canPop() ?? false) {
+        _navigatorKey.currentState?.pop();
+      }
+      // Otherwise the back button would exit to the previous browser entry,
+      // which is the correct web default — no action needed.
+    });
+  }
+
   @override
   void dispose() {
     _state.removeListener(_onStateChanged);
@@ -162,6 +185,7 @@ class _PulsAppState extends State<PulsApp> {
     _shellVisible.dispose();
     _themeMode.dispose();
     _walletService.dispose();
+    _popStateDisposer?.call();
     super.dispose();
   }
 
