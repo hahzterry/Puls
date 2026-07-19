@@ -250,6 +250,17 @@
   <!-- Vercel Web Analytics + Speed Insights (enable both in the Vercel project dashboard) -->
   <script defer src="/_vercel/insights/script.js"></script>
   <script defer src="/_vercel/speed-insights/script.js"></script>
+
+  <!-- Plausible Analytics — cookieless, privacy-friendly analytics.
+       No tracking cookies are set, so no EU/UK consent banner is required
+       (GDPR Recital 30 + PECR). Custom events from Flutter are sent via
+       window.plausible('event_name', { props: {...} }) — see
+       lib/core/utils/analytics.dart. Replace the data-domain with the real
+       production domain once the Plausible site is provisioned. -->
+  <script defer
+    data-domain="pulsmarket.tech"
+    src="https://plausible.io/js/script.js"
+    events-api="https://plausible.io/api/event"></script>
 </head>
 <body>
   <div class="noise"></div>

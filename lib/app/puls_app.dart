@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
+import '../core/utils/analytics.dart';
 import '../core/utils/puls_emoji.dart';
 import '../core/utils/web_url.dart';
 import '../core/widgets/puls_page_route.dart';
@@ -69,9 +70,21 @@ class _PulsAppState extends State<PulsApp> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _maybeOpenDeepLink(newShell);
         _maybeOpenTerminal(newShell);
+        if (newShell && !_appShellViewedFired) {
+          // Funnel event: the app shell became visible — the user landed on
+          // the product (not the marketing landing). Top of the
+          // landing → sign-in → first trade funnel.
+          _appShellViewedFired = true;
+          trackEvent('app_shell_viewed');
+        }
       });
     }
   }
+
+  // Tracks whether `app_shell_viewed` has fired once this session. Without
+  // this guard, the event would fire every time the shell visibility flipped
+  // (sign-in, onboarding complete, deep-link open), inflating the funnel count.
+  bool _appShellViewedFired = false;
 
   void _onWalletChanged() {
     final newShell = _computeShellVisible();

@@ -9,6 +9,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../app/puls_app.dart';
 import '../../app/puls_app_state.dart';
 import '../../core/config.dart' show backendUrl;
+import '../../core/utils/analytics.dart';
 import '../../core/widgets/puls_page_route.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/agent_pfp.dart';
@@ -99,6 +100,13 @@ class _FeedBody extends StatelessWidget {
   final PulsThemeColors t;
 
   void _openDetails(BuildContext context, Market market) {
+    // Funnel event: feed → market detail. The first half of the
+    // feed → market detail → trade funnel.
+    trackEvent('market_detail_opened', {
+      'source': 'feed',
+      'market_slug': market.slug,
+      'category': market.category,
+    });
     Navigator.of(context).push(
       pulsRoute(context, settings: RouteSettings(name: '/m/${market.slug}'), builder: (_) => MarketDetailScreen(marketId: market.id)),
     );
@@ -1040,6 +1048,13 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
   }
 
   void _openDetails(BuildContext context, Market market) {
+    // Funnel event: feed → market detail. The first half of the
+    // feed → market detail → trade funnel.
+    trackEvent('market_detail_opened', {
+      'source': 'feed',
+      'market_slug': market.slug,
+      'category': market.category,
+    });
     Navigator.of(context).push(
       pulsRoute(context, settings: RouteSettings(name: '/m/${market.slug}'), builder: (_) => MarketDetailScreen(marketId: market.id)),
     );

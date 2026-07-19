@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../core/utils/analytics.dart';
 import '../../core/widgets/puls_snack.dart';
 
 import '../../app/puls_app.dart';
@@ -537,6 +538,15 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                                 Navigator.of(context).pop();
                                 snack.show(
                                     '🎯 Limit order placed to ${_isBuy ? "buy" : "sell"} $sideLabel at \$${_limitPrice.toStringAsFixed(2)}');
+                                // Funnel event: a real limit order was placed.
+                                // (Limit orders don't settle instantly, so we
+                                // track 'placed' rather than 'executed'.)
+                                trackEvent('limit_order_placed', {
+                                  'side': isYes ? 'yes' : 'no',
+                                  'action': _isBuy ? 'buy' : 'sell',
+                                  'target_price': _limitPrice.toStringAsFixed(2),
+                                  'amount_usdc': _amount.toStringAsFixed(2),
+                                });
                               } else {
                                 if (_isBuy) {
                                   result = await walletService.buyPosition(
@@ -570,6 +580,16 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                                   isBuy: _isBuy,
                                   walletService: walletService,
                                 );
+                                // Funnel event: a real on-chain trade executed
+                                // successfully. The bottom of the
+                                // feed → market detail → trade funnel.
+                                trackEvent('trade_executed', {
+                                  'type': 'real',
+                                  'side': isYes ? 'yes' : 'no',
+                                  'action': _isBuy ? 'buy' : 'sell',
+                                  'order_type': _isLimit ? 'limit' : 'market',
+                                  'amount_usdc': _amount.toStringAsFixed(2),
+                                });
                               }
                             } else {
                               // Demo trade
@@ -588,6 +608,15 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                               snack.show(_isBuy
                                   ? 'Added demo ${isYes ? 'Yes' : 'No'} position.'
                                   : 'Sold demo ${isYes ? 'Yes' : 'No'} position.');
+                              // Funnel event: a demo trade executed. Tagged as
+                              // 'demo' so we can separate real USDC trade
+                              // volume from demo-mode trades in the funnel.
+                              trackEvent('trade_executed', {
+                                'type': 'demo',
+                                'side': isYes ? 'yes' : 'no',
+                                'action': _isBuy ? 'buy' : 'sell',
+                                'amount_usdc': _amount.toStringAsFixed(2),
+                              });
                             }
                           } catch (e) {
                             if (context.mounted) {

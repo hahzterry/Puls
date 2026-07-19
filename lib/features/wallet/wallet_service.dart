@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config.dart' show backendUrl;
+import '../../core/utils/analytics.dart';
 import '../../core/utils/kv_store.dart';
 import 'web3_wallet_bridge.dart' as web3;
 const _backendUrl = backendUrl;
@@ -99,6 +100,11 @@ class WalletService extends ChangeNotifier {
 
   Future<void> signInWithGoogle() async {
     _setState(_state.copyWith(isLoading: true, error: null));
+    // Funnel event: a user clicked "Sign in with Google" (the start of the
+    // sign-in flow). Paired with `signed_in` below, this measures the
+    // drop-off between clicking sign-in and actually completing it (users
+    // who close the OAuth popup, deny permissions, etc.).
+    trackEvent('sign_in_started', {'method': 'google'});
     try {
       // On web, redirectTo must be the current app URL (not localhost)
       String? redirectTo;
@@ -162,6 +168,11 @@ class WalletService extends ChangeNotifier {
   void _onSignedIn(User user) {
     final userId = 'supabase_${user.id}';
     _setState(_state.copyWith(userId: userId, isLoading: true));
+    // Funnel event: the user actually completed sign-in (the OAuth round-trip
+    // succeeded and Supabase restored a session). Paired with `sign_in_started`
+    // above, this measures the drop-off between clicking sign-in and completing
+    // it — the most common leak in OAuth flows.
+    trackEvent('signed_in', {'method': 'google'});
     _getOrCreateWallet(userId);
   }
 
