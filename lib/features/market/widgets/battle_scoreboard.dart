@@ -103,7 +103,7 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
     );
   }
 
-  Widget _battleBar(String label, int aiVal, int humanVal, double aiPct, {bool isMoney = false}) {
+  Widget _battleBar(String label, num aiVal, num humanVal, double aiPct, {bool isMoney = false}) {
     final fmt = (v) => isMoney ? '\$${v.toStringAsFixed(0)}' : '$v';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

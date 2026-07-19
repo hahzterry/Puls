@@ -142,7 +142,7 @@ class _DepthPainter extends CustomPainter {
     final yesPath = Path()
       ..moveTo(0, h)
       ..lineTo(0, h * 0.3)
-      ..quadraticTo(midX * 0.3, h * 0.15, midX, h * 0.05 * anim)
+      ..quadraticBezierTo(midX * 0.3, h * 0.15, midX, h * 0.05 * anim)
       ..lineTo(midX, h)
       ..close();
     final yesPaint = Paint()
@@ -157,7 +157,7 @@ class _DepthPainter extends CustomPainter {
     final noPath = Path()
       ..moveTo(midX, h)
       ..lineTo(midX, h * 0.05 * anim)
-      ..quadraticTo(midX + (size.width - midX) * 0.7, h * 0.15, size.width, h * 0.3)
+      ..quadraticBezierTo(midX + (size.width - midX) * 0.7, h * 0.15, size.width, h * 0.3)
       ..lineTo(size.width, h)
       ..close();
     final noPaint = Paint()

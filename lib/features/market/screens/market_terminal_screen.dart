@@ -259,8 +259,6 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
   // Seed logs for the DecisionLogPanel — populated from /api/agents/feed
   // and passed as an initial list so the panel isn't empty.
   List<DecisionLog> _seedLogs = [];
-  bool _loadingAgents = true;
-  List<_Market> _terminalMarkets = [];
 
   static const _fallbackMarkets = [
     _Market(
@@ -588,15 +586,15 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
                   // ── Tab bar ──────────────────────────────────────
                   Row(
                     children: [
-                      _TabBtn('OVERVIEW', _tab == 0, () => setState(() => _tab = 0)),
+                      _TabBtn(label: 'OVERVIEW', active: _tab == 0, onTap: () => setState(() => _tab = 0)),
                       const SizedBox(width: 6),
-                      _TabBtn('LIVE', _tab == 1, () => setState(() => _tab = 1)),
+                      _TabBtn(label: 'LIVE', active: _tab == 1, onTap: () => setState(() => _tab = 1)),
                       const SizedBox(width: 6),
-                      _TabBtn('ANALYTICS', _tab == 2, () => setState(() => _tab = 2)),
+                      _TabBtn(label: 'ANALYTICS', active: _tab == 2, onTap: () => setState(() => _tab = 2)),
                       const SizedBox(width: 6),
-                      _TabBtn('MARKETS', _tab == 3, () => setState(() => _tab = 3)),
+                      _TabBtn(label: 'MARKETS', active: _tab == 3, onTap: () => setState(() => _tab = 3)),
                       const SizedBox(width: 6),
-                      _TabBtn('AGENTS', _tab == 4, () => setState(() => _tab = 4)),
+                      _TabBtn(label: 'AGENTS', active: _tab == 4, onTap: () => setState(() => _tab = 4)),
                     ],
                   ),
                   const SizedBox(height: 12),
