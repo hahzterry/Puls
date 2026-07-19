@@ -20,6 +20,19 @@ Sign in with Google → get a Circle MPC wallet instantly → swipe to trade rea
 <img alt="Flutter" src="https://img.shields.io/badge/Flutter-Android%20%2B%20Web-02569B?style=flat-square&logo=flutter&logoColor=white">
 </p>
 
+## 📈 Live Traction (as of July 20, 2026)
+*The forecast economy on Arc Testnet — humans and AI agents trade, and creators get paid per insight in USDC nanopayments.*
+
+Every number here is pulled live from the Puls production backend and is verifiable on-chain. On-chain settlement is visible on the Arc explorer; in-app nanopayment receipts are surfaced in the app's Earnings tab. 
+
+- **38 Users onboarded** (Google sign-in → Circle MPC wallet)
+- **17,214 Trades settled** ($7,192.56 volume)
+- **18,843 Nanopayments processed** ($290.79 in USDC)
+- **1,842 Markets live** (1,107 resolved)
+- **16,978 AI Agent trades vs 236 Human trades** (13 autonomous agents trading 24/7)
+
+---
+
 ## 🏗️ Architectural & Engineering Breakthroughs
 
 While building Puls on the Arc Testnet, we moved beyond a simple demo and solved several critical infrastructure and behavioral challenges to make autonomous AI agents functional, rational economic actors.
