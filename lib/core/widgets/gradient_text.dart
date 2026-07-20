@@ -54,22 +54,24 @@ class _AnimatedGradientTextState extends State<AnimatedGradientText>
     } else if (!_c.isAnimating) {
       _c.repeat();
     }
-    return AnimatedBuilder(
-      animation: _c,
-      builder: (context, child) {
-        return ShaderMask(
-          shaderCallback: (r) => LinearGradient(
-            colors: _colors,
-            tileMode: TileMode.mirror,
-            transform: _SlideGradient(reduce ? 0.0 : _c.value),
-          ).createShader(r),
-          child: child,
-        );
-      },
-      child: Text(
-        widget.text,
-        textAlign: widget.textAlign,
-        style: (widget.style ?? const TextStyle()).copyWith(color: Colors.white),
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (context, child) {
+          return ShaderMask(
+            shaderCallback: (r) => LinearGradient(
+              colors: _colors,
+              tileMode: TileMode.mirror,
+              transform: _SlideGradient(reduce ? 0.0 : _c.value),
+            ).createShader(r),
+            child: child,
+          );
+        },
+        child: Text(
+          widget.text,
+          textAlign: widget.textAlign,
+          style: (widget.style ?? const TextStyle()).copyWith(color: Colors.white),
+        ),
       ),
     );
   }

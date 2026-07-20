@@ -470,17 +470,19 @@ class _PulseLineState extends State<_PulseLine>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, _) {
-        return CustomPaint(
-          size: const Size(double.infinity, 3),
-          painter: _PulseLinePainter(
-            progress: _ctrl.value,
-            color: widget.color,
-          ),
-        );
-      },
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (context, _) {
+          return CustomPaint(
+            size: const Size(double.infinity, 3),
+            painter: _PulseLinePainter(
+              progress: _ctrl.value,
+              color: widget.color,
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -501,7 +503,11 @@ class _PulseLinePainter extends CustomPainter {
     final w = size.width;
     final mid = size.height / 2;
 
-    for (double x = 0; x < w; x += 1) {
+    // Step by 4px instead of 1px — reduces path segments ~4x (from ~1920 to
+    // ~480 on a 1920px screen) with no visible quality loss on a 3px-tall
+    // sine wave. The wave amplitude is sub-pixel (0.8px) so finer sampling
+    // is invisible.
+    for (double x = 0; x < w; x += 4) {
       final t = (x / w + progress) % 1.0;
       final y = mid + math.sin(t * math.pi * 4) * 0.8 * math.sin(t * math.pi);
       if (x == 0) {

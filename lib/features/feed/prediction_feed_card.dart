@@ -283,9 +283,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                           borderRadius: BorderRadius.circular(16),
                           child: Align(
                             alignment: Alignment.bottomCenter,
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 60),
-                              height: double.infinity,
+                            child: DecoratedBox(
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   begin: Alignment.bottomCenter,
@@ -333,8 +331,12 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                           ),
                         ),
                       ),
-                    // Card content (Expensive static part)
-                    child!,
+                    // Card content (Expensive static part) — wrapped in a
+                    // RepaintBoundary so it doesn't repaint when _dragX changes.
+                    // The drag animation (transform, shadow, gradient wave)
+                    // happens in the outer ValueListenableBuilder; this child
+                    // (image, sparkline, text, buttons) is static per market.
+                    RepaintBoundary(child: child!),
                   ],
                 ),
               ),
@@ -371,36 +373,40 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                                   ),
                                 ],
                                 const Spacer(),
-                                ValueListenableBuilder<double>(
-                                  valueListenable: _dragX,
-                                  builder: (context, dragX, _) {
-                                    final progress = (dragX.abs() / 140).clamp(0.0, 1.0);
-                                    if (progress <= 0.2) return const SizedBox.shrink();
-                                    final side = dragX >= 0 ? MarketSide.yes : MarketSide.no;
-                                    final swipeColor = side == MarketSide.yes ? t.yes : t.no;
-                                    return AnimatedOpacity(
-                                      opacity: ((progress - 0.2) / 0.8).clamp(0.0, 1.0),
-                                      duration: const Duration(milliseconds: 80),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: swipeColor,
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          side == MarketSide.yes ? 'YES' : 'NO',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 12,
-                                            letterSpacing: 0.5,
-                                          ),
+                                // YES/NO swipe badge — reads _dragX.value
+                                // directly. Previously a *second*
+                                // ValueListenableBuilder nested inside the
+                                // outer one, causing a redundant subtree
+                                // rebuild on every drag tick. The outer VLB
+                                // already rebuilds this region.
+                                Builder(builder: (context) {
+                                  final dragX = _dragX.value;
+                                  final progress = (dragX.abs() / 140).clamp(0.0, 1.0);
+                                  if (progress <= 0.2) return const SizedBox.shrink();
+                                  final side = dragX >= 0 ? MarketSide.yes : MarketSide.no;
+                                  final swipeColor = side == MarketSide.yes ? t.yes : t.no;
+                                  return AnimatedOpacity(
+                                    opacity: ((progress - 0.2) / 0.8).clamp(0.0, 1.0),
+                                    duration: const Duration(milliseconds: 80),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: swipeColor,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        side == MarketSide.yes ? 'YES' : 'NO',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 12,
+                                          letterSpacing: 0.5,
                                         ),
                                       ),
-                                    );
-                                  },
-                                ),
+                                    ),
+                                  );
+                                }),
                                 const SizedBox(width: 8),
                                 Semantics(
                                   button: true,
