@@ -41,6 +41,12 @@ class _SwarmViewState extends State<SwarmView> {
   @override
   void initState() {
     super.initState();
+    // Load the roster immediately so the ColonyFeed (segment 0, the default
+    // view) has agents available for the tap-to-open-detail-sheet interaction.
+    // Previously, the roster only loaded when the user switched to segment 1
+    // (the grid), so tapping an agent in the colony feed found no match and
+    // showed an empty loader forever.
+    _load();
   }
 
   @override

@@ -127,14 +127,16 @@ class _PipelineTrackerState extends State<_PipelineTracker>
                     decoration:
                         BoxDecoration(shape: BoxShape.circle, color: t.brand))
               else
-                AnimatedBuilder(
-                  animation: _c,
-                  builder: (_, __) => Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: t.brand.withValues(alpha: 0.4 + 0.6 * _c.value),
+                RepaintBoundary(
+                  child: AnimatedBuilder(
+                    animation: _c,
+                    builder: (_, __) => Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: t.brand.withValues(alpha: 0.4 + 0.6 * _c.value),
+                      ),
                     ),
                   ),
                 ),
@@ -174,11 +176,13 @@ class _PipelineTrackerState extends State<_PipelineTracker>
       ),
     );
     if (active && !reduce) {
-      return AnimatedBuilder(
-        animation: _c,
-        builder: (_, child) =>
-            Transform.scale(scale: 1 + 0.07 * _c.value, child: child),
-        child: node,
+      return RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _c,
+          builder: (_, child) =>
+              Transform.scale(scale: 1 + 0.07 * _c.value, child: child),
+          child: node,
+        ),
       );
     }
     return node;

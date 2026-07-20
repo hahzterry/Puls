@@ -30,36 +30,71 @@ class _HumansVsAgentsCardState extends State<HumansVsAgentsCard> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
+  /// Mirrors the static versus.html aggregation exactly: two separate API
+  /// calls (type=agents + type=humans), and win rate = winsRes / resolved
+  /// (true realized win rate), NOT a simple average of per-trader winRate.
+  /// The old code fetched type='all' in one call and averaged winRate
+  /// naively — that buried humans at ~1.7% because thousands of still-open
+  /// trades counted as 0% wins.
   Future<void> _load() async {
     try {
-      final list = await WalletServiceScope.of(context)
-          .getLeaderboard(limit: 200, type: 'all');
-      double aSum = 0, hSum = 0;
-      int aN = 0, hN = 0;
-      for (final row in list) {
+      final wallet = WalletServiceScope.of(context);
+      final results = await Future.wait([
+        wallet.getLeaderboard(limit: 500, type: 'agents'),
+        wallet.getLeaderboard(limit: 500, type: 'humans'),
+      ]);
+      final agentRows = results[0];
+      final humanRows = results[1];
+
+      var aResolved = 0, aWins = 0;
+      var aWrNum = 0.0, aWrDen = 0;
+      for (final row in agentRows) {
         if (row is! Map) continue;
-        final trades = (row['tradesCount'] as num?)?.toInt() ??
-            (row['trades'] as num?)?.toInt() ??
+        final tc = (row['tradesCount'] as num?)?.toInt() ??
+            (row['trades'] as num?)?.toInt() ?? 0;
+        final resolved = (row['resolvedCount'] as num?)?.toInt() ?? 0;
+        final wins = (row['winsCount'] as num?)?.toInt() ?? 0;
+        final wr = double.tryParse(
+                row['winRate']?.toString() ?? '') ??
             0;
-        if (trades <= 0) continue;
-        final win = double.tryParse(row['winRate']?.toString() ??
-                row['win_rate']?.toString() ??
-                '') ??
-            0;
-        if (row['isAgent'] == true) {
-          aSum += win;
-          aN++;
-        } else {
-          hSum += win;
-          hN++;
-        }
+        aResolved += resolved;
+        aWins += wins;
+        aWrNum += wr * tc;
+        aWrDen += tc;
       }
+
+      var hResolved = 0, hWins = 0;
+      var hWrNum = 0.0, hWrDen = 0;
+      for (final row in humanRows) {
+        if (row is! Map) continue;
+        final tc = (row['tradesCount'] as num?)?.toInt() ??
+            (row['trades'] as num?)?.toInt() ?? 0;
+        final resolved = (row['resolvedCount'] as num?)?.toInt() ?? 0;
+        final wins = (row['winsCount'] as num?)?.toInt() ?? 0;
+        final wr = double.tryParse(
+                row['winRate']?.toString() ?? '') ??
+            0;
+        hResolved += resolved;
+        hWins += wins;
+        hWrNum += wr * tc;
+        hWrDen += tc;
+      }
+
+      // True win rate = wins / RESOLVED positions. Falls back to
+      // trade-weighted estimate only if the API didn't send counts.
+      final aWinRate = aResolved > 0
+          ? (aWins / aResolved * 100)
+          : (aWrDen > 0 ? (aWrNum / aWrDen) : 0);
+      final hWinRate = hResolved > 0
+          ? (hWins / hResolved * 100)
+          : (hWrDen > 0 ? (hWrNum / hWrDen) : 0);
+
       if (mounted) {
         setState(() {
-          _agentCount = aN;
-          _humanCount = hN;
-          _agentWin = aN > 0 ? aSum / aN : 0;
-          _humanWin = hN > 0 ? hSum / hN : 0;
+          _agentCount = agentRows.length;
+          _humanCount = humanRows.length;
+          _agentWin = aWinRate.toDouble();
+          _humanWin = hWinRate.toDouble();
           _loaded = true;
         });
       }

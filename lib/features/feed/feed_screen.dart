@@ -1272,9 +1272,11 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                 Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 600),
-                    child: const Padding(
-                      padding: EdgeInsets.fromLTRB(0, 4, 0, 10),
-                      child: _AlphaFeedTeaser(),
+                    child: const RepaintBoundary(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(0, 4, 0, 10),
+                        child: _AlphaFeedTeaser(),
+                      ),
                     ),
                   ),
                 ),

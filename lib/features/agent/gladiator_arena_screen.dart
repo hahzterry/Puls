@@ -241,9 +241,10 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: AnimatedBuilder(
-              animation: _pulse,
-              builder: (_, __) => Container(
+            child: RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: _pulse,
+                builder: (_, __) => Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
@@ -284,6 +285,7 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
                   ],
                 ),
               ),
+            ),
             ),
           ),
         ],
@@ -756,9 +758,10 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
           ),
           Expanded(
             child: ClipRect(
-              child: AnimatedBuilder(
-                animation: _ticker,
-                builder: (context, _) {
+              child: RepaintBoundary(
+                child: AnimatedBuilder(
+                  animation: _ticker,
+                  builder: (context, _) {
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       final row = Row(
@@ -781,6 +784,7 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
                     },
                   );
                 },
+                ),
               ),
             ),
           ),
