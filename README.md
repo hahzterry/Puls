@@ -428,8 +428,8 @@ graph TD
     App -- "Login" --> Auth
     App -- "userId" --> API
     API -- "Circle SDK (Wallet Creation)" --> Wallet
-    Wallet -- "USDC Gas Token" -.-> Factory
-    Wallet -- "buyYes / buyNo<br/>sell / claim" -.-> Market
+    Wallet -. "USDC Gas Token" .-> Factory
+    Wallet -. "buyYes, buyNo, sell, claim" .-> Market
     API -- "createMarket()" --> Factory
     Factory -- "Deploys" --> Market
     Market -- "Verified Source" --> Explorer
