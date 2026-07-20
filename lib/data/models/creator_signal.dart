@@ -64,7 +64,20 @@ class CreatorSignal {
   /// The linked market has resolved (outcome known) OR the staked bond has
   /// settled — either way the call is over and the alpha is closed: the UI
   /// shows it as Finished and it can no longer be unlocked/bought.
-  bool get isFinished => marketResolved || (bond != null && !bond!.isActive);
+  ///
+  /// Checks three conditions:
+  /// 1. [marketResolved] — the linked market resolved on-chain.
+  /// 2. Bond exists AND is not active (returned or slashed = settled).
+  /// 3. Bond exists AND `correct` is set (the bond was judged right/wrong) —
+  ///    this catches signals where the bond status field might still say
+  ///    'active' in the DB but the `correct` field has been populated by the
+  ///    settlement process, which is the authoritative signal that the call
+  ///    is finished.
+  bool get isFinished =>
+      marketResolved ||
+      (bond != null && !bond!.isActive) ||
+      (bond != null && bond!.correct != null) ||
+      marketOutcome != null;
 
   /// True only when the paid alpha (the YES/NO pick) is legitimately available
   /// to this viewer: they've unlocked it (paid per-read) or they own it.

@@ -1564,13 +1564,20 @@ class _AlphaFeedTeaserState extends State<_AlphaFeedTeaser> {
 
   Future<void> _load() async {
     try {
-      final data = await WalletServiceScope.of(context).getAlphaList();
+      // Pull from the REAL signals marketplace (/api/signals), not the
+      // hardcoded demo alpha list. This way the feed teaser shows the same
+      // signals that are live in the Agent → Signals tab, including newly
+      // published ones.
+      final data = await WalletServiceScope.of(context).getSignals();
       final signals =
           ((data['signals'] as List?) ?? []).cast<Map<String, dynamic>>();
-      // Prefer a signal the user hasn't unlocked yet, else just the first.
-      final pick = signals.firstWhere(
+      // Prefer a signal the user hasn't unlocked yet (an actual alpha drop),
+      // else the freshest published one. Skip finished signals — those are
+      // resolved and no longer unlockable.
+      final available = signals.where((s) => s['marketResolved'] != true);
+      final pick = available.firstWhere(
         (s) => s['unlocked'] != true,
-        orElse: () => signals.isNotEmpty ? signals.first : <String, dynamic>{},
+        orElse: () => available.isNotEmpty ? available.first : <String, dynamic>{},
       );
       if (mounted) {
         setState(() {
@@ -1601,6 +1608,9 @@ class _AlphaFeedTeaserState extends State<_AlphaFeedTeaser> {
     final priceStr = price <= 0
         ? 'unlock'
         : '\$${price.toStringAsFixed(price < 0.01 ? 4 : 2)}';
+    // Show the creator's name if available.
+    final creator = sig['creatorUserId']?.toString() ?? '';
+    final isAgent = creator.contains('agent');
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -1617,7 +1627,7 @@ class _AlphaFeedTeaserState extends State<_AlphaFeedTeaser> {
           ),
           child: Row(
             children: [
-              PulsEmoji.icon('🔥', size: 18),
+              PulsEmoji.icon(isAgent ? '🤖' : '🔥', size: 18),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -1625,7 +1635,7 @@ class _AlphaFeedTeaserState extends State<_AlphaFeedTeaser> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'TOP ALPHA DROP',
+                      'AI ALPHA PICK',
                       style: TextStyle(
                         color: t.brand,
                         fontSize: 10,
