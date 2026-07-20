@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../../core/motion.dart';
@@ -20,6 +21,12 @@ class _ParticleShapesState extends State<ParticleShapes> with TickerProviderStat
   final _rand = Random(42);
   static const _morphDuration = Duration(milliseconds: 1800);
   int _prevIndex = 0;
+
+  // Cache shape point lists so they're generated once per shape, not every
+  // animation frame. _getShapePoints() generates hundreds of Offset points
+  // (loops over a filled circle/grid) — recomputing them on every 60fps
+  // tick was a significant CPU hit. Now we compute on demand and cache.
+  final Map<int, List<Offset>> _shapeCache = {};
 
   @override
   void initState() {
@@ -86,12 +93,17 @@ class _ParticleShapesState extends State<ParticleShapes> with TickerProviderStat
   }
 
   List<Offset> _getShapePoints(int index, Size size) {
-    switch (index) {
-      case 0: return _predictionShape(size);
-      case 1: return _swipeShape(size);
-      case 2: return _winShape(size);
-      default: return _predictionShape(size);
-    }
+    // Cache key combines shape index + viewport size so a resize invalidates.
+    // The shapes are deterministic given (index, size) — no reason to recompute.
+    final key = index * 100000 + size.width.round() * 1000 + size.height.round();
+    return _shapeCache.putIfAbsent(key, () {
+      switch (index) {
+        case 0: return _predictionShape(size);
+        case 1: return _swipeShape(size);
+        case 2: return _winShape(size);
+        default: return _predictionShape(size);
+      }
+    });
   }
 
   // Crystal ball / chart shape for "Prediction"
@@ -195,23 +207,25 @@ class _ParticleShapesState extends State<ParticleShapes> with TickerProviderStat
       final size = Size(constraints.maxWidth, constraints.maxHeight);
       _initParticles(size);
 
-      return AnimatedBuilder(
-        animation: Listenable.merge([_morphCtrl, _breatheCtrl]),
-        builder: (context, _) {
-          final targets = _getShapePoints(widget.shapeIndex, size);
-          final prevTargets = _getShapePoints(_prevIndex, size);
-          return CustomPaint(
-            size: size,
-            painter: _ParticlePainter(
-              particles: _particles,
-              targets: targets,
-              prevTargets: prevTargets,
-              morphProgress: _morphCtrl.value,
-              breathe: _breatheCtrl.value,
-              isDark: widget.isDark,
-            ),
-          );
-        },
+      return RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: Listenable.merge([_morphCtrl, _breatheCtrl]),
+          builder: (context, _) {
+            final targets = _getShapePoints(widget.shapeIndex, size);
+            final prevTargets = _getShapePoints(_prevIndex, size);
+            return CustomPaint(
+              size: size,
+              painter: _ParticlePainter(
+                particles: _particles,
+                targets: targets,
+                prevTargets: prevTargets,
+                morphProgress: _morphCtrl.value,
+                breathe: _breatheCtrl.value,
+                isDark: widget.isDark,
+              ),
+            );
+          },
+        ),
       );
     });
   }
@@ -285,13 +299,20 @@ class _ParticlePainter extends CustomPainter {
       colors.add(baseColor.withValues(alpha: alpha));
     }
 
-    // Draw all particles as dots
-    final paint = Paint();
-    const dotSize = 2.5;
-    for (int i = 0; i < points.length; i++) {
-      paint.color = colors[i];
-      canvas.drawCircle(points[i], dotSize, paint);
-    }
+    // Batch-draw all particles as a single drawPoints call instead of
+    // per-particle drawCircle — a single CanvasKit draw call vs. hundreds.
+    // PointMode.points draws each as a square of size paint.strokeWidth.
+    final paint = Paint()
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+
+    // Build a Float32List of [x,y, x,y, ...] for drawPoints.
+    // drawPoints takes PointMode + a list of Offset.
+    canvas.drawPoints(
+      ui.PointMode.points,
+      points,
+      paint..color = baseColor.withValues(alpha: 0.85),
+    );
   }
 
   @override

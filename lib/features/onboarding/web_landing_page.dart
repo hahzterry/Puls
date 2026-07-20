@@ -104,30 +104,42 @@ class _WebLandingPageState extends State<WebLandingPage>
         child: Stack(
           children: [
             // ── Animated, cursor-reactive Aurora ──────────────────────────
+            // RepaintBoundary isolates the 60fps aurora repaints from the
+            // rest of the Stack (content, dot grid, grain) so they don't
+            // re-rasterize on every animation tick.
             Positioned.fill(
-              child: AnimatedBuilder(
-                animation: Listenable.merge([_aurora, _pointer]),
-                builder: (context, _) => CustomPaint(
-                  painter: _AuroraPainter(
-                    progress: _aurora.value,
-                    isDark: isDark,
-                    bg: t.bg,
-                    pointer: _pointer.value,
+              child: RepaintBoundary(
+                child: AnimatedBuilder(
+                  animation: Listenable.merge([_aurora, _pointer]),
+                  builder: (context, _) => CustomPaint(
+                    painter: _AuroraPainter(
+                      progress: _aurora.value,
+                      isDark: isDark,
+                      bg: t.bg,
+                      pointer: _pointer.value,
+                    ),
                   ),
                 ),
               ),
             ),
             // ── Dot Grid ──────────────────────────────────────────────────
+            // Static painter — RepaintBoundary ensures it's rasterized once
+            // and never repainted when siblings change.
             Positioned.fill(
-              child: CustomPaint(painter: _DotGridPainter(color: dotColor)),
+              child: RepaintBoundary(
+                child: CustomPaint(painter: _DotGridPainter(color: dotColor)),
+              ),
             ),
             // ── Film grain (depth) ────────────────────────────────────────
+            // Static painter — same treatment as the dot grid.
             Positioned.fill(
               child: IgnorePointer(
-                child: CustomPaint(
-                  painter: _GrainPainter(
-                    color: (isDark ? Colors.white : Colors.black)
-                        .withValues(alpha: 0.025),
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    painter: _GrainPainter(
+                      color: (isDark ? Colors.white : Colors.black)
+                          .withValues(alpha: 0.025),
+                    ),
                   ),
                 ),
               ),

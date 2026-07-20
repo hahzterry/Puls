@@ -70,42 +70,48 @@ class _PromoCarouselState extends State<PromoCarousel> {
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          height: widget.height,
-          child: PageView.builder(
-            controller: _ctrl,
-            itemCount: widget.slides.length,
-            onPageChanged: (i) {
-              setState(() => _current = i);
-              _startAutoPlay();
-            },
-            itemBuilder: (context, i) => _PromoCard(
-              slide: widget.slides[i],
-              t: t,
+    return RepaintBoundary(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: widget.height,
+            child: PageView.builder(
+              controller: _ctrl,
+              itemCount: widget.slides.length,
+              onPageChanged: (i) {
+                setState(() => _current = i);
+                _startAutoPlay();
+              },
+              itemBuilder: (context, i) => _PromoCard(
+                slide: widget.slides[i],
+                t: t,
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.slides.length, (i) {
-            final active = i == _current;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              width: active ? 20 : 6,
-              height: 6,
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              decoration: BoxDecoration(
-                color: active ? t.brand : t.border,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            );
-          }),
-        ),
-      ],
+          const SizedBox(height: 10),
+          // Dots indicator — wrap in RepaintBoundary so the dot animations
+          // don't trigger repaints of the PageView above.
+          RepaintBoundary(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(widget.slides.length, (i) {
+                final active = i == _current;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  width: active ? 20 : 6,
+                  height: 6,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    color: active ? t.brand : t.border,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
