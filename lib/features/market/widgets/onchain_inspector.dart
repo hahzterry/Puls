@@ -31,10 +31,10 @@ class _OnchainInspectorState extends State<OnchainInspector> {
       final res = await http.get(Uri.parse('$backendUrl/api/trade/recent')).timeout(const Duration(seconds: 5));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        final list = (data['trades'] as List? ?? []).cast<Map<String, dynamic>>();
-        // Filter to trades with tx hashes
-        final withTx = list.where((t) => (t['tx_hash'] as String?)?.isNotEmpty == true).toList();
-        if (mounted) setState(() { _trades = withTx.take(30).toList(); _loading = false; });
+        // API returns a bare array, not { trades: [...] }
+        final list = (data is List ? data : (data['trades'] as List? ?? []))
+            .cast<Map<String, dynamic>>();
+        if (mounted) setState(() { _trades = list.take(30).toList(); _loading = false; });
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);

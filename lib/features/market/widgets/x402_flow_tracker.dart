@@ -31,7 +31,13 @@ class _X40FlowTrackerState extends State<X40FlowTracker> {
       final res = await http.get(Uri.parse('$backendUrl/api/x402/payments?limit=100')).timeout(const Duration(seconds: 8));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        final list = (data['payments'] as List? ?? []).cast<Map<String, dynamic>>();
+        final List rawList;
+        if (data is List) {
+          rawList = data;
+        } else {
+          rawList = (data['payments'] as List? ?? []);
+        }
+        final list = rawList.cast<Map<String, dynamic>>();
         if (mounted) setState(() { _payments = list.take(40).toList(); _loading = false; });
       }
     } catch (_) {

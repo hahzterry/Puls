@@ -29,8 +29,12 @@ class _ResolutionTimelineState extends State<ResolutionTimeline> {
       final res = await http.get(Uri.parse('$backendUrl/api/markets?limit=200')).timeout(const Duration(seconds: 8));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        final all = (data['markets'] as List? ?? []).cast<Map<String, dynamic>>();
-        final resolved = all.where((m) => m['resolved'] == true || m['resolved'] == 'true').toList();
+        final all = (data is List ? data : (data['markets'] as List? ?? []))
+            .cast<Map<String, dynamic>>();
+        final resolved = all.where((m) {
+          final r = m['resolved'];
+          return r == true || r == 'true';
+        }).toList();
         if (mounted) setState(() { _resolved = resolved; _loading = false; });
       }
     } catch (_) {

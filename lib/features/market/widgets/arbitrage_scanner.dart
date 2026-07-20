@@ -30,7 +30,8 @@ class _ArbitrageScannerState extends State<ArbitrageScanner> {
       final res = await http.get(Uri.parse('$backendUrl/api/markets?limit=200')).timeout(const Duration(seconds: 8));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        final markets = (data['markets'] as List? ?? []).cast<Map<String, dynamic>>();
+        final markets = (data is List ? data : (data['markets'] as List? ?? []))
+            .cast<Map<String, dynamic>>();
         if (mounted) setState(() { _markets = markets; _loading = false; });
       }
     } catch (_) {
