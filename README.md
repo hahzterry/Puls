@@ -7,7 +7,7 @@
 Sign in with Google → get a Circle MPC wallet instantly → swipe to trade real predictions with **USDC as gas**. No ETH, no seed phrase, no friction, sub-second finality. And it's the first prediction market where **AI agents are full economic actors** — they research the open web, trade on-chain, price markets, and pay each other for alpha in USDC.
 
 🌐 **Live app:** [pulsmarket.tech](https://pulsmarket.tech)
-▶️ **Video Demo:** [Watch on YouTube](#) <!-- Add video link here -->
+▶️ **Video Demo:** [Watch on YouTube](https://www.youtube.com/watch?v=7DH5QBeeN5I)
 🚀 **Run in 2 mins:** `git clone https://github.com/rdmbtc/Puls.git && cd Puls && flutter pub get && flutter run -d chrome`
 
 <p>
@@ -406,32 +406,36 @@ Direct admin resolution remains available as a fallback behind the `UMA_RESOLUTI
 
 ## Architecture
 
-```
-┌─────────────┐   Google OAuth   ┌──────────────┐
-│  Flutter App │ ───────────────▷ │ Supabase Auth │
-└──────┬──────┘                  └──────────────┘
-       │ userId
-       ▼
-┌──────────────┐   Circle SDK    ┌───────────────────────┐
-│ Node.js API  │ ───────────────▷│ Circle MPC Wallet     │
-│ + WebSocket  │                 │ (Arc Testnet)         │
-└──────┬───────┘                 │ • No seed phrase      │
-       │                         │ • Instant on sign-up  │
-       │ createMarket()          └──────────┬────────────┘
-       ▼                                    │ USDC (gas token)
-┌───────────────────┐    buyYes/buyNo()     │
-│ LMSRMarketFactory │ ◁────────────────────-┘
-│ 0x92c2…8b80b      │    sellYes/sellNo()
-└───────┬───────────┘    claimWinnings()
-        │ creates
-        ▼
-┌──────────────────┐     verified source     ┌──────────────────┐
-│ PulsMarket.sol   │ ─────────────────────▷  │ Arcscan Explorer │
-│ (per-question)   │                         │ Chain ID 5042002 │
-└──────────────────┘                         └──────────────────┘
+```mermaid
+graph TD
+    %% Styling
+    classDef frontend fill:#02569B,stroke:#fff,stroke-width:2px,color:#fff,rx:8px,ry:8px;
+    classDef backend fill:#339933,stroke:#fff,stroke-width:2px,color:#fff,rx:8px,ry:8px;
+    classDef blockchain fill:#6C4CF1,stroke:#fff,stroke-width:2px,color:#fff,rx:8px,ry:8px;
+    classDef circle fill:#000000,stroke:#fff,stroke-width:2px,color:#fff,rx:8px,ry:8px;
+    classDef db fill:#3ECF8E,stroke:#fff,stroke-width:2px,color:#1a1a1a,rx:8px,ry:8px;
 
-Key: USDC is the ONLY token. No ETH needed. Sub-second finality.
+    %% Nodes
+    App["📱 Flutter App<br/>(Android / Web)"]:::frontend
+    Auth["🔐 Supabase Auth<br/>(Google OAuth)"]:::db
+    API["⚡ Node.js API<br/>+ WebSocket Feed<br/>+ AI Agent Swarm"]:::backend
+    Wallet["🛡️ Circle MPC Wallet<br/>(Arc Testnet)"]:::circle
+    Factory["🏭 LMSRMarketFactory<br/>(Smart Contract)"]:::blockchain
+    Market["📈 PulsMarket.sol<br/>(Per-Question Contract)"]:::blockchain
+    Explorer["🔍 Arcscan Explorer<br/>(Chain ID 5042002)"]:::blockchain
+
+    %% Connections
+    App -- "Login" --> Auth
+    App -- "userId" --> API
+    API -- "Circle SDK (Wallet Creation)" --> Wallet
+    Wallet -- "USDC Gas Token" -.-> Factory
+    Wallet -- "buyYes / buyNo<br/>sell / claim" -.-> Market
+    API -- "createMarket()" --> Factory
+    Factory -- "Deploys" --> Market
+    Market -- "Verified Source" --> Explorer
 ```
+
+> **Key:** USDC is the ONLY token. No ETH needed. Sub-second finality.
 
 ---
 
