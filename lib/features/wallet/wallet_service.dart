@@ -790,6 +790,12 @@ class WalletService extends ChangeNotifier {
 
   /// Batch-claim every resolved+won+unclaimed position. Returns { ok, claimed }.
   Future<Map<String, dynamic>> claimAllWinnings() async {
+    if (_state.isExternalWallet) {
+      // Web3 users: they need to claim individually on-chain via MetaMask.
+      // The frontend should call claimWinnings() per market, not claim-all.
+      // Return empty so the UI doesn't crash.
+      return {'ok': true, 'claimed': 0, 'items': [], 'message': 'Use individual claim per market'};
+    }
     return _post('/api/trade/claim-all', {'userId': _state.userId},
         timeout: const Duration(seconds: 40));
   }
