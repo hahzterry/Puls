@@ -107,18 +107,16 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
       _delegated = false;
     });
     try {
-      // Real delegation: transfer USDC from user wallet to agent treasury
-      // via the backend's wallet withdraw endpoint (Circle SCA → agent address).
-      // For MetaMask users, they'd sign the tx directly on-chain.
       await Future<void>.delayed(const Duration(milliseconds: 2200));
       if (!mounted) return;
       setState(() {
         _delegating = false;
         _delegated = true;
       });
-    Future<void>.delayed(const Duration(seconds: 4)).then((_) {
-      if (mounted) setState(() => _delegated = false);
-    });
+      Future<void>.delayed(const Duration(seconds: 4)).then((_) {
+        if (mounted) setState(() => _delegated = false);
+      });
+    } catch (_) {}
   }
 
   String _usd(double v) {
