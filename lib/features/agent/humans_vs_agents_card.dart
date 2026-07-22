@@ -54,8 +54,10 @@ class _HumansVsAgentsCardState extends State<HumansVsAgentsCard> {
             (row['trades'] as num?)?.toInt() ?? 0;
         final resolved = (row['resolvedCount'] as num?)?.toInt() ?? 0;
         final wins = (row['winsCount'] as num?)?.toInt() ?? 0;
-        final wr = double.tryParse(
-                row['winRate']?.toString() ?? '') ??
+        // winRate comes as a number from the API (e.g. 67.5 or 0), not a
+        // string. Parse it robustly — handle both num and string.
+        final wr = (row['winRate'] as num?)?.toDouble() ??
+            double.tryParse(row['winRate']?.toString() ?? '') ??
             0;
         aResolved += resolved;
         aWins += wins;
@@ -71,8 +73,8 @@ class _HumansVsAgentsCardState extends State<HumansVsAgentsCard> {
             (row['trades'] as num?)?.toInt() ?? 0;
         final resolved = (row['resolvedCount'] as num?)?.toInt() ?? 0;
         final wins = (row['winsCount'] as num?)?.toInt() ?? 0;
-        final wr = double.tryParse(
-                row['winRate']?.toString() ?? '') ??
+        final wr = (row['winRate'] as num?)?.toDouble() ??
+            double.tryParse(row['winRate']?.toString() ?? '') ??
             0;
         hResolved += resolved;
         hWins += wins;
