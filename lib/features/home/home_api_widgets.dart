@@ -98,8 +98,9 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
         border: Border(bottom: BorderSide(color: t.border)),
       ),
       clipBehavior: Clip.antiAlias,
-      child: AnimatedBuilder(
-        animation: _scrollController,
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _scrollController,
         builder: (context, child) {
           final pairs = Row(
             mainAxisSize: MainAxisSize.min,
@@ -127,6 +128,7 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
           );
         },
       ),
+    ),
     );
   }
 }

@@ -674,13 +674,15 @@ class _FlashArbitrageScreenState extends State<FlashArbitrageScreen>
       children: [
         // Particle burst
         Positioned.fill(
-          child: AnimatedBuilder(
-            animation: _burst,
-            builder: (_, __) => CustomPaint(
-              painter: _BurstPainter(
-                progress: _burst.value,
-                color: t.yes,
-                accent: PulsColors.brandMint,
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _burst,
+              builder: (_, __) => CustomPaint(
+                painter: _BurstPainter(
+                  progress: _burst.value,
+                  color: t.yes,
+                  accent: PulsColors.brandMint,
+                ),
               ),
             ),
           ),

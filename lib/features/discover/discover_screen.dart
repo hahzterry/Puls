@@ -1090,19 +1090,20 @@ class _MiniSparkline extends StatelessWidget {
     final maxY = prices.reduce((a, b) => a > b ? a : b);
     final pad = (maxY - minY) < 0.01 ? 0.05 : (maxY - minY) * 0.2;
 
-    return LineChart(
-      LineChartData(
-        minY: (minY - pad).clamp(0, 1),
-        maxY: (maxY + pad).clamp(0, 1),
-        gridData: const FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-        titlesData: const FlTitlesData(show: false),
-        lineTouchData: const LineTouchData(enabled: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            curveSmoothness: 0.35,
+    return RepaintBoundary(
+      child: LineChart(
+        LineChartData(
+          minY: (minY - pad).clamp(0, 1),
+          maxY: (maxY + pad).clamp(0, 1),
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          titlesData: const FlTitlesData(show: false),
+          lineTouchData: const LineTouchData(enabled: false),
+          lineBarsData: [
+            LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              curveSmoothness: 0.35,
             color: color,
             barWidth: 2.2,
             shadow: Shadow(
@@ -1125,6 +1126,7 @@ class _MiniSparkline extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

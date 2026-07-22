@@ -492,12 +492,14 @@ class _PulseLinePainter extends CustomPainter {
   final double progress;
   final Color color;
 
+  static final Paint _paint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5
+    ..strokeCap = StrokeCap.round;
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..strokeCap = StrokeCap.round;
+    _paint.color = color;
 
     final path = Path();
     final w = size.width;
@@ -518,14 +520,14 @@ class _PulseLinePainter extends CustomPainter {
     }
 
     // Glow
-    paint.color = color.withValues(alpha: 0.2);
-    paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawPath(path, paint);
+    _paint.color = color.withValues(alpha: 0.2);
+    _paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawPath(path, _paint);
 
     // Main line
-    paint.color = color.withValues(alpha: 0.5);
-    paint.maskFilter = null;
-    canvas.drawPath(path, paint);
+    _paint.color = color.withValues(alpha: 0.5);
+    _paint.maskFilter = null;
+    canvas.drawPath(path, _paint);
   }
 
   @override

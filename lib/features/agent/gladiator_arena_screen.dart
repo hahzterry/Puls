@@ -759,31 +759,29 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
           Expanded(
             child: ClipRect(
               child: RepaintBoundary(
-                child: AnimatedBuilder(
-                  animation: _ticker,
-                  builder: (context, _) {
-                  return LayoutBuilder(
-                    builder: (context, constraints) {
-                      final row = Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          for (final e in _feed) _tickerItem(t, e),
-                        ],
-                      );
-                      return SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const NeverScrollableScrollPhysics(),
-                        child: Transform.translate(
+                child: Builder(
+                  builder: (context) {
+                    final row = Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final e in _feed) _tickerItem(t, e),
+                      ],
+                    );
+                    final tape = Row(children: [row, row]);
+                    return AnimatedBuilder(
+                      animation: _ticker,
+                      child: tape,
+                      builder: (context, child) {
+                        return Transform.translate(
                           offset: Offset(
                             -((_ticker.value * 1400) % 1400),
                             0,
                           ),
-                          child: Row(children: [row, row]),
-                        ),
-                      );
-                    },
-                  );
-                },
+                          child: child,
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
             ),

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../../core/motion.dart';
 import '../../core/rendering/fast_trig.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/tactile.dart';
 
 enum DecisionSide { yes, no }
 
@@ -56,22 +57,11 @@ class AgentBrainVisualizer extends StatefulWidget {
 
 class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
     with TickerProviderStateMixin {
-  static const _background = Color(0xFF030405);
-  static const _surface = Color(0xFF0B0D10);
-  static const _line = Color(0xFF20242B);
-  static const _mint = Color(0xFF31F5B0);
-  static const _red = Color(0xFFFF4968);
-  static const _text = Color(0xFFF2F7F5);
-  static const _muted = Color(0xFF7E8985);
-
   late final AnimationController _sequence;
   late final AnimationController _pulse;
   late final Animation<double> _decisionReveal;
   final _renderCache = _BrainRenderCache();
   bool? _reduceMotion;
-
-  Color get _decisionColor =>
-      widget.decision.side == DecisionSide.yes ? _mint : _red;
 
   @override
   void initState() {
@@ -141,22 +131,31 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.hasBoundedWidth
             ? constraints.maxWidth
             : MediaQuery.sizeOf(context).width;
         final compact = width < 360;
-        final visualHeight = (width * 0.62).clamp(210.0, 310.0).toDouble();
+        final visualHeight = (width * 0.60).clamp(210.0, 310.0).toDouble();
 
         return RepaintBoundary(
           child: Container(
             width: double.infinity,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              color: _background,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: _line),
+              color: t.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: t.border),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -164,13 +163,22 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
               children: [
                 Padding(
                   padding: EdgeInsets.fromLTRB(
-                    compact ? 18 : 24,
-                    22,
-                    compact ? 18 : 24,
+                    compact ? 16 : 22,
+                    20,
+                    compact ? 16 : 22,
                     8,
                   ),
-                  child: _header(),
+                  child: _header(t),
                 ),
+                if (widget.decision.sources.isNotEmpty) ...[
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: compact ? 16 : 22,
+                    ),
+                    child: _sourcesBar(t),
+                  ),
+                  const SizedBox(height: 6),
+                ],
                 SizedBox(
                   height: visualHeight,
                   width: double.infinity,
@@ -182,6 +190,7 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
                         sourceCount: widget.decision.sources.length,
                         decisionSide: widget.decision.side,
                         cache: _renderCache,
+                        theme: t,
                       ),
                     ),
                   ),
@@ -196,9 +205,9 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _reasoning(),
+                      _reasoning(t),
                       if (widget.showActions) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 14),
                         FadeTransition(
                           opacity: _decisionReveal,
                           child: SlideTransition(
@@ -206,7 +215,7 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
                               begin: const Offset(0, 0.16),
                               end: Offset.zero,
                             ).animate(_decisionReveal),
-                            child: _actions(compact),
+                            child: _actions(t, compact),
                           ),
                         ),
                       ],
@@ -221,29 +230,43 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
     );
   }
 
-  Widget _header() {
+  Widget _header(PulsThemeColors t) {
+    final isYes = widget.decision.side == DecisionSide.yes;
+    final decisionColor = isYes ? t.yes : t.no;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: _mint,
-                shape: BoxShape.circle,
+            AnimatedBuilder(
+              animation: _pulse,
+              builder: (_, __) => Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: PulsColors.brandMint,
+                  boxShadow: [
+                    BoxShadow(
+                      color: PulsColors.brandMint.withValues(
+                        alpha: 0.4 + 0.5 * _pulse.value,
+                      ),
+                      blurRadius: 6 + 4 * _pulse.value,
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: 9),
+            const SizedBox(width: 8),
             const Text(
-              'AGENT NEURAL ACTIVITY',
+              'NEURAL ACTIVITY MATRIX',
               style: TextStyle(
-                color: _mint,
+                color: PulsColors.brandMint,
                 fontFamily: PulsColors.fontSans,
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 1.8,
+                letterSpacing: 1.6,
               ),
             ),
             const Spacer(),
@@ -251,44 +274,96 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
               animation: _sequence,
               builder: (context, child) {
                 final complete = _sequence.value >= 0.99;
-                return Text(
-                  complete ? 'RESOLVED' : 'THINKING',
-                  style: TextStyle(
-                    color: complete ? _decisionColor : _muted,
-                    fontFamily: PulsColors.fontSans,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: complete
+                        ? (isYes ? t.yesBg : t.noBg)
+                        : t.surfaceRaised,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: complete ? decisionColor.withValues(alpha: 0.3) : t.border,
+                    ),
+                  ),
+                  child: Text(
+                    complete ? 'RESOLVED' : 'THINKING...',
+                    style: TextStyle(
+                      color: complete ? decisionColor : t.textMuted,
+                      fontFamily: PulsColors.fontSans,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.1,
+                    ),
                   ),
                 );
               },
             ),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         Text(
           widget.decision.question,
-          style: const TextStyle(
-            color: _text,
+          style: TextStyle(
+            color: t.text,
             fontFamily: PulsColors.fontSans,
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
+            fontSize: 17.5,
+            fontWeight: FontWeight.w800,
             height: 1.3,
-            letterSpacing: -0.25,
+            letterSpacing: -0.3,
           ),
         ),
       ],
     );
   }
 
-  Widget _reasoning() {
+  Widget _sourcesBar(PulsThemeColors t) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          Icon(Icons.hub_rounded, size: 12, color: t.textSubtle),
+          const SizedBox(width: 6),
+          Text(
+            'SOURCES:',
+            style: TextStyle(
+              color: t.textSubtle,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(width: 8),
+          for (final source in widget.decision.sources)
+            Container(
+              margin: const EdgeInsets.only(right: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: t.surfaceRaised,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: t.border.withValues(alpha: 0.6)),
+              ),
+              child: Text(
+                source.title,
+                style: TextStyle(
+                  color: t.textMuted,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _reasoning(PulsThemeColors t) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _surface,
+        color: t.surfaceRaised,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _line),
+        border: Border.all(color: t.border),
       ),
       child: AnimatedBuilder(
         animation: _sequence,
@@ -302,15 +377,21 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'REASONING TRACE',
-                style: TextStyle(
-                  color: _muted,
-                  fontFamily: PulsColors.fontSans,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.4,
-                ),
+              Row(
+                children: [
+                  Icon(Icons.terminal_rounded, size: 13, color: t.brand),
+                  const SizedBox(width: 6),
+                  Text(
+                    'REASONING TRACE // SYNAPSE LOG',
+                    style: TextStyle(
+                      color: t.textSubtle,
+                      fontFamily: PulsColors.fontSans,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
               Text.rich(
@@ -321,16 +402,16 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
                     ),
                     TextSpan(
                       text: cursorVisible ? '  ▌' : '',
-                      style: const TextStyle(color: _mint),
+                      style: const TextStyle(color: PulsColors.brandMint),
                     ),
                   ],
                 ),
-                style: const TextStyle(
-                  color: _text,
+                style: TextStyle(
+                  color: t.text,
                   fontFamily: PulsColors.fontSans,
-                  fontSize: 13,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w500,
-                  height: 1.48,
+                  height: 1.5,
                 ),
               ),
             ],
@@ -340,9 +421,9 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
     );
   }
 
-  Widget _actions(bool compact) {
-    final yes = _decisionButton(DecisionSide.yes);
-    final no = _decisionButton(DecisionSide.no);
+  Widget _actions(PulsThemeColors t, bool compact) {
+    final yes = _decisionButton(t, DecisionSide.yes);
+    final no = _decisionButton(t, DecisionSide.no);
     if (compact) {
       return Column(
         mainAxisSize: MainAxisSize.min,
@@ -362,18 +443,18 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
     );
   }
 
-  Widget _decisionButton(DecisionSide side) {
+  Widget _decisionButton(PulsThemeColors t, DecisionSide side) {
     final selected = widget.decision.side == side;
-    final color = side == DecisionSide.yes ? _mint : _red;
+    final color = side == DecisionSide.yes ? t.yes : t.no;
     final amount = selected && widget.decision.amountUsdc > 0
         ? ' · \$${widget.decision.amountUsdc.toStringAsFixed(2)}'
         : '';
+
     return Semantics(
       button: true,
       selected: selected,
       label: '${side.name.toUpperCase()} decision$amount',
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: Tactile(
         onTap: widget.onDecision == null
             ? null
             : () {
@@ -386,12 +467,26 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
           height: 56,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: selected ? color : _surface,
+            gradient: selected
+                ? (side == DecisionSide.yes
+                    ? PulsColors.pulseGradient
+                    : LinearGradient(colors: [t.no, t.no]))
+                : null,
+            color: selected ? null : t.surfaceRaised,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: selected ? color : _line,
-              width: selected ? 0 : 1,
+              color: selected ? Colors.transparent : t.border,
+              width: 1,
             ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.35),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -400,8 +495,8 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
                 side == DecisionSide.yes
                     ? Icons.arrow_upward_rounded
                     : Icons.arrow_downward_rounded,
-                size: 18,
-                color: selected ? _background : color,
+                size: 19,
+                color: selected ? Colors.white : color,
               ),
               const SizedBox(width: 8),
               Flexible(
@@ -410,9 +505,9 @@ class _AgentBrainVisualizerState extends State<AgentBrainVisualizer>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: selected ? _background : color,
+                    color: selected ? Colors.white : color,
                     fontFamily: PulsColors.fontSans,
-                    fontSize: 13,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.8,
                     fontFeatures: PulsColors.tabularFigures,
@@ -434,6 +529,7 @@ class _BrainPainter extends CustomPainter {
     required this.sourceCount,
     required this.decisionSide,
     required this.cache,
+    required this.theme,
   }) : super(repaint: Listenable.merge([sequence, pulse]));
 
   final Animation<double> sequence;
@@ -441,10 +537,7 @@ class _BrainPainter extends CustomPainter {
   final int sourceCount;
   final DecisionSide decisionSide;
   final _BrainRenderCache cache;
-
-  static const _mint = Color(0xFF31F5B0);
-  static const _red = Color(0xFFFF4968);
-  static const _line = Color(0xFF20242B);
+  final PulsThemeColors theme;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -453,8 +546,8 @@ class _BrainPainter extends CustomPainter {
     final ingest = _unit(sequence.value / 0.34);
     final process = _unit((sequence.value - 0.24) / 0.5);
     final reveal = _unit((sequence.value - 0.72) / 0.28);
-    final decisionColor = decisionSide == DecisionSide.yes ? _mint : _red;
-    final coreColor = Color.lerp(_mint, decisionColor, reveal)!;
+    final decisionColor = decisionSide == DecisionSide.yes ? theme.yes : theme.no;
+    final coreColor = Color.lerp(PulsColors.brandMint, decisionColor, reveal)!;
 
     _drawOrbit(canvas, process);
 
@@ -511,7 +604,7 @@ class _BrainPainter extends CustomPainter {
         connection.start,
         6.5 * scale * nodePulse,
         index + pulse.value,
-        _mint,
+        PulsColors.brandMint,
       );
     }
 
@@ -579,7 +672,7 @@ class _BrainPainter extends CustomPainter {
   }
 
   void _drawOrbit(Canvas canvas, double progress) {
-    cache.orbitPaint.color = _line.withValues(alpha: 0.74);
+    cache.orbitPaint.color = theme.border.withValues(alpha: 0.74);
     canvas.drawArc(
       cache.outerOrbit,
       -math.pi / 2,
@@ -587,7 +680,7 @@ class _BrainPainter extends CustomPainter {
       false,
       cache.orbitPaint,
     );
-    cache.orbitPaint.color = _line.withValues(alpha: 0.42);
+    cache.orbitPaint.color = theme.border.withValues(alpha: 0.42);
     canvas.drawArc(
       cache.innerOrbit,
       math.pi / 2,
@@ -635,7 +728,8 @@ class _BrainPainter extends CustomPainter {
         oldDelegate.decisionSide != decisionSide ||
         oldDelegate.cache != cache ||
         oldDelegate.sequence != sequence ||
-        oldDelegate.pulse != pulse;
+        oldDelegate.pulse != pulse ||
+        oldDelegate.theme != theme;
   }
 }
 
@@ -660,10 +754,10 @@ class _BrainRenderCache {
   final Paint glowPaint = Paint();
   final Paint revealPaint = Paint()..style = PaintingStyle.stroke;
   final Paint largeParticlePaint = Paint()
-    ..color = _BrainPainter._mint.withValues(alpha: 0.9)
+    ..color = PulsColors.brandMint.withValues(alpha: 0.9)
     ..strokeCap = StrokeCap.round;
   final Paint smallParticlePaint = Paint()
-    ..color = _BrainPainter._mint.withValues(alpha: 0.9)
+    ..color = PulsColors.brandMint.withValues(alpha: 0.9)
     ..strokeCap = StrokeCap.round;
 
   List<_BrainConnection> connections = const [];
@@ -733,8 +827,8 @@ class _BrainRenderCache {
           metric: path.computeMetrics().first,
           shader: LinearGradient(
             colors: [
-              _BrainPainter._mint.withValues(alpha: 0.16),
-              _BrainPainter._mint.withValues(alpha: 0.72),
+              PulsColors.brandMint.withValues(alpha: 0.16),
+              PulsColors.brandMint.withValues(alpha: 0.72),
             ],
           ).createShader(Rect.fromPoints(start, center)),
         );

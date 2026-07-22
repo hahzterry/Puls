@@ -134,8 +134,10 @@ class _TerminalGridBackgroundState extends State<_TerminalGridBackground>
         ),
         // High-tech grid pattern
         Positioned.fill(
-          child: CustomPaint(
-            painter: _GridPainter(),
+          child: RepaintBoundary(
+            child: CustomPaint(
+              painter: _GridPainter(),
+            ),
           ),
         ),
         Positioned.fill(child: widget.child),
@@ -1481,8 +1483,10 @@ class _AgentDashboardCardState extends State<_AgentDashboardCard> {
                 SizedBox(
                   width: 54,
                   height: 24,
-                  child: CustomPaint(
-                    painter: _SparklinePainter(agent.pnlHistory, agent.pnl >= 0 ? const Color(0xFF2DD4BF) : const Color(0xFFEC4899)),
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: _SparklinePainter(agent.pnlHistory, agent.pnl >= 0 ? const Color(0xFF2DD4BF) : const Color(0xFFEC4899)),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),

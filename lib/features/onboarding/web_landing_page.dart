@@ -934,9 +934,11 @@ class _PulsingDotState extends State<_PulsingDot>
       return _dot(0.6);
     }
     if (!_c.isAnimating) _c.repeat(reverse: true);
-    return AnimatedBuilder(
-      animation: _c,
-      builder: (_, __) => _dot(_c.value),
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (_, __) => _dot(_c.value),
+      ),
     );
   }
 }
@@ -3775,9 +3777,10 @@ class _GatewayVizState extends State<_GatewayViz> with SingleTickerProviderState
       _c.repeat();
     }
     final t = context.puls;
-    return AnimatedBuilder(
-      animation: _c,
-      builder: (context, _) {
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (context, _) {
         final v = reduce ? 0.8 : _c.value;
         final phase = v < 0.33 ? 0 : (v < 0.66 ? 1 : 2); // 0: Query, 1: Pay, 2: Data
         
@@ -3800,6 +3803,7 @@ class _GatewayVizState extends State<_GatewayViz> with SingleTickerProviderState
           ],
         );
       },
+    ),
     );
   }
 

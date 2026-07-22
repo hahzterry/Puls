@@ -871,8 +871,9 @@ class _PortfolioChart extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 20, 14, 10),
       child: SizedBox(
         height: 130, // constrain chart height inside GlassCard padding
-        child: LineChart(
-          LineChartData(
+        child: RepaintBoundary(
+          child: LineChart(
+            LineChartData(
             gridData: const FlGridData(show: false),
             borderData: FlBorderData(show: false),
             titlesData: const FlTitlesData(show: false),
@@ -922,6 +923,7 @@ class _PortfolioChart extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/config.dart' show backendUrl;
@@ -25,11 +26,11 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
     with TickerProviderStateMixin {
   // ── Real agent data (fetched from backend) ──
   String _agentName = 'Pulse 🤖';
-  String _contract = '0x13675668842505839fdc581f56746593fDAB85D';
-  double _apy = 47.2;
-  double _roi30d = 12.8;
+  final String _contract = '0x13675668842505839fdc581f56746593fDAB85D';
+  final double _apy = 47.2;
+  final double _roi30d = 12.8;
   double _tvl = 1284530.0;
-  double _sharpe = 2.41;
+  final double _sharpe = 2.41;
   double _winRate = 68.4;
   double _balance = 0;
   static const _performanceFee = 0.20; // agent keeps 20% of profits
@@ -125,6 +126,31 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
     return '\$${v.toStringAsFixed(0)}';
   }
 
+  void _copyContract(BuildContext context, PulsThemeColors t) {
+    Clipboard.setData(ClipboardData(text: _contract));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: PulsColors.brandMint, size: 18),
+            SizedBox(width: 8),
+            Text(
+              'Contract address copied to clipboard!',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+            ),
+          ],
+        ),
+        backgroundColor: t.surfaceRaised,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: t.border),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
@@ -135,9 +161,35 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
     return Scaffold(
       backgroundColor: t.bg,
       appBar: AppBar(
-        backgroundColor: Colors.transparent, 
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Agent Sponsorship'),
+        scrolledUnderElevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: Tactile(
+            onTap: () => Navigator.of(context).maybePop(),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: t.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: t.border),
+                ),
+                child: Icon(Icons.arrow_back_rounded, color: t.text, size: 18),
+              ),
+            ),
+          ),
+        ),
+        title: Text(
+          'Agent Sponsorship',
+          style: TextStyle(
+            color: t.text,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -146,51 +198,77 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
         ],
       ),
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-              children: [
-                _agentHeader(t),
-                const SizedBox(height: 14),
-                _statRow(t),
-                const SizedBox(height: 14),
-                _chartCard(t),
-                const SizedBox(height: 14),
-                _amountCard(t),
-                const SizedBox(height: 14),
-                _profitSplitCard(t, projectedGross, agentCut, userReturn),
-                const SizedBox(height: 20),
-                _delegateButton(t),
-                const SizedBox(height: 10),
-                Center(
-                  child: Text(
-                    'Non-custodial · funds stay in your delegation vault\n20% performance fee on profits · Arc Testnet',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: t.textSubtle,
-                      fontSize: 11.5,
-                      letterSpacing: 0.2,
-                    ),
+        child: _loading
+            ? Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(t.brand),
+                ),
+              )
+            : Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                    children: [
+                      _agentHeader(context, t),
+                      const SizedBox(height: 14),
+                      _statRow(t),
+                      const SizedBox(height: 14),
+                      _chartCard(t),
+                      const SizedBox(height: 14),
+                      _amountCard(t),
+                      const SizedBox(height: 14),
+                      _profitSplitCard(t, projectedGross, agentCut, userReturn),
+                      const SizedBox(height: 20),
+                      _delegateButton(t),
+                      const SizedBox(height: 14),
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.shield_outlined, color: t.textSubtle, size: 13),
+                            const SizedBox(width: 5),
+                            Text(
+                              'Non-custodial · funds stay in your delegation vault\n20% performance fee on profits · Arc Testnet',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: t.textSubtle,
+                                fontSize: 11.5,
+                                height: 1.35,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
     );
   }
 
   // ── Agent header ──────────────────────────────────────────────────────────
-  Widget _agentHeader(PulsThemeColors t) {
+  Widget _agentHeader(BuildContext context, PulsThemeColors t) {
+    final shortContract = _contract.length > 14
+        ? '${_contract.substring(0, 6)}...${_contract.substring(_contract.length - 4)}'
+        : _contract;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: t.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: t.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -198,23 +276,24 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
           AnimatedBuilder(
             animation: _glowCtrl,
             builder: (_, __) => Container(
-              padding: const EdgeInsets.all(2.5),
+              padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: PulsColors.pulseGradient,
                 boxShadow: [
                   BoxShadow(
                     color: PulsColors.brandMint.withValues(
-                      alpha: 0.18 + 0.22 * _glowCtrl.value,
+                      alpha: 0.20 + 0.25 * _glowCtrl.value,
                     ),
-                    blurRadius: 14 + 8 * _glowCtrl.value,
+                    blurRadius: 16 + 10 * _glowCtrl.value,
+                    spreadRadius: 1,
                   ),
                 ],
               ),
               child: CircleAvatar(
-                radius: 26,
+                radius: 27,
                 backgroundColor: t.surfaceRaised,
-                child: Icon(Icons.psychology_rounded, color: t.brand, size: 28),
+                child: Icon(Icons.psychology_rounded, color: t.brand, size: 29),
               ),
             ),
           ),
@@ -232,46 +311,73 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: t.text,
-                          fontSize: 18,
+                          fontSize: 19,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.3,
                         ),
                       ),
                     ),
                     const SizedBox(width: 6),
-                    const Icon(Icons.verified_rounded,
-                        color: PulsColors.brandMint, size: 17),
+                    const Icon(
+                      Icons.verified_rounded,
+                      color: PulsColors.brandMint,
+                      size: 18,
+                    ),
                   ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 5),
                 Row(
                   children: [
-                    Icon(Icons.link_rounded, color: t.textSubtle, size: 13),
-                    const SizedBox(width: 4),
-                    Text(
-                      _contract,
-                      style: TextStyle(
-                        color: t.textMuted,
-                        fontSize: 12,
-                        fontFeatures: PulsColors.tabularFigures,
+                    Tactile(
+                      onTap: () => _copyContract(context, t),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: t.surfaceRaised,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: t.border.withValues(alpha: 0.6)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.copy_rounded, color: t.textSubtle, size: 11),
+                            const SizedBox(width: 4),
+                            Text(
+                              shortContract,
+                              style: TextStyle(
+                                color: t.textMuted,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                fontFeatures: PulsColors.tabularFigures,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                       decoration: BoxDecoration(
                         color: t.yesBg,
-                        borderRadius: BorderRadius.circular(5),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: t.yes.withValues(alpha: 0.3)),
                       ),
-                      child: Text(
-                        'AUDITED',
-                        style: TextStyle(
-                          color: t.yes,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.verified_user_rounded, color: t.yes, size: 11),
+                          const SizedBox(width: 3),
+                          Text(
+                            'AUDITED',
+                            style: TextStyle(
+                              color: t.yes,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -279,17 +385,17 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               ShaderMask(
-                shaderCallback: (r) =>
-                    PulsColors.pulseGradient.createShader(r),
+                shaderCallback: (r) => PulsColors.pulseGradient.createShader(r),
                 child: Text(
                   '${_apy.toStringAsFixed(1)}%',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 24,
+                    fontSize: 25,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.8,
                     fontFeatures: PulsColors.tabularFigures,
@@ -301,7 +407,7 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                 style: TextStyle(
                   color: t.textSubtle,
                   fontSize: 10,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -314,32 +420,44 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
 
   // ── Stat chips ────────────────────────────────────────────────────────────
   Widget _statRow(PulsThemeColors t) {
-    Widget stat(String label, String value, {Color? color}) => Expanded(
+    Widget stat(String label, String value, IconData icon, {Color? color}) => Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             decoration: BoxDecoration(
               color: t.surface,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: t.border),
             ),
             child: Column(
               children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: color ?? t.text,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    fontFeatures: PulsColors.tabularFigures,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 12, color: color ?? t.textSubtle),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: color ?? t.text,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          fontFeatures: PulsColors.tabularFigures,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   label,
                   style: TextStyle(
                     color: t.textSubtle,
                     fontSize: 10,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: 0.6,
                   ),
                 ),
@@ -350,13 +468,13 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
 
     return Row(
       children: [
-        stat('30D ROI', '+${_roi30d.toStringAsFixed(1)}%', color: t.yes),
-        const SizedBox(width: 10),
-        stat('TVL', _usd(_tvl)),
-        const SizedBox(width: 10),
-        stat('SHARPE', _sharpe.toStringAsFixed(2)),
-        const SizedBox(width: 10),
-        stat('WIN RATE', '${_winRate.toStringAsFixed(0)}%',
+        stat('30D ROI', '+${_roi30d.toStringAsFixed(1)}%', Icons.trending_up_rounded, color: t.yes),
+        const SizedBox(width: 8),
+        stat('TVL', _usd(_tvl), Icons.account_balance_wallet_rounded),
+        const SizedBox(width: 8),
+        stat('SHARPE', _sharpe.toStringAsFixed(2), Icons.equalizer_rounded),
+        const SizedBox(width: 8),
+        stat('WIN RATE', '${_winRate.toStringAsFixed(0)}%', Icons.emoji_events_rounded,
             color: PulsColors.brandMint),
       ],
     );
@@ -368,10 +486,10 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
     final gain = (curve.last / curve.first - 1) * 100;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
       decoration: BoxDecoration(
         color: t.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: t.border),
       ),
       child: Column(
@@ -383,16 +501,22 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'PERFORMANCE',
-                      style: TextStyle(
-                        color: t.textSubtle,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.4,
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.show_chart_rounded, color: t.brand, size: 14),
+                        const SizedBox(width: 5),
+                        Text(
+                          'STRATEGY PERFORMANCE',
+                          style: TextStyle(
+                            color: t.textSubtle,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -400,7 +524,7 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                           '+${gain.toStringAsFixed(1)}%',
                           style: TextStyle(
                             color: t.yes,
-                            fontSize: 22,
+                            fontSize: 23,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -0.5,
                             fontFeatures: PulsColors.tabularFigures,
@@ -409,12 +533,19 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                         const SizedBox(width: 6),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 3),
-                          child: Text(
-                            _timeframes[_timeframe],
-                            style: TextStyle(
-                              color: t.textMuted,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: t.yesBg,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              _timeframes[_timeframe],
+                              style: TextStyle(
+                                color: t.yes,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                         ),
@@ -425,10 +556,10 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
               ),
               // Timeframe selector
               Container(
-                padding: const EdgeInsets.all(3),
+                padding: const EdgeInsets.all(3.5),
                 decoration: BoxDecoration(
                   color: t.surfaceRaised,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: t.border),
                 ),
                 child: Row(
@@ -451,14 +582,22 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                             gradient: i == _timeframe
                                 ? PulsColors.pulseGradient
                                 : null,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(9),
+                            boxShadow: i == _timeframe
+                                ? [
+                                    BoxShadow(
+                                      color: PulsColors.brandPink.withValues(alpha: 0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    )
+                                  ]
+                                : null,
                           ),
                           child: Text(
                             _timeframes[i],
                             style: TextStyle(
-                              color:
-                                  i == _timeframe ? Colors.white : t.textMuted,
-                              fontSize: 11,
+                              color: i == _timeframe ? Colors.white : t.textMuted,
+                              fontSize: 11.5,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -469,9 +608,9 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           SizedBox(
-            height: 170,
+            height: 175,
             width: double.infinity,
             child: AnimatedBuilder(
               animation: Listenable.merge([_chartCtrl, _glowCtrl]),
@@ -494,10 +633,10 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
   // ── Amount slider ─────────────────────────────────────────────────────────
   Widget _amountCard(PulsThemeColors t) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: t.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: t.border),
       ),
       child: Column(
@@ -511,22 +650,29 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                   style: TextStyle(
                     color: t.textSubtle,
                     fontSize: 10,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: 1.4,
                   ),
                 ),
               ),
-              Text(
-                'Balance: \$4,250.00',
-                style: TextStyle(
-                  color: t.textMuted,
-                  fontSize: 11.5,
-                  fontFeatures: PulsColors.tabularFigures,
-                ),
+              Row(
+                children: [
+                  Icon(Icons.account_balance_wallet_outlined, color: t.textSubtle, size: 13),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Balance: \$4,250.00',
+                    style: TextStyle(
+                      color: t.textMuted,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: PulsColors.tabularFigures,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -535,13 +681,12 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                 duration: const Duration(milliseconds: 260),
                 curve: Curves.easeOutCubic,
                 builder: (_, v, __) => ShaderMask(
-                  shaderCallback: (r) =>
-                      PulsColors.pulseGradient.createShader(r),
+                  shaderCallback: (r) => PulsColors.pulseGradient.createShader(r),
                   child: Text(
                     '\$${v.round()}',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 40,
+                      fontSize: 42,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -1.5,
                       height: 1,
@@ -552,29 +697,36 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
               ),
               const SizedBox(width: 8),
               Padding(
-                padding: const EdgeInsets.only(bottom: 5),
-                child: Text(
-                  'USDC',
-                  style: TextStyle(
-                    color: t.textMuted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: t.surfaceRaised,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: t.border),
+                  ),
+                  child: Text(
+                    'USDC',
+                    style: TextStyle(
+                      color: t.text,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           SliderTheme(
             data: SliderThemeData(
-              trackHeight: 6,
+              trackHeight: 7,
               activeTrackColor: PulsColors.brandMint,
               inactiveTrackColor: t.surfaceRaised,
               thumbColor: Colors.white,
-              overlayColor: PulsColors.brandPink.withValues(alpha: 0.12),
-              thumbShape:
-                  const RoundSliderThumbShape(enabledThumbRadius: 11),
+              overlayColor: PulsColors.brandPink.withValues(alpha: 0.15),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 11),
             ),
             child: Slider(
               value: _amount,
@@ -585,6 +737,7 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                   : (v) => setState(() => _amount = v),
             ),
           ),
+          const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -594,12 +747,12 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 7),
+                        horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: (_amount - quick).abs() < 1
                           ? t.brandSubtle
                           : t.surfaceRaised,
-                      borderRadius: BorderRadius.circular(9),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: (_amount - quick).abs() < 1
                             ? t.brand
@@ -613,7 +766,7 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                             ? t.brand
                             : t.textMuted,
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         fontFeatures: PulsColors.tabularFigures,
                       ),
                     ),
@@ -623,17 +776,24 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                 onTap: () => setState(() => _amount = 4250),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 7),
+                      horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: PulsColors.pulseGradient,
-                    borderRadius: BorderRadius.circular(9),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: PulsColors.brandPink.withValues(alpha: 0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: const Text(
                     'MAX',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
                       letterSpacing: 0.6,
                     ),
                   ),
@@ -654,10 +814,10 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
     double userReturn,
   ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: t.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: t.border),
       ),
       child: Column(
@@ -666,14 +826,14 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
           Row(
             children: [
               const Icon(Icons.pie_chart_rounded,
-                  color: PulsColors.brandMint, size: 15),
+                  color: PulsColors.brandMint, size: 16),
               const SizedBox(width: 6),
               Text(
                 'PROJECTED PROFIT SPLIT · 1Y',
                 style: TextStyle(
                   color: t.textSubtle,
                   fontSize: 10,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 1.4,
                 ),
               ),
@@ -682,9 +842,9 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
           const SizedBox(height: 14),
           // Animated split bar
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
             child: SizedBox(
-              height: 14,
+              height: 16,
               child: Row(
                 children: [
                   Expanded(
@@ -730,14 +890,15 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
           ),
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             decoration: BoxDecoration(
               color: t.surfaceRaised,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: t.border.withValues(alpha: 0.6)),
             ),
             child: Row(
               children: [
-                Icon(Icons.auto_awesome_rounded, color: t.brand, size: 14),
+                Icon(Icons.auto_awesome_rounded, color: t.brand, size: 15),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TweenAnimationBuilder<double>(
@@ -781,7 +942,7 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: t.surfaceRaised,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: t.border),
       ),
       child: Column(
@@ -799,7 +960,7 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                   style: TextStyle(
                     color: t.textSubtle,
                     fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: 0.8,
                   ),
                 ),
@@ -843,24 +1004,24 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
           onTap: _delegating || _delegated ? null : _delegate,
           behavior: HitTestBehavior.opaque,
           child: Container(
-            height: 56,
+            height: 58,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               gradient: _delegated
                   ? LinearGradient(colors: [t.yes, t.yes])
                   : PulsColors.pulseGradient,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
                   color: (_delegated ? t.yes : PulsColors.brandPink)
                       .withValues(alpha: glow),
-                  blurRadius: _delegating ? 34 : 22,
+                  blurRadius: _delegating ? 36 : 24,
                   offset: const Offset(0, 6),
                 ),
                 if (_delegating)
                   BoxShadow(
                     color: PulsColors.brandMint.withValues(alpha: glow * 0.8),
-                    blurRadius: 44,
+                    blurRadius: 46,
                   ),
               ],
             ),
@@ -882,8 +1043,8 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                         'Signing delegation on-chain…',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
                           letterSpacing: 0.3,
                         ),
                       ),
@@ -897,15 +1058,15 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
                             ? Icons.check_circle_rounded
                             : Icons.bolt_rounded,
                         color: Colors.white,
-                        size: 20,
+                        size: 22,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         label,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w900,
                           letterSpacing: 0.2,
                         ),
                       ),
@@ -933,6 +1094,7 @@ class _LivePill extends StatelessWidget {
         decoration: BoxDecoration(
           color: t.yesBg,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: t.yes.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
