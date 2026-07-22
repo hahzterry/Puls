@@ -1,17 +1,11 @@
 import fs from 'fs';
+import path from 'path';
 import 'dotenv/config';
 import { createWalletClient, createPublicClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { arcTestnet } from 'viem/chains';
 
-// Deploys AgentDuel (the Colosseum) to Arc Testnet (5042002).
-//   1) forge build   (produces ./out/AgentDuel.sol/AgentDuel.json)
-//   2) PRIVATE_KEY=0x... node deployAgentDuel.mjs
-// Then copy the printed address into the backend .env as AGENT_DUEL_ADDRESS.
-
 const USDC = process.env.USDC_ADDRESS || '0x3600000000000000000000000000000000000000';
-// Protocol fee on the loser's stake, in bps. Default 0 (winner takes the full
-// loser stake) — set AGENT_DUEL_FEE_BPS to skim a house rake to the treasury.
 const FEE_BPS = Math.min(1000, parseInt(process.env.AGENT_DUEL_FEE_BPS || '0', 10) || 0);
 
 async function deploy() {
@@ -26,7 +20,13 @@ async function deploy() {
   const walletClient = createWalletClient({ account, chain: arcTestnet, transport: http(process.env.ARC_RPC_URL || undefined) });
   const publicClient = createPublicClient({ chain: arcTestnet, transport: http(process.env.ARC_RPC_URL || undefined) });
 
-  const artifact = JSON.parse(fs.readFileSync('./out/AgentDuel.sol/AgentDuel.json', 'utf-8'));
+  const artifactPath = path.resolve('./out/AgentDuel.sol/AgentDuel.json');
+  if (!fs.existsSync(artifactPath)) {
+    console.error('❌ Artifact not found. Please run `forge build` first.');
+    process.exit(1);
+  }
+
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf-8'));
   const ABI = artifact.abi;
   const BYTECODE = artifact.bytecode.object;
 
@@ -47,12 +47,19 @@ async function deploy() {
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   console.log(`\n✅ AgentDuel deployed: ${receipt.contractAddress}`);
   console.log(`Explorer: https://testnet.arcscan.app/address/${receipt.contractAddress}`);
-  console.log(`\nAdd to backend .env:\n  AGENT_DUEL_ADDRESS=${receipt.contractAddress}`);
+
+  const deploymentsDir = path.resolve('./deployments');
+  if (!fs.existsSync(deploymentsDir)) {
+    fs.mkdirSync(deploymentsDir, { recursive: true });
+  }
 
   fs.writeFileSync(
-    './deployed-agent-duel.json',
+    path.join(deploymentsDir, 'deployed-agent-duel.json'),
     JSON.stringify({ agentDuelAddress: receipt.contractAddress, usdc: USDC, treasury, feeBps: FEE_BPS }, null, 2)
   );
 }
 
-deploy().catch((e) => { console.error(e); process.exit(1); });
+deploy().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

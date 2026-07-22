@@ -126,6 +126,38 @@ class _DecisionLogPanelState extends State<DecisionLogPanel> {
   }
 
   @override
+  void didUpdateWidget(DecisionLogPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When the parent passes updated initialLogs (e.g. after an async API
+    // call completes), merge any NEW logs that aren't already in the panel.
+    // Without this, the panel keeps its initial empty list forever — the
+    // parent's setState updates the constructor arg but the State already
+    // captured the old empty list in initState.
+    if (widget.initialLogs.length > oldWidget.initialLogs.length) {
+      final existing = _logs.toSet();
+      for (final log in widget.initialLogs) {
+        if (!existing.contains(log)) {
+          _logs.add(log);
+        }
+      }
+      if (_logs.length > widget.maxLines) {
+        _logs.removeRange(0, _logs.length - widget.maxLines);
+      }
+      if (widget.autoScroll) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollCtrl.hasClients && mounted) {
+            _scrollCtrl.animateTo(
+              _scrollCtrl.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      }
+    }
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (widget.stream != null && _sub == null) {

@@ -1,16 +1,33 @@
 {
-  "name": "contracts",
+  "name": "@puls/contracts",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Solidity smart contracts for Puls prediction markets, agent bonds, duels, and resolution pipeline on Arc Testnet",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "forge build",
+    "test": "forge test",
+    "fmt": "forge fmt",
+    "deploy:factory": "node scripts/deployFactory.mjs",
+    "deploy:signal-registry": "node scripts/deploySignalRegistry.mjs",
+    "deploy:agent-bond": "node scripts/deployAgentBond.mjs",
+    "deploy:agent-duel": "node scripts/deployAgentDuel.mjs",
+    "deploy:streaming-pay": "node scripts/deployStreamingPay.mjs",
+    "deploy:market": "node scripts/deployMarket.mjs"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "solidity",
+    "foundry",
+    "arc",
+    "usdc",
+    "prediction-market",
+    "lmsr",
+    "uma-oracle",
+    "agents"
+  ],
+  "author": "Puls Team",
+  "license": "MIT",
   "dependencies": {
-    "dotenv": "^17.4.2",
-    "viem": "^2.49.3"
+    "dotenv": "^16.4.5",
+    "viem": "^2.19.8"
   }
 }

@@ -1,13 +1,9 @@
 import fs from 'fs';
+import path from 'path';
 import 'dotenv/config';
 import { createWalletClient, createPublicClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { arcTestnet } from 'viem/chains';
-
-// Deploys SignalRegistry to Arc Testnet (5042002).
-//   1) forge build      (produces ./out/SignalRegistry.sol/SignalRegistry.json)
-//   2) PRIVATE_KEY=0x... node deploySignalRegistry.mjs
-// Then copy the printed address into the backend .env as SIGNAL_REGISTRY_ADDRESS.
 
 async function deploy() {
   const pk = process.env.PRIVATE_KEY;
@@ -17,12 +13,16 @@ async function deploy() {
   }
 
   const account = privateKeyToAccount(pk.startsWith('0x') ? pk : `0x${pk}`);
-  const walletClient = createWalletClient({ account, chain: arcTestnet, transport: http() });
-  const publicClient = createPublicClient({ chain: arcTestnet, transport: http() });
+  const walletClient = createWalletClient({ account, chain: arcTestnet, transport: http(process.env.ARC_RPC_URL || undefined) });
+  const publicClient = createPublicClient({ chain: arcTestnet, transport: http(process.env.ARC_RPC_URL || undefined) });
 
-  const artifact = JSON.parse(
-    fs.readFileSync('./out/SignalRegistry.sol/SignalRegistry.json', 'utf-8')
-  );
+  const artifactPath = path.resolve('./out/SignalRegistry.sol/SignalRegistry.json');
+  if (!fs.existsSync(artifactPath)) {
+    console.error('❌ Artifact not found. Please run `forge build` first.');
+    process.exit(1);
+  }
+
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf-8'));
   const ABI = artifact.abi;
   const BYTECODE = artifact.bytecode.object;
 
@@ -40,10 +40,14 @@ async function deploy() {
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   console.log(`\n✅ SignalRegistry deployed: ${receipt.contractAddress}`);
   console.log(`Explorer: https://testnet.arcscan.app/address/${receipt.contractAddress}`);
-  console.log(`\nAdd to backend .env:\n  SIGNAL_REGISTRY_ADDRESS=${receipt.contractAddress}`);
+
+  const deploymentsDir = path.resolve('./deployments');
+  if (!fs.existsSync(deploymentsDir)) {
+    fs.mkdirSync(deploymentsDir, { recursive: true });
+  }
 
   fs.writeFileSync(
-    './deployed-signal-registry.json',
+    path.join(deploymentsDir, 'deployed-signal-registry.json'),
     JSON.stringify({ signalRegistryAddress: receipt.contractAddress }, null, 2)
   );
 }

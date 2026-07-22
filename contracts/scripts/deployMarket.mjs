@@ -1,41 +1,38 @@
-/**
- * Deploy PulsMarket to Arc Testnet
- *
- * 1. Go to https://remix.ethereum.org
- * 2. Create a new file, paste the contents of src/PulsMarket.sol
- * 3. Compile (Solidity 0.8.24, optimizer ON, 200 runs)
- * 4. In the Compilation Details, copy the BYTECODE → object field (hex string)
- * 5. Paste it below as BYTECODE
- * 6. Set PRIVATE_KEY in .env
- * 7. Run: node deploy.mjs
- */
-
 import fs from 'fs';
+import path from 'path';
 import 'dotenv/config';
 import { createWalletClient, createPublicClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { arcTestnet } from 'viem/chains';
 
-// Read artifact from Forge output
-const artifact = JSON.parse(fs.readFileSync('./out/LMSRMarket.sol/LMSRMarket.json', 'utf-8'));
-const ABI = artifact.abi;
-const BYTECODE = artifact.bytecode.object;
-
-const USDC = '0x3600000000000000000000000000000000000000';
+const USDC = process.env.USDC_ADDRESS || '0x3600000000000000000000000000000000000000';
 
 async function deploy() {
   const pk = process.env.PRIVATE_KEY;
-  if (!pk) { console.error('❌ Set PRIVATE_KEY in .env'); process.exit(1); }
+  if (!pk) {
+    console.error('❌ Set PRIVATE_KEY in .env');
+    process.exit(1);
+  }
 
-  const account = privateKeyToAccount(pk);
-  const walletClient = createWalletClient({ account, chain: arcTestnet, transport: http() });
-  const publicClient = createPublicClient({ chain: arcTestnet, transport: http() });
+  const account = privateKeyToAccount(pk.startsWith('0x') ? pk : `0x${pk}`);
+  const walletClient = createWalletClient({ account, chain: arcTestnet, transport: http(process.env.ARC_RPC_URL || undefined) });
+  const publicClient = createPublicClient({ chain: arcTestnet, transport: http(process.env.ARC_RPC_URL || undefined) });
+
+  const artifactPath = path.resolve('./out/LMSRMarket.sol/LMSRMarket.json');
+  if (!fs.existsSync(artifactPath)) {
+    console.error('❌ Artifact not found. Please run `forge build` first.');
+    process.exit(1);
+  }
+
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf-8'));
+  const ABI = artifact.abi;
+  const BYTECODE = artifact.bytecode.object;
 
   const question = process.env.MARKET_QUESTION || 'Will Bitcoin close above $100k this quarter?';
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 3600);
-  const bParam = 10000000n; // b = 10 USDC. Max loss is ~ 6.93 USDC
+  const bParam = 10_000_000n; // b = 10 USDC
 
-  console.log(`Deploying from: ${account.address}`);
+  console.log(`Deploying LMSRMarket from: ${account.address}`);
   console.log(`Question: ${question}`);
   console.log(`Chain: Arc Testnet (5042002)`);
 
@@ -72,7 +69,6 @@ async function deploy() {
 
   console.log(`✅ Market Funded!`);
   console.log(`Explorer: https://testnet.arcscan.app/address/${receipt.contractAddress}`);
-  console.log(`\nAdd to backend/.env:\nMARKET_CONTRACT=${receipt.contractAddress}`);
 }
 
 deploy().catch(console.error);
