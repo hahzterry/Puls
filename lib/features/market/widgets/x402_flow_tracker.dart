@@ -102,15 +102,14 @@ class _PaymentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final endpoint = (payment['endpoint'] as String? ?? 'unknown').toUpperCase();
-    final amount = (payment['amount_usdc'] as num?)?.toDouble() ?? 0;
-    final payer = (payment['payer'] as String? ?? '???');
-    final payee = (payment['pay_to'] as String? ?? '???');
-    final ts = (payment['created_at'] as String? ?? '');
-    final time = ts.length >= 8 ? ts.substring(11, 19) : '--:--:--';
+    final amount = (payment['amountUsdc'] as num?)?.toDouble() ?? (payment['amount_usdc'] as num?)?.toDouble() ?? (payment['amount'] as num?)?.toDouble() ?? 0;
+    final payerStr = payment['from'] as String? ?? payment['fromLabel'] as String? ?? payment['payerShort'] as String? ?? payment['payer'] as String? ?? 'HUMAN';
+    final payeeStr = payment['to'] as String? ?? payment['toLabel'] as String? ?? payment['payeeShort'] as String? ?? payment['pay_to'] as String? ?? 'TREASURY';
+    final ts = (payment['created_at'] as String? ?? payment['createdAt'] as String? ?? '');
+    final time = ts.length >= 19 ? ts.substring(11, 19) : (ts.length >= 8 ? ts.substring(11) : '--:--:--');
 
-    final isAgent = payer.startsWith('agent_');
-    final payerShort = isAgent ? payer.split('_').last.toUpperCase() : 'HUMAN';
-    final payeeShort = payee.startsWith('agent_') ? payee.split('_').last.toUpperCase() : 'TREASURY';
+    final payerShort = payerStr.length > 12 ? '${payerStr.substring(0, 5)}…' : payerStr;
+    final payeeShort = payeeStr.length > 12 ? '${payeeStr.substring(0, 5)}…' : payeeStr;
 
     // Color by endpoint
     Color color;

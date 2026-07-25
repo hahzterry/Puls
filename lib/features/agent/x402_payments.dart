@@ -39,6 +39,8 @@ class _Receipt {
   const _Receipt({
     required this.id,
     required this.endpoint,
+    required this.from,
+    required this.to,
     required this.payerShort,
     required this.amountUsdc,
     required this.receiptId,
@@ -48,6 +50,8 @@ class _Receipt {
 
   final String id;
   final String endpoint;
+  final String from;
+  final String to;
   final String payerShort;
   final double amountUsdc;
   final String? receiptId;
@@ -94,10 +98,14 @@ class _X402PaymentsState extends State<X402Payments> {
         final endpoint = p['endpoint'] as String? ?? '—';
         final amt = (p['amountUsdc'] as num?)?.toDouble() ?? 0;
         if (endpoint == 'agent_to_agent') { a2aCount++; a2aUsdc += amt; }
+        final fromStr = p['from'] as String? ?? p['fromLabel'] as String? ?? p['payerShort'] as String? ?? 'Agent';
+        final toStr = p['to'] as String? ?? p['toLabel'] as String? ?? p['payeeShort'] as String? ?? 'Creator';
         list.add(_Receipt(
           id: '${p['id'] ?? ''}',
           endpoint: endpoint,
-          payerShort: p['payerShort'] as String? ?? '—',
+          from: fromStr,
+          to: toStr,
+          payerShort: fromStr,
           amountUsdc: amt,
           receiptId: p['receiptId'] as String?,
           status: p['status'] as String? ?? 'settled',
@@ -411,13 +419,13 @@ class _X402PaymentsState extends State<X402Payments> {
           const SizedBox(height: 10),
           Row(
             children: [
-              _chip(t, Icons.person_outline_rounded, r.payerShort),
+              _chip(t, Icons.person_outline_rounded, r.from),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Icon(Icons.arrow_forward_rounded,
                     size: 15, color: t.textSubtle),
               ),
-              _chip(t, Icons.workspace_premium_rounded, 'Creator', brand: true),
+              _chip(t, Icons.workspace_premium_rounded, r.to, brand: true),
             ],
           ),
           const SizedBox(height: 10),
