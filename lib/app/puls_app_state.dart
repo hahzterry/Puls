@@ -131,10 +131,11 @@ class PulsAppState extends ChangeNotifier {
   /// loaded feed first; otherwise fetches the single market and adds it to the
   /// feed so detail screens can look it up by id.
   Future<Market?> ensureMarketBySlug(String slug) async {
+    final clean = Uri.decodeComponent(slug).trim().toLowerCase();
     for (final m in _markets) {
-      if (m.slug == slug || m.id == slug) return m;
+      if (m.slug.toLowerCase() == clean || m.id.toLowerCase() == clean) return m;
     }
-    final fetched = await _polymarket.fetchMarketBySlug(slug);
+    final fetched = await _polymarket.fetchMarketBySlug(clean);
     if (fetched == null) return null;
     _markets = [fetched, ..._markets];
     notifyListeners();

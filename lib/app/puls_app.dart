@@ -73,21 +73,18 @@ class _PulsAppState extends State<PulsApp> {
     final newTheme = _state.themeMode;
     if (_themeMode.value != newTheme) _themeMode.value = newTheme;
     final newShell = _computeShellVisible();
-    if (_shellVisible.value != newShell) {
+    final shellFlipped = _shellVisible.value != newShell;
+    if (shellFlipped) {
       _shellVisible.value = newShell;
-      // Side-effects only fire when shell visibility actually changes.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _maybeOpenDeepLink(newShell);
-        _maybeOpenTerminal(newShell);
-        if (newShell && !_appShellViewedFired) {
-          // Funnel event: the app shell became visible — the user landed on
-          // the product (not the marketing landing). Top of the
-          // landing → sign-in → first trade funnel.
-          _appShellViewedFired = true;
-          trackEvent('app_shell_viewed');
-        }
-      });
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeOpenDeepLink(newShell);
+      _maybeOpenTerminal(newShell);
+      if (shellFlipped && newShell && !_appShellViewedFired) {
+        _appShellViewedFired = true;
+        trackEvent('app_shell_viewed');
+      }
+    });
   }
 
   // Tracks whether `app_shell_viewed` has fired once this session. Without
@@ -99,11 +96,11 @@ class _PulsAppState extends State<PulsApp> {
     final newShell = _computeShellVisible();
     if (_shellVisible.value != newShell) {
       _shellVisible.value = newShell;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _maybeOpenDeepLink(newShell);
-        _maybeOpenTerminal(newShell);
-      });
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeOpenDeepLink(newShell);
+      _maybeOpenTerminal(newShell);
+    });
   }
 
   bool _computeShellVisible() {

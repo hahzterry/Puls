@@ -63,9 +63,11 @@ async function getMarket(slug) {
 }
 
 module.exports = async (req, res) => {
-  const slug = String(req.query.slug || '').trim().toLowerCase();
-  // Slugs are url-safe by construction; reject anything else.
-  if (!slug || !/^[a-z0-9_-]{1,200}$/.test(slug)) {
+  const rawSlug = String(req.query.slug || '').trim();
+  let slug = rawSlug.toLowerCase();
+  try { slug = decodeURIComponent(rawSlug).trim().toLowerCase(); } catch (_) {}
+  // Slugs are url-safe by construction; reject empty or invalid format.
+  if (!slug || !/^[a-z0-9_%.-]{1,500}$/.test(slug)) {
     res.statusCode = 302;
     res.setHeader('Location', '/');
     return res.end();
