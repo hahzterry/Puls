@@ -112,7 +112,7 @@ class PolymarketRepository {
           'outcomePrices': '["${j['yesPrice'] ?? 0.5}","${j['noPrice'] ?? 0.5}"]',
           'volumeNum': j['totalVolume'],
           'endDate': j['deadline'] != null
-              ? DateTime.fromMillisecondsSinceEpoch((j['deadline'] as num).toInt() * 1000)
+              ? DateTime.fromMillisecondsSinceEpoch(((j['deadline'] is num ? j['deadline'] : num.tryParse('${j['deadline']}') ?? 0) as num).toInt() * 1000)
                   .toIso8601String()
               : null,
         });
