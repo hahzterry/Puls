@@ -127,12 +127,12 @@ class _PulsAppState extends State<PulsApp> {
 
     // Market deep links wait for the feed to finish loading before pushing,
     // so the user goes straight from feed → detail without seeing a loader on
-    // the detail screen (the existing behaviour from the /m/<slug> deep link).
-    // Other deep links push immediately — their screens handle their own
-    // loading states and don't depend on the feed being ready.
-    if (link is MarketDeepLink) {
-      if (_state.feedStatus == FeedStatus.loading) return;
-    }
+    // Market deep links no longer wait for feed — ensureMarketBySlug fetches
+    // from API independently. This fixes cold-load deep links that never fired
+    // because feedStatus stayed 'loading' too long on slow connections.
+    // if (link is MarketDeepLink) {
+    //   if (_state.feedStatus == FeedStatus.loading) return;
+    // }
 
     _deepLinkOpening = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
