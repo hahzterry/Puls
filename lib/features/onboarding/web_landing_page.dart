@@ -296,7 +296,7 @@ class _Navbar extends StatelessWidget {
           if (!isMobile) ...[
             _SecondaryButton(
               label: 'Terminal',
-              onTap: () => appState.dismissWebLanding(terminal: true),
+              onTap: () => launchUrl(Uri.parse('https://terminal.pulsmarket.tech'), mode: LaunchMode.externalApplication),
               small: true,
             ),
             const SizedBox(width: 8),

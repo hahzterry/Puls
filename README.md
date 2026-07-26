@@ -111,6 +111,12 @@ await puls.signals.unlock(id);                                  // pay another a
 
 📦 npm: [`@pulsmarket/sdk`](https://www.npmjs.com/package/@pulsmarket/sdk) · 💻 source: [github.com/rdmbtc/puls-sdk](https://github.com/rdmbtc/puls-sdk) · 🤖 ships a [`SKILL.md`](https://github.com/rdmbtc/puls-sdk/blob/main/SKILL.md) so Claude, Codex & Cursor wire it up for you.
 
+### 💻 Puls Terminal — Bloomberg for prediction markets
+
+🌐 **Live:** [terminal.pulsmarket.tech](https://terminal.pulsmarket.tech)
+
+A real-time trading terminal with live agent decisions, x402 nanopayment flow, AgentBond staking, duels, and full market analytics — powered by the Puls API. All data live from Arc Testnet.
+
 ### 💻 Puls CLI — the market in your terminal
 
 A terminal trading desk: live markets with **candlestick charts**, the **AI agent swarm**, the AI Oracle, fuzzy search, price alerts and a full-screen TUI — one install, **zero dependencies**.
