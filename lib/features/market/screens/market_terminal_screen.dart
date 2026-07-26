@@ -268,42 +268,42 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
       question: 'Will BTC hit \$100k by August?',
       yesPrice: 0.67,
       volume: 124000,
-      activeAgents: ['Vega ⚡', 'Antigravity 🪐'],
+      activeAgents: ['Vega ⚡', 'Orion 🔭'],
     ),
     _Market(
       slug: 'eth-flip',
       question: 'Will ETH flip its all-time high?',
       yesPrice: 0.31,
       volume: 88000,
-      activeAgents: ['Lyra 💠', 'Sirius 🌠'],
+      activeAgents: ['Cygnus 🛡️', 'Atlas 📈'],
     ),
     _Market(
       slug: 'us-recession',
       question: 'US recession declared in 2026?',
       yesPrice: 0.18,
       volume: 210000,
-      activeAgents: ['Orion 🛰️', 'Antigravity 🪐'],
+      activeAgents: ['Orion 🔭', 'Nova 🌐'],
     ),
     _Market(
       slug: 'fed-cut-july',
       question: 'Fed cuts rates in July?',
       yesPrice: 0.74,
       volume: 156000,
-      activeAgents: ['Vega ⚡', 'Sirius 🌠'],
+      activeAgents: ['Vega ⚡', 'Atlas 📈'],
     ),
     _Market(
       slug: 'arc-tvl-1b',
       question: 'Arc TVL exceeds \$1B by Q4?',
       yesPrice: 0.42,
       volume: 67000,
-      activeAgents: ['Antigravity 🪐', 'Lyra 💠'],
+      activeAgents: ['Nova 🌐', 'Cygnus 🛡️'],
     ),
     _Market(
       slug: 'sol-300',
       question: 'SOL above \$300 this month?',
       yesPrice: 0.55,
       volume: 92000,
-      activeAgents: ['Vega ⚡'],
+      activeAgents: ['Striker ⚽'],
     ),
   ];
 
@@ -316,11 +316,11 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
     });
   }
 
-  void _loadMarketsData() {
+  void _loadMarketsData() async {
     final state = PulsAppState.instance;
     if (state != null && state.feedMarkets.isNotEmpty) {
       final realMarkets = state.feedMarkets.take(15).map((m) {
-        final agentPool = ['Vega ⚡', 'Lyra 💠', 'Antigravity 🪐', 'Orion 🛰️', 'Sirius 🌠'];
+        final agentPool = ['Vega ⚡', 'Cygnus 🛡️', 'Orion 🔭', 'Atlas 📈', 'Nova 🌐', 'Striker ⚽'];
         agentPool.shuffle();
         return _Market(
           slug: m.slug,
@@ -332,6 +332,33 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
       }).toList();
       if (mounted) setState(() => _terminalMarkets = realMarkets);
     } else {
+      // Try loading from API directly instead of using mock fallback
+      try {
+        final res = await http.get(
+          Uri.parse('$backendUrl/api/markets?limit=15'),
+          headers: {'Accept': 'application/json'},
+        ).timeout(const Duration(seconds: 8));
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body) as List;
+          final agentPool = ['Vega ⚡', 'Cygnus 🛡️', 'Orion 🔭', 'Atlas 📈', 'Nova 🌐', 'Striker ⚽'];
+          final realMarkets = data.take(15).map((m) {
+            agentPool.shuffle();
+            final prices = m['outcomePrices'] is String ? jsonDecode(m['outcomePrices']) : m['outcomePrices'] ?? [0.5, 0.5];
+            return _Market(
+              slug: m['slug'] ?? '',
+              question: m['question'] ?? m['slug'] ?? '',
+              yesPrice: double.tryParse('${prices is List && prices.isNotEmpty ? prices[0] : 0.5}') ?? 0.5,
+              volume: (double.tryParse('${m['liquidity'] ?? m['volume'] ?? 0}') ?? 0).toInt(),
+              activeAgents: agentPool.take(math.Random().nextInt(3) + 1).toList(),
+            );
+          }).toList();
+          if (mounted && realMarkets.isNotEmpty) {
+            setState(() => _terminalMarkets = realMarkets);
+            return;
+          }
+        }
+      } catch (_) {}
+      // Final fallback — only if API also fails
       if (mounted) setState(() => _terminalMarkets = List.from(_fallbackMarkets));
     }
   }
@@ -456,7 +483,8 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
     
     switch (action) {
       case 'go':
-        return ('$agentName → [ TRADE ] ${side.toUpperCase()} $amt · $q', LogLevel.ok);
+        final alphaPaid = (amount != null && amt.isNotEmpty) ? ' [x402 \$${amount}]' : '';
+        return ('$agentName → [ TRADE ] ${side.toUpperCase()} $amt · $q$alphaPaid', LogLevel.ok);
       case 'skip':
         return ('$agentName → [ SKIP ] $q', LogLevel.warn);
       case 'comment':
@@ -469,9 +497,33 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
         return ('$agentName → [ STREAM SKIP ] conviction low', LogLevel.info);
       case 'director_refund':
         return ('$agentName → [ REFUND ] $amt returned', LogLevel.warn);
+      case 'signal_unlock':
+      case 'unlock':
+        return ('$agentName → [ x402 ] Signal Unlocked $amt', LogLevel.pay);
+      case 'tip':
+        return ('$agentName → [ TIP ] $amt → $q', LogLevel.pay);
+      case 'x402':
+      case 'nanopayment':
+        return ('$agentName → [ x402 ] Nanopayment $amt', LogLevel.pay);
+      case 'bond_stake':
+        return ('$agentName → [ AGENTBOND ] Staked $amt on ${side.toUpperCase()}', LogLevel.pay);
+      case 'bond_return':
+        return ('$agentName → [ BOND RETURNED ] +$amt', LogLevel.ok);
+      case 'bond_slash':
+        return ('$agentName → [ BOND SLASHED ] -$amt', LogLevel.err);
+      case 'duel_open':
+      case 'duel_join':
+        return ('$agentName → [ DUEL ] Matched vs opponent on $q', LogLevel.info);
+      case 'duel_won':
+        return ('$agentName → [ DUEL WON ] +$amt', LogLevel.ok);
+      case 'duel_lost':
+        return ('$agentName → [ DUEL LOST ] -$amt', LogLevel.err);
       default:
         if (action.contains('bond') || action.contains('stake')) {
           return ('$agentName → [ STAKED ] $amt on ${side.toUpperCase()}', LogLevel.pay);
+        }
+        if (action.contains('x402') || action.contains('pay')) {
+          return ('$agentName → [ x402 ] $amt · $q', LogLevel.pay);
         }
         return ('$agentName → [ ${action.toUpperCase()} ] $q', LogLevel.info);
     }
@@ -1932,7 +1984,7 @@ final _fallbackAgents = [
     trades: 1248,
     address: '0x71C...392A',
     color: Color(0xFF2DD4BF),
-    latestAction: 'Staked \$24.50 YES on btc-100k',
+    latestAction: 'Staked \$0.10 YES on columbus-crew-mls-cup',
     pnlHistory: [4000.0, 6200.0, 5800.0, 7100.0, 9400.0, 11200.0, 10800.0, 14000.0, 16200.0, 18432.20],
   ),
   const _AgentInfo(
@@ -1945,7 +1997,7 @@ final _fallbackAgents = [
     trades: 942,
     address: '0x4bB...51aF',
     color: Color(0xFFEC4899),
-    latestAction: 'Arb execute: Buy NO on eth-flip',
+    latestAction: 'Trade: Buy NO on bank-of-japan-rate',
     pnlHistory: [3000.0, 4100.0, 5600.0, 5200.0, 7800.0, 8400.0, 9900.0, 11200.0, 10500.0, 12190.55],
   ),
   const _AgentInfo(
