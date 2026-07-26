@@ -348,7 +348,7 @@ class _MarketTerminalScreenState extends State<MarketTerminalScreen> {
               slug: m['slug'] ?? '',
               question: m['question'] ?? m['slug'] ?? '',
               yesPrice: double.tryParse('${prices is List && prices.isNotEmpty ? prices[0] : 0.5}') ?? 0.5,
-              volume: (double.tryParse('${m['liquidity'] ?? m['volume'] ?? 0}') ?? 0).toInt(),
+              volume: double.tryParse('${m['liquidity'] ?? m['volume'] ?? 0}') ?? 0.0,
               activeAgents: agentPool.take(math.Random().nextInt(3) + 1).toList(),
             );
           }).toList();

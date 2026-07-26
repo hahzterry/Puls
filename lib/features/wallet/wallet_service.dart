@@ -1039,9 +1039,7 @@ class WalletService extends ChangeNotifier {
     if (_state.userId == null) return [];
     try {
       final res = await _get('/api/notifications', {'userId': _state.userId!});
-      if (res is List) return res;
-      if (res is Map && res['notifications'] is List) return res['notifications'] as List<dynamic>;
-      return [];
+      return res['notifications'] as List<dynamic>? ?? [];
     } catch (e) {
       debugPrint('[WalletService] Failed to fetch notifications: $e');
       return [];
@@ -1125,9 +1123,7 @@ class WalletService extends ChangeNotifier {
     if (_state.userId == null) return [];
     try {
       final res = await _get('/api/trade/limit-orders', {'userId': _state.userId!});
-      if (res is List) return res;
-      if (res is Map && res['orders'] is List) return res['orders'] as List<dynamic>;
-      return [];
+      return res['orders'] as List<dynamic>? ?? [];
     } catch (e) {
       debugPrint('[WalletService] Failed to fetch limit orders: $e');
       return [];
