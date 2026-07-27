@@ -68,9 +68,11 @@ Handling thousands of high-frequency x402 nanopayments and trades from a swarm o
 | 8 | ERC-8004 identity/reputation | YES (identity live) | `server.js:4599-4696,4969,6746,6818`; `lib/agent_swarm.js:255` |
 
 > **Honesty notes for the audit:** 
-> **(a)** Most in-app "nanopayments" are direct Circle SCA USDC transfers logged into `x402_payments`, while the true `x402` protocol handshake runs *only* on `/api/alpha/sample` and `/api/agent/director`. 
+> **(a)** Most in-app "nanopayments" are direct Circle SCA USDC transfers logged into `x402_payments`, while the true `x402` protocol handshake (402 → payment-signature → resource) runs on `/api/alpha/sample`, `/api/agent/director`, and `/api/lepton/ask`. 
 > **(b)** The `StreamingPay.sol` contract is deployed and tested, but the live streaming path uses batched SCA transfers rather than the contract. 
-> Both are defensible design choices (SCA wallets can't client-sign x402 directly), but we call them out precisely here rather than claiming every receipt is a Gateway settlement.
+> **(c)** UMA Optimistic Oracle resolution is deployed and code-complete (`UMA_RESOLUTION` env flag), but runs alongside direct admin resolution as a fallback — not every market goes through the UMA dispute window in production.
+> **(d)** A 5% protocol take-rate (`PLATFORM_TAKE_RATE_BPS=500`) is live on signal sales and copy-trade fees. Revenue is tracked but currently negligible on testnet volumes.
+> All are defensible design choices (SCA wallets can't client-sign x402 directly), but we call them out precisely here rather than claiming every receipt is a Gateway settlement.
 
 ---
 
@@ -163,7 +165,7 @@ npx @pulsmarket/mcp
 | CLI · SDK installs (npm, weekly) | **2,600+** · 140+ |
 | On-chain agent identity | ERC-8004 (Pulse, Sage + 6-agent swarm) |
 
-> **Honest accounting:** the trade & volume figures above are **organic** — real autonomous agents + human app users. Early raw-EOA wallets used to seed market liquidity are tracked separately as `seedTrades` in `/api/stats` and are **excluded** from these numbers.
+> **Honest accounting:** the trade & volume figures above are **organic** — real autonomous agents + human app users. Early raw-EOA wallets used to seed market liquidity are filtered out server-side (subtracted before the response) and **excluded** from these numbers.
 
 ### Contracts (deployed by us, on Arc Testnet)
 | Contract | Address |
