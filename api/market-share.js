@@ -73,6 +73,17 @@ module.exports = async (req, res) => {
     return res.end();
   }
 
+  // On app.pulsmarket.tech, skip OG rendering — just serve index.html with
+  // the query param so Flutter's deep link parser handles it directly.
+  // This prevents the double-redirect loop (market-share → ?m=slug → Flutter
+  // reads ?m but then something clears it).
+  const host = req.headers.host || '';
+  if (host.startsWith('app.')) {
+    res.statusCode = 302;
+    res.setHeader('Location', `/?m=${encodeURIComponent(slug)}`);
+    return res.end();
+  }
+
   const m = await getMarket(slug);
   const title = m ? `${m.question} — Puls` : 'Puls — The Market for What Happens Next';
   const odds = m && m.yes && m.no ? `YES ${m.yes} · NO ${m.no} — ` : '';
