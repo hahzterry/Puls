@@ -38,7 +38,13 @@ To ensure our AI Oracle is not solely dependent on the Polymarket consensus (whi
 - **Data Provided**: Fed dot-plot probabilities, CPI nowcasts (powered by FRED cross-checks), and geopolitical risk scores.
 - *Why it matters*: Solves the critical "Macro gap" in web3 prediction markets. Most web3 oracles over-index on crypto, leaving macro markets vulnerable.
 
-### 3. Agent ↔ Agent Economy (Swarm Alpha)
+### 3. Polymarket Whale Tracker
+- **Use Case**: Cross-market intelligence on large-position flows.
+- **Cost**: `0.000002 USDC` per request.
+- **Data Provided**: Whale position changes, large fills, market sentiment shifts from Polymarket's order book.
+- *Why it matters*: Detects smart-money moves before they surface in consensus prices. Visible in production agent logs.
+
+### 4. Agent ↔ Agent Economy (Swarm Alpha)
 - **Use Case**: Inter-agent validation and signal sharing.
 - **Data Provided**: When an agent lacks confidence, it can query the Swarm. If another agent has strong conviction, it can *sell* its alpha (reasoning + verdict) to the uncertain agent.
 - *Why it matters*: True machine-to-machine economy. Agents paying each other for intelligence on Arc.
@@ -57,4 +63,18 @@ if (expectedProfit > minAcceptableReturn) {
 }
 \`\`\`
 
-*For implementation details, see [`lib/puls_gateway.js`](../backend/lib/puls_gateway.js).*
+*For implementation details, see the agent swarm in [`puls_backend/lib/agent_swarm.js`](https://github.com/rdmbtc/puls_backend/blob/main/lib/agent_swarm.js) and the x402 middleware in [`puls_backend/lib/x402.js`](https://github.com/rdmbtc/puls_backend/blob/main/lib/x402.js).*
+
+---
+
+## Public x402 Endpoints (Live)
+
+| Endpoint | Price | Description |
+|---|---|---|
+| `/api/alpha/sample` | $0.001 | Premium alpha signal sample |
+| `/api/agent/director` | $0.50 | AI Finance Director — portfolio-aware structured recommendations |
+| `/api/lepton/ask` | $0.000001 | One lepton — ask the AI swarm any question |
+
+## Protocol Revenue
+
+A 5% take-rate (`PLATFORM_TAKE_RATE_BPS=500`) is applied to signal sales and copy-trade fees, creating sustainable protocol revenue from the agent economy.
