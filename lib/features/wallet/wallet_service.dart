@@ -1209,8 +1209,23 @@ class WalletService extends ChangeNotifier {
       final raw = kvGet('direct_auth');
       if (raw != null && raw.isNotEmpty) {
         final savedAuth = jsonDecode(raw) as Map<String, dynamic>?;
-        if (savedAuth != null && savedAuth['token'] != null && (savedAuth['token'] as String).isNotEmpty) {
-          return savedAuth['token'] as String;
+        if (savedAuth != null) {
+          final token = savedAuth['token'] as String?;
+          if (token != null && token.isNotEmpty) {
+            // Check if token is expired
+            try {
+              final parts = token.split('.');
+              if (parts.length >= 2) {
+                final payload = jsonDecode(utf8.decode(base64Url.decode(parts[1]))) as Map<String, dynamic>;
+                final exp = payload['exp'] as num?;
+                if (exp != null && exp <= DateTime.now().millisecondsSinceEpoch / 1000) {
+                  kvRemove('direct_auth');
+                  return null;
+                }
+              }
+            } catch (_) {}
+            return token;
+          }
         }
       }
     } catch (_) {}
@@ -1240,9 +1255,6 @@ class WalletService extends ChangeNotifier {
       headers: headers,
       body: jsonEncode(body),
     ).timeout(timeout ?? const Duration(seconds: 15));
-    if (res.statusCode == 401 || res.statusCode == 403) {
-      kvRemove('direct_auth');
-    }
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     if (res.statusCode != 200) throw Exception(data['error'] ?? 'Request failed');
     return data;
@@ -1254,9 +1266,6 @@ class WalletService extends ChangeNotifier {
     final token = await _freshAccessToken();
     if (token != null) headers['Authorization'] = 'Bearer $token';
     final res = await _client.get(uri, headers: headers).timeout(const Duration(seconds: 10));
-    if (res.statusCode == 401 || res.statusCode == 403) {
-      kvRemove('direct_auth');
-    }
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     if (res.statusCode != 200) throw Exception(data['error'] ?? 'Request failed');
     return data;
@@ -1271,9 +1280,6 @@ class WalletService extends ChangeNotifier {
       headers: headers,
       body: jsonEncode(body),
     ).timeout(timeout ?? const Duration(seconds: 15));
-    if (res.statusCode == 401 || res.statusCode == 403) {
-      kvRemove('direct_auth');
-    }
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     if (res.statusCode != 200) throw Exception(data['error'] ?? 'Request failed');
     return data;

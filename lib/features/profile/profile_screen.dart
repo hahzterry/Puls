@@ -1093,13 +1093,15 @@ class _ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasWallet = ws.userId != null;
-    final defaultName = ws.isExternalWallet
-        ? (ws.walletAddress != null && ws.walletAddress!.length > 10
-            ? '${ws.walletAddress!.substring(0, 6)}...${ws.walletAddress!.substring(ws.walletAddress!.length - 4)}'
-            : ws.walletAddress ?? 'Puls Trader')
-        : (supaUser?.userMetadata?['full_name'] ??
-            supaUser?.userMetadata?['name'] ??
-            (ws.userId != null ? 'Puls Trader' : 'Guest Trader')) as String;
+    final defaultName = (ws.userId == 'supabase_231e1ae9-9f9f-47bb-a6f7-2e406ba29b10')
+        ? 'Dr RDM'
+        : (ws.isExternalWallet
+            ? (ws.walletAddress != null && ws.walletAddress!.length > 10
+                ? '${ws.walletAddress!.substring(0, 6)}...${ws.walletAddress!.substring(ws.walletAddress!.length - 4)}'
+                : ws.walletAddress ?? 'Puls Trader')
+            : (supaUser?.userMetadata?['full_name'] ??
+                supaUser?.userMetadata?['name'] ??
+                (ws.userId != null ? 'Puls Trader' : 'Guest Trader')) as String);
 
     final name = displayName ?? defaultName;
     final email = ws.isExternalWallet
