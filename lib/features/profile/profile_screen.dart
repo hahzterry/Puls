@@ -47,6 +47,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       !_loadingProfile &&
       (_displayName == null || _displayName!.trim().isEmpty);
 
+  String? _lastUserId;
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +65,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _loadProfileData();
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final wallet = WalletServiceScope.of(context);
+    final userId = wallet.state.userId;
+    if (userId != null && userId != _lastUserId) {
+      _lastUserId = userId;
+      wallet.refreshBalance();
+      _loadProfileData();
+    }
   }
 
   Future<void> _loadProfileData() async {
@@ -1085,12 +1099,12 @@ class _ProfileCard extends StatelessWidget {
             : ws.walletAddress ?? 'Puls Trader')
         : (supaUser?.userMetadata?['full_name'] ??
             supaUser?.userMetadata?['name'] ??
-            'Puls Trader') as String;
+            (ws.userId != null ? 'Puls Trader' : 'Guest Trader')) as String;
 
     final name = displayName ?? defaultName;
     final email = ws.isExternalWallet
         ? 'Connected via Web3'
-        : (supaUser?.email ?? 'trader@puls.arc') as String;
+        : (supaUser?.email ?? (ws.userId != null ? 'Google Account' : 'Guest')) as String;
 
     final avatar =
         avatarUrl ?? supaUser?.userMetadata?['avatar_url'] as String?;
