@@ -119,6 +119,12 @@ class WalletService extends ChangeNotifier {
     try {
       _supabase.auth.onAuthStateChange.listen((data) {
         if (data.session != null && _state.userId == null) {
+          try {
+            kvSet('direct_auth', jsonEncode({
+              'userId': data.session!.user.id,
+              'token': data.session!.accessToken,
+            }));
+          } catch (_) {}
           _onSignedIn(data.session!.user);
         } else if (data.session == null && !_state.isExternalWallet && savedAuth == null) {
           _refreshTimer?.cancel();
@@ -127,7 +133,15 @@ class WalletService extends ChangeNotifier {
         }
       });
       final existing = _supabase.auth.currentSession;
-      if (existing != null) _onSignedIn(existing.user);
+      if (existing != null) {
+        try {
+          kvSet('direct_auth', jsonEncode({
+            'userId': existing.user.id,
+            'token': existing.accessToken,
+          }));
+        } catch (_) {}
+        _onSignedIn(existing.user);
+      }
     } catch (e) {
       debugPrint('[WalletService] Supabase auth init error: $e');
     }
@@ -1211,8 +1225,9 @@ class WalletService extends ChangeNotifier {
         final savedAuth = jsonDecode(raw) as Map<String, dynamic>?;
         if (savedAuth != null) {
           final token = savedAuth['token'] as String?;
-          if (token != null && token.isNotEmpty) {
+            if (token != null && token.isNotEmpty) {
             // Check if token is expired
+            bool expired = false;
             try {
               final parts = token.split('.');
               if (parts.length >= 2) {
@@ -1220,11 +1235,11 @@ class WalletService extends ChangeNotifier {
                 final exp = payload['exp'] as num?;
                 if (exp != null && exp <= DateTime.now().millisecondsSinceEpoch / 1000) {
                   kvRemove('direct_auth');
-                  return null;
+                  expired = true;
                 }
               }
             } catch (_) {}
-            return token;
+            if (!expired) return token;
           }
         }
       }
@@ -1240,6 +1255,14 @@ class WalletService extends ChangeNotifier {
       } catch (_) {
         s = auth.currentSession;
       }
+    }
+    if (s?.accessToken != null) {
+      try {
+        kvSet('direct_auth', jsonEncode({
+          'userId': s!.user.id,
+          'token': s.accessToken,
+        }));
+      } catch (_) {}
     }
     return s?.accessToken;
   }
