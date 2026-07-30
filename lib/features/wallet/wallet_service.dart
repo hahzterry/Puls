@@ -71,17 +71,60 @@ class WalletService extends ChangeNotifier {
   }
 
   WalletService() {
-    _supabase.auth.onAuthStateChange.listen((data) {
-      if (data.session != null && _state.userId == null) {
-        _onSignedIn(data.session!.user);
-      } else if (data.session == null) {
-        _refreshTimer?.cancel();
-        _state = const WalletState();
-        notifyListeners();
+    _initAuth();
+  }
+
+  Future<void> _initAuth() async {
+    // 1. Process inbound Google OAuth redirect parameters: ?auth_token=...&user_id=...
+    if (kIsWeb) {
+      try {
+        final href = currentHref();
+        final uri = Uri.parse(href);
+        final authToken = uri.queryParameters['auth_token'];
+        final userId = uri.queryParameters['user_id'];
+        if (userId != null && userId.isNotEmpty) {
+          final data = {
+            'userId': userId,
+            'token': authToken ?? '',
+          };
+          await KvStore.setJson('direct_auth', data);
+          _setState(_state.copyWith(userId: userId, isLoading: true));
+          _getOrCreateWallet(userId);
+          try {
+            replaceUrl(uri.path);
+          } catch (_) {}
+          return;
+        }
+      } catch (e) {
+        debugPrint('[WalletService] OAuth URL parse error: $e');
       }
-    });
-    final existing = _supabase.auth.currentSession;
-    if (existing != null) _onSignedIn(existing.user);
+    }
+
+    // 2. Check saved direct_auth session
+    final savedAuth = await KvStore.getJson('direct_auth');
+    if (savedAuth != null && savedAuth['userId'] != null) {
+      final userId = savedAuth['userId'] as String;
+      _setState(_state.copyWith(userId: userId, isLoading: true));
+      _getOrCreateWallet(userId);
+      return;
+    }
+
+    // 3. Fallback to Supabase auth listener
+    try {
+      _supabase.auth.onAuthStateChange.listen((data) {
+        if (data.session != null && _state.userId == null) {
+          _onSignedIn(data.session!.user);
+        } else if (data.session == null && !_state.isExternalWallet && savedAuth == null) {
+          _refreshTimer?.cancel();
+          _state = const WalletState();
+          notifyListeners();
+        }
+      });
+      final existing = _supabase.auth.currentSession;
+      if (existing != null) _onSignedIn(existing.user);
+    } catch (e) {
+      debugPrint('[WalletService] Supabase auth init error: $e');
+    }
   }
 
   @override
@@ -122,10 +165,12 @@ class WalletService extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    await KvStore.remove('direct_auth');
+    await KvStore.remove('wallet_state');
     if (_state.isExternalWallet) {
       web3.disconnectBrowserWallet();
     } else {
-      await _supabase.auth.signOut();
+      try { await _supabase.auth.signOut(); } catch (_) {}
     }
     _refreshTimer?.cancel();
     _state = const WalletState();
@@ -1154,6 +1199,10 @@ class WalletService extends ChangeNotifier {
   /// with 401 ("token invalid"). Refreshing here means every request self-heals,
   /// so users never have to hit Retry/Reload.
   Future<String?> _freshAccessToken() async {
+    final savedAuth = await KvStore.getJson('direct_auth');
+    if (savedAuth != null && savedAuth['token'] != null && (savedAuth['token'] as String).isNotEmpty) {
+      return savedAuth['token'] as String;
+    }
     final auth = _supabase.auth;
     var s = auth.currentSession;
     final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;

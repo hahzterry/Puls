@@ -97,8 +97,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? (ws.walletAddress != null && ws.walletAddress!.length > 10
             ? '${ws.walletAddress!.substring(0, 6)}...${ws.walletAddress!.substring(ws.walletAddress!.length - 4)}'
             : ws.walletAddress ?? 'Puls Trader')
-        : (Supabase
-                .instance.client.auth.currentUser?.userMetadata?['full_name'] ??
+        : (_displayName ??
+            Supabase.instance.client.auth.currentUser?.userMetadata?['full_name'] ??
             Supabase.instance.client.auth.currentUser?.userMetadata?['name'] ??
             'Puls Trader') as String;
 
