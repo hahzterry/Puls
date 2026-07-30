@@ -26,7 +26,7 @@ class _WebTickerStripState extends State<WebTickerStrip>
   Widget? _tape;
   double _rowWidth = 0;
 
-  static const double _itemW = 232;   // fixed chip width (px)
+  static const double _itemW = 232; // fixed chip width (px)
   static const double _pxPerSec = 42; // calm, constant scroll speed
   // Long fixed period; elapsed seconds = value * _periodSec, wrapped with
   // modulo, so the loop is seamless and independent of the period.
@@ -85,15 +85,32 @@ class _WebTickerStripState extends State<WebTickerStrip>
         border: Border.all(color: t.border),
       ),
       clipBehavior: Clip.antiAlias,
-      child: RepaintBoundary(
-        child: AnimatedBuilder(
-          animation: _ctrl,
-          child: _tape,
-          builder: (context, child) {
-            final elapsed = _ctrl.value * _periodSec; // seconds
-            final dx = rowWidth > 0 ? -((elapsed * _pxPerSec) % rowWidth) : 0.0;
-            return Transform.translate(offset: Offset(dx, 0), child: child);
-          },
+      // Edge fade masks the tape's hard clip so chips glance in and out of
+      // view instead of popping at the container's rounded edge.
+      child: ShaderMask(
+        shaderCallback: (rect) => const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Colors.transparent,
+            Colors.white,
+            Colors.white,
+            Colors.transparent,
+          ],
+          stops: [0.0, 0.05, 0.95, 1.0],
+        ).createShader(rect),
+        blendMode: BlendMode.dstIn,
+        child: RepaintBoundary(
+          child: AnimatedBuilder(
+            animation: _ctrl,
+            child: _tape,
+            builder: (context, child) {
+              final elapsed = _ctrl.value * _periodSec; // seconds
+              final dx =
+                  rowWidth > 0 ? -((elapsed * _pxPerSec) % rowWidth) : 0.0;
+              return Transform.translate(offset: Offset(dx, 0), child: child);
+            },
+          ),
         ),
       ),
     );
@@ -140,7 +157,7 @@ class _TickerChip extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            'YES ${formatCents(yesPrice )}',
+            'YES ${formatCents(yesPrice)}',
             style: const TextStyle(
               color: PulsColors.brandMint,
               fontSize: 12,

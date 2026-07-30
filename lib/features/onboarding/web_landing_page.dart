@@ -167,7 +167,7 @@ class _WebLandingPageState extends State<WebLandingPage>
                     _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: _StatsSection())),
                     _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: FaqSection())),
                     _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: _FinalCtaSection())),
-                    const RepaintBoundary(child: _FooterSection()),
+                    _Reveal(scrollOffset: _scrollOffset, child: RepaintBoundary(child: _FooterSection(scrollCtrl: _scrollCtrl))),
                   ],
                 ),
               ),
@@ -197,6 +197,13 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ),
               ),
             ),
+            // ── Sticky navbar (frosted glass, condenses on scroll) ─────────
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: _StickyNavbar(scrollOffset: _scrollOffset),
+            ),
           ],
         ),
       ),
@@ -209,9 +216,12 @@ class _WebLandingPageState extends State<WebLandingPage>
 // previews and locally.
 String _pageUrl(String path) => Uri.base.resolve(path).toString();
 
-// ── Navbar ────────────────────────────────────────────────────────────────────
-class _Navbar extends StatelessWidget {
-  const _Navbar();
+// ── Static (first-paint) Navbar ──────────────────────────────────────────────
+/// The full navbar shown at scroll position 0. Sits in the hero, no backdrop
+/// blur — just the logo, links and CTA on a transparent background. Once the
+/// user scrolls past ~80px the _StickyNavbar takes over.
+class _InlineNavbar extends StatelessWidget {
+  const _InlineNavbar();
 
   @override
   Widget build(BuildContext context) {
@@ -223,10 +233,6 @@ class _Navbar extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 48, vertical: isMobile ? 12 : 18),
-      decoration: BoxDecoration(
-        color: t.bg.withValues(alpha: 0.8),
-        border: Border(bottom: BorderSide(color: t.border.withValues(alpha: 0.5))),
-      ),
       child: Row(
         children: [
           Container(
@@ -251,7 +257,6 @@ class _Navbar extends StatelessWidget {
           ),
           const Spacer(),
           if (!isMobile) ...[
-            // ── Product dropdown ─────────────────────────────────────
             _NavDropdown(
               label: 'Product',
               items: [
@@ -262,7 +267,6 @@ class _Navbar extends StatelessWidget {
               ],
             ),
             const SizedBox(width: 4),
-            // ── Developers dropdown ───────────────────────────────────
             _NavDropdown(
               label: 'Developers',
               items: [
@@ -273,7 +277,6 @@ class _Navbar extends StatelessWidget {
               ],
             ),
             const SizedBox(width: 8),
-            // Android as a small icon-button (distribution channel, not primary nav)
             _NavIcon(
               icon: Icons.android_rounded,
               url: _pageUrl('/mobile-download'),
@@ -282,7 +285,6 @@ class _Navbar extends StatelessWidget {
             const SizedBox(width: 16),
           ] else
             const _MobileNavMenu(),
-          // Theme Toggle button
           IconButton(
             onPressed: appState.toggleThemeMode,
             icon: Icon(
@@ -312,35 +314,159 @@ class _Navbar extends StatelessWidget {
   }
 }
 
-class _NavLink extends StatefulWidget {
-  const _NavLink(this.label, this.url);
-  final String label;
-  final String url;
-
-  @override
-  State<_NavLink> createState() => _NavLinkState();
-}
-
-class _NavLinkState extends State<_NavLink> {
-  bool _hovered = false;
+/// Sticky navbar that appears once the user scrolls past ~80px.
+/// Frosted glass background fills in as it slides in; condenses to a slim bar
+/// (logo + CTA only) so it never competes with the content below.
+class _StickyNavbar extends StatelessWidget {
+  const _StickyNavbar({required this.scrollOffset});
+  final double scrollOffset;
 
   @override
   Widget build(BuildContext context) {
+    final appState = PulsStateScope.of(context);
     final t = context.puls;
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: Text(
-            widget.label,
-            style: TextStyle(
-              color: _hovered ? t.brand : t.textMuted,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+    final isDark = context.isDark;
+    final w = MediaQuery.sizeOf(context).width;
+    final isMobile = w < 800;
+
+    // Reveal animation: fades + slides in over the first 120px of scroll.
+    final reveal = Curves.easeOut.transform(
+      ((scrollOffset - 80) / 120).clamp(0.0, 1.0),
+    );
+    // Condense: full nav shrinks to compact once past 200px.
+    final condense = Curves.easeOut.transform(
+      ((scrollOffset - 200) / 100).clamp(0.0, 1.0),
+    );
+
+    return AnimatedSlide(
+      duration: Duration.zero,
+      offset: Offset(0, -1 + reveal),
+      child: AnimatedOpacity(
+        duration: Duration.zero,
+        opacity: reveal,
+        child: Container(
+          decoration: BoxDecoration(
+            color: t.bg.withValues(alpha: 0.78 + 0.02 * condense),
+            border: Border(
+              bottom: BorderSide(
+                color: t.border.withValues(alpha: 0.4 + 0.2 * condense),
+              ),
+            ),
+            boxShadow: condense > 0.5
+                ? [
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black.withValues(alpha: 0.3)
+                          : Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 24,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 16 : 48,
+                  vertical: isMobile ? 10 : (14 - 4 * condense),
+                ),
+                child: Row(
+                  children: [
+                    // Logo + wordmark — always visible
+                    Container(
+                      width: isMobile ? 26 : 28,
+                      height: isMobile ? 26 : 28,
+                      decoration: BoxDecoration(
+                        color: t.brandSubtle,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.asset('assets/logo.png', fit: BoxFit.cover),
+                    ),
+                    SizedBox(width: isMobile ? 8 : 10),
+                    if (!isMobile)
+                      Text(
+                        'Puls',
+                        style: TextStyle(
+                          fontFamily: PulsColors.fontDisplay,
+                          color: t.text,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                    const Spacer(),
+                    // Full nav links — fade out as we condense
+                    if (!isMobile)
+                      Opacity(
+                        opacity: 1 - condense,
+                        child: Transform.translate(
+                          offset: Offset(0, -4 * condense),
+                          child: IgnorePointer(
+                            ignoring: condense > 0.5,
+                            child: Row(
+                              children: [
+                                _NavDropdown(
+                                  label: 'Product',
+                                  items: [
+                                    ('Pulse', _pageUrl('/pulse')),
+                                    ('Agent', _pageUrl('/agent')),
+                                    ('Versus', _pageUrl('/versus')),
+                                    ('Explorer', _pageUrl('/explorer')),
+                                  ],
+                                ),
+                                const SizedBox(width: 4),
+                                _NavDropdown(
+                                  label: 'Developers',
+                                  items: [
+                                    ('Docs', 'https://docs.pulsmarket.tech'),
+                                    ('CLI', _pageUrl('/cli')),
+                                    ('Build', _pageUrl('/build')),
+                                    ('GitHub', 'https://github.com/rdmbtc/Puls'),
+                                  ],
+                                ),
+                                const SizedBox(width: 8),
+                                _NavIcon(
+                                  icon: Icons.android_rounded,
+                                  url: _pageUrl('/mobile-download'),
+                                  tooltip: 'Download for Android',
+                                ),
+                                const SizedBox(width: 12),
+                                _SecondaryButton(
+                                  label: 'Terminal',
+                                  onTap: () => launchUrl(
+                                    Uri.parse('https://terminal.pulsmarket.tech'),
+                                    mode: LaunchMode.externalApplication,
+                                  ),
+                                  small: true,
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    // Always-visible controls
+                    IconButton(
+                      onPressed: appState.toggleThemeMode,
+                      icon: Icon(
+                        isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                        size: 18,
+                        color: t.textMuted,
+                      ),
+                      tooltip: isDark ? 'Light mode' : 'Dark mode',
+                    ),
+                    SizedBox(width: isMobile ? 4 : 8),
+                    _PrimaryButton(
+                      label: isMobile ? 'Launch' : 'Launch App',
+                      onTap: () => appState.dismissWebLanding(terminal: false),
+                      small: true,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -595,8 +721,8 @@ class _HeroSectionState extends State<_HeroSection> {
       constraints: BoxConstraints(minHeight: h),
       child: Stack(
         children: [
-          // Navbar
-          const Positioned(top: 0, left: 0, right: 0, child: _Navbar()),
+          // ── Inline navbar (first paint, transparent bg) ────────────────
+          const Positioned(top: 0, left: 0, right: 0, child: _InlineNavbar()),
           // Hero content with parallax
           Padding(
             padding: EdgeInsets.only(top: isMobile ? 110 : 90),
@@ -740,7 +866,7 @@ class _HeroCopy extends StatelessWidget {
               ),
             ],
           ),
-        ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.15),
+        ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, duration: 400.ms, curve: Curves.easeOutCubic),
         SizedBox(height: isMobile ? 22 : 30),
         // Editorial serif headline
         Text(
@@ -754,7 +880,7 @@ class _HeroCopy extends StatelessWidget {
             height: 1.04,
             letterSpacing: -1.5,
           ),
-        ).animate().fadeIn(duration: 600.ms, delay: 100.ms).slideY(begin: 0.12, delay: 100.ms),
+        ).animate().fadeIn(duration: 500.ms, delay: 60.ms).slideY(begin: 0.18, end: 0, duration: 500.ms, delay: 60.ms, curve: Curves.easeOutCubic),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 450),
           transitionBuilder: (child, anim) => FadeTransition(
@@ -777,7 +903,7 @@ class _HeroCopy extends StatelessWidget {
               letterSpacing: -1.5,
             ),
           ),
-        ).animate().fadeIn(duration: 600.ms, delay: 150.ms),
+        ).animate().fadeIn(duration: 500.ms, delay: 180.ms).slideY(begin: 0.15, end: 0, duration: 500.ms, delay: 180.ms, curve: Curves.easeOutCubic),
         SizedBox(height: isMobile ? 18 : 26),
         // Subtitle
         ConstrainedBox(
@@ -794,7 +920,7 @@ class _HeroCopy extends StatelessWidget {
               fontWeight: FontWeight.w400,
             ),
           ),
-        ).animate().fadeIn(duration: 600.ms, delay: 250.ms).slideY(begin: 0.12, delay: 250.ms),
+        ).animate().fadeIn(duration: 500.ms, delay: 300.ms).slideY(begin: 0.12, end: 0, duration: 500.ms, delay: 300.ms, curve: Curves.easeOutCubic),
         SizedBox(height: isMobile ? 26 : 34),
         // CTAs
         Wrap(
@@ -822,7 +948,7 @@ class _HeroCopy extends StatelessWidget {
               );
             }),
           ],
-        ).animate().fadeIn(duration: 600.ms, delay: 350.ms).slideY(begin: 0.12, delay: 350.ms),
+        ).animate().fadeIn(duration: 500.ms, delay: 420.ms).slideY(begin: 0.08, end: 0, duration: 500.ms, delay: 420.ms, curve: Curves.easeOutCubic).scaleXY(begin: 0.96, end: 1.0, duration: 500.ms, delay: 420.ms, curve: Curves.easeOutCubic),
         SizedBox(height: isMobile ? 14 : 18),
         // Tech depth lives in the docs — keep the hero to one clear idea.
         Row(
@@ -832,7 +958,7 @@ class _HeroCopy extends StatelessWidget {
             const SizedBox(width: 6),
             const _InlineLink(label: 'Read the technical docs', url: 'https://docs.pulsmarket.tech'),
           ],
-        ).animate().fadeIn(duration: 600.ms, delay: 420.ms),
+        ).animate().fadeIn(duration: 400.ms, delay: 540.ms),
         SizedBox(height: isMobile ? 12 : 14),
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -843,7 +969,7 @@ class _HeroCopy extends StatelessWidget {
             Text('  ·  No wallet, no seed phrase, no risk.',
                 style: TextStyle(color: t.textSubtle, fontSize: 12.5)),
           ],
-        ).animate().fadeIn(duration: 600.ms, delay: 450.ms),
+        ).animate().fadeIn(duration: 400.ms, delay: 580.ms),
       ],
     );
   }
@@ -2936,10 +3062,10 @@ class _StatsSection extends StatelessWidget {
                 return Wrap(
                   spacing: isMobile ? 12 : 20, runSpacing: isMobile ? 12 : 20,
                   children: [
-                    _statCard('100+', 'Live Markets', 'From Polymarket Gamma API', t.brand, 'https://img.icons8.com/?id=KslJGdGlJFNz&format=png&size=256', constraints, cols, t),
-                    _statCard('< 1s', 'Trade Speed', 'Arc sub-second finality', t.yes, 'https://img.icons8.com/?id=XTqUA8keYxec&format=png&size=256', constraints, cols, t),
-                    _statCard('\$0 ETH', 'Gas Cost', 'USDC is the native gas token', PulsColors.amber, 'https://img.icons8.com/?id=rcnetj6T68lY&format=png&size=256', constraints, cols, t),
-                    _statCard('MPC', 'Wallet Type', 'Circle developer-controlled wallets', const Color(0xFF0EA5E9), 'https://img.icons8.com/?id=hkkfYNNRoACe&format=png&size=256', constraints, cols, t),
+                    _statCard('100+', 'Live Markets', 'From Polymarket Gamma API', t.brand, Icons.candlestick_chart_rounded, constraints, cols, t),
+                    _statCard('< 1s', 'Trade Speed', 'Arc sub-second finality', t.yes, Icons.bolt_rounded, constraints, cols, t),
+                    _statCard('\$0 ETH', 'Gas Cost', 'USDC is the native gas token', PulsColors.amber, Icons.local_gas_station_rounded, constraints, cols, t),
+                    _statCard('MPC', 'Wallet Type', 'Circle developer-controlled wallets', const Color(0xFF0EA5E9), Icons.account_balance_wallet_rounded, constraints, cols, t),
                   ],
                 );
               }),
@@ -3060,7 +3186,7 @@ class _StatsSection extends StatelessWidget {
     );
   }
 
-  Widget _statCard(String value, String label, String sub, Color color, String imageUrl, BoxConstraints constraints, int cols, PulsThemeColors t) {
+  Widget _statCard(String value, String label, String sub, Color color, IconData icon, BoxConstraints constraints, int cols, PulsThemeColors t) {
     final isMobile = constraints.maxWidth < 600;
     final spacing = isMobile ? 12.0 : 20.0;
     return SizedBox(
@@ -3088,12 +3214,17 @@ class _StatsSection extends StatelessWidget {
                     ),
                   ),
                 ),
-                Image.network(proxifyImageUrl(imageUrl),
-                  width: isMobile ? 32 : 48,
-                  height: isMobile ? 32 : 48,
-                  cacheHeight: 96,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                // Brand-tinted icon badge — replaces the old icons8 network images
+                Container(
+                  width: isMobile ? 36 : 48,
+                  height: isMobile ? 36 : 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: color.withValues(alpha: 0.25), width: 1.2),
+                  ),
+                  child: Icon(icon, size: isMobile ? 18 : 24, color: color),
                 ),
               ],
             ),
@@ -3149,77 +3280,174 @@ class _FinalCtaSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
     final t = context.puls;
+    final isDark = context.isDark;
     final w = MediaQuery.sizeOf(context).width;
     final isMobile = w < 700;
     final double titleSize = w < 480 ? 38 : (w < 900 ? 52 : 66);
+    final glowColor = isDark ? PulsColors.brandPinkDark : PulsColors.brandPink;
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 48, vertical: isMobile ? 72 : 130),
-      child: Column(
-        children: [
-          Text(
-            'Don\'t trust predictions.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: PulsColors.fontDisplay,
-              color: t.text,
-              fontSize: titleSize,
-              fontWeight: FontWeight.w600,
-              height: 1.08,
-              letterSpacing: -1.5,
+    return Stack(
+      children: [
+        // Radial glow backdrop behind the CTA section
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(
+              painter: _CtaGlowPainter(color: glowColor, isDark: isDark),
             ),
           ),
-          Text(
-            'Verify them on-chain.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: PulsColors.fontDisplay,
-              color: t.brand,
-              fontSize: titleSize,
-              fontWeight: FontWeight.w600,
-              fontStyle: FontStyle.italic,
-              height: 1.12,
-              letterSpacing: -1.5,
-            ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'Trade alongside AI agents that stake real USDC on every call. '
-            'One-tap wallet — you\'re trading in under a minute.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: t.textMuted, fontSize: isMobile ? 14 : 16, height: 1.6),
-          ),
-          SizedBox(height: isMobile ? 28 : 36),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            alignment: WrapAlignment.center,
-            children: [
-              Builder(builder: (context) {
-                final wallet = WalletServiceScope.of(context);
-                return _PrimaryButton(
-                  label: wallet.state.isLoading ? 'Connecting…' : 'Launch Puls',
-                  onTap: wallet.state.isLoading
-                      ? null
-                      : () {
-                          if (wallet.state.userId != null) {
-                            appState.dismissWebLanding();
-                          } else {
-                            wallet.signInWithGoogle();
-                          }
-                        },
-                );
-              }),
-              _SecondaryButton(
-                label: '⤓  Android APK',
-                onTap: () => launchUrl(Uri.parse(kAndroidApkUrl), mode: LaunchMode.externalApplication),
+        ),
+        // Content sits above the glow
+        Container(
+          padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 20 : 48, vertical: isMobile ? 72 : 130),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 860),
+              child: Container(
+                padding:
+                    EdgeInsets.symmetric(horizontal: isMobile ? 24 : 64, vertical: isMobile ? 40 : 72),
+                decoration: BoxDecoration(
+                  color: t.surface.withValues(alpha: isDark ? 0.6 : 0.75),
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(
+                    color: t.border.withValues(alpha: 0.4),
+                  ),
+                  boxShadow: isDark
+                      ? [
+                          BoxShadow(
+                            color: glowColor.withValues(alpha: 0.08),
+                            blurRadius: 80,
+                            spreadRadius: -20,
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.25),
+                            blurRadius: 40,
+                            offset: const Offset(0, 24),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: glowColor.withValues(alpha: 0.06),
+                            blurRadius: 60,
+                            spreadRadius: -16,
+                          ),
+                        ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(32),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                    child: Column(
+                      children: [
+                        // Decorative gradient rule above the headline
+                        Container(
+                          width: 48,
+                          height: 3,
+                          decoration: const BoxDecoration(
+                            gradient: PulsColors.pulseGradient,
+                            borderRadius: BorderRadius.all(Radius.circular(100)),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        Text(
+                          'Don\'t trust predictions.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: PulsColors.fontDisplay,
+                            color: t.text,
+                            fontSize: titleSize,
+                            fontWeight: FontWeight.w600,
+                            height: 1.08,
+                            letterSpacing: -1.5,
+                          ),
+                        ),
+                        Text(
+                          'Verify them on-chain.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: PulsColors.fontDisplay,
+                            color: t.brand,
+                            fontSize: titleSize,
+                            fontWeight: FontWeight.w600,
+                            fontStyle: FontStyle.italic,
+                            height: 1.12,
+                            letterSpacing: -1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Trade alongside AI agents that stake real USDC on every call. '
+                          'One-tap wallet — you\'re trading in under a minute.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: t.textMuted,
+                              fontSize: isMobile ? 14 : 16,
+                              height: 1.6),
+                        ),
+                        SizedBox(height: isMobile ? 32 : 40),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            Builder(builder: (context) {
+                              final wallet = WalletServiceScope.of(context);
+                              return _PrimaryButton(
+                                label: wallet.state.isLoading
+                                    ? 'Connecting…'
+                                    : 'Launch Puls',
+                                onTap: wallet.state.isLoading
+                                    ? null
+                                    : () {
+                                        if (wallet.state.userId != null) {
+                                          appState.dismissWebLanding();
+                                        } else {
+                                          wallet.signInWithGoogle();
+                                        }
+                                      },
+                              );
+                            }),
+                            _SecondaryButton(
+                              label: '⤓  Android APK',
+                              onTap: () => launchUrl(Uri.parse(kAndroidApkUrl),
+                                  mode: LaunchMode.externalApplication),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
+}
+
+// Soft radial brand glow that lifts the final CTA section.
+class _CtaGlowPainter extends CustomPainter {
+  const _CtaGlowPainter({required this.color, required this.isDark});
+  final Color color;
+  final bool isDark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height * 0.55);
+    final radius = size.shortestSide * 0.55;
+    final alpha = isDark ? 0.10 : 0.08;
+    final paint = Paint()
+      ..shader = RadialGradient(
+        colors: [color.withValues(alpha: alpha), color.withValues(alpha: 0.0)],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+    canvas.drawRect(Offset.zero & size, paint);
+  }
+
+  @override
+  bool shouldRepaint(_CtaGlowPainter old) =>
+      old.color != color || old.isDark != isDark;
 }
 
 // ── Aurora background painter ─────────────────────────────────────────────────
@@ -3240,7 +3468,7 @@ class _AuroraPainter extends CustomPainter {
     final t = progress * 2 * math.pi;
     final blobs = isDark
         ? const [
-            PulsColors.brandWashDark, // Deep plum
+            Color(0xFF2A0720),   // deeper plum — more contrast against navy
             PulsColors.brandPinkDark, // Neon Pink
             PulsColors.brandMint,     // Neon Mint
           ]
@@ -3249,7 +3477,7 @@ class _AuroraPainter extends CustomPainter {
             Color(0xFFFDF2F8),         // Soft glow
             Color(0xFFE6FAF6),         // Frosted mint
           ];
-    final alpha = isDark ? 0.16 : 0.35;
+    final alpha = isDark ? 0.14 : 0.32;
 
     canvas.drawRect(Offset.zero & size, Paint()..color = bg);
 
@@ -3264,9 +3492,10 @@ class _AuroraPainter extends CustomPainter {
     final w = size.width, h = size.height;
     // Parallax toward the cursor — each blob drifts a different amount for depth.
     final px = pointer.dx, py = pointer.dy;
-    blob(blobs[0], w * (0.28 + 0.06 * math.sin(t)) + px * 150, h * (0.18 + 0.05 * math.cos(t * 0.8)) + py * 120, w * 0.42);
-    blob(blobs[1], w * (0.78 + 0.05 * math.cos(t * 0.9)) - px * 120, h * (0.30 + 0.06 * math.sin(t * 0.7)) + py * 90, w * 0.38);
-    blob(blobs[2], w * (0.55 + 0.07 * math.sin(t * 0.6 + 2)) + px * 80, h * (0.74 + 0.04 * math.cos(t + 1)) - py * 110, w * 0.34);
+    // Larger, slower-feeling blobs with more spread for a more ethereal look.
+    blob(blobs[0], w * (0.24 + 0.07 * math.sin(t)) + px * 170, h * (0.15 + 0.06 * math.cos(t * 0.75)) + py * 140, w * 0.52);
+    blob(blobs[1], w * (0.80 + 0.06 * math.cos(t * 0.85)) - px * 140, h * (0.28 + 0.07 * math.sin(t * 0.65)) + py * 110, w * 0.46);
+    blob(blobs[2], w * (0.55 + 0.08 * math.sin(t * 0.55 + 2)) + px * 95, h * (0.78 + 0.05 * math.cos(t * 0.9 + 1)) - py * 130, w * 0.40);
   }
 
   @override
@@ -3299,7 +3528,8 @@ class _GrainPainter extends CustomPainter {
 
 // ── Footer ────────────────────────────────────────────────────────────────────
 class _FooterSection extends StatelessWidget {
-  const _FooterSection();
+  const _FooterSection({required this.scrollCtrl});
+  final ScrollController scrollCtrl;
 
   @override
   Widget build(BuildContext context) {
@@ -3308,8 +3538,12 @@ class _FooterSection extends StatelessWidget {
     final isMobile = w < 600;
 
     return Container(
-      color: t.surface.withValues(alpha: 0.3),
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 48, vertical: isMobile ? 48 : 80),
+      decoration: BoxDecoration(
+        color: t.surface.withValues(alpha: 0.3),
+        border: Border(top: BorderSide(color: t.border.withValues(alpha: 0.4))),
+      ),
+      padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 16 : 48, vertical: isMobile ? 48 : 80),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 960),
@@ -3318,14 +3552,15 @@ class _FooterSection extends StatelessWidget {
               isMobile
                   ? Column(
                       children: [
+                        // Logo + wordmark
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              width: 26, height: 26,
+                              width: 28, height: 28,
                               decoration: BoxDecoration(
                                 color: t.brandSubtle,
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(7),
                               ),
                               clipBehavior: Clip.antiAlias,
                               child: Image.asset('assets/logo.png', fit: BoxFit.cover),
@@ -3333,23 +3568,36 @@ class _FooterSection extends StatelessWidget {
                             const SizedBox(width: 10),
                             Text(
                               'Puls',
-                              style: TextStyle(fontFamily: PulsColors.fontDisplay, color: t.text, fontSize: 17, fontWeight: FontWeight.w700),
+                              style: TextStyle(
+                                  fontFamily: PulsColors.fontDisplay,
+                                  color: t.text,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.4),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
+                        // Copyright
                         Text(
                           '© 2026 Puls · Built on Arc Network',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: t.textSubtle, fontSize: 12, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                              color: t.textSubtle,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Text(
                           'Arc is a trademark of Circle Internet Group, Inc. and/or its affiliates.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: t.textSubtle.withValues(alpha: 0.5), fontSize: 10, height: 1.4),
+                          style: TextStyle(
+                              color: t.textSubtle.withValues(alpha: 0.5),
+                              fontSize: 10,
+                              height: 1.4),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 24),
+                        // Links
                         const Wrap(
                           alignment: WrapAlignment.center,
                           spacing: 20,
@@ -3358,58 +3606,145 @@ class _FooterSection extends StatelessWidget {
                             _FooterLink('X/Twitter', 'https://x.com/rdmnad'),
                             _FooterLink('Docs', 'https://docs.pulsmarket.tech'),
                             _FooterLink('GitHub', 'https://github.com/rdmbtc/Puls'),
-                            _FooterLink('Explorer', 'https://testnet.arcscan.app/address/$factoryAddress'),
+                            _FooterLink('Explorer',
+                                'https://testnet.arcscan.app/address/$factoryAddress'),
                             _FooterLink('Android app', kAndroidApkUrl),
                             _FooterLink('Terms', 'https://pulsmarket.tech/terms'),
                             _FooterLink('Privacy', 'https://pulsmarket.tech/privacy'),
                           ],
                         ),
+                        const SizedBox(height: 28),
+                        // Back to top
+                        _BackToTop(scrollCtrl: scrollCtrl),
                       ],
                     )
                   : Row(
                       children: [
-                        Container(
-                          width: 26, height: 26,
-                          decoration: BoxDecoration(
-                            color: t.brandSubtle,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: Image.asset('assets/logo.png', fit: BoxFit.cover),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Puls',
-                          style: TextStyle(fontFamily: PulsColors.fontDisplay, color: t.text, fontSize: 17, fontWeight: FontWeight.w700),
+                        // Left: logo + wordmark
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 28, height: 28,
+                              decoration: BoxDecoration(
+                                color: t.brandSubtle,
+                                borderRadius: BorderRadius.circular(7),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Image.asset('assets/logo.png', fit: BoxFit.cover),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Puls',
+                              style: TextStyle(
+                                  fontFamily: PulsColors.fontDisplay,
+                                  color: t.text,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.4),
+                            ),
+                          ],
                         ),
                         const Spacer(),
+                        // Center: copyright
                         Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
                               '© 2026 Puls · Built on Arc Network',
-                              style: TextStyle(color: t.textSubtle, fontSize: 12, fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                  color: t.textSubtle,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Arc is a trademark of Circle Internet Group, Inc. and/or its affiliates.',
-                              style: TextStyle(color: t.textSubtle.withValues(alpha: 0.5), fontSize: 10),
+                              style: TextStyle(
+                                  color: t.textSubtle.withValues(alpha: 0.5),
+                                  fontSize: 10),
                             ),
                           ],
                         ),
                         const Spacer(),
-                        const _FooterLink('X/Twitter', 'https://x.com/rdmnad'),
-                        const SizedBox(width: 20),
-                        const _FooterLink('Docs', 'https://docs.pulsmarket.tech'),
-                        const SizedBox(width: 20),
-                        const _FooterLink('GitHub', 'https://github.com/rdmbtc/Puls'),
-                        const SizedBox(width: 20),
-                        const _FooterLink('Terms', 'https://pulsmarket.tech/terms'),
-                        const SizedBox(width: 20),
-                        const _FooterLink('Privacy', 'https://pulsmarket.tech/privacy'),
+                        // Right: links + back to top
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const _FooterLink('X/Twitter', 'https://x.com/rdmnad'),
+                            const SizedBox(width: 20),
+                            const _FooterLink('Docs', 'https://docs.pulsmarket.tech'),
+                            const SizedBox(width: 20),
+                            const _FooterLink('GitHub', 'https://github.com/rdmbtc/Puls'),
+                            const SizedBox(width: 20),
+                            const _FooterLink('Terms', 'https://pulsmarket.tech/terms'),
+                            const SizedBox(width: 20),
+                            const _FooterLink('Privacy', 'https://pulsmarket.tech/privacy'),
+                            const SizedBox(width: 24),
+                            _BackToTop(scrollCtrl: scrollCtrl),
+                          ],
+                        ),
                       ],
                     ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BackToTop extends StatefulWidget {
+  const _BackToTop({required this.scrollCtrl});
+  final ScrollController scrollCtrl;
+
+  @override
+  State<_BackToTop> createState() => _BackToTopState();
+}
+
+class _BackToTopState extends State<_BackToTop> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: () {
+          widget.scrollCtrl.animateTo(
+            0,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeInOutCubic,
+          );
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: _hover ? t.brandSubtle : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _hover ? t.brand.withValues(alpha: 0.4) : t.border,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.keyboard_arrow_up_rounded,
+                  size: 18, color: _hover ? t.brand : t.textMuted),
+              const SizedBox(width: 4),
+              Text(
+                'Back to top',
+                style: TextStyle(
+                  color: _hover ? t.brand : t.textMuted,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ),

@@ -50,7 +50,7 @@ Map<String, dynamic>? _decodeTradeJson(String raw) {
 
 class FeedScreen extends StatelessWidget {
   const FeedScreen({this.isDemoMode = false, super.key});
-  
+
   final bool isDemoMode;
 
   @override
@@ -110,7 +110,9 @@ class _FeedBody extends StatelessWidget {
       'category': market.category,
     });
     Navigator.of(context).push(
-      pulsRoute(context, settings: RouteSettings(name: '/m/${market.slug}'), builder: (_) => MarketDetailScreen(marketId: market.id)),
+      pulsRoute(context,
+          settings: RouteSettings(name: '/m/${market.slug}'),
+          builder: (_) => MarketDetailScreen(marketId: market.id)),
     );
   }
 
@@ -199,7 +201,8 @@ class _FeedBody extends StatelessWidget {
           child: Center(
             child: PulsErrorState(
               title: 'Could not load markets',
-              message: 'Markets couldn\'t load. Check your connection and retry.',
+              message:
+                  'Markets couldn\'t load. Check your connection and retry.',
               onRetry: appState.refresh,
             ),
           ),
@@ -217,7 +220,8 @@ class _FeedBody extends StatelessWidget {
                 message: 'Check back soon or try the Discover tab.',
                 actionLabel: 'Go to Discover',
                 actionIcon: Icons.explore_rounded,
-                onAction: () => ShellNavScope.maybeOf(context)?.goToTab(PulsTab.discover),
+                onAction: () =>
+                    ShellNavScope.maybeOf(context)?.goToTab(PulsTab.discover),
               ),
             ),
           );
@@ -251,9 +255,13 @@ class _FeedBody extends StatelessWidget {
                 ),
               );
               if (context.reduceMotion) return item;
-              return item.animate()
-                  .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
-                  .slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOutCubic);
+              return item
+                  .animate()
+                  .fadeIn(duration: 300.ms, curve: Curves.easeOutCubic)
+                  .slideY(
+                      begin: 0.05,
+                      duration: 300.ms,
+                      curve: Curves.easeOutCubic);
             },
           ),
         );
@@ -268,6 +276,9 @@ class _FeedHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Narrow screens (phones, mobile web) drop the network chip so the
+    // header never overflows; everything else stays reachable.
+    final compact = MediaQuery.sizeOf(context).width < 480;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
       child: Row(
@@ -310,53 +321,84 @@ class _FeedHeader extends StatelessWidget {
                 ],
               ),
               Text('Swipe to choose your side',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 12,
-                      )),
+                  style: TextStyle(fontSize: 12, color: t.textMuted)),
             ],
           ),
           const Spacer(),
           if (!isDemoMode) ...[
-            const HelpButton(tab: PulsTab.feed),
-            const SizedBox(width: 8),
-            TextButton.icon(
-              onPressed: () {
-                buildPulsTour(
-                  feedKey: tourFeedKey,
-                  discoverKey: tourDiscoverKey,
-                  homeKey: tourHomeKey,
-                  portfolioKey: tourPortfolioKey,
-                  creatorsKey: tourCreatorsKey,
-                  agentKey: tourAgentKey,
-                  profileKey: tourProfileKey,
-                ).start(context);
-              },
-              icon: Icon(Icons.help_outline_rounded, size: 16, color: t.brand),
-              label: Text('Take Tour',
-                  style: TextStyle(
-                      color: t.brand,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600)),
-            ),
-            const SizedBox(width: 8),
-            TextButton.icon(
-              onPressed: () {
-                final appState = PulsStateScope.of(context);
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => SwipeDiscoveryScreen(
-                          markets: appState.markets,
-                          onSwipeYes: (m) => showTradePreviewSheet(
-                              context: context, market: m, side: MarketSide.yes),
-                          onSwipeNo: (m) => showTradePreviewSheet(
-                              context: context, market: m, side: MarketSide.no),
-                        )));
-              },
-              icon: Icon(Icons.swipe_rounded, size: 16, color: t.brand),
-              label: Text('Swipe Mode',
-                  style: TextStyle(
-                      color: t.brand,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600)),
+            // Compact action pill — groups the three header actions (tips,
+            // tour, swipe mode) into one quiet control instead of three
+            // competing text buttons.
+            Semantics(
+              label: 'Feed options',
+              hint: 'Opens help, tour and swipe discovery actions.',
+              child: PopupMenuButton<String>(
+                icon: Icon(Icons.more_horiz_rounded,
+                    size: 18, color: t.textSubtle),
+                tooltip: 'Feed options',
+                padding: EdgeInsets.zero,
+                style: IconButton.styleFrom(
+                  backgroundColor: t.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: t.border),
+                  ),
+                  minimumSize: const Size(34, 34),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'tips',
+                    height: 40,
+                    child: _MenuRow(
+                        icon: Icons.tips_and_updates_outlined,
+                        label: 'Tips',
+                        t: t),
+                  ),
+                  PopupMenuItem(
+                    value: 'tour',
+                    height: 40,
+                    child: _MenuRow(
+                        icon: Icons.route_rounded, label: 'Take tour', t: t),
+                  ),
+                  PopupMenuItem(
+                    value: 'swipe',
+                    height: 40,
+                    child: _MenuRow(
+                        icon: Icons.swipe_rounded, label: 'Swipe mode', t: t),
+                  ),
+                ],
+                onSelected: (value) {
+                  switch (value) {
+                    case 'tips':
+                      openOnboardingTips(context, PulsTab.feed);
+                    case 'tour':
+                      buildPulsTour(
+                        feedKey: tourFeedKey,
+                        discoverKey: tourDiscoverKey,
+                        homeKey: tourHomeKey,
+                        portfolioKey: tourPortfolioKey,
+                        creatorsKey: tourCreatorsKey,
+                        agentKey: tourAgentKey,
+                        profileKey: tourProfileKey,
+                      ).start(context);
+                    case 'swipe':
+                      final appState = PulsStateScope.of(context);
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => SwipeDiscoveryScreen(
+                                markets: appState.markets,
+                                onSwipeYes: (m) => showTradePreviewSheet(
+                                    context: context,
+                                    market: m,
+                                    side: MarketSide.yes),
+                                onSwipeNo: (m) => showTradePreviewSheet(
+                                    context: context,
+                                    market: m,
+                                    side: MarketSide.no),
+                              )));
+                  }
+                },
+              ),
             ),
             const SizedBox(width: 8),
           ],
@@ -367,26 +409,26 @@ class _FeedHeader extends StatelessWidget {
               );
             },
             child: Container(
-              width: 36,
-              height: 36,
+              width: 34,
+              height: 34,
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
                 color: t.surface,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: t.border),
               ),
               child: Icon(Icons.notifications_outlined,
-                  color: t.textSubtle, size: 18),
+                  color: t.textSubtle, size: 17),
             ),
           ),
           Semantics(
             label: 'Markets live',
             child: Container(
-              padding: const EdgeInsets.fromLTRB(4, 4, 8, 4),
+              padding: const EdgeInsets.fromLTRB(6, 5, 8, 5),
               margin: const EdgeInsets.only(right: 6),
               decoration: BoxDecoration(
                 color: t.yesBg,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -395,11 +437,12 @@ class _FeedHeader extends StatelessWidget {
                       size: 6,
                       color: t.yes,
                       period: const Duration(milliseconds: 1400)),
+                  const SizedBox(width: 3),
                   Text(
                     'LIVE',
                     style: TextStyle(
                       color: t.yes,
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.8,
                     ),
@@ -408,24 +451,46 @@ class _FeedHeader extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: PulsColors.amberLight,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Text(
-              'Arc Network',
-              style: TextStyle(
-                color: PulsColors.amber,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
+          if (!compact)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: PulsColors.amberLight.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Arc',
+                style: TextStyle(
+                  color: PulsColors.amber,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                ),
               ),
             ),
-          ),
         ],
       ),
+    );
+  }
+}
+
+/// Label row inside the compact header options menu.
+class _MenuRow extends StatelessWidget {
+  const _MenuRow({required this.icon, required this.label, required this.t});
+  final IconData icon;
+  final String label;
+  final PulsThemeColors t;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: t.textSubtle),
+        const SizedBox(width: 10),
+        Text(label,
+            style: TextStyle(
+                color: t.text, fontSize: 13, fontWeight: FontWeight.w600)),
+      ],
     );
   }
 }
@@ -861,8 +926,7 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
         }
       }
     } catch (e) {
-      debugPrint(
-          '[Feed] Error fetching recent trades from backend: $e');
+      debugPrint('[Feed] Error fetching recent trades from backend: $e');
     }
 
     // If the backend returned no data, show an honest "no recent trades"
@@ -963,7 +1027,9 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
       'category': market.category,
     });
     Navigator.of(context).push(
-      pulsRoute(context, settings: RouteSettings(name: '/m/${market.slug}'), builder: (_) => MarketDetailScreen(marketId: market.id)),
+      pulsRoute(context,
+          settings: RouteSettings(name: '/m/${market.slug}'),
+          builder: (_) => MarketDetailScreen(marketId: market.id)),
     );
   }
 
@@ -1039,18 +1105,14 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          gradient: selected ? PulsColors.pulseGradient : null,
-          color: selected ? null : Colors.transparent,
+          // Selected = soft brand wash + tinted text instead of the full
+          // gradient — much less harsh against the surrounding panel.
+          color: selected ? t.brandSubtle : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: t.brand.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
+          border: Border.all(
+            color:
+                selected ? t.brand.withValues(alpha: 0.35) : Colors.transparent,
+          ),
         ),
         child: Row(
           children: [
@@ -1061,7 +1123,7 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
               child: Text(
                 label,
                 style: TextStyle(
-                  color: selected ? Colors.white : t.text,
+                  color: selected ? t.brand : t.text,
                   fontSize: 13,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
                 ),
@@ -1072,13 +1134,13 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: selected ? Colors.white.withValues(alpha: 0.25) : t.border,
+                color: selected ? t.brand.withValues(alpha: 0.14) : t.surface,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 count.toString(),
                 style: TextStyle(
-                  color: selected ? Colors.white : t.textMuted,
+                  color: selected ? t.brand : t.textMuted,
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1108,7 +1170,7 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
       children: [
         // Left Column: Category Panel
         SizedBox(
-          width: 250,
+          width: 224,
           child: Padding(
             padding: const EdgeInsets.only(left: 20, right: 10),
             child: Card(
@@ -1123,14 +1185,21 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'CATEGORIES',
-                      style: TextStyle(
-                        color: t.textMuted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.0,
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.grid_view_rounded,
+                            size: 12, color: t.textMuted),
+                        const SizedBox(width: 6),
+                        Text(
+                          'CATEGORIES',
+                          style: TextStyle(
+                            color: t.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Expanded(
@@ -1170,7 +1239,9 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                     constraints: const BoxConstraints(maxWidth: 600),
                     child: const RepaintBoundary(
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(0, 4, 0, 10),
+                        // A touch more top breathing-room so the teaser
+                        // doesn't butt directly against the ticker strip.
+                        padding: EdgeInsets.fromLTRB(0, 8, 0, 12),
                         child: _AlphaFeedTeaser(),
                       ),
                     ),
@@ -1182,7 +1253,8 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                           child: PulsEmptyState(
                             icon: Icons.filter_list_off_rounded,
                             title: 'No predictions found',
-                            message: 'Try a different category or check back later.',
+                            message:
+                                'Try a different category or check back later.',
                             compact: true,
                           ),
                         )
@@ -1223,9 +1295,15 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                               ),
                             );
                             if (context.reduceMotion) return item;
-                            return item.animate()
-                                .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
-                                .slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOutCubic);
+                            return item
+                                .animate()
+                                .fadeIn(
+                                    duration: 300.ms,
+                                    curve: Curves.easeOutCubic)
+                                .slideY(
+                                    begin: 0.05,
+                                    duration: 300.ms,
+                                    curve: Curves.easeOutCubic);
                           },
                         ),
                 ),
@@ -1300,8 +1378,10 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                                 final act = _activities[index];
                                 final sideColor = act.isYes ? t.yes : t.no;
                                 final sideText = act.isYes ? 'YES' : 'NO';
+                                final isLast = index == _activities.length - 1;
                                 return _buildActivityItem(
-                                    act, sideColor, sideText, animation);
+                                    act, sideColor, sideText, animation,
+                                    showDivider: !isLast);
                               },
                             ),
                     ),
@@ -1326,8 +1406,9 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
     _BetActivity act,
     Color sideColor,
     String sideText,
-    Animation<double> animation,
-  ) {
+    Animation<double> animation, {
+    required bool showDivider,
+  }) {
     final t = widget.t;
     // Named house/swarm agents carry an emoji in their formatted handle.
     final isAgent = act.username.runes.any((r) => r > 0x2600);
@@ -1341,97 +1422,112 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
           curve: Curves.easeInOutCubic,
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6.0),
-          child: _ActivityRowCard(
-            isAgent: isAgent,
-            t: t,
-            onTap: tappable ? () => _openProfile(act.userId) : null,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _ActivityAvatar(name: act.username, isAgent: isAgent, t: t),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+          padding: const EdgeInsets.only(top: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ActivityRowCard(
+                isAgent: isAgent,
+                t: t,
+                onTap: tappable ? () => _openProfile(act.userId) : null,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ActivityAvatar(name: act.username, isAgent: isAgent, t: t),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Flexible(
-                            child: Text(
-                              act.username,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: isAgent ? t.brand : t.text,
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w800,
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  act.username,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: isAgent ? t.brand : t.text,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            act.action,
-                            style:
-                                TextStyle(color: t.textSubtle, fontSize: 11.5),
-                          ),
-                          const Spacer(),
-                          Text(
-                            act.time,
-                            style: TextStyle(color: t.textSubtle, fontSize: 10),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        act.question,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: t.text,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          height: 1.35,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 7, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: sideColor.withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(
-                              sideText,
-                              style: TextStyle(
-                                color: sideColor,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
+                              const SizedBox(width: 4),
+                              Text(
+                                act.action,
+                                style: TextStyle(
+                                    color: t.textSubtle, fontSize: 11.5),
                               ),
-                            ),
+                              const Spacer(),
+                              Text(
+                                act.time,
+                                style: TextStyle(
+                                    color: t.textSubtle, fontSize: 10),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(height: 5),
                           Text(
-                            '\$${act.amount.toStringAsFixed(act.amount % 1 == 0 ? 0 : 2)}',
+                            act.question,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: t.text,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              height: 1.35,
                             ),
                           ),
-                          Text(' USDC',
-                              style: TextStyle(
-                                  color: t.textSubtle, fontSize: 10.5)),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: sideColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  sideText,
+                                  style: TextStyle(
+                                    color: sideColor,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '\$${act.amount.toStringAsFixed(act.amount % 1 == 0 ? 0 : 2)}',
+                                style: TextStyle(
+                                  color: t.text,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Text(' USDC',
+                                  style: TextStyle(
+                                      color: t.textSubtle, fontSize: 10.5)),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+              ),
+              if (showDivider)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(40, 4, 4, 0),
+                  child: Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: t.border.withValues(alpha: 0.55),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
@@ -1475,7 +1571,8 @@ class _AlphaFeedTeaserState extends State<_AlphaFeedTeaser> {
       final available = signals.where((s) => s['marketResolved'] != true);
       final pick = available.firstWhere(
         (s) => s['unlocked'] != true,
-        orElse: () => available.isNotEmpty ? available.first : <String, dynamic>{},
+        orElse: () =>
+            available.isNotEmpty ? available.first : <String, dynamic>{},
       );
       if (mounted) {
         setState(() {
@@ -1583,10 +1680,15 @@ class _AlphaFeedTeaserState extends State<_AlphaFeedTeaser> {
 // Emoji for the web category panel (mirrors Discover's mapping).
 String _feedCategoryEmoji(String? category) {
   final cat = (category ?? 'all').toLowerCase();
-  
+
   if (cat.contains('world cup') || cat.contains('fifa')) return '🏆';
   if (cat.contains('baseball') || cat.contains('mlb')) return '⚾';
-  if (cat.contains('combat sports') || cat.contains('ufc') || cat.contains('mma') || cat.contains('boxing')) return '🥊';
+  if (cat.contains('combat sports') ||
+      cat.contains('ufc') ||
+      cat.contains('mma') ||
+      cat.contains('boxing')) {
+    return '🥊';
+  }
   if (cat.contains('football') || cat.contains('nfl')) return '🏈';
   if (cat.contains('soccer') || cat.contains('premier league')) return '⚽';
   if (cat.contains('basketball') || cat.contains('nba')) return '🏀';
@@ -1594,7 +1696,9 @@ String _feedCategoryEmoji(String? category) {
   if (cat.contains('politics') || cat.contains('election')) return '🗳️';
   if (cat.contains('crypto') || cat.contains('bitcoin')) return '🪙';
   if (cat.contains('finance') || cat.contains('stock')) return '💼';
-  if (cat.contains('ai agents') || cat.contains('ai') || cat.contains('tech')) return '🤖';
+  if (cat.contains('ai agents') || cat.contains('ai') || cat.contains('tech')) {
+    return '🤖';
+  }
   if (cat.contains('science')) return '🧪';
   if (cat.contains('pop culture') || cat.contains('entertainment')) return '🎬';
   if (cat.contains('general')) return '📰';
@@ -1625,22 +1729,23 @@ class _ActivityAvatar extends StatelessWidget {
     final pfp = agentPfpAsset(name);
     if (pfp != null) {
       return Container(
-        width: 34,
-        height: 34,
+        width: 32,
+        height: 32,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-                color: PulsColors.brandPink.withValues(alpha: 0.3), blurRadius: 8)
+                color: PulsColors.brandPink.withValues(alpha: 0.3),
+                blurRadius: 8)
           ],
         ),
         child: Image.asset(pfp, fit: BoxFit.cover),
       );
     }
     return Container(
-      width: 34,
-      height: 34,
+      width: 32,
+      height: 32,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         gradient: isAgent ? PulsColors.pulseGradient : null,
@@ -1682,13 +1787,14 @@ class _ActivityRowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       decoration: BoxDecoration(
         color: isAgent ? t.brand.withValues(alpha: 0.05) : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isAgent ? t.brand.withValues(alpha: 0.18) : t.border,
-        ),
+        borderRadius: BorderRadius.circular(10),
+        // Border only for agents — plain rows rely on the divider between
+        // items instead of a per-row box (much calmer on the eye).
+        border:
+            isAgent ? Border.all(color: t.brand.withValues(alpha: 0.16)) : null,
       ),
       child: child,
     );

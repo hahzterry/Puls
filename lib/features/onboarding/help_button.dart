@@ -6,6 +6,11 @@ import '../shell/shell_nav.dart';
 import 'onboarding_flags.dart';
 import 'onboarding_sheet.dart';
 
+/// Opens the onboarding tips sheet for [tab] without needing a visible
+/// [HelpButton] — used by compact headers that tuck tips into a menu.
+Future<void> openOnboardingTips(BuildContext context, PulsTab tab) =>
+    OnboardingSheet.show(context, tab);
+
 /// A small circular "?" button placed in each tab's header. Tapping it opens
 /// the onboarding tip sheet for that tab. Until a user has opened the tips for
 /// a tab at least once, a subtle pulsing dot draws attention to it.
@@ -92,8 +97,8 @@ class _HelpButtonState extends State<HelpButton>
                   top: 2,
                   right: 2,
                   child: FadeTransition(
-                    opacity: Tween<double>(begin: 0.45, end: 1.0)
-                        .animate(_pulse),
+                    opacity:
+                        Tween<double>(begin: 0.45, end: 1.0).animate(_pulse),
                     child: Container(
                       width: 9,
                       height: 9,
