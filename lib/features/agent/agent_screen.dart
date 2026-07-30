@@ -8,8 +8,8 @@ import '../../core/widgets/puls_snack.dart';
 import '../../core/widgets/tactile.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:haptic_kit/haptic_kit.dart';
+import '../../core/utils/kv_store.dart' show kvGet;
 
 import '../../app/puls_app.dart';
 import '../../core/theme/app_theme.dart';
@@ -273,10 +273,16 @@ class _AgentScreenState extends State<AgentScreen>
     if (uid == null) return;
     try {
       final headers = <String, String>{};
-      final session = Supabase.instance.client.auth.currentSession;
-      if (session != null) {
-        headers['Authorization'] = 'Bearer ${session.accessToken}';
-      }
+      try {
+        final raw = kvGet('direct_auth');
+        if (raw != null && raw.isNotEmpty) {
+          final saved = jsonDecode(raw) as Map<String, dynamic>?;
+          final token = saved?['token'] as String?;
+          if (token != null && token.isNotEmpty) {
+            headers['Authorization'] = 'Bearer $token';
+          }
+        }
+      } catch (_) {}
       final res = await _client
           .get(
             Uri.parse('$backendUrl/api/agent/status?userId=$uid'),
@@ -336,10 +342,16 @@ class _AgentScreenState extends State<AgentScreen>
     final headers = <String, String>{
       'Content-Type': 'application/json',
     };
-    final session = Supabase.instance.client.auth.currentSession;
-    if (session != null) {
-      headers['Authorization'] = 'Bearer ${session.accessToken}';
-    }
+    try {
+      final raw = kvGet('direct_auth');
+      if (raw != null && raw.isNotEmpty) {
+        final saved = jsonDecode(raw) as Map<String, dynamic>?;
+        final token = saved?['token'] as String?;
+        if (token != null && token.isNotEmpty) {
+          headers['Authorization'] = 'Bearer $token';
+        }
+      }
+    } catch (_) {}
     final res = await _client
         .post(
           Uri.parse('$backendUrl$path'),
