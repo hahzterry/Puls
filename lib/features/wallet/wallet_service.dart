@@ -106,18 +106,15 @@ class WalletService extends ChangeNotifier {
     // who close the OAuth popup, deny permissions, etc.).
     trackEvent('sign_in_started', {'method': 'google'});
     try {
-      // On web, redirectTo must be the current app URL (not localhost)
-      String? redirectTo;
       if (kIsWeb) {
-        // Use the current page origin so it works on any deployment
-        redirectTo = Uri.base.origin;
+        // Direct backend Google OAuth flow (bypasses Supabase egress restrictions)
+        html.window.location.href = 'https://api.pulsmarket.tech/api/auth/google';
       } else {
-        redirectTo = 'io.supabase.puls://login-callback';
+        await _supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: 'io.supabase.puls://login-callback',
+        );
       }
-      await _supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: redirectTo,
-      );
     } catch (e) {
       _setState(_state.copyWith(isLoading: false, error: e.toString()));
     }
