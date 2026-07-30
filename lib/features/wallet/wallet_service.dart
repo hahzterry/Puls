@@ -87,7 +87,7 @@ class WalletService extends ChangeNotifier {
             'userId': userId,
             'token': authToken ?? '',
           };
-          await KvStore.setJson('direct_auth', data);
+          kvSet('direct_auth', jsonEncode(data));
           _setState(_state.copyWith(userId: userId, isLoading: true));
           _getOrCreateWallet(userId);
           try {
@@ -101,7 +101,13 @@ class WalletService extends ChangeNotifier {
     }
 
     // 2. Check saved direct_auth session
-    final savedAuth = await KvStore.getJson('direct_auth');
+    Map<String, dynamic>? savedAuth;
+    try {
+      final raw = kvGet('direct_auth');
+      if (raw != null && raw.isNotEmpty) {
+        savedAuth = jsonDecode(raw) as Map<String, dynamic>?;
+      }
+    } catch (_) {}
     if (savedAuth != null && savedAuth['userId'] != null) {
       final userId = savedAuth['userId'] as String;
       _setState(_state.copyWith(userId: userId, isLoading: true));
@@ -165,8 +171,8 @@ class WalletService extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    await KvStore.remove('direct_auth');
-    await KvStore.remove('wallet_state');
+    kvRemove('direct_auth');
+    kvRemove('wallet_state');
     if (_state.isExternalWallet) {
       web3.disconnectBrowserWallet();
     } else {
@@ -1199,10 +1205,15 @@ class WalletService extends ChangeNotifier {
   /// with 401 ("token invalid"). Refreshing here means every request self-heals,
   /// so users never have to hit Retry/Reload.
   Future<String?> _freshAccessToken() async {
-    final savedAuth = await KvStore.getJson('direct_auth');
-    if (savedAuth != null && savedAuth['token'] != null && (savedAuth['token'] as String).isNotEmpty) {
-      return savedAuth['token'] as String;
-    }
+    try {
+      final raw = kvGet('direct_auth');
+      if (raw != null && raw.isNotEmpty) {
+        final savedAuth = jsonDecode(raw) as Map<String, dynamic>?;
+        if (savedAuth != null && savedAuth['token'] != null && (savedAuth['token'] as String).isNotEmpty) {
+          return savedAuth['token'] as String;
+        }
+      }
+    } catch (_) {}
     final auth = _supabase.auth;
     var s = auth.currentSession;
     final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
