@@ -38,6 +38,12 @@ void setDocumentTitle(String title) {
   web.document.title = title;
 }
 
+void redirectToWebUrl(String url) {
+  try {
+    web.window.location.href = url;
+  } catch (_) {}
+}
+
 void pushUrl(String path, {String? title}) {
   try {
     final url = _absolutize(path);

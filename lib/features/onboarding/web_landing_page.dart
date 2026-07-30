@@ -333,10 +333,6 @@ class _StickyNavbar extends StatelessWidget {
     final reveal = Curves.easeOut.transform(
       ((scrollOffset - 80) / 120).clamp(0.0, 1.0),
     );
-    // Condense: full nav shrinks to compact once past 200px.
-    final condense = Curves.easeOut.transform(
-      ((scrollOffset - 200) / 100).clamp(0.0, 1.0),
-    );
 
     return AnimatedSlide(
       duration: Duration.zero,
@@ -346,13 +342,11 @@ class _StickyNavbar extends StatelessWidget {
         opacity: reveal,
         child: Container(
           decoration: BoxDecoration(
-            color: t.bg.withValues(alpha: 0.78 + 0.02 * condense),
+            color: t.bg.withValues(alpha: 0.8),
             border: Border(
-              bottom: BorderSide(
-                color: t.border.withValues(alpha: 0.4 + 0.2 * condense),
-              ),
+              bottom: BorderSide(color: t.border.withValues(alpha: 0.5)),
             ),
-            boxShadow: condense > 0.5
+            boxShadow: reveal > 0.5
                 ? [
                     BoxShadow(
                       color: isDark
@@ -370,11 +364,11 @@ class _StickyNavbar extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: isMobile ? 16 : 48,
-                  vertical: isMobile ? 10 : (14 - 4 * condense),
+                  vertical: isMobile ? 10 : 14,
                 ),
                 child: Row(
                   children: [
-                    // Logo + wordmark — always visible
+                    // Logo + wordmark
                     Container(
                       width: isMobile ? 26 : 28,
                       height: isMobile ? 26 : 28,
@@ -398,56 +392,45 @@ class _StickyNavbar extends StatelessWidget {
                         ),
                       ),
                     const Spacer(),
-                    // Full nav links — fade out as we condense
-                    if (!isMobile)
-                      Opacity(
-                        opacity: 1 - condense,
-                        child: Transform.translate(
-                          offset: Offset(0, -4 * condense),
-                          child: IgnorePointer(
-                            ignoring: condense > 0.5,
-                            child: Row(
-                              children: [
-                                _NavDropdown(
-                                  label: 'Product',
-                                  items: [
-                                    ('Pulse', _pageUrl('/pulse')),
-                                    ('Agent', _pageUrl('/agent')),
-                                    ('Versus', _pageUrl('/versus')),
-                                    ('Explorer', _pageUrl('/explorer')),
-                                  ],
-                                ),
-                                const SizedBox(width: 4),
-                                _NavDropdown(
-                                  label: 'Developers',
-                                  items: [
-                                    ('Docs', 'https://docs.pulsmarket.tech'),
-                                    ('CLI', _pageUrl('/cli')),
-                                    ('Build', _pageUrl('/build')),
-                                    ('GitHub', 'https://github.com/rdmbtc/Puls'),
-                                  ],
-                                ),
-                                const SizedBox(width: 8),
-                                _NavIcon(
-                                  icon: Icons.android_rounded,
-                                  url: _pageUrl('/mobile-download'),
-                                  tooltip: 'Download for Android',
-                                ),
-                                const SizedBox(width: 12),
-                                _SecondaryButton(
-                                  label: 'Terminal',
-                                  onTap: () => launchUrl(
-                                    Uri.parse('https://terminal.pulsmarket.tech'),
-                                    mode: LaunchMode.externalApplication,
-                                  ),
-                                  small: true,
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                            ),
-                          ),
-                        ),
+                    // Full nav links — always visible on desktop
+                    if (!isMobile) ...[
+                      _NavDropdown(
+                        label: 'Product',
+                        items: [
+                          ('Pulse', _pageUrl('/pulse')),
+                          ('Agent', _pageUrl('/agent')),
+                          ('Versus', _pageUrl('/versus')),
+                          ('Explorer', _pageUrl('/explorer')),
+                        ],
                       ),
+                      const SizedBox(width: 4),
+                      _NavDropdown(
+                        label: 'Developers',
+                        items: [
+                          ('Docs', 'https://docs.pulsmarket.tech'),
+                          ('CLI', _pageUrl('/cli')),
+                          ('Build', _pageUrl('/build')),
+                          ('GitHub', 'https://github.com/rdmbtc/Puls'),
+                        ],
+                      ),
+                      const SizedBox(width: 8),
+                      _NavIcon(
+                        icon: Icons.android_rounded,
+                        url: _pageUrl('/mobile-download'),
+                        tooltip: 'Download for Android',
+                      ),
+                      const SizedBox(width: 12),
+                      _SecondaryButton(
+                        label: 'Terminal',
+                        onTap: () => launchUrl(
+                          Uri.parse('https://terminal.pulsmarket.tech'),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                        small: true,
+                      ),
+                      const SizedBox(width: 8),
+                    ] else
+                      const _MobileNavMenu(),
                     // Always-visible controls
                     IconButton(
                       onPressed: appState.toggleThemeMode,

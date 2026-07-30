@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/config.dart' show backendUrl;
 import '../../core/utils/analytics.dart';
 import '../../core/utils/kv_store.dart';
+import '../../core/utils/web_url.dart';
 import 'web3_wallet_bridge.dart' as web3;
 const _backendUrl = backendUrl;
 
@@ -108,7 +109,7 @@ class WalletService extends ChangeNotifier {
     try {
       if (kIsWeb) {
         // Direct backend Google OAuth flow (bypasses Supabase egress restrictions)
-        html.window.location.href = 'https://api.pulsmarket.tech/api/auth/google';
+        redirectToWebUrl('https://api.pulsmarket.tech/api/auth/google');
       } else {
         await _supabase.auth.signInWithOAuth(
           OAuthProvider.google,

@@ -21,6 +21,9 @@ void pushUrl(String path, {String? title}) {}
 /// Replace the current URL in-place (no new history entry). No-op on non-web.
 void replaceUrl(String path, {String? title}) {}
 
+/// Redirect browser to a URL. No-op on non-web.
+void redirectToWebUrl(String url) {}
+
 /// Update OG/Twitter meta tags for social sharing. No-op on non-web.
 void setShareMetadata(ShareMetadata meta) {}
 
