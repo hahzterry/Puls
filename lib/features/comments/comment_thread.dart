@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/config.dart' show backendUrl;
+import '../../core/utils/kv_store.dart' show kvGet;
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/gradient_text.dart';
@@ -95,10 +95,16 @@ class _CommentThreadState extends State<CommentThread> {
 
   Map<String, String> get _authHeaders {
     final headers = <String, String>{'Content-Type': 'application/json'};
-    final session = Supabase.instance.client.auth.currentSession;
-    if (session != null) {
-      headers['Authorization'] = 'Bearer ${session.accessToken}';
-    }
+    try {
+      final raw = kvGet('direct_auth');
+      if (raw != null && raw.isNotEmpty) {
+        final saved = jsonDecode(raw) as Map<String, dynamic>?;
+        final token = saved?['token'] as String?;
+        if (token != null && token.isNotEmpty) {
+          headers['Authorization'] = 'Bearer $token';
+        }
+      }
+    } catch (_) {}
     return headers;
   }
 

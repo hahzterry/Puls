@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/puls_emoji.dart';
+import '../../core/utils/kv_store.dart' show kvGet;
 import '../../core/config.dart' show backendUrl;
 import '../../core/widgets/tactile.dart';
 import '../../core/widgets/puls_snack.dart';
@@ -35,8 +35,16 @@ class _FinanceDirectorCardState extends State<FinanceDirectorCard> {
 
   Map<String, String> get _headers {
     final h = <String, String>{'Content-Type': 'application/json'};
-    final s = Supabase.instance.client.auth.currentSession;
-    if (s != null) h['Authorization'] = 'Bearer ${s.accessToken}';
+    try {
+      final raw = kvGet('direct_auth');
+      if (raw != null && raw.isNotEmpty) {
+        final saved = jsonDecode(raw) as Map<String, dynamic>?;
+        final token = saved?['token'] as String?;
+        if (token != null && token.isNotEmpty) {
+          h['Authorization'] = 'Bearer $token';
+        }
+      }
+    } catch (_) {}
     return h;
   }
 

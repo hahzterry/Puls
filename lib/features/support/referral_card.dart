@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../../core/widgets/puls_snack.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/config.dart' show backendUrl;
+import '../../core/utils/kv_store.dart' show kvGet;
 import '../../core/theme/app_theme.dart';
+import '../../app/puls_app.dart';
 
 class ReferralCard extends StatefulWidget {
   const ReferralCard({super.key});
@@ -36,16 +37,24 @@ class _ReferralCardState extends State<ReferralCard> {
 
   Map<String, String> get _headers {
     final h = <String, String>{'Content-Type': 'application/json'};
-    final s = Supabase.instance.client.auth.currentSession;
-    if (s != null) h['Authorization'] = 'Bearer ${s.accessToken}';
+    try {
+      final raw = kvGet('direct_auth');
+      if (raw != null && raw.isNotEmpty) {
+        final saved = jsonDecode(raw) as Map<String, dynamic>?;
+        final token = saved?['token'] as String?;
+        if (token != null && token.isNotEmpty) {
+          h['Authorization'] = 'Bearer $token';
+        }
+      }
+    } catch (_) {}
     return h;
   }
 
   Future<void> _fetch() async {
     try {
-      final u = Supabase.instance.client.auth.currentUser;
+      final uid = WalletServiceScope.of(context).state.userId;
       final uri = Uri.parse('$backendUrl/api/referrals/me').replace(
-        queryParameters: {if (u != null) 'userId': 'supabase_${u.id}'},
+        queryParameters: {if (uid != null) 'userId': uid},
       );
       final res = await http.get(
         uri,

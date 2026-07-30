@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:animate_do/animate_do.dart';
+import '../../core/utils/kv_store.dart' show kvGet;
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import '../../app/puls_app.dart';
@@ -67,6 +67,18 @@ class _AiCopilotSheetState extends State<AiCopilotSheet> {
     super.dispose();
   }
 
+  String _directToken() {
+    try {
+      final raw = kvGet('direct_auth');
+      if (raw != null && raw.isNotEmpty) {
+        final saved = jsonDecode(raw) as Map<String, dynamic>?;
+        final token = saved?['token'] as String?;
+        if (token != null && token.isNotEmpty) return token;
+      }
+    } catch (_) {}
+    return '';
+  }
+
   Future<void> _send(String text) async {
     final uid = WalletServiceScope.of(context).state.userId;
     if (uid == null || text.trim().isEmpty || _busy) return;
@@ -84,7 +96,7 @@ class _AiCopilotSheetState extends State<AiCopilotSheet> {
         Uri.parse('$backendUrl/api/copilot/chat'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${Supabase.instance.client.auth.currentSession?.accessToken ?? ""}',
+          'Authorization': 'Bearer ${_directToken()}',
         },
         body: jsonEncode({
           'userId': uid,
