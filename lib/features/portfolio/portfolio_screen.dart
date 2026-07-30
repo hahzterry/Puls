@@ -167,26 +167,32 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
   void _setupRealtime() {
     final ws = WalletServiceScope.of(context).state;
-    _tradeChannel?.unsubscribe();
+    try {
+      _tradeChannel?.unsubscribe();
+    } catch (_) {}
     _tradeChannel = null;
     if (ws.userId == null) return;
 
-    _tradeChannel = _supabase
-        .channel('public:trades:portfolio')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'trades',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'user_id',
-            value: ws.userId,
-          ),
-          callback: (payload) {
-            _load(silent: true);
-          },
-        )
-        .subscribe();
+    try {
+      _tradeChannel = _supabase
+          .channel('public:trades:portfolio')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'trades',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: ws.userId,
+            ),
+            callback: (payload) {
+              _load(silent: true);
+            },
+          )
+          .subscribe();
+    } catch (e) {
+      debugPrint('[PortfolioScreen] Supabase realtime disabled: $e');
+    }
   }
 
   void _applySort() {
