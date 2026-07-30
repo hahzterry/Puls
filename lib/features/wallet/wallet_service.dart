@@ -1219,14 +1219,14 @@ class WalletService extends ChangeNotifier {
   /// with 401 ("token invalid"). Refreshing here means every request self-heals,
   /// so users never have to hit Retry/Reload.
   Future<String?> _freshAccessToken() async {
+    String? expiredToken;
     try {
       final raw = kvGet('direct_auth');
       if (raw != null && raw.isNotEmpty) {
         final savedAuth = jsonDecode(raw) as Map<String, dynamic>?;
         if (savedAuth != null) {
           final token = savedAuth['token'] as String?;
-            if (token != null && token.isNotEmpty) {
-            // Check if token is expired
+          if (token != null && token.isNotEmpty) {
             bool expired = false;
             try {
               final parts = token.split('.');
@@ -1234,6 +1234,7 @@ class WalletService extends ChangeNotifier {
                 final payload = jsonDecode(utf8.decode(base64Url.decode(parts[1]))) as Map<String, dynamic>;
                 final exp = payload['exp'] as num?;
                 if (exp != null && exp <= DateTime.now().millisecondsSinceEpoch / 1000) {
+                  expiredToken = token;
                   kvRemove('direct_auth');
                   expired = true;
                 }
@@ -1263,8 +1264,28 @@ class WalletService extends ChangeNotifier {
           'token': s.accessToken,
         }));
       } catch (_) {}
+      return s.accessToken;
     }
-    return s?.accessToken;
+    // Last resort: try backend token refresh with the expired token
+    if (expiredToken != null) {
+      try {
+        final refreshRes = await _client.post(
+          Uri.parse('$_backendUrl/api/auth/refresh'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'token': expiredToken}),
+        ).timeout(const Duration(seconds: 10));
+        if (refreshRes.statusCode == 200) {
+          final data = jsonDecode(refreshRes.body) as Map<String, dynamic>;
+          final newToken = data['token'] as String?;
+          final userId = data['userId'] as String?;
+          if (newToken != null && userId != null) {
+            kvSet('direct_auth', jsonEncode({'userId': userId, 'token': newToken}));
+            return newToken;
+          }
+        }
+      } catch (_) {}
+    }
+    return null;
   }
 
   Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> body, {Duration? timeout}) async {
