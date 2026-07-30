@@ -924,7 +924,7 @@ class _HeroCopy extends StatelessWidget {
                 label: 'Connect wallet',
                 onTap: () async {
                   await wallet.signInWithExternalWallet();
-                  if (wallet.state.isExternalWallet && context.mounted) {
+                  if (wallet.state.isExternalWallet && !context.mounted) {
                     appState.dismissWebLanding();
                   }
                 },

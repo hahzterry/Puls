@@ -9,6 +9,7 @@ import '../../core/widgets/tactile.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:haptic_kit/haptic_kit.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
 import '../../core/utils/kv_store.dart' show kvGet;
 
 import '../../app/puls_app.dart';
@@ -261,6 +262,32 @@ class _AgentScreenState extends State<AgentScreen>
 
   bool _resumed = false;
 
+  Future<Map<String, String>> _buildAuthHeaders() async {
+    final headers = <String, String>{};
+    try {
+      final raw = kvGet('direct_auth');
+      if (raw != null && raw.isNotEmpty) {
+        final saved = jsonDecode(raw) as Map<String, dynamic>?;
+        final token = saved?['token'] as String?;
+        if (token != null && token.isNotEmpty) {
+          headers['Authorization'] = 'Bearer $token';
+          return headers;
+        }
+      }
+    } catch (_) {}
+    try {
+      final auth = Supabase.instance.client.auth;
+      var session = auth.currentSession;
+      if (session == null) {
+        session = await auth.refreshSession();
+      }
+      if (session?.accessToken != null) {
+        headers['Authorization'] = 'Bearer ${session!.accessToken}';
+      }
+    } catch (_) {}
+    return headers;
+  }
+
   void _resumeIfNeeded() {
     if (_resumed || _userId == null) return;
     _resumed = true;
@@ -272,17 +299,7 @@ class _AgentScreenState extends State<AgentScreen>
     final uid = _userId;
     if (uid == null) return;
     try {
-      final headers = <String, String>{};
-      try {
-        final raw = kvGet('direct_auth');
-        if (raw != null && raw.isNotEmpty) {
-          final saved = jsonDecode(raw) as Map<String, dynamic>?;
-          final token = saved?['token'] as String?;
-          if (token != null && token.isNotEmpty) {
-            headers['Authorization'] = 'Bearer $token';
-          }
-        }
-      } catch (_) {}
+      final headers = await _buildAuthHeaders();
       final res = await _client
           .get(
             Uri.parse('$backendUrl/api/agent/status?userId=$uid'),
@@ -339,19 +356,8 @@ class _AgentScreenState extends State<AgentScreen>
 
   Future<Map<String, dynamic>> _post(
       String path, Map<String, dynamic> body) async {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
-    try {
-      final raw = kvGet('direct_auth');
-      if (raw != null && raw.isNotEmpty) {
-        final saved = jsonDecode(raw) as Map<String, dynamic>?;
-        final token = saved?['token'] as String?;
-        if (token != null && token.isNotEmpty) {
-          headers['Authorization'] = 'Bearer $token';
-        }
-      }
-    } catch (_) {}
+    final headers = await _buildAuthHeaders();
+    headers['Content-Type'] = 'application/json';
     final res = await _client
         .post(
           Uri.parse('$backendUrl$path'),
