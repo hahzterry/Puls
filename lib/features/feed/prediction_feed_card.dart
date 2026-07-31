@@ -523,12 +523,15 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                       _OddsBar(market: market),
                             const SizedBox(height: 12),
                             // Sparkline — always 48px, shows a quiet surface
-                            // while loading
+                            // while loading. animate:false — feed cards are
+                            // recreated as you scroll, so re-running the 800ms
+                            // draw-in on every rebuild would churn the paint.
                             PulsSparkline(
                               prices: _sparkline,
                               color: _sparkline.last >= _sparkline.first
                                   ? context.puls.yes
                                   : context.puls.no,
+                              animate: false,
                             ),
                       const SizedBox(height: 8),
                       // Stats + details

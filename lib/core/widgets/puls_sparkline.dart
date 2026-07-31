@@ -63,7 +63,7 @@ class PulsSparkline extends StatelessWidget {
         .toList();
 
     final chart = LineChart(
-      duration: context.reduceMotion
+      duration: (!animate || context.reduceMotion)
           ? Duration.zero
           : const Duration(milliseconds: 800),
       curve: Curves.easeOutCubic,

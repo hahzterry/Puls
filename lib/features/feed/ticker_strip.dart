@@ -85,32 +85,20 @@ class _WebTickerStripState extends State<WebTickerStrip>
         border: Border.all(color: t.border),
       ),
       clipBehavior: Clip.antiAlias,
-      // Edge fade masks the tape's hard clip so chips glance in and out of
-      // view instead of popping at the container's rounded edge.
-      child: ShaderMask(
-        shaderCallback: (rect) => const LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            Colors.transparent,
-            Colors.white,
-            Colors.white,
-            Colors.transparent,
-          ],
-          stops: [0.0, 0.05, 0.95, 1.0],
-        ).createShader(rect),
-        blendMode: BlendMode.dstIn,
-        child: RepaintBoundary(
-          child: AnimatedBuilder(
-            animation: _ctrl,
-            child: _tape,
-            builder: (context, child) {
-              final elapsed = _ctrl.value * _periodSec; // seconds
-              final dx =
-                  rowWidth > 0 ? -((elapsed * _pxPerSec) % rowWidth) : 0.0;
-              return Transform.translate(offset: Offset(dx, 0), child: child);
-            },
-          ),
+      // NOTE: no ShaderMask here. A dstIn shader over the moving tape would
+      // allocate a saveLayer on every animation frame (60fps), which is the
+      // single most expensive thing this marquee could do on web. The rounded
+      // clip alone is plenty — chips glance out through it just fine.
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _ctrl,
+          child: _tape,
+          builder: (context, child) {
+            final elapsed = _ctrl.value * _periodSec; // seconds
+            final dx =
+                rowWidth > 0 ? -((elapsed * _pxPerSec) % rowWidth) : 0.0;
+            return Transform.translate(offset: Offset(dx, 0), child: child);
+          },
         ),
       ),
     );

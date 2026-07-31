@@ -2,8 +2,12 @@
   "buildCommand": "bash build_vercel.sh",
   "outputDirectory": "build/web",
   "installCommand": "echo 'skip'",
+  "redirects": [
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "www.pulsmarket.tech" }], "destination": "https://pulsmarket.tech/$1", "permanent": true },
+    { "source": "/", "has": [{ "type": "host", "value": "www.pulsmarket.tech" }], "destination": "https://pulsmarket.tech/", "permanent": true }
+  ],
   "rewrites": [
-    { "source": "/sitemap.xml", "destination": "https://safe-spire-63835.herokuapp.com/sitemap.xml" },
+    { "source": "/api/market-sitemap.xml", "destination": "https://safe-spire-63835.herokuapp.com/sitemap.xml" },
     { "source": "/m/:slug", "destination": "/api/market-share?slug=:slug" },
     { "source": "/terms", "destination": "/terms.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
@@ -24,6 +28,13 @@
       "source": "/(.*)",
       "headers": [
         { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, must-revalidate" },
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" }
       ]
     },
     {

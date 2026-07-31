@@ -33,7 +33,6 @@ Allow: /
 # The Flutter app bundle doesn't need crawling, but it can't hurt.
 Disallow: /flutter_bootstrap.js
 
-# Sitemaps: marketing pages (static) + dynamic market pages (backend-generated).
-Sitemap: https://pulsmarket.tech/sitemap-marketing.xml
+# Sitemaps: marketing/static pages + dynamic market pages (backend-generated).
 Sitemap: https://pulsmarket.tech/sitemap.xml
-Sitemap: https://app.pulsmarket.tech/sitemap.xml
+Sitemap: https://pulsmarket.tech/api/market-sitemap.xml

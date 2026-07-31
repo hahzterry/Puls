@@ -38,6 +38,8 @@ class _WebLandingPageState extends State<WebLandingPage>
     with SingleTickerProviderStateMixin {
   final _scrollCtrl = ScrollController();
   double _scrollOffset = 0;
+  int _lastScrollNotified = 0;
+  static const _scrollThrottleMs = 50; // ~20 rebuilds/s max for scroll effects
   late final AnimationController _aurora;
   // Normalized cursor position (-0.5..0.5 on each axis) for the reactive aurora.
   // A ValueNotifier so mouse moves repaint only the aurora, not the whole page.
@@ -50,7 +52,14 @@ class _WebLandingPageState extends State<WebLandingPage>
     // in build() so motion-sensitive users get a single still frame.
     _aurora =
         AnimationController(vsync: this, duration: const Duration(seconds: 18));
+    // Throttled scroll listener: setState fires at most ~20×/s instead of once
+    // per scroll pixel. The rebuild only feeds the scroll-progress bar + hero
+    // parallax, so sub-frame updates are invisible — but skipping them removes
+    // a full-page rebuild from every scroll frame (biggest landing FPS win).
     _scrollCtrl.addListener(() {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (now - _lastScrollNotified < _scrollThrottleMs) return;
+      _lastScrollNotified = now;
       if (mounted) setState(() => _scrollOffset = _scrollCtrl.offset);
     });
   }
