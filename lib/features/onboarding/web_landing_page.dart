@@ -830,6 +830,7 @@ class _HeroCopy extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = PulsStateScope.of(context);
     final t = context.puls;
+    final isDark = context.isDark;
     final w = MediaQuery.sizeOf(context).width;
     final isMobile = w < 1000;
     final double titleSize = w < 480 ? 44 : (w < 1000 ? 56 : (w < 1250 ? 64 : 74));
@@ -878,6 +879,14 @@ class _HeroCopy extends StatelessWidget {
             fontWeight: FontWeight.w600,
             height: 1.04,
             letterSpacing: -1.5,
+            shadows: isDark
+                ? [
+                    Shadow(
+                      color: PulsColors.brandPinkDark.withValues(alpha: 0.18),
+                      blurRadius: 32,
+                    ),
+                  ]
+                : null,
           ),
         ).animate().fadeIn(duration: 500.ms, delay: 60.ms).slideY(begin: 0.18, end: 0, duration: 500.ms, delay: 60.ms, curve: Curves.easeOutCubic),
         AnimatedSwitcher(
@@ -3126,12 +3135,14 @@ class _StatsSection extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 960),
           child: Column(
             children: [
-              Text(
-                'Built on Circle\'s full stack',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: t.text, fontSize: isMobile ? 24 : 36, fontWeight: FontWeight.w800, letterSpacing: -1),
+              const _SectionEyebrow(label: 'LIVE PROTOCOL STATS'),
+              const SizedBox(height: 20),
+              _GradientHeadline(
+                lead: 'Built on Circle\'s full stack,',
+                accent: 'proven on-chain.',
+                isMobile: isMobile,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Text(
                 'Real bonds. Real trades. Real accountability.',
                 textAlign: TextAlign.center,
@@ -3272,12 +3283,86 @@ class _StatsSection extends StatelessWidget {
     final spacing = isMobile ? 12.0 : 20.0;
     return SizedBox(
       width: (constraints.maxWidth - (cols - 1) * spacing) / cols,
-      child: GlassCard(
-        radius: 18,
-        blur: 10,
-        fillAlpha: 0.05,
-        borderAlpha: 0.12,
+      child: _StatCard(
+        value: value,
+        label: label,
+        sub: sub,
+        color: color,
+        icon: icon,
+        isMobile: isMobile,
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatefulWidget {
+  const _StatCard({
+    required this.value,
+    required this.label,
+    required this.sub,
+    required this.color,
+    required this.icon,
+    required this.isMobile,
+  });
+  final String value;
+  final String label;
+  final String sub;
+  final Color color;
+  final IconData icon;
+  final bool isMobile;
+
+  @override
+  State<_StatCard> createState() => _StatCardState();
+}
+
+class _StatCardState extends State<_StatCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    final isMobile = widget.isMobile;
+    final color = widget.color;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        transform: _hovered
+            ? Matrix4.translationValues(0.0, -4.0, 0.0)
+            : Matrix4.identity(),
         padding: EdgeInsets.all(isMobile ? 12 : 24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              t.surface,
+              Color.alphaBlend(color.withValues(alpha: _hovered ? 0.06 : 0.02), t.surface),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: _hovered ? color.withValues(alpha: 0.4) : t.border,
+          ),
+          boxShadow: _hovered
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.18),
+                    blurRadius: 28,
+                    offset: const Offset(0, 14),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: t.text.withValues(alpha: 0.05),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -3285,7 +3370,7 @@ class _StatsSection extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    value,
+                    widget.value,
                     style: TextStyle(
                       color: color,
                       fontSize: isMobile ? 22 : 36,
@@ -3296,23 +3381,47 @@ class _StatsSection extends StatelessWidget {
                   ),
                 ),
                 // Brand-tinted icon badge — replaces the old icons8 network images
-                Container(
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
                   width: isMobile ? 36 : 48,
                   height: isMobile ? 36 : 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
+                    color: _hovered
+                        ? color.withValues(alpha: 0.18)
+                        : color.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
-                    border: Border.all(color: color.withValues(alpha: 0.25), width: 1.2),
+                    border: Border.all(
+                      color: color.withValues(
+                          alpha: _hovered ? 0.45 : 0.25),
+                      width: 1.2,
+                    ),
+                    boxShadow: _hovered
+                        ? [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.4),
+                              blurRadius: 14,
+                            ),
+                          ]
+                        : null,
                   ),
-                  child: Icon(icon, size: isMobile ? 18 : 24, color: color),
+                  child: Icon(widget.icon,
+                      size: isMobile ? 18 : 24, color: color),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            Text(label, style: TextStyle(color: t.text, fontSize: isMobile ? 13 : 15, fontWeight: FontWeight.w700)),
+            Text(widget.label,
+                style: TextStyle(
+                    color: t.text,
+                    fontSize: isMobile ? 13 : 15,
+                    fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
-            Text(sub, style: TextStyle(color: t.textMuted, fontSize: isMobile ? 10 : 12, height: 1.4)),
+            Text(widget.sub,
+                style: TextStyle(
+                    color: t.textMuted,
+                    fontSize: isMobile ? 10 : 12,
+                    height: 1.4)),
           ],
         ),
       ),
@@ -4189,7 +4298,7 @@ class _RevealState extends State<_Reveal> {
       child: AnimatedSlide(
         duration: revealDuration,
         curve: Curves.easeOutCubic,
-        offset: _shown || visibleNow ? Offset.zero : const Offset(0, 0.045),
+        offset: _shown || visibleNow ? Offset.zero : const Offset(0, 0.06),
         child: widget.child,
       ),
     );
