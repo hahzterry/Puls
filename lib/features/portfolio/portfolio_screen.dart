@@ -11,7 +11,6 @@ import '../../core/widgets/tactile.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../app/puls_app.dart';
@@ -50,12 +49,10 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   String _totalSpent = '0.00';
   bool _loading = true;
   String? _error;
-  RealtimeChannel? _tradeChannel;
   String? _lastUserId;
   bool _initialized = false;
   bool _newestFirst = true;
   bool _claimingAll = false;
-  final _supabase = Supabase.instance.client;
   final http.Client _client = http.Client();
 
   /// Positions that are resolved, won, and not yet claimed.
@@ -148,7 +145,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     if (!_initialized || userId != _lastUserId) {
       _initialized = true;
       _lastUserId = userId;
-      _setupRealtime();
       _load();
     }
     // Instant reload whenever any trade is placed (user or agent), no realtime lag.
@@ -163,36 +159,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   void _onTradeSignal() {
     _pendingPollTries = 0; // fresh trade -> restart the pending poll budget
     _load(silent: true);
-  }
-
-  void _setupRealtime() {
-    final ws = WalletServiceScope.of(context).state;
-    try {
-      _tradeChannel?.unsubscribe();
-    } catch (_) {}
-    _tradeChannel = null;
-    if (ws.userId == null) return;
-
-    try {
-      _tradeChannel = _supabase
-          .channel('public:trades:portfolio')
-          .onPostgresChanges(
-            event: PostgresChangeEvent.all,
-            schema: 'public',
-            table: 'trades',
-            filter: PostgresChangeFilter(
-              type: PostgresChangeFilterType.eq,
-              column: 'user_id',
-              value: ws.userId,
-            ),
-            callback: (payload) {
-              _load(silent: true);
-            },
-          )
-          .subscribe();
-    } catch (e) {
-      debugPrint('[PortfolioScreen] Supabase realtime disabled: $e');
-    }
   }
 
   void _applySort() {
@@ -267,7 +233,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   void dispose() {
     _pendingPoll?.cancel();
     _signal?.removeListener(_onTradeSignal);
-    _tradeChannel?.unsubscribe();
     _client.close();
     super.dispose();
   }
