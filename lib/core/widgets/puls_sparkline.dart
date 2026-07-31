@@ -62,6 +62,14 @@ class PulsSparkline extends StatelessWidget {
         .map((e) => FlSpot(e.key.toDouble(), e.value))
         .toList();
 
+    final lastIndex = spots.length - 1;
+
+    // Sparse series (few daily samples) need a softer curve to read as a
+    // flowing line rather than a jagged polyline. Dense series keep the
+    // default smoothness so they don't overshoot.
+    final effectiveSmoothness =
+        spots.length < 8 ? (smoothness + 0.15).clamp(0.0, 0.6) : smoothness;
+
     final chart = LineChart(
       duration: (!animate || context.reduceMotion)
           ? Duration.zero
@@ -78,18 +86,26 @@ class PulsSparkline extends StatelessWidget {
           LineChartBarData(
             spots: spots,
             isCurved: true,
-            curveSmoothness: smoothness,
+            curveSmoothness: effectiveSmoothness,
             preventCurveOverShooting: true,
             color: color,
             barWidth: strokeWidth,
+            // A dot ONLY on the final point. fl_chart's getDotPainter runs for
+            // every spot when show:true, so without this guard a short series
+            // renders as a string of circles instead of a smooth line.
             dotData: FlDotData(
               show: showLastDot,
-              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
-                radius: 2.6,
-                color: color,
-                strokeWidth: 1.5,
-                strokeColor: context.puls.surface,
-              ),
+              getDotPainter: (spot, percent, bar, index) {
+                if (index != lastIndex) {
+                  return FlDotCirclePainter(radius: 0);
+                }
+                return FlDotCirclePainter(
+                  radius: 3,
+                  color: color,
+                  strokeWidth: 2,
+                  strokeColor: context.puls.surface,
+                );
+              },
             ),
             belowBarData: BarAreaData(
               show: true,
