@@ -29,6 +29,10 @@ class PulsColors {
   static const amber = Color(0xFFF59E0B);        // warm gold
   static const amberLight = Color(0xFFFEF6E7);
 
+  // Agent-created markets badge — a fixed "AI" accent that reads the same on
+  // light and dark surfaces. Centralized here (was hardcoded in 7+ places).
+  static const agentPurple = Color(0xFF8B5CF6);
+
   // Neutrals (cool — shared undertone across light & dark)
   static const gray50 = Color(0xFFFAFBFD);
   static const gray100 = Color(0xFFF4F6FA);

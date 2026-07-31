@@ -279,7 +279,7 @@ class _AgentScreenState extends State<AgentScreen>
       final auth = Supabase.instance.client.auth;
       var session = auth.currentSession;
       if (session == null) {
-        session = await auth.refreshSession();
+        session = (await auth.refreshSession()).session;
       }
       if (session?.accessToken != null) {
         headers['Authorization'] = 'Bearer ${session!.accessToken}';

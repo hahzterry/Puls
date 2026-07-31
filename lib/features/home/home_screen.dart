@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/widgets/puls_page_route.dart';
 import '../../core/widgets/skeleton.dart';
+import '../../core/widgets/tactile.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
@@ -115,14 +116,26 @@ class _WebHomeScreen extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleLarge),
                   const Spacer(),
                   const HelpButton(tab: PulsTab.home),
-                  TextButton.icon(
-                    onPressed: () => PulsStateScope.of(context).refresh(),
-                    icon: Icon(Icons.refresh_rounded, size: 16, color: t.brand),
-                    label: Text('Refresh',
-                        style: TextStyle(
-                            color: t.brand,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 8),
+                  // Quiet refresh — an icon in the same rounded-square language
+                  // as the rest of the app's compact header controls.
+                  Semantics(
+                    button: true,
+                    label: 'Refresh markets',
+                    child: Tactile(
+                      onTap: () => PulsStateScope.of(context).refresh(),
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: t.surface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: t.border),
+                        ),
+                        child: Icon(Icons.refresh_rounded,
+                            size: 17, color: t.brand),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -214,11 +227,24 @@ class _WebHomeScreen extends StatelessWidget {
                         Text('Trending Predictions',
                             style: Theme.of(context).textTheme.titleLarge),
                         const Spacer(),
-                        TextButton.icon(
-                          onPressed: () => PulsStateScope.of(context).refresh(),
-                          icon: Icon(Icons.refresh_rounded, size: 16, color: t.brand),
-                          label: Text('Refresh',
-                              style: TextStyle(color: t.brand, fontSize: 13, fontWeight: FontWeight.w600)),
+                        Semantics(
+                          button: true,
+                          label: 'Refresh markets',
+                          child: Tactile(
+                            onTap: () =>
+                                PulsStateScope.of(context).refresh(),
+                            child: Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: t.surface,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: t.border),
+                              ),
+                              child: Icon(Icons.refresh_rounded,
+                                  size: 17, color: t.brand),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -279,7 +305,7 @@ class _FeaturedHeroBanner extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: t.surfaceRaised,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: t.border, width: 1.5),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -323,30 +349,44 @@ class _FeaturedHeroBanner extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.14),
+                    color: PulsColors.agentPurple.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const PulsEmojiText('🤖 AGENT',
                       style: TextStyle(
-                          color: Color(0xFF8B5CF6),
+                          color: PulsColors.agentPurple,
                           fontSize: 9.5,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.4)),
                 ),
               ],
               const Spacer(),
-              Icon(Icons.trending_up_rounded, color: t.yes, size: 16),
-              const SizedBox(width: 4),
-              Text(
-                'Volume: ${market.volume}',
-                style: TextStyle(
-                    color: t.textSubtle,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: t.surface,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: t.border),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.trending_up_rounded, color: t.yes, size: 12),
+                    const SizedBox(width: 4),
+                    Text(
+                      market.volume,
+                      style: TextStyle(
+                          color: t.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           GestureDetector(
             onTap: () => Navigator.of(context).push(
               pulsRoute(context, settings: RouteSettings(name: '/m/${market.slug}'), builder: (_) => MarketDetailScreen(marketId: market.id),
@@ -362,14 +402,14 @@ class _FeaturedHeroBanner extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             market.context,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(color: t.textMuted, fontSize: 13, height: 1.5),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           Row(
             children: [
               Expanded(
@@ -460,7 +500,7 @@ class _WebTrendingCardState extends State<_WebTrendingCard> {
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: t.brandSubtle,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       widget.market.category,
@@ -573,7 +613,7 @@ class _WebWalletBox extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: t.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: t.border),
       ),
       child: Column(
@@ -608,14 +648,19 @@ class _WebWalletBox extends StatelessWidget {
           ] else ...[
             Text('\$$balance USDC',
                 style: TextStyle(
-                    color: t.text, fontSize: 24, fontWeight: FontWeight.w800)),
+                    color: t.text,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    fontFeatures: PulsColors.tabularFigures)),
             const SizedBox(height: 4),
             Text(
               ws.walletAddress != null && ws.walletAddress!.isNotEmpty
                   ? '${ws.walletAddress!.substring(0, 6)}...${ws.walletAddress!.substring(ws.walletAddress!.length - 4)}'
                   : 'Generating address...',
               style: TextStyle(
-                  color: t.textSubtle, fontSize: 11, fontFamily: 'monospace'),
+                  color: t.textSubtle,
+                  fontSize: 11,
+                  fontFamily: PulsColors.fontMono),
             ),
             const SizedBox(height: 14),
             if (isZero) ...[
@@ -690,7 +735,7 @@ class _WebHotMarketCardState extends State<_WebHotMarketCard> {
           decoration: BoxDecoration(
             color:
                 _hovered ? t.surfaceRaised : t.surface.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: _hovered ? t.brand : t.border),
           ),
           child: Column(
@@ -703,7 +748,7 @@ class _WebHotMarketCardState extends State<_WebHotMarketCard> {
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: t.brandSubtle,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       widget.market.category.toUpperCase(),
@@ -806,36 +851,46 @@ class _TradingPillButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
-      child: TextButton(
-        onPressed: onPressed,
-        style: TextButton.styleFrom(
-          backgroundColor: bg,
-          foregroundColor: color,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      height: 52,
+      child: Tactile(
+        onTap: onPressed,
+        pressedScale: 0.97,
+        child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-            Row(
-              children: [
-                Text(pct,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w900, fontSize: 13)),
-                const SizedBox(width: 4),
-                Text('($price)',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 11,
-                        color: color.withValues(alpha: 0.7))),
-              ],
-            ),
-          ],
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withValues(alpha: 0.28)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label,
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      letterSpacing: 0.3,
+                      color: color)),
+              Row(
+                children: [
+                  Text(pct,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          fontFeatures: PulsColors.tabularFigures,
+                          color: color)),
+                  const SizedBox(width: 4),
+                  Text('($price)',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 11,
+                          fontFeatures: PulsColors.tabularFigures,
+                          color: color.withValues(alpha: 0.7))),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

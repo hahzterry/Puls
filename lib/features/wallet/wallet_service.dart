@@ -1261,10 +1261,10 @@ class WalletService extends ChangeNotifier {
       try {
         kvSet('direct_auth', jsonEncode({
           'userId': s!.user.id,
-          'token': s.accessToken,
+          'token': s!.accessToken,
         }));
       } catch (_) {}
-      return s.accessToken;
+      return s!.accessToken;
     }
     // Last resort: try backend token refresh with the expired token
     if (expiredToken != null) {

@@ -700,12 +700,28 @@ class _HeroSectionState extends State<_HeroSection> {
         : -(widget.scrollOffset * 0.18).clamp(0.0, h * 0.25);
     final heroOpacity = (1 - widget.scrollOffset / (h * 0.55)).clamp(0.0, 1.0);
 
+    // Navbar crossfade: the inline (hero) navbar fades out as the sticky one
+    // fades in, giving a seamless handoff around 80–200px.
+    final inlineNavOpacity =
+        (1 - widget.scrollOffset / 140).clamp(0.0, 1.0);
+
     return ConstrainedBox(
       constraints: BoxConstraints(minHeight: h),
       child: Stack(
         children: [
           // ── Inline navbar (first paint, transparent bg) ────────────────
-          const Positioned(top: 0, left: 0, right: 0, child: _InlineNavbar()),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              ignoring: widget.scrollOffset > 100,
+              child: Opacity(
+                opacity: inlineNavOpacity,
+                child: const _InlineNavbar(),
+              ),
+            ),
+          ),
           // Hero content with parallax
           Padding(
             padding: EdgeInsets.only(top: isMobile ? 110 : 90),
@@ -924,7 +940,7 @@ class _HeroCopy extends StatelessWidget {
                 label: 'Connect wallet',
                 onTap: () async {
                   await wallet.signInWithExternalWallet();
-                  if (wallet.state.isExternalWallet && !context.mounted) {
+                  if (wallet.state.isExternalWallet && context.mounted) {
                     appState.dismissWebLanding();
                   }
                 },
@@ -1084,34 +1100,49 @@ class _TrustStrip extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Wrap(
-          spacing: isMobile ? 18 : 36,
+          spacing: 0,
           runSpacing: 12,
           alignment: WrapAlignment.center,
-          children: _rails
-              .map((r) => Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        r.$1,
-                        style: TextStyle(
-                          fontFamily: PulsColors.fontDisplay,
-                          color: t.text.withValues(alpha: 0.75),
-                          fontSize: isMobile ? 14 : 16,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        r.$2,
-                        style: TextStyle(
-                          color: t.textSubtle,
-                          fontSize: isMobile ? 10 : 11.5,
-                        ),
-                      ),
-                    ],
-                  ))
-              .toList(),
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            for (var i = 0; i < _rails.length; i++) ...[
+              if (i > 0)
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 22),
+                  child: Container(
+                    width: 3,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: t.brand.withValues(alpha: 0.4),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _rails[i].$1,
+                    style: TextStyle(
+                      fontFamily: PulsColors.fontDisplay,
+                      color: t.text.withValues(alpha: 0.75),
+                      fontSize: isMobile ? 14 : 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _rails[i].$2,
+                    style: TextStyle(
+                      color: t.textSubtle,
+                      fontSize: isMobile ? 10 : 11.5,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
         ),
       ],
     );
@@ -1317,7 +1348,18 @@ class _HowItWorksSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     for (var i = 0; i < steps.length; i++) ...[
-                      if (i > 0) const SizedBox(width: 18),
+                      if (i > 0) ...[
+                        const SizedBox(width: 10),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 46),
+                          child: Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 18,
+                            color: t.brand.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                      ],
                       Expanded(
                         child: _HowStep(
                             icon: steps[i].$1,
@@ -1336,7 +1378,7 @@ class _HowItWorksSection extends StatelessWidget {
   }
 }
 
-class _HowStep extends StatelessWidget {
+class _HowStep extends StatefulWidget {
   const _HowStep(
       {required this.icon,
       required this.step,
@@ -1348,58 +1390,85 @@ class _HowStep extends StatelessWidget {
   final String body;
 
   @override
+  State<_HowStep> createState() => _HowStepState();
+}
+
+class _HowStepState extends State<_HowStep> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final t = context.puls;
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: t.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: PulsColors.pulseGradient,
-                  borderRadius: BorderRadius.circular(13),
-                  boxShadow: [
-                    BoxShadow(
-                        color: t.brand.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 5)),
-                  ],
-                ),
-                child: Icon(icon, color: Colors.white, size: 23),
-              ),
-              const Spacer(),
-              Text(step,
-                  style: TextStyle(
-                      fontFamily: PulsColors.fontDisplay,
-                      color: t.border,
-                      fontSize: 42,
-                      fontWeight: FontWeight.w800,
-                      height: 1.0)),
-            ],
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        transform: _hovered
+            ? Matrix4.translationValues(0.0, -4.0, 0.0)
+            : Matrix4.identity(),
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: t.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: _hovered ? t.brand.withValues(alpha: 0.45) : t.border,
           ),
-          const SizedBox(height: 16),
-          Text(title,
-              style: TextStyle(
-                  color: t.text,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3)),
-          const SizedBox(height: 7),
-          Text(body,
-              style:
-                  TextStyle(color: t.textMuted, fontSize: 13.5, height: 1.55)),
-        ],
+          boxShadow: _hovered
+              ? [
+                  BoxShadow(
+                    color: t.brand.withValues(alpha: 0.15),
+                    blurRadius: 28,
+                    offset: const Offset(0, 12),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: PulsColors.pulseGradient,
+                    borderRadius: BorderRadius.circular(13),
+                    boxShadow: [
+                      BoxShadow(
+                          color: t.brand.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 5)),
+                    ],
+                  ),
+                  child: Icon(widget.icon, color: Colors.white, size: 23),
+                ),
+                const Spacer(),
+                Text(widget.step,
+                    style: TextStyle(
+                        fontFamily: PulsColors.fontDisplay,
+                        color: _hovered ? t.brand.withValues(alpha: 0.7) : t.border,
+                        fontSize: 42,
+                        fontWeight: FontWeight.w800,
+                        height: 1.0)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(widget.title,
+                style: TextStyle(
+                    color: t.text,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3)),
+            const SizedBox(height: 7),
+            Text(widget.body,
+                style:
+                    TextStyle(color: t.textMuted, fontSize: 13.5, height: 1.55)),
+          ],
+        ),
       ),
     );
   }
@@ -2983,32 +3052,61 @@ class _CapabilityStrip extends StatelessWidget {
           alignment: WrapAlignment.center,
           spacing: 10,
           runSpacing: 10,
-          children: [for (final it in _items) _pill(t, it.$1, it.$2)],
+          children: [for (final it in _items) _CapabilityPill(icon: it.$1, label: it.$2)],
         ),
       ],
     );
   }
+}
 
-  Widget _pill(PulsThemeColors t, IconData icon, String label) => Container(
+class _CapabilityPill extends StatefulWidget {
+  const _CapabilityPill({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  State<_CapabilityPill> createState() => _CapabilityPillState();
+}
+
+class _CapabilityPillState extends State<_CapabilityPill> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        transform: _hovered
+            ? Matrix4.translationValues(0.0, -2.0, 0.0)
+            : Matrix4.identity(),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: t.surface,
+          color: _hovered ? t.brandSubtle : t.surface,
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: t.border),
+          border: Border.all(
+            color: _hovered ? t.brand.withValues(alpha: 0.4) : t.border,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: t.brand),
+            Icon(widget.icon, size: 14, color: _hovered ? t.brand : t.textMuted),
             const SizedBox(width: 7),
-            Text(label,
+            Text(widget.label,
                 style: TextStyle(
-                    color: t.textMuted,
+                    color: _hovered ? t.brand : t.textMuted,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600)),
           ],
         ),
-      );
+      ),
+    );
+  }
 }
 
 // ── Stats Section ─────────────────────────────────────────────────────────────
@@ -3764,20 +3862,34 @@ class _VerifiedBadge extends StatelessWidget {
   }
 }
 
-class _FooterLink extends StatelessWidget {
+class _FooterLink extends StatefulWidget {
   const _FooterLink(this.label, this.url);
   final String label, url;
+
+  @override
+  State<_FooterLink> createState() => _FooterLinkState();
+}
+
+class _FooterLinkState extends State<_FooterLink> {
+  bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
     return GestureDetector(
-      onTap: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+      onTap: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        child: Text(
-          label,
-          style: TextStyle(color: t.textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 150),
+          style: TextStyle(
+            color: _hovered ? t.brand : t.textMuted,
+            fontSize: 13,
+            fontWeight: _hovered ? FontWeight.w700 : FontWeight.w500,
+          ),
+          child: Text(widget.label),
         ),
       ),
     );
@@ -3795,9 +3907,28 @@ class _PrimaryButton extends StatefulWidget {
   State<_PrimaryButton> createState() => _PrimaryButtonState();
 }
 
-class _PrimaryButtonState extends State<_PrimaryButton> {
+class _PrimaryButtonState extends State<_PrimaryButton>
+    with SingleTickerProviderStateMixin {
   bool _hovered = false;
+  bool _pressed = false;
   Offset _magnet = Offset.zero;
+
+  late final AnimationController _glow;
+
+  @override
+  void initState() {
+    super.initState();
+    _glow = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+  }
+
+  @override
+  void dispose() {
+    _glow.dispose();
+    super.dispose();
+  }
 
   void _onHover(PointerHoverEvent e) {
     if (context.reduceMotion) return;
@@ -3806,48 +3937,91 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
     final s = box.size;
     final dx = (e.localPosition.dx - s.width / 2) / (s.width / 2);
     final dy = (e.localPosition.dy - s.height / 2) / (s.height / 2);
-    setState(() => _magnet = Offset(dx.clamp(-1.0, 1.0) * 6, dy.clamp(-1.0, 1.0) * 5));
+    setState(() => _magnet = Offset(dx.clamp(-1.0, 1.0) * 4, dy.clamp(-1.0, 1.0) * 3));
+  }
+
+  void _onEnter() {
+    setState(() => _hovered = true);
+    _glow.forward();
+  }
+
+  void _onExit() {
+    setState(() {
+      _pressed = false;
+      _hovered = false;
+      _magnet = Offset.zero;
+    });
+    _glow.reverse();
   }
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
+    final scale = _pressed ? 0.97 : (_hovered ? 1.04 : 1.0);
+    final duration = Duration(milliseconds: _pressed ? 60 : 150);
+
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onHover: _onHover,
-      onExit: (_) => setState(() {
-        _hovered = false;
-        _magnet = Offset.zero;
-      }),
+      cursor: widget.onTap == null ? SystemMouseCursors.basic : SystemMouseCursors.click,
+      onEnter: (_) => widget.onTap != null ? _onEnter() : null,
+      onHover: widget.onTap != null ? _onHover : null,
+      onExit: (_) => widget.onTap != null ? _onExit() : null,
       child: GestureDetector(
         onTap: widget.onTap,
+        onTapDown: widget.onTap != null ? (_) => setState(() => _pressed = true) : null,
+        onTapUp: widget.onTap != null ? (_) => setState(() => _pressed = false) : null,
+        onTapCancel: widget.onTap != null ? () => setState(() => _pressed = false) : null,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 90),
-          curve: Curves.easeOut,
+          duration: _pressed ? const Duration(milliseconds: 70) : const Duration(milliseconds: 180),
+          curve: _pressed ? Curves.easeOut : Curves.easeOutCubic,
           transformAlignment: Alignment.center,
-          transform: Matrix4.translationValues(_magnet.dx, _magnet.dy, 0),
-          child: AnimatedScale(
-            scale: _hovered ? 1.04 : 1.0,
-            duration: const Duration(milliseconds: 150),
-            child: Container(
+          transform: Matrix4.translationValues(
+            _pressed ? 0 : _magnet.dx,
+            _pressed ? 0 : _magnet.dy,
+            0,
+          )..scale(scale),
+          child: AnimatedBuilder(
+            animation: _glow,
+            builder: (context, child) => Container(
               padding: EdgeInsets.symmetric(
                 horizontal: widget.small ? 18 : 32,
                 vertical: widget.small ? 10 : 16,
               ),
               decoration: BoxDecoration(
                 gradient: PulsColors.pulseGradient,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: _hovered
-                    ? [BoxShadow(color: PulsColors.brandPink.withValues(alpha: 0.35), blurRadius: 20, offset: const Offset(0, 4))]
-                    : [],
+                borderRadius: BorderRadius.circular(widget.small ? 10 : 14),
+                boxShadow: [
+                  // Base soft shadow
+                  BoxShadow(
+                    color: t.brand.withValues(alpha: 0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                  // Glow on hover
+                  if (_glow.value > 0)
+                    BoxShadow(
+                      color: PulsColors.brandPink.withValues(
+                          alpha: _glow.value * (context.isDark ? 0.25 : 0.18)),
+                      blurRadius: 24 + 16 * _glow.value,
+                      spreadRadius: -2 * _glow.value,
+                    ),
+                  // Pressed: tighter shadow
+                  if (_pressed)
+                    BoxShadow(
+                      color: t.brand.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 1),
+                    ),
+                ],
               ),
-              child: Text(
-                widget.label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
+              child: child,
+            ),
+            child: Text(
+              widget.label,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: widget.small ? 13.5 : 14.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.1,
               ),
             ),
           ),
@@ -3869,33 +4043,60 @@ class _SecondaryButton extends StatefulWidget {
 
 class _SecondaryButtonState extends State<_SecondaryButton> {
   bool _hovered = false;
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
+    final isDark = context.isDark;
+    final scale = _pressed ? 0.97 : 1.0;
+    final duration = Duration(milliseconds: _pressed ? 60 : 150);
+
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
+      cursor: widget.onTap == null ? SystemMouseCursors.basic : SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
+      onExit: (_) => setState(() { _hovered = false; _pressed = false; }),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.symmetric(
-            horizontal: widget.small ? 16 : 30,
-            vertical: widget.small ? 10 : 16,
-          ),
-          decoration: BoxDecoration(
-            color: _hovered ? t.surfaceRaised : t.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _hovered ? t.textMuted : t.border),
-          ),
-          child: Text(
-            widget.label,
-            style: TextStyle(
-              color: _hovered ? t.text : t.textMuted,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedScale(
+          duration: duration,
+          scale: scale,
+          curve: Curves.easeOutCubic,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.small ? 16 : 30,
+              vertical: widget.small ? 10 : 16,
+            ),
+            decoration: BoxDecoration(
+              color: _hovered ? t.surfaceRaised : t.surface,
+              borderRadius: BorderRadius.circular(widget.small ? 10 : 14),
+              border: Border.all(
+                color: _hovered ? t.textMuted.withValues(alpha: 0.5) : t.border,
+                width: _hovered ? 1.5 : 1.0,
+              ),
+              boxShadow: _hovered
+                  ? [
+                      BoxShadow(
+                        color: isDark
+                            ? Colors.black.withValues(alpha: 0.15)
+                            : Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Text(
+              widget.label,
+              style: TextStyle(
+                color: _hovered ? t.text : t.textMuted,
+                fontSize: widget.small ? 13.5 : 14.5,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
@@ -4010,7 +4211,7 @@ class _ScrollCueState extends State<_ScrollCue>
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400));
+    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600));
   }
 
   @override
@@ -4037,26 +4238,67 @@ class _ScrollCueState extends State<_ScrollCue>
             color: t.textSubtle,
             fontSize: 9.5,
             fontWeight: FontWeight.w800,
-            letterSpacing: 2,
+            letterSpacing: 2.4,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
+        // Mouse-shaped cue with an animated wheel dot.
         AnimatedBuilder(
           animation: _c,
           builder: (context, child) => Transform.translate(
-            offset: Offset(0, reduce ? 0 : _c.value * 5),
+            offset: Offset(0, reduce ? 0 : _c.value * 4),
             child: child,
           ),
           child: Container(
-            width: 26,
-            height: 26,
-            alignment: Alignment.center,
+            width: 22,
+            height: 34,
             decoration: BoxDecoration(
-              color: t.surface,
-              shape: BoxShape.circle,
-              border: Border.all(color: t.border),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  t.surface.withValues(alpha: 0.9),
+                  t.surfaceRaised,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: t.border.withValues(alpha: 0.9),
+                width: 1.4,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: t.brand.withValues(alpha: 0.08),
+                  blurRadius: 14,
+                  spreadRadius: -4,
+                ),
+              ],
             ),
-            child: Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: t.textMuted),
+            child: Center(
+              child: AnimatedBuilder(
+                animation: _c,
+                builder: (context, _) => Opacity(
+                  opacity: reduce ? 0.8 : (0.3 + 0.7 * (1 - _c.value)),
+                  child: Transform.translate(
+                    offset: Offset(0, reduce ? 0 : -3 + _c.value * 6),
+                    child: Container(
+                      width: 3,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: t.brand,
+                        borderRadius: BorderRadius.circular(100),
+                        boxShadow: [
+                          BoxShadow(
+                            color: t.brand.withValues(alpha: 0.6),
+                            blurRadius: 5,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ],

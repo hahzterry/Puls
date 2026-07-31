@@ -1,4 +1,4 @@
-import 'package:animate_do/animate_do.dart';
+﻿import 'package:animate_do/animate_do.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -65,25 +65,25 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   String _getCategoryEmoji(String category) {
     switch (category.toLowerCase()) {
       case 'all':
-        return '🌍';
+        return 'рџЊЌ';
       case 'politics':
-        return '🗳️';
+        return 'рџ—іпёЏ';
       case 'crypto':
-        return '🪙';
+        return 'рџЄ™';
       case 'sports':
-        return '⚽';
+        return 'вљЅ';
       case 'pop culture':
-        return '🎬';
+        return 'рџЋ¬';
       case 'science':
-        return '🧪';
+        return 'рџ§Є';
       case 'tech':
-        return '💻';
+        return 'рџ’»';
       case 'finance':
-        return '💼';
+        return 'рџ’ј';
       case 'ai agents':
-        return '🤖';
+        return 'рџ¤–';
       default:
-        return '🔮';
+        return 'рџ”®';
     }
   }
 
@@ -104,7 +104,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         appState.feedStatus == FeedStatus.loading && appState.markets.isEmpty;
     final hasFilters = _query.isNotEmpty || _category != 'All';
 
-    // Spotlight the single highest-volume market as a featured hero — only when
+    // Spotlight the single highest-volume market as a featured hero вЂ” only when
     // the user hasn't narrowed things down with a search or category.
     final Market? featured =
         (!hasFilters && !isInitialLoading && markets.isNotEmpty)
@@ -133,7 +133,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       margin: const EdgeInsets.only(right: 12),
                       decoration: BoxDecoration(
                         color: t.brandSubtle,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: Image.asset('assets/logo.png', fit: BoxFit.cover),
@@ -165,7 +165,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
                         color: t.brandSubtle,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(14),
                         border:
                             Border.all(color: t.brand.withValues(alpha: 0.3)),
                       ),
@@ -210,9 +210,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   boxShadow: [
                     if (_searchFocused)
                       BoxShadow(
-                        color: t.brand.withValues(alpha: 0.15),
-                        blurRadius: 16,
-                        spreadRadius: 2,
+                        color: t.brand.withValues(alpha: 0.12),
+                        blurRadius: 20,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 3),
                       ),
                   ],
                 ),
@@ -267,15 +268,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         decoration: BoxDecoration(
                           gradient: sel ? PulsColors.pulseGradient : null,
                           color: sel ? null : t.surface,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                               color: sel ? Colors.transparent : t.border),
                           boxShadow: [
                             if (sel)
                               BoxShadow(
-                                color: t.brand.withValues(alpha: 0.3),
+                                color: t.brand.withValues(alpha: 0.18),
                                 blurRadius: 14,
-                                offset: const Offset(0, 4),
+                                offset: const Offset(0, 3),
                               ),
                           ],
                         ),
@@ -328,12 +329,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: t.surfaceRaised,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: t.border),
                     ),
                     child: Text(
                         isInitialLoading
-                            ? 'Searching…'
+                            ? 'SearchingвЂ¦'
                             : '${markets.length} found',
                         style: TextStyle(
                             color: t.textMuted,
@@ -527,7 +528,7 @@ class _MarketCardState extends State<_MarketCard> {
           curve: Curves.easeOutCubic,
           transform: Matrix4.translationValues(0, _hovered ? -4.0 : 0.0, 0),
           child: GlassCard(
-            radius: 20,
+            radius: 16,
             blur: 10,
             fillAlpha: _hovered ? 0.07 : 0.03,
             borderAlpha: _hovered ? 0.45 : 0.12,
@@ -560,12 +561,12 @@ class _MarketCardState extends State<_MarketCard> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 7, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF8B5CF6).withValues(alpha: 0.14),
+                            color: const PulsColors.agentPurple.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const PulsEmojiText('🤖 AGENT',
+                          child: const PulsEmojiText('рџ¤– AGENT',
                               style: TextStyle(
-                                  color: Color(0xFF8B5CF6),
+                                  color: PulsColors.agentPurple,
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 0.4)),
@@ -581,24 +582,33 @@ class _MarketCardState extends State<_MarketCard> {
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600)),
                         ),
-                      GestureDetector(
-                        onTap: widget.onWatchlist,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: widget.isWatchlisted
-                                ? PulsColors.amberLight
-                                : Colors.transparent,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            widget.isWatchlisted
-                                ? Icons.bookmark_rounded
-                                : Icons.bookmark_border_rounded,
-                            size: 18,
-                            color: widget.isWatchlisted
-                                ? PulsColors.amber
-                                : t.textSubtle,
+                      Semantics(
+                        button: true,
+                        label: widget.isWatchlisted
+                            ? 'Remove from watchlist'
+                            : 'Add to watchlist',
+                        excludeSemantics: true,
+                        child: Tactile(
+                          onTap: widget.onWatchlist,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: widget.isWatchlisted
+                                  ? PulsColors.amberLight
+                                  : Colors.transparent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              widget.isWatchlisted
+                                  ? Icons.bookmark_rounded
+                                  : Icons.bookmark_border_rounded,
+                              size: 18,
+                              color: widget.isWatchlisted
+                                  ? PulsColors.amber
+                                  : t.textSubtle,
+                            ),
                           ),
                         ),
                       ),
@@ -632,9 +642,10 @@ class _MarketCardState extends State<_MarketCard> {
                           market.question,
                           style: TextStyle(
                             color: t.text,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w750,
                             height: 1.35,
+                            letterSpacing: -0.2,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -718,7 +729,7 @@ class _MarketCardState extends State<_MarketCard> {
   }
 }
 
-// ── Featured market hero ──────────────────────────────────────────────────────
+// в”Ђв”Ђ Featured market hero в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _FeaturedLabel extends StatelessWidget {
   const _FeaturedLabel({required this.t});
   final PulsThemeColors t;
@@ -741,7 +752,7 @@ class _FeaturedLabel extends StatelessWidget {
                 letterSpacing: 1.2)),
         const SizedBox(width: 8),
         Expanded(
-          child: Text('· highest volume right now',
+          child: Text('В· highest volume right now',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(color: t.textSubtle, fontSize: 12)),
@@ -829,7 +840,7 @@ class _FeaturedMarketCardState extends State<_FeaturedMarketCard> {
           curve: Curves.easeOutCubic,
           transform: Matrix4.translationValues(0, _hovered ? -4.0 : 0.0, 0),
           child: GlassCard(
-            radius: 24,
+            radius: 20,
             blur: 12,
             fillAlpha: _hovered ? 0.08 : 0.04,
             borderAlpha: _hovered ? 0.5 : 0.22,
@@ -859,12 +870,12 @@ class _FeaturedMarketCardState extends State<_FeaturedMarketCard> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.14),
+                        color: const PulsColors.agentPurple.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const PulsEmojiText('🤖 AGENT',
+                      child: const PulsEmojiText('рџ¤– AGENT',
                           style: TextStyle(
-                              color: Color(0xFF8B5CF6),
+                              color: PulsColors.agentPurple,
                               fontSize: 9.5,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.4)),
@@ -947,13 +958,13 @@ class _FeaturedMarketCardState extends State<_FeaturedMarketCard> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  _stat(t, 'Volume', m.volume.isEmpty ? '—' : m.volume),
+                  _stat(t, 'Volume', m.volume.isEmpty ? 'вЂ”' : m.volume),
                   Container(
                       width: 1,
                       height: 28,
                       margin: const EdgeInsets.symmetric(horizontal: 18),
                       color: t.border),
-                  _stat(t, 'Liquidity', m.liquidity.isEmpty ? '—' : m.liquidity),
+                  _stat(t, 'Liquidity', m.liquidity.isEmpty ? 'вЂ”' : m.liquidity),
                   Container(
                       width: 1,
                       height: 28,
@@ -1034,11 +1045,11 @@ class _BigBuyState extends State<_BigBuy> {
         onTap: widget.onPressed,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
-          height: 46,
+          height: 48,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: widget.bg,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
                 color: widget.fg.withValues(alpha: _hover ? 0.6 : 0.3)),
             boxShadow: _hover
@@ -1148,14 +1159,14 @@ class _BuyBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 32,
+      height: 34,
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: fg,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          padding: const EdgeInsets.symmetric(horizontal: 11),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1163,14 +1174,18 @@ class _BuyBtn extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                  fontWeight: FontWeight.w800, fontSize: 11, color: fg),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11.5,
+                  letterSpacing: 0.3,
+                  color: fg),
             ),
             const SizedBox(width: 4),
             Text(
               price,
               style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 10,
+                  fontSize: 10.5,
+                  fontFeatures: PulsColors.tabularFigures,
                   color: fg.withValues(alpha: 0.75)),
             ),
           ],
@@ -1193,7 +1208,7 @@ class _EmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
       decoration: BoxDecoration(
         color: t.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: t.border),
       ),
       child: Column(
@@ -1245,7 +1260,7 @@ class _EmptyState extends StatelessWidget {
                           horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: t.surfaceRaised,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: t.border),
                       ),
                       child: Row(
@@ -1263,7 +1278,7 @@ class _EmptyState extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            '${(m.yesPrice * 100).toStringAsFixed(0)}¢',
+                            '${(m.yesPrice * 100).toStringAsFixed(0)}Вў',
                             style: TextStyle(
                                 color: t.yes,
                                 fontSize: 13,
