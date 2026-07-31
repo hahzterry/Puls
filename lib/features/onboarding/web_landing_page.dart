@@ -418,6 +418,11 @@ class _InlineNavbar extends StatelessWidget {
                 ('GitHub', 'https://github.com/rdmbtc/Puls'),
               ],
             ),
+            const SizedBox(width: 4),
+            const _NavItemButton(
+              label: 'Invest',
+              url: 'https://invest.pulsmarket.tech',
+            ),
             const SizedBox(width: 8),
             _NavIcon(
               icon: Icons.android_rounded,
@@ -556,6 +561,11 @@ class _StickyNavbar extends StatelessWidget {
                           ('Build', _pageUrl('/build')),
                           ('GitHub', 'https://github.com/rdmbtc/Puls'),
                         ],
+                      ),
+                      const SizedBox(width: 4),
+                      const _NavItemButton(
+                        label: 'Invest',
+                        url: 'https://invest.pulsmarket.tech',
                       ),
                       const SizedBox(width: 8),
                       _NavIcon(
@@ -713,6 +723,47 @@ class _NavDropdownState extends State<_NavDropdown> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// A standalone nav link button (used for top-level links like Invest).
+class _NavItemButton extends StatefulWidget {
+  const _NavItemButton({required this.label, required this.url});
+  final String label;
+  final String url;
+
+  @override
+  State<_NavItemButton> createState() => _NavItemButtonState();
+}
+
+class _NavItemButtonState extends State<_NavItemButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: () => launchUrl(
+          Uri.parse(widget.url),
+          mode: LaunchMode.externalApplication,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              color: _hovered ? t.brand : t.textMuted,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ),
     );
   }
