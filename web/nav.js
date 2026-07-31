@@ -67,3 +67,26 @@
   document.body.insertAdjacentElement('afterbegin', nav);
   nav.querySelector('.burger').addEventListener('click', function () { nav.classList.toggle('open'); });
 })();
+
+/* ── IndexNow auto-ping ─────────────────────────────────────────────────────
+   Bing / Yandex / Seznam index new or updated URLs in seconds instead of days.
+   Each page pings its own URL once per client (tracked in localStorage) so we
+   never spam the API. Key file already ships at /8d263884...txt. */
+(function () {
+  var KEY = '8d263884d3d242a08882fa883908f00d';
+  try {
+    var url = location.origin + location.pathname;
+    if (location.protocol !== 'https:' || url.indexOf('pulsmarket.tech') === -1) return;
+    var done = JSON.parse(localStorage.getItem('puls:indexnow') || '[]');
+    if (done.indexOf(url) !== -1) return;
+    var img = new Image();
+    img.src = 'https://api.indexnow.org/indexnow?url=' + encodeURIComponent(url) +
+      '&key=' + KEY + '&keyLocation=' + encodeURIComponent('https://pulsmarket.tech/' + KEY + '.txt');
+    img.onload = img.onerror = function () {
+      try {
+        done.push(url);
+        localStorage.setItem('puls:indexnow', JSON.stringify(done));
+      } catch (e) {}
+    };
+  } catch (e) {}
+})();

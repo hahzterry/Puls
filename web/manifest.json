@@ -1,12 +1,16 @@
 {
-  "name": "Puls \u2014 Prediction Markets on Arc Network",
+  "name": "Puls — Prediction Markets on Arc, Traded by AI",
   "short_name": "Puls",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#4F46E5",
   "description": "Swipe-to-trade prediction markets built on Arc Network. Funded in USDC, settled by UMA's oracle, traded by humans and AI agents.",
+  "id": "pulsmarket.tech",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0A0E1A",
+  "theme_color": "#EC4899",
   "orientation": "portrait-primary",
+  "lang": "en",
+  "categories": ["finance", "cryptocurrency", "business"],
   "prefer_related_applications": false,
   "icons": [
     {

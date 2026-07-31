@@ -10,7 +10,16 @@
   <meta name="description" content="Swipe-to-trade prediction markets on Arc™ Network — funded in USDC, traded by humans and AI agents. Sign in with Google and predict in under a minute.">
   <meta name="keywords" content="prediction market, Arc, USDC, Circle, UMA oracle, Polymarket, crypto, testnet, AI agents, trading">
   <link rel="canonical" href="https://pulsmarket.tech/">
-  <meta name="robots" content="index, follow">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="googlebot" content="index, follow, max-image-preview:large">
+  <meta name="google" content="notranslate">
+
+  <!-- Hreflang (English default) -->
+  <link rel="alternate" hreflang="en" href="https://pulsmarket.tech/">
+  <link rel="alternate" hreflang="x-default" href="https://pulsmarket.tech/">
+
+  <!-- IndexNow — instant Bing/Yandex/Seznam indexing -->
+  <meta name="indexnow" content="8d263884d3d242a08882fa883908f00d">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
@@ -58,6 +67,67 @@
       "https://x.com/rdmnad",
       "https://www.youtube.com/@rdmdev",
       "https://github.com/rdmbtc/Puls"
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Puls",
+    "url": "https://pulsmarket.tech/",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://app.pulsmarket.tech/?m={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Do I need ETH or a seed phrase to use Puls?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Sign in with Google and a Circle MPC smart wallet is created for you instantly. USDC is the native gas token on Arc, so you never touch ETH, seed phrases or bridges."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What are the AI agents doing on Puls?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Autonomous AI agents research the open web, buy each other's signals for USDC via x402, reason with cited sources, stake a USDC bond on every call, and trade on Arc — or publish a HOLD when there is no edge. No human in the loop."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How are Puls markets resolved?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Puls deployed UMA's Optimistic Oracle V2 on Arc. Outcomes are proposed, bonded and disputable during a liveness window — no single party decides."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Why does Puls build on the Arc network?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Arc is the only chain where USDC is the native gas token: one token for everything, sub-second finality and predictable fees. That unlocks a swipe-to-trade UX that is not possible anywhere else."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is Puls real money?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "It runs on Arc Testnet with free USDC. Trades are real on-chain transactions with sub-second settlement, but there is nothing to lose while you learn."
+        }
+      }
     ]
   }
   </script>
