@@ -1,4 +1,4 @@
-﻿import 'package:animate_do/animate_do.dart';
+import 'package:animate_do/animate_do.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -160,8 +160,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     },
                     child: Container(
                       height: 38,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: kIsWeb ? 12 : 9),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: kIsWeb ? 12 : 9),
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
                         color: t.brandSubtle,
@@ -310,7 +310,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 isWatchlisted: appState.isWatchlisted(featured.id),
                 onWatchlist: () => appState.toggleWatchlist(featured.id),
                 onTap: () => Navigator.of(context).push(
-                  pulsRoute(context, settings: RouteSettings(name: '/m/${featured.slug}'), builder: (_) => MarketDetailScreen(marketId: featured.id)),
+                  pulsRoute(context,
+                      settings: RouteSettings(name: '/m/${featured.slug}'),
+                      builder: (_) =>
+                          MarketDetailScreen(marketId: featured.id)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -410,7 +413,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               isWatchlisted: appState.isWatchlisted(gridMarkets[i].id),
               onWatchlist: () => appState.toggleWatchlist(gridMarkets[i].id),
               onTap: () => Navigator.of(context).push(
-                pulsRoute(context, settings: RouteSettings(name: '/m/${gridMarkets[i].slug}'), builder: (_) => MarketDetailScreen(marketId: gridMarkets[i].id),
+                pulsRoute(
+                  context,
+                  settings: RouteSettings(name: '/m/${gridMarkets[i].slug}'),
+                  builder: (_) =>
+                      MarketDetailScreen(marketId: gridMarkets[i].id),
                 ),
               ),
             ),
@@ -438,7 +445,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             isWatchlisted: appState.isWatchlisted(gridMarkets[i].id),
             onWatchlist: () => appState.toggleWatchlist(gridMarkets[i].id),
             onTap: () => Navigator.of(context).push(
-              pulsRoute(context, settings: RouteSettings(name: '/m/${gridMarkets[i].slug}'), builder: (_) => MarketDetailScreen(marketId: gridMarkets[i].id),
+              pulsRoute(
+                context,
+                settings: RouteSettings(name: '/m/${gridMarkets[i].slug}'),
+                builder: (_) => MarketDetailScreen(marketId: gridMarkets[i].id),
               ),
             ),
           ),
@@ -518,24 +528,24 @@ class _MarketCardState extends State<_MarketCard> {
 
     return RepaintBoundary(
       child: MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          transform: Matrix4.translationValues(0, _hovered ? -4.0 : 0.0, 0),
-          child: GlassCard(
-            radius: 16,
-            blur: 10,
-            fillAlpha: _hovered ? 0.07 : 0.03,
-            borderAlpha: _hovered ? 0.45 : 0.12,
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            transform: Matrix4.translationValues(0, _hovered ? -4.0 : 0.0, 0),
+            child: GlassCard(
+              radius: 16,
+              blur: 10,
+              fillAlpha: _hovered ? 0.07 : 0.03,
+              borderAlpha: _hovered ? 0.45 : 0.12,
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Row(
                     children: [
                       Container(
@@ -561,7 +571,8 @@ class _MarketCardState extends State<_MarketCard> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 7, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const PulsColors.agentPurple.withValues(alpha: 0.14),
+                            color: const PulsColors.agentPurple.withValues(
+                                alpha: 0.14),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: const PulsEmojiText('рџ¤– AGENT',
@@ -621,7 +632,8 @@ class _MarketCardState extends State<_MarketCard> {
                       if (market.imageUrl.isNotEmpty) ...[
                         ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.network(proxifyImageUrl(market.imageUrl),
+                          child: Image.network(
+                            proxifyImageUrl(market.imageUrl),
                             width: 44,
                             height: 44,
                             cacheHeight: 88,
@@ -846,169 +858,173 @@ class _FeaturedMarketCardState extends State<_FeaturedMarketCard> {
             borderAlpha: _hovered ? 0.5 : 0.22,
             padding: const EdgeInsets.all(20),
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: t.brandSubtle,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(m.category.toUpperCase(),
-                        style: TextStyle(
-                            color: t.brand,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5)),
-                  ),
-                  if (m.createdByAgent) ...[
-                    const SizedBox(width: 6),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 4),
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const PulsColors.agentPurple.withValues(alpha: 0.14),
+                        color: t.brandSubtle,
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const PulsEmojiText('рџ¤– AGENT',
+                      child: Text(m.category.toUpperCase(),
                           style: TextStyle(
-                              color: PulsColors.agentPurple,
-                              fontSize: 9.5,
+                              color: t.brand,
+                              fontSize: 10,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: 0.4)),
+                              letterSpacing: 0.5)),
+                    ),
+                    if (m.createdByAgent) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const PulsColors.agentPurple.withValues(
+                              alpha: 0.14),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const PulsEmojiText('рџ¤– AGENT',
+                            style: TextStyle(
+                                color: PulsColors.agentPurple,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.4)),
+                      ),
+                    ],
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: trendBg,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                          '${up ? '+' : ''}${TradeMath.formatPercent(m.trend)}',
+                          style: TextStyle(
+                              color: trendColor,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11)),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: widget.onWatchlist,
+                      child: Icon(
+                        widget.isWatchlisted
+                            ? Icons.bookmark_rounded
+                            : Icons.bookmark_border_rounded,
+                        size: 20,
+                        color: widget.isWatchlisted
+                            ? PulsColors.amber
+                            : t.textSubtle,
+                      ),
                     ),
                   ],
-                  const Spacer(),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: trendBg,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                        '${up ? '+' : ''}${TradeMath.formatPercent(m.trend)}',
-                        style: TextStyle(
-                            color: trendColor,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 11)),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: widget.onWatchlist,
-                    child: Icon(
-                      widget.isWatchlisted
-                          ? Icons.bookmark_rounded
-                          : Icons.bookmark_border_rounded,
-                      size: 20,
-                      color:
-                          widget.isWatchlisted ? PulsColors.amber : t.textSubtle,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (m.imageUrl.isNotEmpty) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(proxifyImageUrl(m.imageUrl),
-                        width: 52,
-                        height: 52,
-                        cacheHeight: 104,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (m.imageUrl.isNotEmpty) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          proxifyImageUrl(m.imageUrl),
                           width: 52,
                           height: 52,
-                          color: t.brandSubtle,
-                          child: Icon(Icons.show_chart_rounded,
-                              color: t.brand, size: 24),
+                          cacheHeight: 104,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 52,
+                            height: 52,
+                            color: t.brandSubtle,
+                            child: Icon(Icons.show_chart_rounded,
+                                color: t.brand, size: 24),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                    ],
+                    Expanded(
+                      child: Text(m.question,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: t.text,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              height: 1.3,
+                              letterSpacing: -0.3)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 56,
+                  child: _loading
+                      ? const SizedBox.shrink()
+                      : _spark.length >= 2
+                          ? _MiniSparkline(prices: _spark, isUp: up)
+                          : const SizedBox.shrink(),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    _stat(t, 'Volume', m.volume.isEmpty ? 'вЂ”' : m.volume),
+                    Container(
+                        width: 1,
+                        height: 28,
+                        margin: const EdgeInsets.symmetric(horizontal: 18),
+                        color: t.border),
+                    _stat(t, 'Liquidity',
+                        m.liquidity.isEmpty ? 'вЂ”' : m.liquidity),
+                    Container(
+                        width: 1,
+                        height: 28,
+                        margin: const EdgeInsets.symmetric(horizontal: 18),
+                        color: t.border),
+                    _stat(t, 'Ends in', _endsIn(m.deadline)),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _BigBuy(
+                        label: 'YES',
+                        price: TradeMath.formatPrice(m.yesPrice),
+                        bg: t.yesBg,
+                        fg: t.yes,
+                        onPressed: () => showTradePreviewSheet(
+                          context: context,
+                          market: m,
+                          side: MarketSide.yes,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _BigBuy(
+                        label: 'NO',
+                        price: TradeMath.formatPrice(m.noPrice),
+                        bg: t.noBg,
+                        fg: t.no,
+                        onPressed: () => showTradePreviewSheet(
+                          context: context,
+                          market: m,
+                          side: MarketSide.no,
+                        ),
+                      ),
+                    ),
                   ],
-                  Expanded(
-                    child: Text(m.question,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            color: t.text,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            height: 1.3,
-                            letterSpacing: -0.3)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 56,
-                child: _loading
-                    ? const SizedBox.shrink()
-                    : _spark.length >= 2
-                        ? _MiniSparkline(prices: _spark, isUp: up)
-                        : const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _stat(t, 'Volume', m.volume.isEmpty ? 'вЂ”' : m.volume),
-                  Container(
-                      width: 1,
-                      height: 28,
-                      margin: const EdgeInsets.symmetric(horizontal: 18),
-                      color: t.border),
-                  _stat(t, 'Liquidity', m.liquidity.isEmpty ? 'вЂ”' : m.liquidity),
-                  Container(
-                      width: 1,
-                      height: 28,
-                      margin: const EdgeInsets.symmetric(horizontal: 18),
-                      color: t.border),
-                  _stat(t, 'Ends in', _endsIn(m.deadline)),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: _BigBuy(
-                      label: 'YES',
-                      price: TradeMath.formatPrice(m.yesPrice),
-                      bg: t.yesBg,
-                      fg: t.yes,
-                      onPressed: () => showTradePreviewSheet(
-                        context: context,
-                        market: m,
-                        side: MarketSide.yes,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _BigBuy(
-                      label: 'NO',
-                      price: TradeMath.formatPrice(m.noPrice),
-                      bg: t.noBg,
-                      fg: t.no,
-                      onPressed: () => showTradePreviewSheet(
-                        context: context,
-                        market: m,
-                        side: MarketSide.no,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -1115,29 +1131,29 @@ class _MiniSparkline extends StatelessWidget {
               spots: spots,
               isCurved: true,
               curveSmoothness: 0.35,
-            color: color,
-            barWidth: 2.2,
-            shadow: Shadow(
-              color: color.withValues(alpha: 0.4),
-              blurRadius: 6,
-              offset: const Offset(0, 1.5),
-            ),
-            dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  color.withValues(alpha: 0.18),
-                  color.withValues(alpha: 0.0),
-                ],
+              color: color,
+              barWidth: 2.2,
+              shadow: Shadow(
+                color: color.withValues(alpha: 0.4),
+                blurRadius: 6,
+                offset: const Offset(0, 1.5),
+              ),
+              dotData: const FlDotData(show: false),
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    color.withValues(alpha: 0.18),
+                    color.withValues(alpha: 0.0),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 }
@@ -1165,7 +1181,8 @@ class _BuyBtn extends StatelessWidget {
         style: TextButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: fg,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           padding: const EdgeInsets.symmetric(horizontal: 11),
         ),
         child: Row(
@@ -1253,7 +1270,9 @@ class _EmptyState extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: GestureDetector(
                     onTap: () => Navigator.of(context).push(
-                      pulsRoute(context, settings: RouteSettings(name: '/m/${m.slug}'), builder: (_) => MarketDetailScreen(marketId: m.id)),
+                      pulsRoute(context,
+                          settings: RouteSettings(name: '/m/${m.slug}'),
+                          builder: (_) => MarketDetailScreen(marketId: m.id)),
                     ),
                     child: Container(
                       padding: const EdgeInsets.symmetric(

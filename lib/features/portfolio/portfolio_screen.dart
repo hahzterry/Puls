@@ -182,7 +182,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: t.surfaceRaised,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(color: t.border),
         ),
         child: Row(
@@ -336,7 +336,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: !_showOrdersTab ? t.brand : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   'Positions (${_positions.length})',
@@ -357,7 +357,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: _showOrdersTab ? t.brand : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   'Limit Orders (${_limitOrders.length})',
@@ -378,9 +378,9 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   Widget _tradeMarketsBtn(PulsThemeColors t) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
+      child: Tactile(
         onTap: () => ShellNavScope.maybeOf(context)?.goToTab(PulsTab.feed),
-        borderRadius: BorderRadius.circular(10),
+        pressedScale: 0.98,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -595,9 +595,15 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                                           ),
                                         );
                                         if (context.reduceMotion) return item;
-                                        return item.animate(delay: (i * 30).ms)
-                                            .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
-                                            .slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOutCubic);
+                                        return item
+                                            .animate(delay: (i * 30).ms)
+                                            .fadeIn(
+                                                duration: 400.ms,
+                                                curve: Curves.easeOutCubic)
+                                            .slideY(
+                                                begin: 0.05,
+                                                duration: 400.ms,
+                                                curve: Curves.easeOutCubic);
                                       },
                                     ),
                                   ],
@@ -631,9 +637,15 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                                           ),
                                         );
                                         if (context.reduceMotion) return item;
-                                        return item.animate(delay: (i * 30).ms)
-                                            .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
-                                            .slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOutCubic);
+                                        return item
+                                            .animate(delay: (i * 30).ms)
+                                            .fadeIn(
+                                                duration: 400.ms,
+                                                curve: Curves.easeOutCubic)
+                                            .slideY(
+                                                begin: 0.05,
+                                                duration: 400.ms,
+                                                curve: Curves.easeOutCubic);
                                       },
                                     ),
                                   ],
@@ -735,9 +747,13 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                         ),
                       );
                       if (context.reduceMotion) return item;
-                      return item.animate(delay: (i * 30).ms)
+                      return item
+                          .animate(delay: (i * 30).ms)
                           .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
-                          .slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOutCubic);
+                          .slideY(
+                              begin: 0.05,
+                              duration: 400.ms,
+                              curve: Curves.easeOutCubic);
                     },
                   ),
                 )
@@ -778,9 +794,13 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                       ),
                     );
                     if (context.reduceMotion) return item;
-                    return item.animate(delay: (i * 30).ms)
+                    return item
+                        .animate(delay: (i * 30).ms)
                         .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
-                        .slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOutCubic);
+                        .slideY(
+                            begin: 0.05,
+                            duration: 400.ms,
+                            curve: Curves.easeOutCubic);
                   },
                 ),
               ),
@@ -845,56 +865,57 @@ class _PortfolioChart extends StatelessWidget {
         child: RepaintBoundary(
           child: LineChart(
             LineChartData(
-            gridData: const FlGridData(show: false),
-            borderData: FlBorderData(show: false),
-            titlesData: const FlTitlesData(show: false),
-            lineTouchData: LineTouchData(
-              touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (_) => t.surface.withValues(alpha: 0.92),
-                tooltipBorder: BorderSide(color: color.withValues(alpha: 0.5), width: 0.8),
-                getTooltipItems: (touchedSpots) {
-                  return touchedSpots.map((spot) {
-                    return LineTooltipItem(
-                      '\$${spot.y.toStringAsFixed(2)} USDC',
-                      TextStyle(
-                          color: t.text,
-                          fontFamily: PulsColors.fontMono,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11),
-                    );
-                  }).toList();
-                },
-              ),
-            ),
-            lineBarsData: [
-              LineChartBarData(
-                spots: spots,
-                isCurved: true,
-                curveSmoothness: 0.35,
-                color: color,
-                barWidth: 3.2,
-                shadow: Shadow(
-                  color: color.withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+              gridData: const FlGridData(show: false),
+              borderData: FlBorderData(show: false),
+              titlesData: const FlTitlesData(show: false),
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipColor: (_) => t.surface.withValues(alpha: 0.92),
+                  tooltipBorder: BorderSide(
+                      color: color.withValues(alpha: 0.5), width: 0.8),
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((spot) {
+                      return LineTooltipItem(
+                        '\$${spot.y.toStringAsFixed(2)} USDC',
+                        TextStyle(
+                            color: t.text,
+                            fontFamily: PulsColors.fontMono,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11),
+                      );
+                    }).toList();
+                  },
                 ),
-                dotData: const FlDotData(show: false),
-                belowBarData: BarAreaData(
-                  show: true,
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      color.withValues(alpha: 0.18),
-                      color.withValues(alpha: 0.0),
-                    ],
+              ),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  isCurved: true,
+                  curveSmoothness: 0.35,
+                  color: color,
+                  barWidth: 3.2,
+                  shadow: Shadow(
+                    color: color.withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                  dotData: const FlDotData(show: false),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        color.withValues(alpha: 0.18),
+                        color.withValues(alpha: 0.0),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -921,8 +942,10 @@ class _HologramSheenPainter extends CustomPainter {
       ..color = Colors.white.withValues(alpha: 0.05)
       ..strokeWidth = 1.0;
 
-    canvas.drawLine(Offset(0, size.height * 0.3), Offset(size.width, size.height * 0.3), linePaint);
-    canvas.drawLine(Offset(size.width * 0.4, 0), Offset(size.width * 0.4, size.height), linePaint);
+    canvas.drawLine(Offset(0, size.height * 0.3),
+        Offset(size.width, size.height * 0.3), linePaint);
+    canvas.drawLine(Offset(size.width * 0.4, 0),
+        Offset(size.width * 0.4, size.height), linePaint);
 
     canvas.drawRect(Offset.zero & size, paint);
   }
@@ -958,12 +981,12 @@ class _HeroCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: t.brand.withValues(alpha: 0.35),
-            blurRadius: 28,
-            offset: const Offset(0, 10),
+            color: t.brand.withValues(alpha: 0.3),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -1072,8 +1095,9 @@ class _HeroCard extends StatelessWidget {
                           'PNL ${pnlPositive ? '+' : ''}\$${v.toStringAsFixed(2)} USDC',
                           style: TextStyle(
                             color: pnlPositive ? t.yes : t.no,
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: FontWeight.w800,
+                            fontFeatures: PulsColors.tabularFigures,
                           ),
                         ),
                       ),
@@ -1378,35 +1402,43 @@ class _PositionCardState extends State<_PositionCard> {
                   ),
               ],
               const Spacer(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('\$${amount.toStringAsFixed(2)} USDC',
-                          style: TextStyle(
-                              color: t.text,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 14)),
-                      if (state == 'COMPLETE') ...[
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () =>
-                              ShareBetCardDialog.show(context, position, pnl),
-                          child: Icon(Icons.share_rounded,
-                              size: 14, color: t.brand),
-                        ),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('\$${amount.toStringAsFixed(2)} USDC',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: t.text,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                                fontFeatures: PulsColors.tabularFigures)),
+                        if (state == 'COMPLETE') ...[
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () =>
+                                ShareBetCardDialog.show(context, position, pnl),
+                            child: Icon(Icons.share_rounded,
+                                size: 14, color: t.brand),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  if (pnl != null && pnl.abs() >= 0.01)
-                    Text('${pnl >= 0 ? '+' : ''}\$${pnl.toStringAsFixed(2)}',
-                        style: TextStyle(
-                            color: pnl >= 0 ? t.yes : t.no,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12)),
-                ],
+                    ),
+                    if (pnl != null && pnl.abs() >= 0.01)
+                      Text('${pnl >= 0 ? '+' : ''}\$${pnl.toStringAsFixed(2)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: pnl >= 0 ? t.yes : t.no,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                              fontFeatures: PulsColors.tabularFigures)),
+                  ],
+                ),
               ),
             ],
           ),
@@ -1420,14 +1452,14 @@ class _PositionCardState extends State<_PositionCard> {
             const SizedBox(height: 6),
             Row(
               children: [
-                Text('Entry ${formatCents(entryPrice )}',
+                Text('Entry ${formatCents(entryPrice)}',
                     style: TextStyle(color: t.textSubtle, fontSize: 11)),
                 if (currentPrice != null) ...[
                   const SizedBox(width: 6),
                   Icon(Icons.arrow_forward_rounded,
                       size: 10, color: t.textSubtle),
                   const SizedBox(width: 6),
-                  Text('Now ${formatCents(currentPrice )}',
+                  Text('Now ${formatCents(currentPrice)}',
                       style: TextStyle(
                         color: (currentPrice - entryPrice).abs() < 0.01
                             ? t.textSubtle
@@ -1515,7 +1547,7 @@ class _PositionCardState extends State<_PositionCard> {
                                 : t.border,
                             width: 1.5),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(14)),
                       ),
                     ),
                   ),
@@ -1561,7 +1593,7 @@ class _PositionCardState extends State<_PositionCard> {
                                       : t.border,
                                   width: 1.5),
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
+                                  borderRadius: BorderRadius.circular(14)),
                             ),
                           ),
                   ),
@@ -1592,32 +1624,32 @@ class _StatBox extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: highlight ? t.yesBg : t.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
             color: highlight ? t.yes.withValues(alpha: 0.3) : t.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
+          Text(label.toUpperCase(),
               style: TextStyle(
                   color: t.textSubtle,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500)),
-          const SizedBox(height: 2),
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.6)),
+          const SizedBox(height: 3),
           Text(value,
               style: TextStyle(
                 color: highlight ? t.yes : t.text,
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
+                fontFeatures: PulsColors.tabularFigures,
               )),
         ],
       ),
     );
   }
 }
-
-
 
 class _LimitOrderCard extends StatelessWidget {
   const _LimitOrderCard({
@@ -1722,7 +1754,7 @@ class _LimitOrderCard extends StatelessWidget {
                             color: t.text,
                             fontWeight: FontWeight.w800,
                             fontSize: 14)),
-                  Text('Limit: ${formatCents(targetPrice )}',
+                  Text('Limit: ${formatCents(targetPrice)}',
                       style: TextStyle(
                           color: t.textSubtle,
                           fontWeight: FontWeight.w600,

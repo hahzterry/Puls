@@ -112,7 +112,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ? '${ws.walletAddress!.substring(0, 6)}...${ws.walletAddress!.substring(ws.walletAddress!.length - 4)}'
             : ws.walletAddress ?? 'Puls Trader')
         : (_displayName ??
-            Supabase.instance.client.auth.currentUser?.userMetadata?['full_name'] ??
+            Supabase
+                .instance.client.auth.currentUser?.userMetadata?['full_name'] ??
             Supabase.instance.client.auth.currentUser?.userMetadata?['name'] ??
             'Puls Trader') as String;
 
@@ -238,7 +239,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                             ),
-
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -414,14 +414,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _Row(
                           icon: Icons.motion_photos_paused_outlined,
                           title: 'Reduce motion',
-                          subtitle: (appState.reduceMotionOverride ??
-                                  false)
+                          subtitle: (appState.reduceMotionOverride ?? false)
                               ? 'Animations minimized'
                               : 'Full animations',
                           t: t,
                           trailing: Switch(
-                            value: appState.reduceMotionOverride ??
-                                false,
+                            value: appState.reduceMotionOverride ?? false,
                             activeTrackColor: t.brand,
                             onChanged: (v) => appState.setReduceMotion(v),
                           ),
@@ -701,14 +699,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _Row(
                   icon: Icons.motion_photos_paused_outlined,
                   title: 'Reduce motion',
-                  subtitle: (appState.reduceMotionOverride ??
-                          false)
+                  subtitle: (appState.reduceMotionOverride ?? false)
                       ? 'Animations minimized'
                       : 'Full animations',
                   t: t,
                   trailing: Switch(
-                    value: appState.reduceMotionOverride ??
-                        false,
+                    value: appState.reduceMotionOverride ?? false,
                     activeTrackColor: t.brand,
                     onChanged: (v) => appState.setReduceMotion(v),
                   ),
@@ -886,20 +882,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const AnimatedGradientText('Profile Settings',
-            style: TextStyle(
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5)),
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: t.brandSubtle,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset('assets/logo.png', fit: BoxFit.cover),
+              ),
+              const SizedBox(width: 10),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Puls',
+                      style: TextStyle(
+                          fontFamily: PulsColors.fontDisplay,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                          letterSpacing: -0.3)),
+                  const AnimatedGradientText('Profile',
+                      style: TextStyle(
+                          fontFamily: PulsColors.fontDisplay,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3)),
+                ],
+              ),
+            ],
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.mail_outline_rounded, size: 20),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InboxScreen())),
+          Semantics(
+            label: 'Open inbox',
+            button: true,
+            child: Tactile(
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const InboxScreen())),
+              child: Container(
+                width: 34,
+                height: 34,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: t.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: t.border),
+                ),
+                child: Icon(Icons.mail_outline_rounded,
+                    size: 17, color: t.textSubtle),
+              ),
+            ),
           ),
-          const HelpAction(tab: PulsTab.profile)
+          const HelpAction(tab: PulsTab.profile),
         ],
       ),
       body: SafeArea(
@@ -955,12 +1000,12 @@ class _GlassCardState extends State<GlassCard> {
         color: _isHovered
             ? t.surfaceRaised.withValues(alpha: 0.8)
             : t.surfaceRaised.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: widget.border ?? defaultBorder,
         gradient: widget.gradient,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFEC4899)
+            color: PulsColors.brandPink
                 .withValues(alpha: _isHovered ? 0.08 : 0.03),
             blurRadius: _isHovered ? 20 : 12,
             offset: const Offset(0, 4),
@@ -1055,7 +1100,7 @@ class _NicknameReminderCard extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: t.brand,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Text(
                   'Set',
@@ -1093,51 +1138,48 @@ class _ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasWallet = ws.userId != null;
-    final defaultName = (ws.userId == 'supabase_231e1ae9-9f9f-47bb-a6f7-2e406ba29b10')
+    final defaultName = (ws.userId ==
+            'supabase_231e1ae9-9f9f-47bb-a6f7-2e406ba29b10')
         ? 'Dr RDM'
         : (ws.isExternalWallet
             ? (ws.walletAddress != null && ws.walletAddress!.length > 10
                 ? '${ws.walletAddress!.substring(0, 6)}...${ws.walletAddress!.substring(ws.walletAddress!.length - 4)}'
                 : ws.walletAddress ?? 'Puls Trader')
             : (supaUser?.userMetadata?['full_name'] ??
-                supaUser?.userMetadata?['name'] ??
-                (ws.userId != null ? 'Puls Trader' : 'Guest Trader')) as String);
+                    supaUser?.userMetadata?['name'] ??
+                    (ws.userId != null ? 'Puls Trader' : 'Guest Trader'))
+                as String);
 
     final name = displayName ?? defaultName;
     final email = ws.isExternalWallet
         ? 'Connected via Web3'
-        : (supaUser?.email ?? (ws.userId != null ? 'Google Account' : 'Guest')) as String;
+        : (supaUser?.email ?? (ws.userId != null ? 'Google Account' : 'Guest'))
+            as String;
 
     final avatar =
         avatarUrl ?? supaUser?.userMetadata?['avatar_url'] as String?;
 
     return GlassCard(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          // Avatar with premium gradient border
+          // Avatar with a quiet brand ring — calmer than the old triple-stop
+          // gradient frame and consistent with the feed's logo tile.
           Container(
-            padding: const EdgeInsets.all(2.5),
+            padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  t.brand,
-                  PulsColors.brandMint,
-                  t.brand.withValues(alpha: 0.3)
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
+              color: t.brandSubtle,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: t.brand.withValues(alpha: 0.25)),
             ),
             child: PulsAvatar(
               url: avatar,
               name: name,
-              size: 60,
-              radius: 14,
+              size: 56,
+              radius: 12,
             ),
           ),
-          const SizedBox(width: 18),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1167,7 +1209,7 @@ class _ProfileCard extends StatelessWidget {
                           horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: t.yesBg,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: t.yes.withValues(alpha: 0.2)),
                       ),
                       child: Text(
@@ -1182,7 +1224,7 @@ class _ProfileCard extends StatelessWidget {
                           horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: t.brandSubtle,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                         border:
                             Border.all(color: t.brand.withValues(alpha: 0.2)),
                       ),
@@ -1898,7 +1940,8 @@ class _WalletCard extends StatelessWidget {
     );
   }
 
-  void _showWalletInfo(BuildContext context, WalletState ws, WalletService wallet, PulsThemeColors t) {
+  void _showWalletInfo(BuildContext context, WalletState ws,
+      WalletService wallet, PulsThemeColors t) {
     PulsSheet.show(
       context,
       builder: (_) => PulsSheetSurface(
@@ -1909,7 +1952,9 @@ class _WalletCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Technical Details', style: TextStyle(color: t.text, fontSize: 18, fontWeight: FontWeight.w800)),
+            Text('Technical Details',
+                style: TextStyle(
+                    color: t.text, fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 16),
             _InfoRow('Target Network', 'Arc L1', t),
             _InfoRow('Chain ID', '5042002', t),

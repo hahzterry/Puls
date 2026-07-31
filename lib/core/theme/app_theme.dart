@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 // ── Semantic palette ──────────────────────────────────────────────────────────
 class PulsColors {
   // ── Brand — anchored on the LOGO (neon pulse: mint → pink on dark navy) ──
-  static const brandPink = Color(0xFFEC4899);      // primary brand (light)
-  static const brandPinkDark = Color(0xFFF472B6);  // primary brand (dark)
-  static const brandMint = Color(0xFF2DD4BF);      // gradient partner / teal accent
+  static const brandPink = Color(0xFFEC4899); // primary brand (light)
+  static const brandPinkDark = Color(0xFFF472B6); // primary brand (dark)
+  static const brandMint = Color(0xFF2DD4BF); // gradient partner / teal accent
   static const brandWashLight = Color(0xFFFCE7F3); // pink wash (light surfaces)
-  static const brandWashDark = Color(0xFF3B0A2A);  // deep plum (dark surfaces)
+  static const brandWashDark = Color(0xFF3B0A2A); // deep plum (dark surfaces)
 
   // The signature "pulse" gradient (mint → pink), straight from the logo.
   static const pulseGradient = LinearGradient(
@@ -22,11 +22,11 @@ class PulsColors {
   static const indigoDark = Color(0xFFBE185D);
 
   // Semantic — prediction market YES (teal/mint) / NO (red)
-  static const green = Color(0xFF14B8A6);        // teal-green (YES)
+  static const green = Color(0xFF14B8A6); // teal-green (YES)
   static const greenLight = Color(0xFFE6FAF6);
-  static const red = Color(0xFFEF4444);          // clean red (NO)
+  static const red = Color(0xFFEF4444); // clean red (NO)
   static const redLight = Color(0xFFFEECEC);
-  static const amber = Color(0xFFF59E0B);        // warm gold
+  static const amber = Color(0xFFF59E0B); // warm gold
   static const amberLight = Color(0xFFFEF6E7);
 
   // Agent-created markets badge — a fixed "AI" accent that reads the same on
@@ -44,19 +44,20 @@ class PulsColors {
   static const gray900 = Color(0xFF0E1422);
 
   // Dark mode — deep navy (echoes the logo background)
-  static const dark50 = Color(0xFF0A0E1A);       // navy-black canvas
-  static const dark100 = Color(0xFF121829);       // card surface
-  static const dark200 = Color(0xFF1B2236);       // raised surface
-  static const dark300 = Color(0xFF303B54);       // strong border
-  static const dark400 = Color(0xFF5E6A85);       // subtle text
-  static const dark500 = Color(0xFF7C88A3);       // muted text
-  static const dark600 = Color(0xFF9AA6C0);       // secondary text
-  static const dark900 = Color(0xFFEAF0FF);       // primary text
+  static const dark50 = Color(0xFF0A0E1A); // navy-black canvas
+  static const dark100 = Color(0xFF121829); // card surface
+  static const dark200 = Color(0xFF1B2236); // raised surface
+  static const dark300 = Color(0xFF303B54); // strong border
+  static const dark400 = Color(0xFF5E6A85); // subtle text
+  static const dark500 = Color(0xFF7C88A3); // muted text
+  static const dark600 = Color(0xFF9AA6C0); // secondary text
+  static const dark900 = Color(0xFFEAF0FF); // primary text
 
   // Font families
   static const fontDisplay = 'Playfair Display';
   static const fontSans = 'DM Sans';
-  static const fontMono = 'JetBrains Mono'; // terminal/code UI (DecisionLogPanel)
+  static const fontMono =
+      'JetBrains Mono'; // terminal/code UI (DecisionLogPanel)
 
   // Glassmorphism — a translucent tint over the blurred backdrop.
   // Dark: icy mint-tinted glass over navy. Light: frosted white acrylic.
@@ -106,28 +107,39 @@ class PulsThemeColors extends ThemeExtension<PulsThemeColors> {
 
   @override
   PulsThemeColors copyWith({
-    Color? bg, Color? surface, Color? surfaceRaised, Color? surfaceGlass,
-    Color? border, Color? borderStrong,
-    Color? text, Color? textMuted, Color? textSubtle,
-    Color? brand, Color? brandSubtle,
-    Color? yes, Color? no, Color? yesBg, Color? noBg,
-  }) => PulsThemeColors(
-    bg: bg ?? this.bg,
-    surface: surface ?? this.surface,
-    surfaceRaised: surfaceRaised ?? this.surfaceRaised,
-    surfaceGlass: surfaceGlass ?? this.surfaceGlass,
-    border: border ?? this.border,
-    borderStrong: borderStrong ?? this.borderStrong,
-    text: text ?? this.text,
-    textMuted: textMuted ?? this.textMuted,
-    textSubtle: textSubtle ?? this.textSubtle,
-    brand: brand ?? this.brand,
-    brandSubtle: brandSubtle ?? this.brandSubtle,
-    yes: yes ?? this.yes,
-    no: no ?? this.no,
-    yesBg: yesBg ?? this.yesBg,
-    noBg: noBg ?? this.noBg,
-  );
+    Color? bg,
+    Color? surface,
+    Color? surfaceRaised,
+    Color? surfaceGlass,
+    Color? border,
+    Color? borderStrong,
+    Color? text,
+    Color? textMuted,
+    Color? textSubtle,
+    Color? brand,
+    Color? brandSubtle,
+    Color? yes,
+    Color? no,
+    Color? yesBg,
+    Color? noBg,
+  }) =>
+      PulsThemeColors(
+        bg: bg ?? this.bg,
+        surface: surface ?? this.surface,
+        surfaceRaised: surfaceRaised ?? this.surfaceRaised,
+        surfaceGlass: surfaceGlass ?? this.surfaceGlass,
+        border: border ?? this.border,
+        borderStrong: borderStrong ?? this.borderStrong,
+        text: text ?? this.text,
+        textMuted: textMuted ?? this.textMuted,
+        textSubtle: textSubtle ?? this.textSubtle,
+        brand: brand ?? this.brand,
+        brandSubtle: brandSubtle ?? this.brandSubtle,
+        yes: yes ?? this.yes,
+        no: no ?? this.no,
+        yesBg: yesBg ?? this.yesBg,
+        noBg: noBg ?? this.noBg,
+      );
 
   @override
   PulsThemeColors lerp(ThemeExtension<PulsThemeColors>? other, double t) {
@@ -161,40 +173,40 @@ extension PulsThemeX on BuildContext {
 class PulsTheme {
   // ── Light: cool white + brand pink / mint ──────────────────────────────
   static const _light = PulsThemeColors(
-    bg: Color(0xFFFAFBFD),            // cool off-white canvas
-    surface: Color(0xFFFFFFFF),       // pure white cards
+    bg: Color(0xFFFAFBFD), // cool off-white canvas
+    surface: Color(0xFFFFFFFF), // pure white cards
     surfaceRaised: Color(0xFFF4F6FA), // cool elevated
     surfaceGlass: PulsColors.surfaceGlassLight, // frosted acrylic
-    border: Color(0xFFE8EBF1),        // cool border
+    border: Color(0xFFE8EBF1), // cool border
     borderStrong: Color(0xFFD6DBE5),
-    text: Color(0xFF0E1422),          // ink (cool near-black)
-    textMuted: Color(0xFF56607A),     // cool gray
-    textSubtle: Color(0xFF9AA2B5),    // light cool gray
-    brand: Color(0xFFEC4899),         // ★ brand pink (from logo)
-    brandSubtle: Color(0xFFFCE7F3),   // ★ light pink wash
-    yes: Color(0xFF14B8A6),           // teal-green (YES, from logo mint)
-    no: Color(0xFFEF4444),            // clean red (NO)
-    yesBg: Color(0xFFE6FAF6),         // light teal wash
-    noBg: Color(0xFFFEECEC),          // light red wash
+    text: Color(0xFF0E1422), // ink (cool near-black)
+    textMuted: Color(0xFF56607A), // cool gray
+    textSubtle: Color(0xFF9AA2B5), // light cool gray
+    brand: Color(0xFFEC4899), // ★ brand pink (from logo)
+    brandSubtle: Color(0xFFFCE7F3), // ★ light pink wash
+    yes: Color(0xFF14B8A6), // teal-green (YES, from logo mint)
+    no: Color(0xFFEF4444), // clean red (NO)
+    yesBg: Color(0xFFE6FAF6), // light teal wash
+    noBg: Color(0xFFFEECEC), // light red wash
   );
 
   // ── Dark: navy (logo background) + brand pink / mint ───────────────────
   static const _dark = PulsThemeColors(
-    bg: Color(0xFF0A0E1A),            // deep navy-black (echoes logo)
-    surface: Color(0xFF121829),        // navy card
-    surfaceRaised: Color(0xFF1B2236),  // navy raised
+    bg: Color(0xFF0A0E1A), // deep navy-black (echoes logo)
+    surface: Color(0xFF121829), // navy card
+    surfaceRaised: Color(0xFF1B2236), // navy raised
     surfaceGlass: PulsColors.surfaceGlassDark, // icy mint-tinted glass
-    border: Color(0xFF222B40),         // navy border
-    borderStrong: Color(0xFF303B54),   // navy strong border
-    text: Color(0xFFEAF0FF),           // cool near-white
-    textMuted: Color(0xFF9AA6C0),      // cool muted
-    textSubtle: Color(0xFF5E6A85),     // cool subtle
-    brand: Color(0xFFF472B6),          // ★ brand pink (lighter for dark)
-    brandSubtle: Color(0xFF3B0A2A),    // ★ deep plum subtle
-    yes: Color(0xFF2DD4BF),            // ★ bright mint for dark bg
-    no: Color(0xFFF87171),             // ★ bright red for dark bg
-    yesBg: Color(0xFF0E2E2A),          // ★ dark teal surface
-    noBg: Color(0xFF3B1620),           // ★ dark red surface
+    border: Color(0xFF222B40), // navy border
+    borderStrong: Color(0xFF303B54), // navy strong border
+    text: Color(0xFFEAF0FF), // cool near-white
+    textMuted: Color(0xFF9AA6C0), // cool muted
+    textSubtle: Color(0xFF5E6A85), // cool subtle
+    brand: Color(0xFFF472B6), // ★ brand pink (lighter for dark)
+    brandSubtle: Color(0xFF3B0A2A), // ★ deep plum subtle
+    yes: Color(0xFF2DD4BF), // ★ bright mint for dark bg
+    no: Color(0xFFF87171), // ★ bright red for dark bg
+    yesBg: Color(0xFF0E2E2A), // ★ dark teal surface
+    noBg: Color(0xFF3B1620), // ★ dark red surface
   );
 
   static ThemeData light() => _build(Brightness.light, _light);
@@ -239,7 +251,8 @@ class PulsTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: t.surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: t.border),
@@ -252,7 +265,8 @@ class PulsTheme {
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: t.brand, width: 1.5),
         ),
-        hintStyle: TextStyle(fontFamily: bodyFont, color: t.textSubtle, fontSize: 14),
+        hintStyle:
+            TextStyle(fontFamily: bodyFont, color: t.textSubtle, fontSize: 14),
         labelStyle: TextStyle(fontFamily: bodyFont, color: t.textMuted),
         prefixStyle: TextStyle(fontFamily: bodyFont, color: t.text),
       ),
@@ -288,43 +302,61 @@ class PulsTheme {
         // Serif display — Playfair Display
         displaySmall: TextStyle(
           fontFamily: displayFont,
-          color: t.text, fontSize: 30, fontWeight: FontWeight.w700,
-          height: 1.12, letterSpacing: -1.0,
+          color: t.text,
+          fontSize: 30,
+          fontWeight: FontWeight.w700,
+          height: 1.12,
+          letterSpacing: -1.0,
         ),
         headlineMedium: TextStyle(
           fontFamily: displayFont,
-          color: t.text, fontSize: 22, fontWeight: FontWeight.w700,
-          height: 1.2, letterSpacing: -0.5,
+          color: t.text,
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          height: 1.2,
+          letterSpacing: -0.5,
         ),
         titleLarge: TextStyle(
           fontFamily: displayFont,
-          color: t.text, fontSize: 18, fontWeight: FontWeight.w600,
+          color: t.text,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
           letterSpacing: -0.3,
         ),
         // Sans body — DM Sans
         titleMedium: TextStyle(
           fontFamily: bodyFont,
-          color: t.text, fontSize: 15, fontWeight: FontWeight.w600,
+          color: t.text,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
           fontFeatures: PulsColors.tabularFigures,
         ),
         bodyLarge: TextStyle(
           fontFamily: bodyFont,
-          color: t.text, fontSize: 15, height: 1.6,
+          color: t.text,
+          fontSize: 15,
+          height: 1.6,
           fontFeatures: PulsColors.tabularFigures,
         ),
         bodyMedium: TextStyle(
           fontFamily: bodyFont,
-          color: t.textMuted, fontSize: 13, height: 1.5,
+          color: t.textMuted,
+          fontSize: 13,
+          height: 1.5,
           fontFeatures: PulsColors.tabularFigures,
         ),
         labelLarge: TextStyle(
           fontFamily: bodyFont,
-          color: t.text, fontSize: 14, fontWeight: FontWeight.w600,
+          color: t.text,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
           fontFeatures: PulsColors.tabularFigures,
         ),
         labelSmall: TextStyle(
           fontFamily: bodyFont,
-          color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w500,
+          color: t.textSubtle,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
           letterSpacing: 0.5,
           fontFeatures: PulsColors.tabularFigures,
         ),

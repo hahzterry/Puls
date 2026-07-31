@@ -151,7 +151,8 @@ class _WebHomeScreen extends StatelessWidget {
                 ),
                 itemCount: trendingMarkets.length,
                 itemBuilder: (context, i) {
-                  final card = _WebTrendingCard(market: trendingMarkets[i], t: t);
+                  final card =
+                      _WebTrendingCard(market: trendingMarkets[i], t: t);
                   if (i == 0) {
                     return KeyedSubtree(key: tourMarketKey, child: card);
                   }
@@ -201,87 +202,92 @@ class _WebHomeScreen extends StatelessWidget {
             const CryptoTickerStrip(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: size.width < 900
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _HomePromoCarousel(),
-                    const SizedBox(height: 20),
-                    const PointsQuestsCard(),
-                    const SizedBox(height: 20),
-                    _FeaturedHeroBanner(market: featuredMarket, t: t),
-                    const SizedBox(height: 20),
-                    const BlogSection(limit: 4),
-                    const SizedBox(height: 20),
-                    const HumansVsAgentsCard(),
-                    const SizedBox(height: 16),
-                    const SeasonLeaderboardCard(),
-                    const SizedBox(height: 16),
-                    const FearAndGreedWidget(),
-                    const SizedBox(height: 16),
-                    _WebWalletBox(ws: ws, wallet: wallet, t: t),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Text('Trending Predictions',
-                            style: Theme.of(context).textTheme.titleLarge),
-                        const Spacer(),
-                        Semantics(
-                          button: true,
-                          label: 'Refresh markets',
-                          child: Tactile(
-                            onTap: () =>
-                                PulsStateScope.of(context).refresh(),
-                            child: Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                color: t.surface,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: t.border),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: size.width < 900
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _HomePromoCarousel(),
+                          const SizedBox(height: 20),
+                          const PointsQuestsCard(),
+                          const SizedBox(height: 20),
+                          _FeaturedHeroBanner(market: featuredMarket, t: t),
+                          const SizedBox(height: 20),
+                          const BlogSection(limit: 4),
+                          const SizedBox(height: 20),
+                          const HumansVsAgentsCard(),
+                          const SizedBox(height: 16),
+                          const SeasonLeaderboardCard(),
+                          const SizedBox(height: 16),
+                          const FearAndGreedWidget(),
+                          const SizedBox(height: 16),
+                          _WebWalletBox(ws: ws, wallet: wallet, t: t),
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              Text('Trending Predictions',
+                                  style:
+                                      Theme.of(context).textTheme.titleLarge),
+                              const Spacer(),
+                              Semantics(
+                                button: true,
+                                label: 'Refresh markets',
+                                child: Tactile(
+                                  onTap: () =>
+                                      PulsStateScope.of(context).refresh(),
+                                  child: Container(
+                                    width: 34,
+                                    height: 34,
+                                    decoration: BoxDecoration(
+                                      color: t.surface,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: t.border),
+                                    ),
+                                    child: Icon(Icons.refresh_rounded,
+                                        size: 17, color: t.brand),
+                                  ),
+                                ),
                               ),
-                              child: Icon(Icons.refresh_rounded,
-                                  size: 17, color: t.brand),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: size.width > 600 ? 2 : 1,
+                              crossAxisSpacing: 14,
+                              mainAxisSpacing: 14,
+                              childAspectRatio: size.width > 600 ? 1.45 : 1.6,
+                            ),
+                            itemCount: trendingMarkets.length,
+                            itemBuilder: (context, i) => _WebTrendingCard(
+                                market: trendingMarkets[i], t: t),
+                          ),
+                          const SizedBox(height: 24),
+                          PulsEmojiText('🔥 Hot Markets',
+                              style: Theme.of(context).textTheme.titleLarge),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: 140,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: displayHot.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: 12),
+                              itemBuilder: (context, i) => SizedBox(
+                                width: 260,
+                                child: _WebHotMarketCard(
+                                    market: displayHot[i], t: t),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: size.width > 600 ? 2 : 1,
-                        crossAxisSpacing: 14,
-                        mainAxisSpacing: 14,
-                        childAspectRatio: size.width > 600 ? 1.45 : 1.6,
-                      ),
-                      itemCount: trendingMarkets.length,
-                      itemBuilder: (context, i) =>
-                          _WebTrendingCard(market: trendingMarkets[i], t: t),
-                    ),
-                    const SizedBox(height: 24),
-                    PulsEmojiText('🔥 Hot Markets',
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 140,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: displayHot.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                        itemBuilder: (context, i) => SizedBox(
-                          width: 260,
-                          child: _WebHotMarketCard(market: displayHot[i], t: t),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              : bodyContent,
-        ),
+                        ],
+                      )
+                    : bodyContent,
+              ),
             ),
           ],
         ),
@@ -329,8 +335,7 @@ class _FeaturedHeroBanner extends StatelessWidget {
           Row(
             children: [
               ShaderMask(
-                shaderCallback: (r) =>
-                    PulsColors.pulseGradient.createShader(r),
+                shaderCallback: (r) => PulsColors.pulseGradient.createShader(r),
                 child: const Icon(Icons.auto_awesome_rounded,
                     size: 15, color: Colors.white),
               ),
@@ -362,8 +367,7 @@ class _FeaturedHeroBanner extends StatelessWidget {
               ],
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: t.surface,
                   borderRadius: BorderRadius.circular(6),
@@ -389,7 +393,10 @@ class _FeaturedHeroBanner extends StatelessWidget {
           const SizedBox(height: 14),
           GestureDetector(
             onTap: () => Navigator.of(context).push(
-              pulsRoute(context, settings: RouteSettings(name: '/m/${market.slug}'), builder: (_) => MarketDetailScreen(marketId: market.id),
+              pulsRoute(
+                context,
+                settings: RouteSettings(name: '/m/${market.slug}'),
+                builder: (_) => MarketDetailScreen(marketId: market.id),
               ),
             ),
             child: Text(
@@ -462,13 +469,16 @@ class _WebTrendingCardState extends State<_WebTrendingCard> {
     final noPct = 100 - yesPct;
 
     return RepaintBoundary(
-      child: MouseRegion(
+        child: MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: () => Navigator.of(context).push(
-          pulsRoute(context, settings: RouteSettings(name: '/m/${widget.market.slug}'), builder: (_) => MarketDetailScreen(marketId: widget.market.id),
+          pulsRoute(
+            context,
+            settings: RouteSettings(name: '/m/${widget.market.slug}'),
+            builder: (_) => MarketDetailScreen(marketId: widget.market.id),
           ),
         ),
         child: AnimatedContainer(
@@ -525,7 +535,8 @@ class _WebTrendingCardState extends State<_WebTrendingCard> {
                     if (widget.market.imageUrl.isNotEmpty) ...[
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.network(proxifyImageUrl(widget.market.imageUrl),
+                        child: Image.network(
+                          proxifyImageUrl(widget.market.imageUrl),
                           width: 40,
                           height: 40,
                           cacheHeight: 80,
@@ -725,7 +736,10 @@ class _WebHotMarketCardState extends State<_WebHotMarketCard> {
       child: GestureDetector(
         onTap: () {
           Navigator.of(context).push(
-            pulsRoute(context, settings: RouteSettings(name: '/m/${widget.market.slug}'), builder: (_) => MarketDetailScreen(marketId: widget.market.id),
+            pulsRoute(
+              context,
+              settings: RouteSettings(name: '/m/${widget.market.slug}'),
+              builder: (_) => MarketDetailScreen(marketId: widget.market.id),
             ),
           );
         },
