@@ -10,7 +10,6 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/lazy_indexed_stack.dart';
 import '../../core/widgets/puls_footer.dart';
 import '../../core/widgets/deferred_tab_builder.dart';
-import '../../core/widgets/puls_page_route.dart';
 import '../discover/discover_screen.dart' deferred as discover;
 import '../feed/feed_screen.dart' deferred as feed;
 import '../home/home_screen.dart' deferred as home;
@@ -20,7 +19,6 @@ import '../profile/leaderboard_screen.dart' deferred as leaderboard;
 import '../agent/agent_screen.dart' deferred as agent;
 import '../agent/agent_inbox_widget.dart';
 import '../onboarding/onboarding_sheet.dart';
-import '../market/screens/market_terminal_screen.dart' deferred as terminal;
 import 'shell_nav.dart';
 
 class WebShell extends StatefulWidget {
