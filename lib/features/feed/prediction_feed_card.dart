@@ -527,7 +527,9 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                       // no per-rebuild animation cost in the scroll list.
                       PulsSparkline(
                         prices: _sparkline,
-                        color: _sparkline.last >= _sparkline.first
+                        color: (_sparkline.length >= 2
+                                ? _sparkline.last >= _sparkline.first
+                                : market.trendIsPositive)
                             ? context.puls.yes
                             : context.puls.no,
                       ),

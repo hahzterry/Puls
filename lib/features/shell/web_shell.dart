@@ -936,14 +936,12 @@ class _TerminalToggleState extends State<_TerminalToggle> {
           onEnter: (_) => setState(() => _hovered = true),
           onExit: (_) => setState(() => _hovered = false),
           child: GestureDetector(
-            onTap: () async {
-              await terminal.loadLibrary();
-              if (!context.mounted) return;
-              Navigator.of(context).push(
-                pulsRoute(context,
-                    builder: (context) => terminal.MarketTerminalScreen()),
-              );
-            },
+            // The AI Bloomberg Terminal now lives at terminal.pulsmarket.tech
+            // (a standalone host) instead of an in-app route — open it there.
+            onTap: () => launchUrl(
+              Uri.parse('https://terminal.pulsmarket.tech'),
+              mode: LaunchMode.externalApplication,
+            ),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 160),
               width: 38,

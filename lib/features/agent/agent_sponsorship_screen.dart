@@ -483,7 +483,7 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen>
   // ── Performance chart ─────────────────────────────────────────────────────
   Widget _chartCard(PulsThemeColors t) {
     final curve = _curve(_timeframe);
-    final gain = (curve.last / curve.first - 1) * 100;
+    final gain = (curve.length >= 2 && curve.first != 0) ? (curve.last / curve.first - 1) * 100 : 0.0;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
