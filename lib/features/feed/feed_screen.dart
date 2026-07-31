@@ -16,7 +16,6 @@ import '../../core/utils/agent_pfp.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/puls_emoji.dart';
 import '../../core/motion.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/pulse_dot.dart';
 import '../../core/widgets/puls_emoji_text.dart';
@@ -233,7 +232,12 @@ class _FeedBody extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
             itemBuilder: (context, index) {
               final market = markets[index % markets.length];
-              final item = Padding(
+              // Keyed by market id so the list reuses a stable element per
+              // market instead of re-running the card's own fadeIn on a
+              // recycled slot when you scroll back up (which left items at
+              // opacity 0). The fade is owned by PredictionFeedCard itself.
+              return Padding(
+                key: ValueKey('feed_${market.id}_$index'),
                 padding: const EdgeInsets.only(bottom: 16),
                 child: PredictionFeedCard(
                   market: market,
@@ -254,14 +258,6 @@ class _FeedBody extends StatelessWidget {
                   },
                 ),
               );
-              if (context.reduceMotion) return item;
-              return item
-                  .animate()
-                  .fadeIn(duration: 300.ms, curve: Curves.easeOutCubic)
-                  .slideY(
-                      begin: 0.05,
-                      duration: 300.ms,
-                      curve: Curves.easeOutCubic);
             },
           ),
         );
@@ -1263,7 +1259,8 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                           itemBuilder: (context, index) {
                             final market =
                                 filteredMarkets[index % filteredMarkets.length];
-                            final item = Center(
+                            return Center(
+                              key: ValueKey('feed_${market.id}_$index'),
                               child: ConstrainedBox(
                                 constraints:
                                     const BoxConstraints(maxWidth: 600),
@@ -1294,16 +1291,6 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                                 ),
                               ),
                             );
-                            if (context.reduceMotion) return item;
-                            return item
-                                .animate()
-                                .fadeIn(
-                                    duration: 300.ms,
-                                    curve: Curves.easeOutCubic)
-                                .slideY(
-                                    begin: 0.05,
-                                    duration: 300.ms,
-                                    curve: Curves.easeOutCubic);
                           },
                         ),
                 ),
