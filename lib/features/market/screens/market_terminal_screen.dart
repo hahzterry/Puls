@@ -1537,7 +1537,7 @@ class _AgentDashboardCardState extends State<_AgentDashboardCard> {
                   height: 24,
                   child: RepaintBoundary(
                     child: CustomPaint(
-                      painter: _SparklinePainter(agent.pnlHistory, agent.pnl >= 0 ? const Color(0xFF2DD4BF) : const Color(0xFFEC4899)),
+                      painter: _SparklinePainter(agent.pnlHistory, agent.pnl >= 0 ? PulsColors.brandMint : PulsColors.brandPink),
                     ),
                   ),
                 ),

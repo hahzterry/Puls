@@ -51,7 +51,7 @@ class PulsEmptyState extends StatelessWidget {
       padding: EdgeInsets.all(compact ? 24 : 32),
       decoration: BoxDecoration(
         color: t.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: t.border),
       ),
       child: Column(
@@ -60,15 +60,11 @@ class PulsEmptyState extends StatelessWidget {
           if (iconWidget != null)
             iconWidget!
           else
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: t.brandSubtle,
-              ),
-              alignment: Alignment.center,
-              child: Icon(icon, color: t.brand, size: 30),
+            _BrandIconBubble(
+              icon: icon,
+              gradient: PulsColors.pulseGradient,
+              glow: t.brand,
+              iconColor: Colors.white,
             ),
           const SizedBox(height: 16),
           Semantics(
@@ -137,21 +133,24 @@ class PulsErrorState extends StatelessWidget {
       padding: EdgeInsets.all(compact ? 24 : 32),
       decoration: BoxDecoration(
         color: t.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: t.border),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: t.no.withValues(alpha: 0.12),
+          _BrandIconBubble(
+            icon: icon,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                t.no.withValues(alpha: 0.22),
+                t.no.withValues(alpha: 0.08),
+              ],
             ),
-            alignment: Alignment.center,
-            child: Icon(icon, color: t.no, size: 30),
+            glow: t.no,
+            iconColor: t.no,
           ),
           const SizedBox(height: 16),
           Semantics(
@@ -200,6 +199,43 @@ class PulsErrorState extends StatelessWidget {
 
     if (context.reduceMotion) return card;
     return _FadeSlideIn(child: card);
+  }
+}
+
+/// Branded icon bubble for state cards: a soft gradient disc with a gentle
+/// outer glow, so "nothing here yet" reads premium instead of empty.
+class _BrandIconBubble extends StatelessWidget {
+  const _BrandIconBubble({
+    required this.icon,
+    required this.gradient,
+    required this.glow,
+    required this.iconColor,
+  });
+
+  final IconData icon;
+  final Gradient gradient;
+  final Color glow;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 72,
+      height: 72,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: gradient,
+        boxShadow: [
+          BoxShadow(
+            color: glow.withValues(alpha: 0.28),
+            blurRadius: 22,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Icon(icon, color: iconColor, size: 32),
+    );
   }
 }
 

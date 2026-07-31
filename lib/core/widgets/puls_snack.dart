@@ -115,7 +115,7 @@ class PulsSnacker {
             : Duration(
                 milliseconds: (2200 + message.length * 28).clamp(2200, 5000)));
 
-    final surface = _isDark ? _t.surfaceRaised : Colors.white;
+    final surface = _isDark ? _t.surfaceRaised : _t.surface;
     // Centred, readable width: full-bleed (minus margin) on phones, a tidy pill
     // on desktop.
     final width = (_screenWidth - 32).clamp(0.0, 460.0);
@@ -126,7 +126,8 @@ class PulsSnacker {
         SnackBar(
           behavior: SnackBarBehavior.floating,
           backgroundColor: surface,
-          elevation: 0,
+          elevation: 6,
+          shadowColor: _t.brand.withValues(alpha: _isDark ? 0.35 : 0.25),
           duration: showFor,
           width: width,
           padding: EdgeInsets.fromLTRB(14, 12, actionLabel != null ? 8 : 16, 12),

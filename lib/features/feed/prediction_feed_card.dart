@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:haptic_kit/haptic_kit.dart';
@@ -12,6 +11,7 @@ import '../../core/motion.dart';
 import '../../core/widgets/tactile.dart';
 import '../../core/widgets/market_hero.dart';
 import '../../core/widgets/skeleton.dart';
+import '../../core/widgets/puls_sparkline.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
@@ -521,22 +521,15 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                       ],
                       // Odds bar
                       _OddsBar(market: market),
-                      const SizedBox(height: 12),
-                      // Sparkline — always 48px, shows shimmer while loading
-                      SizedBox(
-                        height: 48,
-                        child: _sparkline.length >= 2
-                            ? _CardSparkline(
-                                prices: _sparkline,
-                                isUp: _sparkline.last >= _sparkline.first,
-                              )
-                            : DecoratedBox(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(6),
-                                  color: context.puls.surface,
-                                ),
-                              ),
-                      ),
+                            const SizedBox(height: 12),
+                            // Sparkline — always 48px, shows a quiet surface
+                            // while loading
+                            PulsSparkline(
+                              prices: _sparkline,
+                              color: _sparkline.last >= _sparkline.first
+                                  ? context.puls.yes
+                                  : context.puls.no,
+                            ),
                       const SizedBox(height: 8),
                       // Stats + details
                       Row(
@@ -652,61 +645,6 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
         .animate()
         .fadeIn(duration: 300.ms)
         .slideY(begin: 0.04, duration: 300.ms, curve: Curves.easeOut);
-  }
-}
-
-class _CardSparkline extends StatelessWidget {
-  const _CardSparkline({required this.prices, required this.isUp});
-  final List<double> prices;
-  final bool isUp;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.puls;
-    final color = isUp ? t.yes : t.no;
-    final spots = prices
-        .asMap()
-        .entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value))
-        .toList();
-    final minY = prices.reduce((a, b) => a < b ? a : b);
-    final maxY = prices.reduce((a, b) => a > b ? a : b);
-    final pad = (maxY - minY) < 0.01 ? 0.05 : (maxY - minY) * 0.2;
-
-    return SizedBox(
-      height: 48,
-      child: LineChart(
-        LineChartData(
-          minY: (minY - pad).clamp(0, 1),
-          maxY: (maxY + pad).clamp(0, 1),
-          gridData: const FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          titlesData: const FlTitlesData(show: false),
-          lineTouchData: const LineTouchData(enabled: false),
-          lineBarsData: [
-            LineChartBarData(
-              spots: spots,
-              isCurved: true,
-              curveSmoothness: 0.3,
-              color: color,
-              barWidth: 2,
-              dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    color.withValues(alpha: 0.2),
-                    color.withValues(alpha: 0.0),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

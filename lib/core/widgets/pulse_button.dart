@@ -51,15 +51,7 @@ class PulseButton extends StatelessWidget {
         gradient: _enabled ? PulsColors.pulseGradient : null,
         color: _enabled ? null : t.surfaceRaised,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: _enabled
-            ? [
-                BoxShadow(
-                  color: PulsColors.brandPink.withValues(alpha: 0.32),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ]
-            : null,
+        boxShadow: _enabled ? PulsColors.neonGlow(intensity: 0.32) : null,
       ),
       child: loading
           ? const SizedBox(

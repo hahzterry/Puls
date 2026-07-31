@@ -106,17 +106,19 @@ class _WebLandingPageState extends State<WebLandingPage>
             // ── Animated, cursor-reactive Aurora ──────────────────────────
             // RepaintBoundary isolates the 60fps aurora repaints from the
             // rest of the Stack (content, dot grid, grain) so they don't
-            // re-rasterize on every animation tick.
+            // re-rasterize on every animation tick. Excluded from semantics.
             Positioned.fill(
-              child: RepaintBoundary(
-                child: AnimatedBuilder(
-                  animation: Listenable.merge([_aurora, _pointer]),
-                  builder: (context, _) => CustomPaint(
-                    painter: _AuroraPainter(
-                      progress: _aurora.value,
-                      isDark: isDark,
-                      bg: t.bg,
-                      pointer: _pointer.value,
+              child: ExcludeSemantics(
+                child: RepaintBoundary(
+                  child: AnimatedBuilder(
+                    animation: Listenable.merge([_aurora, _pointer]),
+                    builder: (context, _) => CustomPaint(
+                      painter: _AuroraPainter(
+                        progress: _aurora.value,
+                        isDark: isDark,
+                        bg: t.bg,
+                        pointer: _pointer.value,
+                      ),
                     ),
                   ),
                 ),
@@ -126,19 +128,23 @@ class _WebLandingPageState extends State<WebLandingPage>
             // Static painter — RepaintBoundary ensures it's rasterized once
             // and never repainted when siblings change.
             Positioned.fill(
-              child: RepaintBoundary(
-                child: CustomPaint(painter: _DotGridPainter(color: dotColor)),
+              child: ExcludeSemantics(
+                child: RepaintBoundary(
+                  child: CustomPaint(painter: _DotGridPainter(color: dotColor)),
+                ),
               ),
             ),
             // ── Film grain (depth) ────────────────────────────────────────
             // Static painter — same treatment as the dot grid.
             Positioned.fill(
               child: IgnorePointer(
-                child: RepaintBoundary(
-                  child: CustomPaint(
-                    painter: _GrainPainter(
-                      color: (isDark ? Colors.white : Colors.black)
-                          .withValues(alpha: 0.025),
+                child: ExcludeSemantics(
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: _GrainPainter(
+                        color: (isDark ? Colors.white : Colors.black)
+                            .withValues(alpha: 0.025),
+                      ),
                     ),
                   ),
                 ),
@@ -156,18 +162,73 @@ class _WebLandingPageState extends State<WebLandingPage>
                 child: Column(
                   children: [
                     RepaintBoundary(child: _HeroSection(scrollOffset: _scrollOffset)),
-                    _Reveal(scrollOffset: _scrollOffset, child: RepaintBoundary(child: const LiveMarketTicker())),
+                    _LazySection(
+                      scrollOffset: _scrollOffset,
+                      builder: (_) => _Reveal(
+                        scrollOffset: _scrollOffset,
+                        child: RepaintBoundary(child: const LiveMarketTicker()),
+                      ),
+                    ),
+                    const _SectionDivider(),
                     _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: _HowItWorksSection())),
                     _Reveal(scrollOffset: _scrollOffset, child: RepaintBoundary(child: _FeaturesSection(scrollOffset: _scrollOffset))),
+                    const _SectionDivider(),
                     _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: AccountableAiSection())),
-                    _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: PhoneDemoSection())),
-                    _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: MeetTheAgentsSection())),
-                    _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: LiveTractionSection())),
-                    _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: LiveActivitySection())),
-                    _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: _StatsSection())),
-                    _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: FaqSection())),
-                    _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: _FinalCtaSection())),
-                    _Reveal(scrollOffset: _scrollOffset, child: RepaintBoundary(child: _FooterSection(scrollCtrl: _scrollCtrl))),
+                    _LazySection(
+                      scrollOffset: _scrollOffset,
+                      builder: (_) => _Reveal(
+                        scrollOffset: _scrollOffset,
+                        child: const RepaintBoundary(child: PhoneDemoSection()),
+                      ),
+                    ),
+                    _LazySection(
+                      scrollOffset: _scrollOffset,
+                      builder: (_) => _Reveal(
+                        scrollOffset: _scrollOffset,
+                        child: const RepaintBoundary(child: MeetTheAgentsSection()),
+                      ),
+                    ),
+                    const _SectionDivider(),
+                    _LazySection(
+                      scrollOffset: _scrollOffset,
+                      builder: (_) => _Reveal(
+                        scrollOffset: _scrollOffset,
+                        child: const RepaintBoundary(child: LiveTractionSection()),
+                      ),
+                    ),
+                    _LazySection(
+                      scrollOffset: _scrollOffset,
+                      builder: (_) => _Reveal(
+                        scrollOffset: _scrollOffset,
+                        child: const RepaintBoundary(child: LiveActivitySection()),
+                      ),
+                    ),
+                    _LazySection(
+                      scrollOffset: _scrollOffset,
+                      builder: (_) => _Reveal(
+                        scrollOffset: _scrollOffset,
+                        child: const RepaintBoundary(child: _StatsSection()),
+                      ),
+                    ),
+                    const _SectionDivider(),
+                    _LazySection(
+                      scrollOffset: _scrollOffset,
+                      builder: (_) => _Reveal(
+                        scrollOffset: _scrollOffset,
+                        child: const RepaintBoundary(child: FaqSection()),
+                      ),
+                    ),
+                    _LazySection(
+                      scrollOffset: _scrollOffset,
+                      builder: (_) => _Reveal(
+                        scrollOffset: _scrollOffset,
+                        child: const RepaintBoundary(child: _FinalCtaSection()),
+                      ),
+                    ),
+                    _LazySection(
+                      scrollOffset: _scrollOffset,
+                      builder: (_) => RepaintBoundary(child: _FooterSection(scrollCtrl: _scrollCtrl)),
+                    ),
                   ],
                 ),
               ),
@@ -203,6 +264,57 @@ class _WebLandingPageState extends State<WebLandingPage>
               left: 0,
               right: 0,
               child: _StickyNavbar(scrollOffset: _scrollOffset),
+            ),
+            // ── Vertical scroll progress rail (right edge) ─────────────────
+            // A slim gradient rail that fills as you scroll — a quiet, tactile
+            // reading-depth cue that mirrors the top progress bar.
+            Positioned(
+              top: 64,
+              bottom: 64,
+              right: 1,
+              child: IgnorePointer(
+                child: ExcludeSemantics(
+                  child: SizedBox(
+                    width: 3,
+                    child: Stack(
+                      alignment: Alignment.topCenter,
+                      children: [
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: t.border.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                          ),
+                        ),
+                        FractionallySizedBox(
+                          alignment: Alignment.topCenter,
+                          heightFactor: progress == 0 ? 0.0001 : progress,
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Color(0xFF34E5C0),
+                                  Color(0xFFF65FA9),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.all(Radius.circular(100)),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: PulsColors.brandPink.withValues(alpha: 0.5),
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -998,20 +1110,50 @@ class _InlineLinkState extends State<_InlineLink> {
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
-        child: Text(
-          widget.label,
-          style: TextStyle(
-            color: _hovered ? t.brand : t.textMuted,
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            decoration: TextDecoration.underline,
-            decorationColor: _hovered ? t.brand : t.textSubtle,
+    return Semantics(
+      link: true,
+      label: widget.label,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: GestureDetector(
+          onTap: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: _hovered ? t.brand : t.textMuted,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              // Animated underline — sweeps in from the left on hover.
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: -2,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  height: 1.5,
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: _hovered ? 1.0 : 0.0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF34E5C0), Color(0xFFF65FA9)],
+                        ),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -4069,16 +4211,20 @@ class _PrimaryButtonState extends State<_PrimaryButton>
     final scale = _pressed ? 0.97 : (_hovered ? 1.04 : 1.0);
     final duration = Duration(milliseconds: _pressed ? 60 : 150);
 
-    return MouseRegion(
-      cursor: widget.onTap == null ? SystemMouseCursors.basic : SystemMouseCursors.click,
-      onEnter: (_) => widget.onTap != null ? _onEnter() : null,
-      onHover: widget.onTap != null ? _onHover : null,
-      onExit: (_) => widget.onTap != null ? _onExit() : null,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        onTapDown: widget.onTap != null ? (_) => setState(() => _pressed = true) : null,
-        onTapUp: widget.onTap != null ? (_) => setState(() => _pressed = false) : null,
-        onTapCancel: widget.onTap != null ? () => setState(() => _pressed = false) : null,
+    return Semantics(
+      button: true,
+      enabled: widget.onTap != null,
+      label: widget.label,
+      child: MouseRegion(
+        cursor: widget.onTap == null ? SystemMouseCursors.basic : SystemMouseCursors.click,
+        onEnter: (_) => widget.onTap != null ? _onEnter() : null,
+        onHover: widget.onTap != null ? _onHover : null,
+        onExit: (_) => widget.onTap != null ? _onExit() : null,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          onTapDown: widget.onTap != null ? (_) => setState(() => _pressed = true) : null,
+          onTapUp: widget.onTap != null ? (_) => setState(() => _pressed = false) : null,
+          onTapCancel: widget.onTap != null ? () => setState(() => _pressed = false) : null,
         child: AnimatedContainer(
           duration: _pressed ? const Duration(milliseconds: 70) : const Duration(milliseconds: 180),
           curve: _pressed ? Curves.easeOut : Curves.easeOutCubic,
@@ -4136,8 +4282,8 @@ class _PrimaryButtonState extends State<_PrimaryButton>
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _SecondaryButton extends StatefulWidget {
@@ -4161,57 +4307,61 @@ class _SecondaryButtonState extends State<_SecondaryButton> {
     final scale = _pressed ? 0.97 : 1.0;
     final duration = Duration(milliseconds: _pressed ? 60 : 150);
 
-    return MouseRegion(
-      cursor: widget.onTap == null ? SystemMouseCursors.basic : SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() { _hovered = false; _pressed = false; }),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedScale(
-          duration: duration,
-          scale: scale,
-          curve: Curves.easeOutCubic,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: EdgeInsets.symmetric(
-              horizontal: widget.small ? 16 : 30,
-              vertical: widget.small ? 10 : 16,
-            ),
-            decoration: BoxDecoration(
-              color: _hovered ? t.surfaceRaised : t.surface,
-              borderRadius: BorderRadius.circular(widget.small ? 10 : 14),
-              border: Border.all(
-                color: _hovered ? t.textMuted.withValues(alpha: 0.5) : t.border,
-                width: _hovered ? 1.5 : 1.0,
+    return Semantics(
+      button: true,
+      label: widget.label,
+      child: MouseRegion(
+        cursor: widget.onTap == null ? SystemMouseCursors.basic : SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() { _hovered = false; _pressed = false; }),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
+          child: AnimatedScale(
+            duration: duration,
+            scale: scale,
+            curve: Curves.easeOutCubic,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: EdgeInsets.symmetric(
+                horizontal: widget.small ? 16 : 30,
+                vertical: widget.small ? 10 : 16,
               ),
-              boxShadow: _hovered
-                  ? [
-                      BoxShadow(
-                        color: isDark
-                            ? Colors.black.withValues(alpha: 0.15)
-                            : Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Text(
-              widget.label,
-              style: TextStyle(
-                color: _hovered ? t.text : t.textMuted,
-                fontSize: widget.small ? 13.5 : 14.5,
-                fontWeight: FontWeight.w600,
+              decoration: BoxDecoration(
+                color: _hovered ? t.surfaceRaised : t.surface,
+                borderRadius: BorderRadius.circular(widget.small ? 10 : 14),
+                border: Border.all(
+                  color: _hovered ? t.textMuted.withValues(alpha: 0.5) : t.border,
+                  width: _hovered ? 1.5 : 1.0,
+                ),
+                boxShadow: _hovered
+                    ? [
+                        BoxShadow(
+                          color: isDark
+                              ? Colors.black.withValues(alpha: 0.15)
+                              : Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Text(
+                widget.label,
+                style: TextStyle(
+                  color: _hovered ? t.text : t.textMuted,
+                  fontSize: widget.small ? 13.5 : 14.5,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _DotGridPainter extends CustomPainter {
@@ -4302,6 +4452,81 @@ class _RevealState extends State<_Reveal> {
         child: widget.child,
       ),
     );
+  }
+}
+
+// ── Section divider ───────────────────────────────────────────────────────────
+/// A slim, centered gradient hairline used to give the long page a consistent
+/// visual rhythm between sections.
+class _SectionDivider extends StatelessWidget {
+  const _SectionDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return Center(
+      child: Container(
+        width: 96,
+        height: 1.5,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.transparent,
+              t.brand.withValues(alpha: 0.45),
+              Colors.transparent,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(100),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Lazy section build ────────────────────────────────────────────────────────
+/// Delays constructing its child (and any HTTP the child triggers) until the
+/// section scrolls within ~1.2 viewport-heights of the top of the screen.
+/// This keeps the initial page load light — only the hero + first sections are
+/// built immediately, live sections build as you scroll to them.
+class _LazySection extends StatefulWidget {
+  const _LazySection({required this.scrollOffset, required this.builder});
+  final double scrollOffset;
+  final WidgetBuilder builder;
+
+  @override
+  State<_LazySection> createState() => _LazySectionState();
+}
+
+class _LazySectionState extends State<_LazySection> {
+  bool _built = false;
+  double? _top;
+
+  void _maybeBuild() {
+    if (_built || !mounted) return;
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached || !box.hasSize) return;
+    _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset;
+    final h = MediaQuery.sizeOf(context).height;
+    if (widget.scrollOffset + h * 1.2 >= _top!) {
+      setState(() => _built = true);
+    } else {
+      setState(() {}); // keep the measured position for the next scroll tick
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _LazySection old) {
+    super.didUpdateWidget(old);
+    if (!_built) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeBuild());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_built) return widget.builder(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeBuild());
+    return const SizedBox.shrink();
   }
 }
 

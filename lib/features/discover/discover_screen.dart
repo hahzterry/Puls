@@ -1,5 +1,4 @@
 import 'package:animate_do/animate_do.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/widgets/puls_snack.dart';
@@ -14,6 +13,7 @@ import '../../core/utils/trade_math.dart';
 import '../../core/widgets/gradient_text.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/widgets/skeleton.dart';
+import '../../core/widgets/puls_sparkline.dart';
 import '../../data/models/market.dart';
 import '../../data/polymarket/price_history_service.dart';
 import '../market/market_detail_screen.dart';
@@ -681,8 +681,11 @@ class _MarketCardState extends State<_MarketCard> {
                             ),
                           )
                         : _sparkline.length >= 2
-                            ? _MiniSparkline(
-                                prices: _sparkline, isUp: trendPositive)
+                            ? PulsSparkline(
+                                prices: _sparkline,
+                                color: trendPositive ? t.yes : t.no,
+                                height: double.infinity,
+                              )
                             : Container(),
                   ),
                   const SizedBox(height: 10),
@@ -1093,65 +1096,6 @@ class _BigBuyState extends State<_BigBuy> {
                       fontWeight: FontWeight.w600)),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MiniSparkline extends StatelessWidget {
-  const _MiniSparkline({required this.prices, required this.isUp});
-  final List<double> prices;
-  final bool isUp;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.puls;
-    final color = isUp ? t.yes : t.no;
-    final spots = prices
-        .asMap()
-        .entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value))
-        .toList();
-    final minY = prices.reduce((a, b) => a < b ? a : b);
-    final maxY = prices.reduce((a, b) => a > b ? a : b);
-    final pad = (maxY - minY) < 0.01 ? 0.05 : (maxY - minY) * 0.2;
-
-    return RepaintBoundary(
-      child: LineChart(
-        LineChartData(
-          minY: (minY - pad).clamp(0, 1),
-          maxY: (maxY + pad).clamp(0, 1),
-          gridData: const FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          titlesData: const FlTitlesData(show: false),
-          lineTouchData: const LineTouchData(enabled: false),
-          lineBarsData: [
-            LineChartBarData(
-              spots: spots,
-              isCurved: true,
-              curveSmoothness: 0.35,
-              color: color,
-              barWidth: 2.2,
-              shadow: Shadow(
-                color: color.withValues(alpha: 0.4),
-                blurRadius: 6,
-                offset: const Offset(0, 1.5),
-              ),
-              dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    color.withValues(alpha: 0.18),
-                    color.withValues(alpha: 0.0),
-                  ],
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

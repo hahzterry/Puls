@@ -66,6 +66,44 @@ class PulsColors {
 
   // Tabular figures for numbers — applied to price/win-rate/amount text
   static const tabularFigures = [FontFeature.tabularFigures()];
+
+  /// A single, shared brand-glow shadow — the "neon" accent used on CTA
+  /// buttons, live indicators and winning states. Centralizes the dozens of
+  /// hand-tuned `BoxShadow` copies scattered around the app so the glow stays
+  /// consistent everywhere.
+  static List<BoxShadow> brandGlow({
+    double intensity = 0.25,
+    double blur = 20,
+    double spread = 0,
+    Color? color,
+  }) =>
+      [
+        BoxShadow(
+          color: (color ?? brandPink).withValues(alpha: intensity),
+          blurRadius: blur,
+          spreadRadius: spread,
+          offset: const Offset(0, 5),
+        ),
+      ];
+
+  /// Two-layer glow for the most prominent CTA surfaces (inner close ring +
+  /// wider halo) — reads as a deliberate neon edge rather than a flat shadow.
+  static List<BoxShadow> neonGlow({
+    double intensity = 0.35,
+    Color? color,
+  }) =>
+      [
+        BoxShadow(
+          color: (color ?? brandPink).withValues(alpha: intensity),
+          blurRadius: 12,
+          offset: const Offset(0, 2),
+        ),
+        BoxShadow(
+          color: (color ?? brandPink).withValues(alpha: intensity * 0.45),
+          blurRadius: 28,
+          offset: const Offset(0, 6),
+        ),
+      ];
 }
 
 // ── Theme extension ───────────────────────────────────────────────────────────

@@ -43,11 +43,12 @@ class GlassCard extends StatelessWidget {
     final t = context.puls;
     final isDark = context.isDark;
 
-    // On dark navy we tint the glass toward brand-mint for an icy neon edge;
-    // on light we keep it neutral so it reads as frosted acrylic.
-    final fill = isDark
-        ? PulsColors.brandMint.withValues(alpha: fillAlpha)
-        : Colors.white.withValues(alpha: fillAlpha);
+    // Use the theme's glass fill token (mint-tinted on dark, white on light),
+    // scaling its baked-in alpha by the caller's fillAlpha.
+    final baseGlass = t.surfaceGlass;
+    final baseAlpha = baseGlass.a;
+    final fill =
+        baseGlass.withValues(alpha: (baseAlpha * (fillAlpha / 0.05)).clamp(0.0, 1.0));
     final border = isDark
         ? PulsColors.brandMint.withValues(alpha: borderAlpha)
         : Colors.white.withValues(alpha: borderAlpha * 1.6);

@@ -67,6 +67,8 @@ class _SkeletonState extends State<Skeleton>
       animation: _ctrl,
       builder: (context, _) {
         final x = _ctrl.value * 2 - 1; // -1 .. 1
+        // Sweep a brand-tinted shimmer (mint→pink) over a muted base so every
+        // loading state carries the signature gradient instead of flat gray.
         return Container(
           width: widget.width,
           height: widget.height,
@@ -76,9 +78,9 @@ class _SkeletonState extends State<Skeleton>
               begin: Alignment(x - 1, 0),
               end: Alignment(x + 1, 0),
               colors: [
-                t.border.withValues(alpha: 0.45),
-                t.border.withValues(alpha: 0.9),
-                t.border.withValues(alpha: 0.45),
+                PulsColors.brandMint.withValues(alpha: 0.28),
+                PulsColors.brandPink.withValues(alpha: 0.42),
+                PulsColors.brandMint.withValues(alpha: 0.28),
               ],
             ),
           ),

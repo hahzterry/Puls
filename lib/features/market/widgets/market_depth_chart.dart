@@ -1,8 +1,8 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
-/// Market depth chart — visualizes YES/NO liquidity at price levels.
+/// Market depth chart вЂ” visualizes YES/NO liquidity at price levels.
 /// Reads on-chain pool sizes from the market's contract via the backend.
 class MarketDepthChart extends StatefulWidget {
   const MarketDepthChart({super.key, required this.yesPrice, this.yesPool = 0, this.noPool = 0});
@@ -43,9 +43,9 @@ class _MarketDepthChartState extends State<MarketDepthChart>
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF0C0F19),
+        color: PulsColors.dark50,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: PulsColors.dark300),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,22 +54,22 @@ class _MarketDepthChartState extends State<MarketDepthChart>
             children: [
               const Text('MARKET DEPTH',
                   style: TextStyle(
-                      color: Color(0xFF5E6A85),
+                      color: PulsColors.dark400,
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                       fontFamily: PulsColors.fontMono,
                       letterSpacing: 1.5)),
               const Spacer(),
-              Text('${(widget.yesPrice * 100).round()}¢ YES',
+              Text('${(widget.yesPrice * 100).round()}Вў YES',
                   style: const TextStyle(
-                      color: Color(0xFF2DD4BF),
+                      color: PulsColors.brandMint,
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                       fontFamily: PulsColors.fontMono)),
               const SizedBox(width: 8),
-              Text('${((1 - widget.yesPrice) * 100).round()}¢ NO',
+              Text('${((1 - widget.yesPrice) * 100).round()}Вў NO',
                   style: const TextStyle(
-                      color: Color(0xFFEC4899),
+                      color: PulsColors.brandPink,
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                       fontFamily: PulsColors.fontMono)),
@@ -90,9 +90,9 @@ class _MarketDepthChartState extends State<MarketDepthChart>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _poolStat('YES LIQ', '\$${widget.yesPool.toStringAsFixed(0)}', const Color(0xFF2DD4BF)),
-              _poolStat('NO LIQ', '\$${widget.noPool.toStringAsFixed(0)}', const Color(0xFFEC4899)),
-              _poolStat('TOTAL', '\$${(widget.yesPool + widget.noPool).toStringAsFixed(0)}', const Color(0xFFEAF0FF)),
+              _poolStat('YES LIQ', '\$${widget.yesPool.toStringAsFixed(0)}', PulsColors.brandMint),
+              _poolStat('NO LIQ', '\$${widget.noPool.toStringAsFixed(0)}', PulsColors.brandPink),
+              _poolStat('TOTAL', '\$${(widget.yesPool + widget.noPool).toStringAsFixed(0)}', PulsColors.dark900),
             ],
           ),
         ],
@@ -104,7 +104,7 @@ class _MarketDepthChartState extends State<MarketDepthChart>
     return Column(
       children: [
         Text(label,
-            style: TextStyle(color: const Color(0xFF5E6A85), fontSize: 8, fontWeight: FontWeight.bold, fontFamily: PulsColors.fontMono)),
+            style: TextStyle(color: PulsColors.dark400, fontSize: 8, fontWeight: FontWeight.bold, fontFamily: PulsColors.fontMono)),
         const SizedBox(height: 2),
         Text(value,
             style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w800, fontFamily: PulsColors.fontMono)),
@@ -124,7 +124,7 @@ class _DepthPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // Background grid
     final gridPaint = Paint()
-      ..color = const Color(0xFF1E293B)
+      ..color = PulsColors.dark300
       ..strokeWidth = 0.5;
     for (var i = 1; i < 10; i++) {
       final x = size.width * i / 10;
@@ -149,7 +149,7 @@ class _DepthPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [const Color(0xFF2DD4BF).withValues(alpha: 0.3 * anim), const Color(0xFF2DD4BF).withValues(alpha: 0.05)],
+        colors: [PulsColors.brandMint.withValues(alpha: 0.3 * anim), PulsColors.brandMint.withValues(alpha: 0.05)],
       ).createShader(Rect.fromLTWH(0, 0, midX, h));
     canvas.drawPath(yesPath, yesPaint);
 
@@ -164,13 +164,13 @@ class _DepthPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [const Color(0xFFEC4899).withValues(alpha: 0.3 * anim), const Color(0xFFEC4899).withValues(alpha: 0.05)],
+        colors: [PulsColors.brandPink.withValues(alpha: 0.3 * anim), PulsColors.brandPink.withValues(alpha: 0.05)],
       ).createShader(Rect.fromLTWH(midX, 0, size.width - midX, h));
     canvas.drawPath(noPath, noPaint);
 
     // Midpoint line
     final midPaint = Paint()
-      ..color = const Color(0xFFEAF0FF).withValues(alpha: 0.4 * anim)
+      ..color = PulsColors.dark900.withValues(alpha: 0.4 * anim)
       ..strokeWidth = 1;
     canvas.drawLine(Offset(midX, 0), Offset(midX, h), midPaint);
 
@@ -179,8 +179,8 @@ class _DepthPainter extends CustomPainter {
     for (var i = 0; i <= 10; i += 2) {
       final price = i * 10;
       labelStyle.text = TextSpan(
-        text: '${price}¢',
-        style: const TextStyle(color: Color(0xFF5E6A85), fontSize: 8, fontFamily: 'DM Sans'),
+        text: '${price}Вў',
+        style: const TextStyle(color: PulsColors.dark400, fontSize: 8, fontFamily: 'DM Sans'),
       );
       labelStyle.layout();
       labelStyle.paint(canvas, Offset(size.width * i / 10 - 8, h + 2));
