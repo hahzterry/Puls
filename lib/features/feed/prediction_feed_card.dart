@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:haptic_kit/haptic_kit.dart';
 import 'package:picons/picons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -644,10 +643,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                   ),
                 ),
               ),
-            )))
-        .animate()
-        .fadeIn(duration: 300.ms)
-        .slideY(begin: 0.04, duration: 300.ms, curve: Curves.easeOut);
+            )));
   }
 }
 
