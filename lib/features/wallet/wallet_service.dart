@@ -345,30 +345,33 @@ class WalletService extends ChangeNotifier {
         debugPrint('[Puls] RPC proxy balance fetch failed: $e');
       }
 
-      // Fallback to public RPC with retry
-      for (int attempt = 0; attempt < 2; attempt++) {
-        try {
-          final res = await _client.post(
-            Uri.parse(publicRpc),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'jsonrpc': '2.0',
-              'method': 'eth_call',
-              'params': [{'to': usdc, 'data': data}, 'latest'],
-              'id': 1,
-            }),
-          ).timeout(const Duration(seconds: 8));
-          final result = (jsonDecode(res.body) as Map)['result'] as String?;
-          if (result != null && result.length >= 2) {
-            final raw = BigInt.tryParse(result.replaceFirst('0x', ''), radix: 16) ?? BigInt.zero;
-            final balance = raw / BigInt.from(1000000);
-            _setState(_state.copyWith(usdcBalance: balance.toStringAsFixed(2)));
-            return;
+      // Fallback to public RPC with retry — only on native (web is always
+      // CORS-blocked against third-party RPCs, backend endpoint is the fallback)
+      if (!kIsWeb) {
+        for (int attempt = 0; attempt < 2; attempt++) {
+          try {
+            final res = await _client.post(
+              Uri.parse(publicRpc),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'jsonrpc': '2.0',
+                'method': 'eth_call',
+                'params': [{'to': usdc, 'data': data}, 'latest'],
+                'id': 1,
+              }),
+            ).timeout(const Duration(seconds: 8));
+            final result = (jsonDecode(res.body) as Map)['result'] as String?;
+            if (result != null && result.length >= 2) {
+              final raw = BigInt.tryParse(result.replaceFirst('0x', ''), radix: 16) ?? BigInt.zero;
+              final balance = raw / BigInt.from(1000000);
+              _setState(_state.copyWith(usdcBalance: balance.toStringAsFixed(2)));
+              return;
+            }
+            break; // got a response but no usable result — don't retry
+          } catch (e) {
+            debugPrint('[Puls] Public RPC attempt ${attempt + 1} failed: $e');
+            if (attempt == 0) await Future.delayed(const Duration(seconds: 2));
           }
-          break; // got a response but no usable result — don't retry
-        } catch (e) {
-          debugPrint('[Puls] Public RPC attempt ${attempt + 1} failed: $e');
-          if (attempt == 0) await Future.delayed(const Duration(seconds: 2));
         }
       }
     } catch (e) {

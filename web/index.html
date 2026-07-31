@@ -329,8 +329,9 @@
 
   </style>
 
-  <!-- Ethers.js for WalletConnect — deferred: only needed for wallet actions, not first paint -->
-  <script defer src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+  <!-- Ethers.js for WalletConnect — vendored locally: CDN copies get blocked by
+       browser Tracking Prevention (3rd-party script), which broke wallet actions -->
+  <script defer src="/vendor/ethers.umd.min.js"></script>
   <!-- Vercel Web Analytics + Speed Insights (enable both in the Vercel project dashboard) -->
   <script defer src="/_vercel/insights/script.js"></script>
   <script defer src="/_vercel/speed-insights/script.js"></script>
