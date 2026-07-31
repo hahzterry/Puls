@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/config.dart' show backendUrl;
 import '../../../core/theme/app_theme.dart';
 
-/// AI vs Humans battle scoreboard — real numbers from /api/stats.
+/// AI vs Humans battle scoreboard вЂ” real numbers from /api/stats.
 /// Shows trade count, volume, and win rate for agents vs humans.
 class BattleScoreboard extends StatefulWidget {
   const BattleScoreboard({super.key});
@@ -27,7 +27,9 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
 
   void _fetch() async {
     try {
-      final res = await http.get(Uri.parse('$backendUrl/api/stats')).timeout(const Duration(seconds: 5));
+      final res = await http
+          .get(Uri.parse('$backendUrl/api/stats'))
+          .timeout(const Duration(seconds: 5));
       if (res.statusCode == 200 && mounted) {
         setState(() => _stats = jsonDecode(res.body));
       }
@@ -74,18 +76,29 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
                       letterSpacing: 1.5)),
               const Spacer(),
               Container(
-                width: 6, height: 6,
-                decoration: const BoxDecoration(color: Color(0xFF2DD4BF), shape: BoxShape.circle, boxShadow: [BoxShadow(color: Color(0xFF2DD4BF), blurRadius: 4)]),
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                    color: Color(0xFF2DD4BF),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Color(0xFF2DD4BF), blurRadius: 4)
+                    ]),
               ),
               const SizedBox(width: 6),
               const Text('LIVE',
-                  style: TextStyle(color: Color(0xFF2DD4BF), fontSize: 9, fontWeight: FontWeight.w800, fontFamily: PulsColors.fontMono)),
+                  style: TextStyle(
+                      color: Color(0xFF2DD4BF),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: PulsColors.fontMono)),
             ],
           ),
           const SizedBox(height: 14),
           _battleBar('TRADES', agentTrades, humanTrades, agentTradePct),
           const SizedBox(height: 10),
-          _battleBar('VOLUME USDC', agentVol, humanVol, agentVolPct, isMoney: true),
+          _battleBar('VOLUME USDC', agentVol, humanVol, agentVolPct,
+              isMoney: true),
           const SizedBox(height: 14),
           Row(
             children: [
@@ -93,9 +106,13 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
               const SizedBox(width: 10),
               _scoreCard('AI TRADES', '$agentTrades', const Color(0xFFF59E0B)),
               const SizedBox(width: 10),
-              _scoreCard('HUMAN TRADES', '$humanTrades', const Color(0xFFEC4899)),
+              _scoreCard(
+                  'HUMAN TRADES', '$humanTrades', const Color(0xFFEC4899)),
               const SizedBox(width: 10),
-              _scoreCard('PROTOCOL REV', '\$${(_stats?['protocolRevenueUsdc'] as num?)?.toDouble().toStringAsFixed(2) ?? '0.00'}', const Color(0xFFA855F7)),
+              _scoreCard(
+                  'PROTOCOL REV',
+                  '\$${(_stats?['protocolRevenueUsdc'] as num?)?.toDouble().toStringAsFixed(2) ?? '0.00'}',
+                  const Color(0xFFA855F7)),
             ],
           ),
         ],
@@ -103,7 +120,8 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
     );
   }
 
-  Widget _battleBar(String label, num aiVal, num humanVal, double aiPct, {bool isMoney = false}) {
+  Widget _battleBar(String label, num aiVal, num humanVal, double aiPct,
+      {bool isMoney = false}) {
     final fmt = (v) => isMoney ? '\$${v.toStringAsFixed(0)}' : '$v';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,9 +129,25 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('${fmt(aiVal)} AI', style: const TextStyle(color: Color(0xFF2DD4BF), fontSize: 11, fontWeight: FontWeight.w700, fontFamily: PulsColors.fontMono)),
-            Text(label, style: const TextStyle(color: Color(0xFF5E6A85), fontSize: 9, fontWeight: FontWeight.w800, fontFamily: PulsColors.fontMono, letterSpacing: 1)),
-            Text('${fmt(humanVal)} HUMAN', style: const TextStyle(color: Color(0xFFEC4899), fontSize: 11, fontWeight: FontWeight.w700, fontFamily: PulsColors.fontMono)),
+            Text('${fmt(aiVal)} AI',
+                style: const TextStyle(
+                    color: Color(0xFF2DD4BF),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: PulsColors.fontMono)),
+            Text(label,
+                style: const TextStyle(
+                    color: Color(0xFF5E6A85),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: PulsColors.fontMono,
+                    letterSpacing: 1)),
+            Text('${fmt(humanVal)} HUMAN',
+                style: const TextStyle(
+                    color: Color(0xFFEC4899),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: PulsColors.fontMono)),
           ],
         ),
         const SizedBox(height: 4),
@@ -123,8 +157,12 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
             height: 6,
             child: Row(
               children: [
-                Expanded(flex: (aiPct * 1000).round().clamp(1, 999), child: Container(color: const Color(0xFF2DD4BF))),
-                Expanded(flex: ((1 - aiPct) * 1000).round().clamp(1, 999), child: Container(color: const Color(0xFFEC4899))),
+                Expanded(
+                    flex: (aiPct * 1000).round().clamp(1, 999),
+                    child: Container(color: const Color(0xFF2DD4BF))),
+                Expanded(
+                    flex: ((1 - aiPct) * 1000).round().clamp(1, 999),
+                    child: Container(color: const Color(0xFFEC4899))),
               ],
             ),
           ),
@@ -144,9 +182,20 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
         ),
         child: Column(
           children: [
-            Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 7.5, fontWeight: FontWeight.w700, fontFamily: PulsColors.fontMono, letterSpacing: 0.5)),
+            Text(label,
+                style: TextStyle(
+                    color: color.withValues(alpha: 0.7),
+                    fontSize: 7.5,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: PulsColors.fontMono,
+                    letterSpacing: 0.5)),
             const SizedBox(height: 3),
-            Text(value, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w900, fontFamily: PulsColors.fontMono)),
+            Text(value,
+                style: TextStyle(
+                    color: color,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: PulsColors.fontMono)),
           ],
         ),
       ),

@@ -7,6 +7,7 @@ import '../../core/utils/formatters.dart';
 import '../../core/config.dart';
 import '../../app/puls_app.dart';
 import '../../core/widgets/puls_avatar.dart';
+import '../../core/widgets/puls_page_route.dart';
 import 'user_chat_screen.dart';
 
 class InboxScreen extends StatefulWidget {
@@ -30,7 +31,8 @@ class _InboxScreenState extends State<InboxScreen> {
     final auth = Supabase.instance.client.auth;
     var s = auth.currentSession;
     final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final needsRefresh = s == null || (s.expiresAt != null && s.expiresAt! - nowSec < 60);
+    final needsRefresh =
+        s == null || (s.expiresAt != null && s.expiresAt! - nowSec < 60);
     if (needsRefresh) {
       try {
         final res = await auth.refreshSession();
@@ -75,33 +77,50 @@ class _InboxScreenState extends State<InboxScreen> {
       backgroundColor: t.bg,
       appBar: AppBar(
         backgroundColor: t.surface,
-        title: Text('Messages', style: TextStyle(color: t.text, fontSize: 18, fontWeight: FontWeight.bold)),
+        title: Text('Messages',
+            style: TextStyle(
+                color: t.text, fontSize: 18, fontWeight: FontWeight.bold)),
         iconTheme: IconThemeData(color: t.textSubtle),
         elevation: 0,
         shape: Border(bottom: BorderSide(color: t.border)),
       ),
       body: uid == null
-          ? Center(child: Text('Sign in to view messages', style: TextStyle(color: t.textSubtle)))
+          ? Center(
+              child: Text('Sign in to view messages',
+                  style: TextStyle(color: t.textSubtle)))
           : _loading
               ? Center(child: CircularProgressIndicator(color: t.brand))
               : _conversations.isEmpty
-                  ? Center(child: Text('No active conversations', style: TextStyle(color: t.textSubtle)))
+                  ? Center(
+                      child: Text('No active conversations',
+                          style: TextStyle(color: t.textSubtle)))
                   : ListView.separated(
                       itemCount: _conversations.length,
-                      separatorBuilder: (context, index) => Divider(color: t.border, height: 1),
+                      separatorBuilder: (context, index) =>
+                          Divider(color: t.border, height: 1),
                       itemBuilder: (context, i) {
                         final conv = _conversations[i];
-                        final partnerId = conv['user_id'] == uid ? conv['target_id'] : conv['user_id'];
+                        final partnerId = conv['user_id'] == uid
+                            ? conv['target_id']
+                            : conv['user_id'];
                         final isMe = conv['user_id'] == uid;
                         final dt = DateTime.parse(conv['created_at']).toLocal();
 
                         return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          leading: PulsAvatar(url: null, name: partnerId, size: 48),
-                          title: Text(partnerId, style: TextStyle(color: t.text, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          leading:
+                              PulsAvatar(url: null, name: partnerId, size: 48),
+                          title: Text(partnerId,
+                              style: TextStyle(
+                                  color: t.text, fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
                           subtitle: Row(
                             children: [
-                              if (isMe) Icon(Icons.check, size: 12, color: t.textSubtle),
+                              if (isMe)
+                                Icon(Icons.check,
+                                    size: 12, color: t.textSubtle),
                               if (isMe) const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
@@ -113,12 +132,16 @@ class _InboxScreenState extends State<InboxScreen> {
                               ),
                             ],
                           ),
-                          trailing: Text(timeAgoShort(dt, includeYears: true), style: TextStyle(color: t.textSubtle, fontSize: 12)),
+                          trailing: Text(timeAgoShort(dt, includeYears: true),
+                              style:
+                                  TextStyle(color: t.textSubtle, fontSize: 12)),
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => UserChatScreen(targetUserId: partnerId),
+                              pulsRoute(
+                                context,
+                                builder: (context) =>
+                                    UserChatScreen(targetUserId: partnerId),
                               ),
                             ).then((_) => _fetch());
                           },

@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../motion.dart';
 import '../theme/app_theme.dart';
 
 /// The single sparkline used across the app (feed, discover, home, terminal).
@@ -52,7 +53,6 @@ class PulsSparkline extends StatelessWidget {
       );
     }
 
-    final t = context.puls;
     final minY = prices.reduce((a, b) => a < b ? a : b);
     final maxY = prices.reduce((a, b) => a > b ? a : b);
     final pad = (maxY - minY) < 0.01 ? 0.05 : (maxY - minY) * 0.2;
@@ -84,8 +84,7 @@ class PulsSparkline extends StatelessWidget {
             barWidth: strokeWidth,
             dotData: FlDotData(
               show: showLastDot,
-              getDotPainter: (spot, percent, bar, index) =>
-                  FlDotCirclePainter(
+              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
                 radius: 2.6,
                 color: color,
                 strokeWidth: 1.5,

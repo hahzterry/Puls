@@ -384,7 +384,7 @@ class _FeedHeader extends StatelessWidget {
                       ).start(context);
                     case 'swipe':
                       final appState = PulsStateScope.of(context);
-                      Navigator.of(context).push(MaterialPageRoute(
+                      Navigator.of(context).push(pulsRoute(context,
                           builder: (_) => SwipeDiscoveryScreen(
                                 markets: appState.markets,
                                 onSwipeYes: (m) => showTradePreviewSheet(

@@ -94,7 +94,8 @@ class OnboardingSheet extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.t, required this.content, required this.isWelcome});
+  const _Header(
+      {required this.t, required this.content, required this.isWelcome});
 
   final PulsThemeColors t;
   final OnboardingContent content;
@@ -220,19 +221,27 @@ class _TipCard extends StatelessWidget {
         color: t.surfaceRaised.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: t.border),
+        boxShadow: [
+          BoxShadow(
+            color: t.brand.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: t.brand.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              gradient: PulsColors.pulseGradient,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: PulsColors.brandGlow(intensity: 0.25, blur: 14),
             ),
             child: Center(
-              child: Picon(tip.icon, size: 18, color: t.brand),
+              child: Picon(tip.icon, size: 18, color: Colors.white),
             ),
           ),
           const SizedBox(width: 12),
@@ -286,9 +295,13 @@ class _Footer extends StatelessWidget {
               onTap: () => Navigator.of(context).maybePop(),
               behavior: HitTestBehavior.opaque,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Text('Explore first',
-                    style: TextStyle(color: t.textMuted, fontSize: 13.5, fontWeight: FontWeight.w700)),
+                    style: TextStyle(
+                        color: t.textMuted,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700)),
               ),
             ),
             const Spacer(),
@@ -299,13 +312,21 @@ class _Footer extends StatelessWidget {
               },
               behavior: HitTestBehavior.opaque,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(color: t.brand, borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                    color: t.brand,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: PulsColors.brandGlow(intensity: 0.3)),
                 child: const Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.south_west_rounded, color: Colors.white, size: 16),
                   SizedBox(width: 7),
                   Text('Fund my wallet',
-                      style: TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w800, letterSpacing: -0.2)),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2)),
                 ]),
               ),
             ),
@@ -335,7 +356,8 @@ class _Footer extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
               decoration: BoxDecoration(
                 color: t.brand,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: PulsColors.brandGlow(intensity: 0.3),
               ),
               child: Text(
                 isWelcome ? 'Start trading' : 'Got it',

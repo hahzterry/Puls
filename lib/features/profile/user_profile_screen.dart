@@ -12,6 +12,7 @@ import '../../core/widgets/puls_sheet.dart';
 import '../../core/widgets/puls_loader.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/widgets/puls_avatar.dart';
+import '../../core/widgets/puls_page_route.dart';
 import '../shell/web_layout.dart';
 import '../comments/comment_thread.dart';
 import '../alpha/alpha_actions.dart';
@@ -28,7 +29,8 @@ String _profileDisplayName(Map<String, dynamic>? profile, String userId) {
   if (name != null && name.isNotEmpty && name != 'Puls Trader') return name;
   if (userId.startsWith('eth_') && userId.length > 10) {
     final addr = userId.replaceFirst('eth_', '');
-    if (addr.length > 10) return '${addr.substring(0, 6)}…${addr.substring(addr.length - 4)}';
+    if (addr.length > 10)
+      return '${addr.substring(0, 6)}…${addr.substring(addr.length - 4)}';
   }
   if (userId.startsWith('0x') && userId.length > 10) {
     return '${userId.substring(0, 6)}…${userId.substring(userId.length - 4)}';
@@ -85,7 +87,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final tip = DeferredTip(
       delay: const Duration(seconds: 5),
       onFire: () async {
-        messenger.hideCurrentSnackBar(); // clear the "Tipping…" bar before the receipt
+        messenger
+            .hideCurrentSnackBar(); // clear the "Tipping…" bar before the receipt
         try {
           final res = await wallet.tipCreator(
             amountUsdc: 0.05,
@@ -95,7 +98,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           if (!mounted) return;
           await PaymentReceiptSheet.show(
             context,
-            PaymentReceipt.fromResponse(res, amountUsd: 0.05, creatorHandle: handle),
+            PaymentReceipt.fromResponse(res,
+                amountUsd: 0.05, creatorHandle: handle),
           );
         } catch (e) {
           if (!mounted) return;
@@ -189,7 +193,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       backgroundColor: t.bg,
       appBar: AppBar(
         title: AnimatedGradientText(
-          _isLoading ? 'Trader Profile' : (_profile?['display_name'] ?? 'Trader Profile'),
+          _isLoading
+              ? 'Trader Profile'
+              : (_profile?['display_name'] ?? 'Trader Profile'),
           textAlign: TextAlign.left,
           style: const TextStyle(
             fontWeight: FontWeight.w900,
@@ -218,8 +224,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (currentUserId != null && currentUserId == widget.userId) return null;
 
     final name = _profileDisplayName(_profile, widget.userId);
-    final tipHandle =
-        name.startsWith('@') ? name : '@${name.replaceAll(' ', '').toLowerCase()}';
+    final tipHandle = name.startsWith('@')
+        ? name
+        : '@${name.replaceAll(' ', '').toLowerCase()}';
 
     return SafeArea(
       top: false,
@@ -237,23 +244,34 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: t.border),
                   padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
-                child: Text('Copy', style: TextStyle(color: t.text, fontWeight: FontWeight.w800)),
+                child: Text('Copy',
+                    style:
+                        TextStyle(color: t.text, fontWeight: FontWeight.w800)),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: OutlinedButton(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => UserChatScreen(targetUserId: widget.userId, targetUserName: name)));
+                  Navigator.push(
+                      context,
+                      pulsRoute(context,
+                          builder: (_) => UserChatScreen(
+                              targetUserId: widget.userId,
+                              targetUserName: name)));
                 },
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: t.border),
                   padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
-                child: Text('Chat', style: TextStyle(color: t.text, fontWeight: FontWeight.w800)),
+                child: Text('Chat',
+                    style:
+                        TextStyle(color: t.text, fontWeight: FontWeight.w800)),
               ),
             ),
             const SizedBox(width: 8),
@@ -264,10 +282,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 style: FilledButton.styleFrom(
                   backgroundColor: t.brand,
                   padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
-                icon: const Icon(Icons.volunteer_activism_rounded, size: 17, color: Colors.white),
-                label: const Text('Tip \$0.05', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                icon: const Icon(Icons.volunteer_activism_rounded,
+                    size: 17, color: Colors.white),
+                label: const Text('Tip \$0.05',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w800)),
               ),
             ),
           ],
@@ -282,12 +304,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final avatarUrl = _profile?['avatar_url'] as String?;
 
     // Creator-economy enrichments (all graceful — backend may not send them yet).
-    final isAgent = _profile?['isAgent'] == true || _profile?['is_agent'] == true;
-    final reputation = _parseInt(_profile?['reputation'] ?? _profile?['erc8004Reputation']);
-    final earningsRaw =
-        _profile?['creatorEarningsUsd'] ?? _stats?['earningsUsd'] ?? _stats?['creator_earnings_usd'];
+    final isAgent =
+        _profile?['isAgent'] == true || _profile?['is_agent'] == true;
+    final reputation =
+        _parseInt(_profile?['reputation'] ?? _profile?['erc8004Reputation']);
+    final earningsRaw = _profile?['creatorEarningsUsd'] ??
+        _stats?['earningsUsd'] ??
+        _stats?['creator_earnings_usd'];
     final earningsUsd = earningsRaw == null ? null : _parseFloat(earningsRaw);
-    final sparkRaw = (_stats?['earningsSpark'] ?? _stats?['earnings_spark']) as List?;
+    final sparkRaw =
+        (_stats?['earningsSpark'] ?? _stats?['earnings_spark']) as List?;
     final spark = sparkRaw?.map(_parseFloat).toList() ?? const <double>[];
 
     final currentUserId = WalletServiceScope.of(context).state.userId;
@@ -309,7 +335,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               padding: const EdgeInsets.all(2.5),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [t.brand, PulsColors.brandMint, t.brand.withValues(alpha: 0.3)],
+                  colors: [
+                    t.brand,
+                    PulsColors.brandMint,
+                    t.brand.withValues(alpha: 0.3)
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -329,7 +359,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 children: [
                   Text(
                     name,
-                    style: TextStyle(color: t.text, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                    style: TextStyle(
+                        color: t.text,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5),
                   ),
                   const SizedBox(height: 6),
                   if (address != null) ...[
@@ -340,7 +374,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             duration: const Duration(seconds: 2));
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: t.surface,
                           borderRadius: BorderRadius.circular(6),
@@ -349,11 +384,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.copy_rounded, size: 10, color: t.textSubtle),
+                            Icon(Icons.copy_rounded,
+                                size: 10, color: t.textSubtle),
                             const SizedBox(width: 4),
                             Text(
                               '${address.substring(0, 6)}...${address.substring(address.length - 4)}',
-                              style: TextStyle(color: t.textSubtle, fontSize: 10, fontFamily: 'monospace'),
+                              style: TextStyle(
+                                  color: t.textSubtle,
+                                  fontSize: 10,
+                                  fontFamily: 'monospace'),
                             ),
                           ],
                         ),
@@ -361,14 +400,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ),
                   ] else ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: t.brandSubtle,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         'Supabase Account',
-                        style: TextStyle(color: t.brand, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: t.brand,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -399,7 +442,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final pnlVal = _parseFloat(_stats?['pnl']);
     final winRateVal = _parseFloat(_stats?['winRate'] ?? _stats?['win_rate']);
     final volumeVal = _parseFloat(_stats?['volume']);
-    final tradesCountVal = _parseInt(_stats?['tradesCount'] ?? _stats?['trades_count']);
+    final tradesCountVal =
+        _parseInt(_stats?['tradesCount'] ?? _stats?['trades_count']);
 
     Widget statsGrid = Column(
       children: [
@@ -408,7 +452,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             Expanded(
               child: _StatCard(
                 label: 'TOTAL PROFIT',
-                value: '${pnlVal >= 0 ? '+' : ''}\$${pnlVal.toStringAsFixed(2)}',
+                value:
+                    '${pnlVal >= 0 ? '+' : ''}\$${pnlVal.toStringAsFixed(2)}',
                 valueColor: pnlVal >= 0 ? t.yes : t.no,
                 icon: Icons.show_chart_rounded,
                 t: t,
@@ -418,7 +463,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             Expanded(
               child: _StatCard(
                 label: 'WIN RATE',
-                value: winRateVal == 0 ? '—' : '${winRateVal.toStringAsFixed(1)}%',
+                value:
+                    winRateVal == 0 ? '—' : '${winRateVal.toStringAsFixed(1)}%',
                 valueColor: t.text,
                 icon: Icons.emoji_events_rounded,
                 t: t,
@@ -481,7 +527,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     const SizedBox(height: 12),
                     Text(
                       'No trades yet — this trader is just getting started.',
-                      style: TextStyle(color: t.textMuted, fontSize: 13, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: t.textMuted,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -556,10 +605,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     Widget segmentBody;
     switch (_segment) {
       case 'signals':
-        segmentBody = SignalsSection(creatorUserId: widget.userId, isOwner: isSelf);
+        segmentBody =
+            SignalsSection(creatorUserId: widget.userId, isOwner: isSelf);
         break;
       case 'discussion':
-        segmentBody = CommentThread(targetType: 'profile', targetId: widget.userId);
+        segmentBody =
+            CommentThread(targetType: 'profile', targetId: widget.userId);
         break;
       default:
         segmentBody = Column(
@@ -567,7 +618,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         );
     }
 
-    final earningsCard = CreatorEarningsCard(earningsUsd: earningsUsd, spark: spark);
+    final earningsCard =
+        CreatorEarningsCard(earningsUsd: earningsUsd, spark: spark);
     final copyCard = KeyedSubtree(
       key: _copyKey,
       child: _CopyTraderCard(leaderUserId: widget.userId, leaderName: name),
@@ -779,11 +831,15 @@ class _CopyTraderCardState extends State<_CopyTraderCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Copy ${widget.leaderName}',
-                      style: TextStyle(color: t.text, fontSize: 18, fontWeight: FontWeight.w900)),
+                      style: TextStyle(
+                          color: t.text,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900)),
                   const SizedBox(height: 6),
                   Text(
                     'Each time this trader opens a position, we mirror it onto your wallet — up to your per-trade cap.',
-                    style: TextStyle(color: t.textSubtle, fontSize: 13, height: 1.4),
+                    style: TextStyle(
+                        color: t.textSubtle, fontSize: 13, height: 1.4),
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -791,9 +847,15 @@ class _CopyTraderCardState extends State<_CopyTraderCard> {
                     children: [
                       Text('MAX PER TRADE',
                           style: TextStyle(
-                              color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                              color: t.textSubtle,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1)),
                       Text('\$${temp.toStringAsFixed(2)}',
-                          style: TextStyle(color: t.brand, fontSize: 16, fontWeight: FontWeight.w900)),
+                          style: TextStyle(
+                              color: t.brand,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900)),
                     ],
                   ),
                   Slider(
@@ -809,14 +871,19 @@ class _CopyTraderCardState extends State<_CopyTraderCard> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.of(ctx).pop(double.parse(temp.toStringAsFixed(2))),
+                      onPressed: () => Navigator.of(ctx)
+                          .pop(double.parse(temp.toStringAsFixed(2))),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: t.brand,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
                       ),
                       child: const Text('Start copying',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15)),
                     ),
                   ),
                 ],
@@ -845,7 +912,8 @@ class _CopyTraderCardState extends State<_CopyTraderCard> {
             Expanded(
               child: Text(
                 _following ? 'Copying this trader' : 'Copy this trader',
-                style: TextStyle(color: t.text, fontSize: 15, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                    color: t.text, fontSize: 15, fontWeight: FontWeight.w900),
               ),
             ),
             if (_following)
@@ -856,7 +924,10 @@ class _CopyTraderCardState extends State<_CopyTraderCard> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text('\$${_maxPerTrade.toStringAsFixed(2)}/trade',
-                    style: TextStyle(color: t.brand, fontSize: 11, fontWeight: FontWeight.w800)),
+                    style: TextStyle(
+                        color: t.brand,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800)),
               ),
           ],
         ),
@@ -874,14 +945,18 @@ class _CopyTraderCardState extends State<_CopyTraderCard> {
               ? OutlinedButton.icon(
                   onPressed: _busy ? null : _stopCopying,
                   icon: _busy
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.stop_circle_outlined, size: 18),
                   label: const Text('Stop copying'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: t.text,
                     side: BorderSide(color: t.border),
                     padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                   ),
                 )
               : ElevatedButton.icon(
@@ -890,14 +965,18 @@ class _CopyTraderCardState extends State<_CopyTraderCard> {
                       ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.content_copy_rounded, size: 18, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.content_copy_rounded,
+                          size: 18, color: Colors.white),
                   label: const Text('Copy this trader',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w800)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: t.brand,
                     padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
         ),
@@ -949,12 +1028,19 @@ class _StatCard extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(color: t.textMuted, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                  style: TextStyle(
+                      color: t.textMuted,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: TextStyle(color: valueColor, fontSize: 15, fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                      color: valueColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900),
                 ),
               ],
             ),
@@ -977,10 +1063,10 @@ class _TradeHistoryRow extends StatelessWidget {
     final amt = _parseFloat(trade['usdc_amount']);
     final isBuy = amt > 0;
     final isClaim = side == 'CLAIM';
-    
+
     Color amountColor = t.text;
     String actionLabel = '';
-    
+
     if (isClaim) {
       amountColor = t.yes;
       actionLabel = 'Claimed Winnings';
@@ -992,12 +1078,14 @@ class _TradeHistoryRow extends StatelessWidget {
       actionLabel = 'Sold $side';
     }
 
-    final displayAmt = isClaim 
-        ? '\$0.00' 
+    final displayAmt = isClaim
+        ? '\$0.00'
         : '${isBuy ? '-' : '+'}\$${amt.abs().toStringAsFixed(2)}';
 
-    final date = DateTime.tryParse(trade['created_at'] as String? ?? '') ?? DateTime.now();
-    final formattedDate = '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    final date = DateTime.tryParse(trade['created_at'] as String? ?? '') ??
+        DateTime.now();
+    final formattedDate =
+        '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
 
     return GlassCard(
       padding: const EdgeInsets.all(14),
@@ -1008,23 +1096,23 @@ class _TradeHistoryRow extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: isClaim 
-                  ? t.yesBg 
-                  : isBuy 
-                      ? t.noBg 
+              color: isClaim
+                  ? t.yesBg
+                  : isBuy
+                      ? t.noBg
                       : t.yesBg,
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isClaim 
-                  ? Icons.emoji_events_outlined 
-                  : isBuy 
-                      ? Icons.shopping_basket_outlined 
+              isClaim
+                  ? Icons.emoji_events_outlined
+                  : isBuy
+                      ? Icons.shopping_basket_outlined
                       : Icons.sell_outlined,
-              color: isClaim 
-                  ? t.yes 
-                  : isBuy 
-                      ? t.no 
+              color: isClaim
+                  ? t.yes
+                  : isBuy
+                      ? t.no
                       : t.yes,
               size: 16,
             ),
@@ -1038,12 +1126,16 @@ class _TradeHistoryRow extends StatelessWidget {
                   trade['question'] ?? 'Prediction Trade',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: t.text, fontSize: 13, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: t.text, fontSize: 13, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '$actionLabel · $formattedDate',
-                  style: TextStyle(color: t.textMuted, fontSize: 10, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                      color: t.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -1056,20 +1148,28 @@ class _TradeHistoryRow extends StatelessWidget {
             children: [
               Text(
                 displayAmt,
-                style: TextStyle(color: amountColor, fontSize: 13, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                    color: amountColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 2),
-              if (trade['tx_hash'] != null && (trade['tx_hash'] as String).isNotEmpty)
+              if (trade['tx_hash'] != null &&
+                  (trade['tx_hash'] as String).isNotEmpty)
                 GestureDetector(
                   onTap: () => launchUrl(
-                    Uri.parse('https://testnet.arcscan.app/tx/${trade['tx_hash']}'),
+                    Uri.parse(
+                        'https://testnet.arcscan.app/tx/${trade['tx_hash']}'),
                     mode: LaunchMode.externalApplication,
                   ),
                   child: Row(
                     children: [
                       Text(
                         'View Tx',
-                        style: TextStyle(color: t.brand, fontSize: 9, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: t.brand,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 2),
                       Icon(Icons.open_in_new_rounded, size: 8, color: t.brand),

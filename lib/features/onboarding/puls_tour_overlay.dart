@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -367,12 +366,11 @@ class _TourPopover extends StatelessWidget {
     final showBelow = spaceBelow > 240 || targetRect.top < 240;
 
     // Horizontal position: center on target, clamped to screen edges.
-    final left = (targetRect.center.dx - _cardWidth / 2)
-        .clamp(12.0, (screenSize.width - _cardWidth - 12).clamp(12.0, double.infinity));
+    final left = (targetRect.center.dx - _cardWidth / 2).clamp(12.0,
+        (screenSize.width - _cardWidth - 12).clamp(12.0, double.infinity));
 
     // Arrow x within the card.
-    final arrowX =
-        (targetRect.center.dx - left).clamp(24.0, _cardWidth - 24.0);
+    final arrowX = (targetRect.center.dx - left).clamp(24.0, _cardWidth - 24.0);
 
     final card = Opacity(
       opacity: opacity.clamp(0.0, 1.0),
@@ -394,9 +392,8 @@ class _TourPopover extends StatelessWidget {
       left: left,
       width: _cardWidth,
       top: showBelow ? targetRect.bottom + _gap - 10 : null,
-      bottom: showBelow
-          ? null
-          : (screenSize.height - targetRect.top) + _gap - 10,
+      bottom:
+          showBelow ? null : (screenSize.height - targetRect.top) + _gap - 10,
       child: card,
     );
   }
@@ -430,142 +427,133 @@ class _TourPopover extends StatelessWidget {
           ),
         ],
       ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Step badge + skip.
+          Row(
             children: [
-              // Step badge + skip.
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      gradient: PulsColors.pulseGradient,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      'STEP ${stepIndex + 1} OF $stepCount',
-                      style: const TextStyle(
-                        fontFamily: PulsColors.fontSans,
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: PulsColors.pulseGradient,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'STEP ${stepIndex + 1} OF $stepCount',
+                  style: const TextStyle(
+                    fontFamily: PulsColors.fontSans,
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
                   ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: onSkip,
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Text(
-                        'Skip',
-                        style: TextStyle(
-                          fontFamily: PulsColors.fontSans,
-                          color: t.textSubtle,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text(
-                step.title,
-                style: TextStyle(
-                  fontFamily: PulsColors.fontDisplay,
-                  color: t.text,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                step.description,
-                style: TextStyle(
-                  fontFamily: PulsColors.fontSans,
-                  color: t.textMuted,
-                  fontSize: 14,
-                  height: 1.55,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  // Progress dots.
-                  Row(
-                    children: List.generate(stepCount, (i) {
-                      final active = i == stepIndex;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeOut,
-                        margin: const EdgeInsets.only(right: 6),
-                        width: active ? 20 : 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          gradient:
-                              active ? PulsColors.pulseGradient : null,
-                          color: active
-                              ? null
-                              : t.border,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      );
-                    }),
-                  ),
-                  const Spacer(),
-                  // Next / Done.
-                  GestureDetector(
-                    onTap: onNext,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: t.brand,
-                        borderRadius: BorderRadius.circular(999),
-                        boxShadow: [
-                          BoxShadow(
-                            color: t.brand.withValues(alpha: 0.25),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            isLast ? 'Got it' : 'Next',
-                            style: const TextStyle(
-                              fontFamily: PulsColors.fontSans,
-                              color: Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Icon(
-                            isLast
-                                ? Icons.check_rounded
-                                : Icons.arrow_forward_rounded,
-                            color: Colors.black,
-                            size: 16,
-                          ),
-                        ],
-                      ),
+              const Spacer(),
+              GestureDetector(
+                onTap: onSkip,
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Text(
+                    'Skip',
+                    style: TextStyle(
+                      fontFamily: PulsColors.fontSans,
+                      color: t.textSubtle,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
+                ),
               ),
             ],
           ),
-        );
+          const SizedBox(height: 14),
+          Text(
+            step.title,
+            style: TextStyle(
+              fontFamily: PulsColors.fontDisplay,
+              color: t.text,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            step.description,
+            style: TextStyle(
+              fontFamily: PulsColors.fontSans,
+              color: t.textMuted,
+              fontSize: 14,
+              height: 1.55,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              // Progress dots.
+              Row(
+                children: List.generate(stepCount, (i) {
+                  final active = i == stepIndex;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                    margin: const EdgeInsets.only(right: 6),
+                    width: active ? 20 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      gradient: active ? PulsColors.pulseGradient : null,
+                      color: active ? null : t.border,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  );
+                }),
+              ),
+              const Spacer(),
+              // Next / Done.
+              GestureDetector(
+                onTap: onNext,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    gradient: PulsColors.pulseGradient,
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: PulsColors.neonGlow(intensity: 0.35),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        isLast ? 'Got it' : 'Next',
+                        style: const TextStyle(
+                          fontFamily: PulsColors.fontSans,
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        isLast
+                            ? Icons.check_rounded
+                            : Icons.arrow_forward_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

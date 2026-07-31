@@ -48,7 +48,8 @@ class _WebLandingPageState extends State<WebLandingPage>
     super.initState();
     // The aurora loops continuously; its start/stop is gated on reduce-motion
     // in build() so motion-sensitive users get a single still frame.
-    _aurora = AnimationController(vsync: this, duration: const Duration(seconds: 18));
+    _aurora =
+        AnimationController(vsync: this, duration: const Duration(seconds: 18));
     _scrollCtrl.addListener(() {
       if (mounted) setState(() => _scrollOffset = _scrollCtrl.offset);
     });
@@ -82,11 +83,12 @@ class _WebLandingPageState extends State<WebLandingPage>
         : PulsColors.brandPink.withValues(alpha: 0.04);
 
     // Scroll progress (0..1) for the top progress bar.
-    final maxExtent = _scrollCtrl.hasClients &&
-            _scrollCtrl.position.hasContentDimensions
-        ? _scrollCtrl.position.maxScrollExtent
-        : 0.0;
-    final progress = maxExtent > 0 ? (_scrollOffset / maxExtent).clamp(0.0, 1.0) : 0.0;
+    final maxExtent =
+        _scrollCtrl.hasClients && _scrollCtrl.position.hasContentDimensions
+            ? _scrollCtrl.position.maxScrollExtent
+            : 0.0;
+    final progress =
+        maxExtent > 0 ? (_scrollOffset / maxExtent).clamp(0.0, 1.0) : 0.0;
 
     return Scaffold(
       backgroundColor: t.bg,
@@ -161,7 +163,8 @@ class _WebLandingPageState extends State<WebLandingPage>
                 controller: _scrollCtrl,
                 child: Column(
                   children: [
-                    RepaintBoundary(child: _HeroSection(scrollOffset: _scrollOffset)),
+                    RepaintBoundary(
+                        child: _HeroSection(scrollOffset: _scrollOffset)),
                     _LazySection(
                       scrollOffset: _scrollOffset,
                       builder: (_) => _Reveal(
@@ -170,10 +173,20 @@ class _WebLandingPageState extends State<WebLandingPage>
                       ),
                     ),
                     const _SectionDivider(),
-                    _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: _HowItWorksSection())),
-                    _Reveal(scrollOffset: _scrollOffset, child: RepaintBoundary(child: _FeaturesSection(scrollOffset: _scrollOffset))),
+                    _Reveal(
+                        scrollOffset: _scrollOffset,
+                        child:
+                            const RepaintBoundary(child: _HowItWorksSection())),
+                    _Reveal(
+                        scrollOffset: _scrollOffset,
+                        child: RepaintBoundary(
+                            child:
+                                _FeaturesSection(scrollOffset: _scrollOffset))),
                     const _SectionDivider(),
-                    _Reveal(scrollOffset: _scrollOffset, child: const RepaintBoundary(child: AccountableAiSection())),
+                    _Reveal(
+                        scrollOffset: _scrollOffset,
+                        child: const RepaintBoundary(
+                            child: AccountableAiSection())),
                     _LazySection(
                       scrollOffset: _scrollOffset,
                       builder: (_) => _Reveal(
@@ -185,7 +198,8 @@ class _WebLandingPageState extends State<WebLandingPage>
                       scrollOffset: _scrollOffset,
                       builder: (_) => _Reveal(
                         scrollOffset: _scrollOffset,
-                        child: const RepaintBoundary(child: MeetTheAgentsSection()),
+                        child: const RepaintBoundary(
+                            child: MeetTheAgentsSection()),
                       ),
                     ),
                     const _SectionDivider(),
@@ -193,14 +207,16 @@ class _WebLandingPageState extends State<WebLandingPage>
                       scrollOffset: _scrollOffset,
                       builder: (_) => _Reveal(
                         scrollOffset: _scrollOffset,
-                        child: const RepaintBoundary(child: LiveTractionSection()),
+                        child:
+                            const RepaintBoundary(child: LiveTractionSection()),
                       ),
                     ),
                     _LazySection(
                       scrollOffset: _scrollOffset,
                       builder: (_) => _Reveal(
                         scrollOffset: _scrollOffset,
-                        child: const RepaintBoundary(child: LiveActivitySection()),
+                        child:
+                            const RepaintBoundary(child: LiveActivitySection()),
                       ),
                     ),
                     _LazySection(
@@ -227,7 +243,8 @@ class _WebLandingPageState extends State<WebLandingPage>
                     ),
                     _LazySection(
                       scrollOffset: _scrollOffset,
-                      builder: (_) => RepaintBoundary(child: _FooterSection(scrollCtrl: _scrollCtrl)),
+                      builder: (_) => RepaintBoundary(
+                          child: _FooterSection(scrollCtrl: _scrollCtrl)),
                     ),
                   ],
                 ),
@@ -291,8 +308,8 @@ class _WebLandingPageState extends State<WebLandingPage>
                           alignment: Alignment.topCenter,
                           heightFactor: progress == 0 ? 0.0001 : progress,
                           child: Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
                                 colors: [
@@ -300,14 +317,16 @@ class _WebLandingPageState extends State<WebLandingPage>
                                   Color(0xFFF65FA9),
                                 ],
                               ),
-                              borderRadius: BorderRadius.all(Radius.circular(100)),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(100)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: PulsColors.brandPink
+                                      .withValues(alpha: 0.5),
+                                  blurRadius: 6,
+                                ),
+                              ],
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: PulsColors.brandPink.withValues(alpha: 0.5),
-                                blurRadius: 6,
-                              ),
-                            ],
                           ),
                         ),
                       ],
@@ -344,11 +363,13 @@ class _InlineNavbar extends StatelessWidget {
     final isMobile = w < 800;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 48, vertical: isMobile ? 12 : 18),
+      padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 16 : 48, vertical: isMobile ? 12 : 18),
       child: Row(
         children: [
           Container(
-            width: 32, height: 32,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               color: t.brandSubtle,
               borderRadius: BorderRadius.circular(10),
@@ -410,7 +431,9 @@ class _InlineNavbar extends StatelessWidget {
           if (!isMobile) ...[
             _SecondaryButton(
               label: 'Terminal',
-              onTap: () => launchUrl(Uri.parse('https://terminal.pulsmarket.tech'), mode: LaunchMode.externalApplication),
+              onTap: () => launchUrl(
+                  Uri.parse('https://terminal.pulsmarket.tech'),
+                  mode: LaunchMode.externalApplication),
               small: true,
             ),
             const SizedBox(width: 8),
@@ -547,7 +570,9 @@ class _StickyNavbar extends StatelessWidget {
                     IconButton(
                       onPressed: appState.toggleThemeMode,
                       icon: Icon(
-                        isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                        isDark
+                            ? Icons.light_mode_rounded
+                            : Icons.dark_mode_rounded,
                         size: 18,
                         color: t.textMuted,
                       ),
@@ -622,17 +647,21 @@ class _NavDropdownState extends State<_NavDropdown> {
               side: BorderSide(color: t.border.withValues(alpha: 0.5)),
             ),
           ),
-          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 8)),
+          padding:
+              const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 8)),
         ),
         menuChildren: widget.items.map((item) {
           return MouseRegion(
             onEnter: (_) => _handleEnter(),
             onExit: (_) => _handleExit(),
             child: MenuItemButton(
-              onPressed: () => launchUrl(Uri.parse(item.$2), mode: LaunchMode.externalApplication),
+              onPressed: () => launchUrl(Uri.parse(item.$2),
+                  mode: LaunchMode.externalApplication),
               style: ButtonStyle(
-                padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
-                overlayColor: WidgetStatePropertyAll(t.brandSubtle.withValues(alpha: 0.5)),
+                padding: const WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+                overlayColor: WidgetStatePropertyAll(
+                    t.brandSubtle.withValues(alpha: 0.5)),
               ),
               child: Text(
                 item.$1,
@@ -647,7 +676,8 @@ class _NavDropdownState extends State<_NavDropdown> {
         }).toList(),
         builder: (context, controller, child) {
           return GestureDetector(
-            onTap: () => controller.isOpen ? controller.close() : controller.open(),
+            onTap: () =>
+                controller.isOpen ? controller.close() : controller.open(),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
@@ -656,7 +686,8 @@ class _NavDropdownState extends State<_NavDropdown> {
                   Text(
                     widget.label,
                     style: TextStyle(
-                      color: _hovered || controller.isOpen ? t.brand : t.textMuted,
+                      color:
+                          _hovered || controller.isOpen ? t.brand : t.textMuted,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
@@ -665,7 +696,8 @@ class _NavDropdownState extends State<_NavDropdown> {
                   Icon(
                     Icons.keyboard_arrow_down_rounded,
                     size: 18,
-                    color: _hovered || controller.isOpen ? t.brand : t.textMuted,
+                    color:
+                        _hovered || controller.isOpen ? t.brand : t.textMuted,
                   ),
                 ],
               ),
@@ -679,7 +711,8 @@ class _NavDropdownState extends State<_NavDropdown> {
 
 /// A small icon-only nav button (used for the Android download link).
 class _NavIcon extends StatefulWidget {
-  const _NavIcon({required this.icon, required this.url, required this.tooltip});
+  const _NavIcon(
+      {required this.icon, required this.url, required this.tooltip});
   final IconData icon;
   final String url;
   final String tooltip;
@@ -701,7 +734,8 @@ class _NavIconState extends State<_NavIcon> {
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
         child: GestureDetector(
-          onTap: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
+          onTap: () => launchUrl(Uri.parse(widget.url),
+              mode: LaunchMode.externalApplication),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
             child: Icon(
@@ -814,8 +848,7 @@ class _HeroSectionState extends State<_HeroSection> {
 
     // Navbar crossfade: the inline (hero) navbar fades out as the sticky one
     // fades in, giving a seamless handoff around 80–200px.
-    final inlineNavOpacity =
-        (1 - widget.scrollOffset / 140).clamp(0.0, 1.0);
+    final inlineNavOpacity = (1 - widget.scrollOffset / 140).clamp(0.0, 1.0);
 
     return ConstrainedBox(
       constraints: BoxConstraints(minHeight: h),
@@ -886,7 +919,8 @@ class _HeroContent extends StatelessWidget {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _HeroCopy(phrase: phrase, phraseIndex: phraseIndex, centered: true),
+              child: _HeroCopy(
+                  phrase: phrase, phraseIndex: phraseIndex, centered: true),
             ),
             const SizedBox(height: 40),
             const Center(child: HeroMarketStack(compact: true)),
@@ -912,7 +946,10 @@ class _HeroContent extends StatelessWidget {
                 children: [
                   Expanded(
                     flex: 11,
-                    child: _HeroCopy(phrase: phrase, phraseIndex: phraseIndex, centered: false),
+                    child: _HeroCopy(
+                        phrase: phrase,
+                        phraseIndex: phraseIndex,
+                        centered: false),
                   ),
                   const SizedBox(width: 48),
                   const Expanded(
@@ -933,7 +970,10 @@ class _HeroContent extends StatelessWidget {
 }
 
 class _HeroCopy extends StatelessWidget {
-  const _HeroCopy({required this.phrase, required this.phraseIndex, required this.centered});
+  const _HeroCopy(
+      {required this.phrase,
+      required this.phraseIndex,
+      required this.centered});
   final String phrase;
   final int phraseIndex;
   final bool centered;
@@ -945,16 +985,17 @@ class _HeroCopy extends StatelessWidget {
     final isDark = context.isDark;
     final w = MediaQuery.sizeOf(context).width;
     final isMobile = w < 1000;
-    final double titleSize = w < 480 ? 44 : (w < 1000 ? 56 : (w < 1250 ? 64 : 74));
+    final double titleSize =
+        w < 480 ? 44 : (w < 1000 ? 56 : (w < 1250 ? 64 : 74));
 
-    final cross = centered ? CrossAxisAlignment.center : CrossAxisAlignment.start;
+    final cross =
+        centered ? CrossAxisAlignment.center : CrossAxisAlignment.start;
     final align = centered ? TextAlign.center : TextAlign.left;
 
     return Column(
       crossAxisAlignment: cross,
       mainAxisSize: MainAxisSize.min,
       children: [
-
         // Live badge
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -978,7 +1019,10 @@ class _HeroCopy extends StatelessWidget {
               ),
             ],
           ),
-        ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, duration: 400.ms, curve: Curves.easeOutCubic),
+        )
+            .animate()
+            .fadeIn(duration: 400.ms)
+            .slideY(begin: 0.2, duration: 400.ms, curve: Curves.easeOutCubic),
         SizedBox(height: isMobile ? 22 : 30),
         // Editorial serif headline
         Text(
@@ -1000,13 +1044,19 @@ class _HeroCopy extends StatelessWidget {
                   ]
                 : null,
           ),
-        ).animate().fadeIn(duration: 500.ms, delay: 60.ms).slideY(begin: 0.18, end: 0, duration: 500.ms, delay: 60.ms, curve: Curves.easeOutCubic),
+        ).animate().fadeIn(duration: 500.ms, delay: 60.ms).slideY(
+            begin: 0.18,
+            end: 0,
+            duration: 500.ms,
+            delay: 60.ms,
+            curve: Curves.easeOutCubic),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 450),
           transitionBuilder: (child, anim) => FadeTransition(
             opacity: anim,
             child: SlideTransition(
-              position: Tween(begin: const Offset(0, 0.35), end: Offset.zero).animate(anim),
+              position: Tween(begin: const Offset(0, 0.35), end: Offset.zero)
+                  .animate(anim),
               child: child,
             ),
           ),
@@ -1023,7 +1073,12 @@ class _HeroCopy extends StatelessWidget {
               letterSpacing: -1.5,
             ),
           ),
-        ).animate().fadeIn(duration: 500.ms, delay: 180.ms).slideY(begin: 0.15, end: 0, duration: 500.ms, delay: 180.ms, curve: Curves.easeOutCubic),
+        ).animate().fadeIn(duration: 500.ms, delay: 180.ms).slideY(
+            begin: 0.15,
+            end: 0,
+            duration: 500.ms,
+            delay: 180.ms,
+            curve: Curves.easeOutCubic),
         SizedBox(height: isMobile ? 18 : 26),
         // Subtitle
         ConstrainedBox(
@@ -1040,7 +1095,12 @@ class _HeroCopy extends StatelessWidget {
               fontWeight: FontWeight.w400,
             ),
           ),
-        ).animate().fadeIn(duration: 500.ms, delay: 300.ms).slideY(begin: 0.12, end: 0, duration: 500.ms, delay: 300.ms, curve: Curves.easeOutCubic),
+        ).animate().fadeIn(duration: 500.ms, delay: 300.ms).slideY(
+            begin: 0.12,
+            end: 0,
+            duration: 500.ms,
+            delay: 300.ms,
+            curve: Curves.easeOutCubic),
         SizedBox(height: isMobile ? 26 : 34),
         // CTAs
         Wrap(
@@ -1051,7 +1111,8 @@ class _HeroCopy extends StatelessWidget {
             Builder(builder: (context) {
               final wallet = WalletServiceScope.of(context);
               return _PrimaryButton(
-                label: wallet.state.isLoading ? 'Connecting…' : 'Get started free',
+                label:
+                    wallet.state.isLoading ? 'Connecting…' : 'Get started free',
                 onTap: wallet.state.isLoading ? null : wallet.signInWithGoogle,
               );
             }),
@@ -1068,7 +1129,21 @@ class _HeroCopy extends StatelessWidget {
               );
             }),
           ],
-        ).animate().fadeIn(duration: 500.ms, delay: 420.ms).slideY(begin: 0.08, end: 0, duration: 500.ms, delay: 420.ms, curve: Curves.easeOutCubic).scaleXY(begin: 0.96, end: 1.0, duration: 500.ms, delay: 420.ms, curve: Curves.easeOutCubic),
+        )
+            .animate()
+            .fadeIn(duration: 500.ms, delay: 420.ms)
+            .slideY(
+                begin: 0.08,
+                end: 0,
+                duration: 500.ms,
+                delay: 420.ms,
+                curve: Curves.easeOutCubic)
+            .scaleXY(
+                begin: 0.96,
+                end: 1.0,
+                duration: 500.ms,
+                delay: 420.ms,
+                curve: Curves.easeOutCubic),
         SizedBox(height: isMobile ? 14 : 18),
         // Tech depth lives in the docs — keep the hero to one clear idea.
         Row(
@@ -1076,7 +1151,9 @@ class _HeroCopy extends StatelessWidget {
           children: [
             Icon(Icons.menu_book_rounded, size: 15, color: t.textSubtle),
             const SizedBox(width: 6),
-            const _InlineLink(label: 'Read the technical docs', url: 'https://docs.pulsmarket.tech'),
+            const _InlineLink(
+                label: 'Read the technical docs',
+                url: 'https://docs.pulsmarket.tech'),
           ],
         ).animate().fadeIn(duration: 400.ms, delay: 540.ms),
         SizedBox(height: isMobile ? 12 : 14),
@@ -1085,7 +1162,8 @@ class _HeroCopy extends StatelessWidget {
           children: [
             Icon(Icons.android_rounded, size: 15, color: t.textSubtle),
             const SizedBox(width: 6),
-            const _InlineLink(label: 'Get the Android app', url: kAndroidApkUrl),
+            const _InlineLink(
+                label: 'Get the Android app', url: kAndroidApkUrl),
             Text('  ·  No wallet, no seed phrase, no risk.',
                 style: TextStyle(color: t.textSubtle, fontSize: 12.5)),
           ],
@@ -1118,7 +1196,8 @@ class _InlineLinkState extends State<_InlineLink> {
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
         child: GestureDetector(
-          onTap: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
+          onTap: () => launchUrl(Uri.parse(widget.url),
+              mode: LaunchMode.externalApplication),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -1177,7 +1256,8 @@ class _PulsingDotState extends State<_PulsingDot>
   void initState() {
     super.initState();
     // Repeat is gated on reduce-motion in build().
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
+    _c = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1200));
   }
 
   @override
@@ -1444,6 +1524,7 @@ class _HowItWorksSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
     final isMobile = w < 760;
+    final t = context.puls;
     const steps = [
       (
         Icons.login_rounded,
@@ -1601,7 +1682,9 @@ class _HowStepState extends State<_HowStep> {
                 Text(widget.step,
                     style: TextStyle(
                         fontFamily: PulsColors.fontDisplay,
-                        color: _hovered ? t.brand.withValues(alpha: 0.7) : t.border,
+                        color: _hovered
+                            ? t.brand.withValues(alpha: 0.7)
+                            : t.border,
                         fontSize: 42,
                         fontWeight: FontWeight.w800,
                         height: 1.0)),
@@ -1616,8 +1699,8 @@ class _HowStepState extends State<_HowStep> {
                     letterSpacing: -0.3)),
             const SizedBox(height: 7),
             Text(widget.body,
-                style:
-                    TextStyle(color: t.textMuted, fontSize: 13.5, height: 1.55)),
+                style: TextStyle(
+                    color: t.textMuted, fontSize: 13.5, height: 1.55)),
           ],
         ),
       ),
@@ -1672,10 +1755,12 @@ class _BentoState extends State<_Bento> {
     if (context.reduceMotion) return cell;
     if (!_revealed) return Opacity(opacity: 0, child: cell);
     final delay = (i * 80).ms;
-    return cell
-        .animate()
-        .fadeIn(duration: 460.ms, delay: delay)
-        .slideY(begin: 0.14, end: 0, duration: 540.ms, delay: delay, curve: Curves.easeOutCubic);
+    return cell.animate().fadeIn(duration: 460.ms, delay: delay).slideY(
+        begin: 0.14,
+        end: 0,
+        duration: 540.ms,
+        delay: delay,
+        curve: Curves.easeOutCubic);
   }
 
   @override
@@ -1690,7 +1775,8 @@ class _BentoState extends State<_Bento> {
         featured: true,
         eyebrow: 'AGENTBOND · SKIN IN THE GAME',
         title: 'Every prediction is staked',
-        body: 'Each agent backs its call with a real USDC AgentBond, locked on-chain. '
+        body:
+            'Each agent backs its call with a real USDC AgentBond, locked on-chain. '
             'Wrong call → bond slashed. Right call → returned, reputation rises. '
             'No cheap talk — reputation is capital at risk.',
         visual: _BondViz(),
@@ -1707,7 +1793,8 @@ class _BentoState extends State<_Bento> {
         accent: Color(0xFF2DD4BF),
         eyebrow: 'AUTONOMOUS · NO HUMAN IN THE LOOP',
         title: 'Agents that decide, not automate',
-        body: 'Pulse researches live sources, reasons with citations, sizes by risk, '
+        body:
+            'Pulse researches live sources, reasons with citations, sizes by risk, '
             'and publishes a HOLD when there is no edge. Genuine agency, on-chain.',
         visual: _AgentDecideViz(),
       );
@@ -1723,7 +1810,8 @@ class _BentoState extends State<_Bento> {
         accent: Color(0xFF0EA5E9),
         eyebrow: 'FINANCE DIRECTOR · x402 · PAID',
         title: 'Your AI portfolio manager',
-        body: 'Pay in USDC and it reads your whole portfolio, then returns a risk-managed '
+        body:
+            'Pay in USDC and it reads your whole portfolio, then returns a risk-managed '
             'basket of +EV predicts sized to your balance — money-back if it loses.',
         visual: _DirectorViz(),
       );
@@ -1740,7 +1828,8 @@ class _BentoState extends State<_Bento> {
         accent: const Color(0xFF3B82F6),
         eyebrow: 'PULS GATEWAY · x402',
         title: 'Agents buy real-world data',
-        body: 'Agents use Circle MPC wallets to purchase verified macro and crypto intel via x402 nanopayments. No hallucination, just verified data.',
+        body:
+            'Agents use Circle MPC wallets to purchase verified macro and crypto intel via x402 nanopayments. No hallucination, just verified data.',
         visual: const _GatewayViz(),
         horizontal: wide,
       );
@@ -1917,7 +2006,8 @@ class _BentoCellState extends State<_BentoCell> {
             colors: [
               t.surface,
               Color.alphaBlend(
-                  a.withValues(alpha: widget.featured ? 0.07 : 0.04), t.surface),
+                  a.withValues(alpha: widget.featured ? 0.07 : 0.04),
+                  t.surface),
             ],
           ),
           borderRadius: BorderRadius.circular(24),
@@ -2128,7 +2218,8 @@ class _AgentDecideVizState extends State<_AgentDecideViz>
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(seconds: 12));
+    _c =
+        AnimationController(vsync: this, duration: const Duration(seconds: 12));
   }
 
   @override
@@ -2228,8 +2319,8 @@ class _AgentDecideVizState extends State<_AgentDecideViz>
                     widthFactor: conf.clamp(0.0, 1.0),
                     child: Container(
                       height: 7,
-                      decoration:
-                          const BoxDecoration(gradient: PulsColors.pulseGradient),
+                      decoration: const BoxDecoration(
+                          gradient: PulsColors.pulseGradient),
                     ),
                   ),
                 ],
@@ -2255,9 +2346,7 @@ class _AgentDecideVizState extends State<_AgentDecideViz>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                          yes
-                              ? Icons.trending_up_rounded
-                              : Icons.pause_rounded,
+                          yes ? Icons.trending_up_rounded : Icons.pause_rounded,
                           size: 14,
                           color: verdictColor),
                       const SizedBox(width: 5),
@@ -2290,7 +2379,9 @@ class _AgentDecideVizState extends State<_AgentDecideViz>
         decoration: BoxDecoration(
           color: c,
           shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: c.withValues(alpha: 0.6), blurRadius: 5)],
+          boxShadow: [
+            BoxShadow(color: c.withValues(alpha: 0.6), blurRadius: 5)
+          ],
         ),
       );
 
@@ -2298,7 +2389,8 @@ class _AgentDecideVizState extends State<_AgentDecideViz>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(t.brand.withValues(alpha: 0.10 * lit), t.surface),
+        color:
+            Color.alphaBlend(t.brand.withValues(alpha: 0.10 * lit), t.surface),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: t.brand.withValues(alpha: 0.12 + 0.3 * lit)),
       ),
@@ -2487,7 +2579,9 @@ class _PayFlowVizState extends State<_PayFlowViz>
         ),
         child: const Text('\$',
             style: TextStyle(
-                color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w800)),
       );
 }
 
@@ -2529,8 +2623,7 @@ class _BondVizState extends State<_BondViz>
         final v = reduce ? 0.3 : _c.value;
         final win = v < 0.5; // alternate: returned, then slashed
         final localT = reduce ? 0.3 : (v % 0.5) / 0.5;
-        final fill =
-            Curves.easeOut.transform((localT / 0.45).clamp(0.0, 1.0));
+        final fill = Curves.easeOut.transform((localT / 0.45).clamp(0.0, 1.0));
         final resolved = localT > 0.55;
         final displayFill = !resolved
             ? fill
@@ -2583,8 +2676,7 @@ class _BondVizState extends State<_BondViz>
                             fontWeight: FontWeight.w800)),
                     const SizedBox(height: 2),
                     Text('on this call',
-                        style:
-                            TextStyle(color: t.textSubtle, fontSize: 11)),
+                        style: TextStyle(color: t.textSubtle, fontSize: 11)),
                   ],
                 ),
               ],
@@ -2729,8 +2821,7 @@ class _SignalUnlockVizState extends State<_SignalUnlockViz>
                     decoration: BoxDecoration(
                       color: t.surface.withValues(alpha: 0.82),
                       borderRadius: BorderRadius.circular(16),
-                      border:
-                          Border.all(color: purple.withValues(alpha: 0.25)),
+                      border: Border.all(color: purple.withValues(alpha: 0.25)),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -2754,11 +2845,11 @@ class _SignalUnlockVizState extends State<_SignalUnlockViz>
                 top: 8 + (1 - earn) * 12,
                 right: 12,
                 child: Opacity(
-                  opacity: (earn < 0.85 ? earn : (1 - earn) / 0.15)
-                      .clamp(0.0, 1.0),
+                  opacity:
+                      (earn < 0.85 ? earn : (1 - earn) / 0.15).clamp(0.0, 1.0),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 9, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                     decoration: BoxDecoration(
                       color: t.yes.withValues(alpha: 0.16),
                       borderRadius: BorderRadius.circular(8),
@@ -3011,8 +3102,7 @@ class _SwipeVizState extends State<_SwipeViz>
         final dir = yes ? 1.0 : -1.0;
         final dx = reduce ? 0.0 : dir * progress * 52;
         final rot = reduce ? 0.0 : dir * progress * 0.16;
-        final stamp =
-            reduce ? 0.0 : ((progress - 0.25) / 0.3).clamp(0.0, 1.0);
+        final stamp = reduce ? 0.0 : ((progress - 0.25) / 0.3).clamp(0.0, 1.0);
         final stampColor = yes ? t.yes : t.no;
 
         return Stack(
@@ -3047,8 +3137,7 @@ class _SwipeVizState extends State<_SwipeViz>
                             decoration: BoxDecoration(
                               color: stampColor.withValues(alpha: 0.16),
                               borderRadius: BorderRadius.circular(9),
-                              border: Border.all(
-                                  color: stampColor, width: 2.2),
+                              border: Border.all(color: stampColor, width: 2.2),
                             ),
                             child: Text(yes ? 'YES' : 'NO',
                                 style: TextStyle(
@@ -3161,8 +3250,7 @@ class _SwipeVizState extends State<_SwipeViz>
                     Expanded(flex: 63, child: Container(color: t.yes)),
                     Expanded(
                         flex: 37,
-                        child: Container(
-                            color: t.no.withValues(alpha: 0.65))),
+                        child: Container(color: t.no.withValues(alpha: 0.65))),
                   ],
                 ),
               ),
@@ -3203,7 +3291,9 @@ class _CapabilityStrip extends StatelessWidget {
           alignment: WrapAlignment.center,
           spacing: 10,
           runSpacing: 10,
-          children: [for (final it in _items) _CapabilityPill(icon: it.$1, label: it.$2)],
+          children: [
+            for (final it in _items) _CapabilityPill(icon: it.$1, label: it.$2)
+          ],
         ),
       ],
     );
@@ -3246,7 +3336,8 @@ class _CapabilityPillState extends State<_CapabilityPill> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(widget.icon, size: 14, color: _hovered ? t.brand : t.textMuted),
+            Icon(widget.icon,
+                size: 14, color: _hovered ? t.brand : t.textMuted),
             const SizedBox(width: 7),
             Text(widget.label,
                 style: TextStyle(
@@ -3271,7 +3362,8 @@ class _StatsSection extends StatelessWidget {
     final isMobile = w < 600;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 48, vertical: isMobile ? 48 : 88),
+      padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 16 : 48, vertical: isMobile ? 48 : 88),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 960),
@@ -3288,18 +3380,45 @@ class _StatsSection extends StatelessWidget {
               Text(
                 'Real bonds. Real trades. Real accountability.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: t.textMuted, fontSize: isMobile ? 14 : 16),
+                style:
+                    TextStyle(color: t.textMuted, fontSize: isMobile ? 14 : 16),
               ),
               SizedBox(height: isMobile ? 32 : 48),
               LayoutBuilder(builder: (context, constraints) {
                 final cols = constraints.maxWidth > 700 ? 4 : 2;
                 return Wrap(
-                  spacing: isMobile ? 12 : 20, runSpacing: isMobile ? 12 : 20,
+                  spacing: isMobile ? 12 : 20,
+                  runSpacing: isMobile ? 12 : 20,
                   children: [
-                    _statCard('100+', 'Live Markets', 'From Polymarket Gamma API', t.brand, Icons.candlestick_chart_rounded, constraints, cols, t),
-                    _statCard('< 1s', 'Trade Speed', 'Arc sub-second finality', t.yes, Icons.bolt_rounded, constraints, cols, t),
-                    _statCard('\$0 ETH', 'Gas Cost', 'USDC is the native gas token', PulsColors.amber, Icons.local_gas_station_rounded, constraints, cols, t),
-                    _statCard('MPC', 'Wallet Type', 'Circle developer-controlled wallets', const Color(0xFF0EA5E9), Icons.account_balance_wallet_rounded, constraints, cols, t),
+                    _statCard(
+                        '100+',
+                        'Live Markets',
+                        'From Polymarket Gamma API',
+                        t.brand,
+                        Icons.candlestick_chart_rounded,
+                        constraints,
+                        cols,
+                        t),
+                    _statCard('< 1s', 'Trade Speed', 'Arc sub-second finality',
+                        t.yes, Icons.bolt_rounded, constraints, cols, t),
+                    _statCard(
+                        '\$0 ETH',
+                        'Gas Cost',
+                        'USDC is the native gas token',
+                        PulsColors.amber,
+                        Icons.local_gas_station_rounded,
+                        constraints,
+                        cols,
+                        t),
+                    _statCard(
+                        'MPC',
+                        'Wallet Type',
+                        'Circle developer-controlled wallets',
+                        const Color(0xFF0EA5E9),
+                        Icons.account_balance_wallet_rounded,
+                        constraints,
+                        cols,
+                        t),
                   ],
                 );
               }),
@@ -3318,15 +3437,22 @@ class _StatsSection extends StatelessWidget {
                           Row(
                             children: [
                               Container(
-                                width: 36, height: 36,
-                                decoration: BoxDecoration(color: t.brandSubtle, borderRadius: BorderRadius.circular(10)),
-                                child: Icon(Icons.code_rounded, color: t.brand, size: 18),
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                    color: t.brandSubtle,
+                                    borderRadius: BorderRadius.circular(10)),
+                                child: Icon(Icons.code_rounded,
+                                    color: t.brand, size: 18),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   'LMSRMarketFactory.sol',
-                                  style: TextStyle(color: t.text, fontSize: 13, fontWeight: FontWeight.w700),
+                                  style: TextStyle(
+                                      color: t.text,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -3340,7 +3466,9 @@ class _StatsSection extends StatelessWidget {
                               color: t.textSubtle,
                               fontSize: 10,
                               fontFamily: 'monospace',
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ],
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -3352,7 +3480,8 @@ class _StatsSection extends StatelessWidget {
                               _SecondaryButton(
                                 label: 'View ↗',
                                 onTap: () => launchUrl(
-                                  Uri.parse('https://testnet.arcscan.app/address/$factoryAddress'),
+                                  Uri.parse(
+                                      'https://testnet.arcscan.app/address/$factoryAddress'),
                                   mode: LaunchMode.externalApplication,
                                 ),
                                 small: true,
@@ -3364,9 +3493,13 @@ class _StatsSection extends StatelessWidget {
                     : Row(
                         children: [
                           Container(
-                            width: 40, height: 40,
-                            decoration: BoxDecoration(color: t.brandSubtle, borderRadius: BorderRadius.circular(10)),
-                            child: Icon(Icons.code_rounded, color: t.brand, size: 20),
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                                color: t.brandSubtle,
+                                borderRadius: BorderRadius.circular(10)),
+                            child: Icon(Icons.code_rounded,
+                                color: t.brand, size: 20),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -3378,7 +3511,10 @@ class _StatsSection extends StatelessWidget {
                                     Flexible(
                                       child: Text(
                                         'LMSRMarketFactory.sol — Arc',
-                                        style: TextStyle(color: t.text, fontSize: 15, fontWeight: FontWeight.w700),
+                                        style: TextStyle(
+                                            color: t.text,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
@@ -3393,7 +3529,9 @@ class _StatsSection extends StatelessWidget {
                                     color: t.textSubtle,
                                     fontSize: 12,
                                     fontFamily: 'monospace',
-                                    fontFeatures: const [FontFeature.tabularFigures()],
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures()
+                                    ],
                                   ),
                                 ),
                               ],
@@ -3405,7 +3543,8 @@ class _StatsSection extends StatelessWidget {
                           _SecondaryButton(
                             label: 'View ↗',
                             onTap: () => launchUrl(
-                              Uri.parse('https://testnet.arcscan.app/address/$factoryAddress'),
+                              Uri.parse(
+                                  'https://testnet.arcscan.app/address/$factoryAddress'),
                               mode: LaunchMode.externalApplication,
                             ),
                             small: true,
@@ -3420,7 +3559,8 @@ class _StatsSection extends StatelessWidget {
     );
   }
 
-  Widget _statCard(String value, String label, String sub, Color color, IconData icon, BoxConstraints constraints, int cols, PulsThemeColors t) {
+  Widget _statCard(String value, String label, String sub, Color color,
+      IconData icon, BoxConstraints constraints, int cols, PulsThemeColors t) {
     final isMobile = constraints.maxWidth < 600;
     final spacing = isMobile ? 12.0 : 20.0;
     return SizedBox(
@@ -3482,7 +3622,8 @@ class _StatCardState extends State<_StatCard> {
             end: Alignment.bottomRight,
             colors: [
               t.surface,
-              Color.alphaBlend(color.withValues(alpha: _hovered ? 0.06 : 0.02), t.surface),
+              Color.alphaBlend(
+                  color.withValues(alpha: _hovered ? 0.06 : 0.02), t.surface),
             ],
           ),
           borderRadius: BorderRadius.circular(18),
@@ -3534,8 +3675,7 @@ class _StatCardState extends State<_StatCard> {
                         : color.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: color.withValues(
-                          alpha: _hovered ? 0.45 : 0.25),
+                      color: color.withValues(alpha: _hovered ? 0.45 : 0.25),
                       width: 1.2,
                     ),
                     boxShadow: _hovered
@@ -3547,8 +3687,8 @@ class _StatCardState extends State<_StatCard> {
                           ]
                         : null,
                   ),
-                  child: Icon(widget.icon,
-                      size: isMobile ? 18 : 24, color: color),
+                  child:
+                      Icon(widget.icon, size: isMobile ? 18 : 24, color: color),
                 ),
               ],
             ),
@@ -3636,8 +3776,9 @@ class _FinalCtaSection extends StatelessWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 860),
               child: Container(
-                padding:
-                    EdgeInsets.symmetric(horizontal: isMobile ? 24 : 64, vertical: isMobile ? 40 : 72),
+                padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 24 : 64,
+                    vertical: isMobile ? 40 : 72),
                 decoration: BoxDecoration(
                   color: t.surface.withValues(alpha: isDark ? 0.6 : 0.75),
                   borderRadius: BorderRadius.circular(32),
@@ -3677,7 +3818,8 @@ class _FinalCtaSection extends StatelessWidget {
                           height: 3,
                           decoration: const BoxDecoration(
                             gradient: PulsColors.pulseGradient,
-                            borderRadius: BorderRadius.all(Radius.circular(100)),
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(100)),
                           ),
                         ),
                         const SizedBox(height: 28),
@@ -3800,14 +3942,14 @@ class _AuroraPainter extends CustomPainter {
     final t = progress * 2 * math.pi;
     final blobs = isDark
         ? const [
-            Color(0xFF2A0720),   // deeper plum — more contrast against navy
+            Color(0xFF2A0720), // deeper plum — more contrast against navy
             PulsColors.brandPinkDark, // Neon Pink
-            PulsColors.brandMint,     // Neon Mint
+            PulsColors.brandMint, // Neon Mint
           ]
         : const [
             PulsColors.brandWashLight, // Frosted pink
-            Color(0xFFFDF2F8),         // Soft glow
-            Color(0xFFE6FAF6),         // Frosted mint
+            Color(0xFFFDF2F8), // Soft glow
+            Color(0xFFE6FAF6), // Frosted mint
           ];
     final alpha = isDark ? 0.14 : 0.32;
 
@@ -3825,14 +3967,20 @@ class _AuroraPainter extends CustomPainter {
     // Parallax toward the cursor — each blob drifts a different amount for depth.
     final px = pointer.dx, py = pointer.dy;
     // Larger, slower-feeling blobs with more spread for a more ethereal look.
-    blob(blobs[0], w * (0.24 + 0.07 * math.sin(t)) + px * 170, h * (0.15 + 0.06 * math.cos(t * 0.75)) + py * 140, w * 0.52);
-    blob(blobs[1], w * (0.80 + 0.06 * math.cos(t * 0.85)) - px * 140, h * (0.28 + 0.07 * math.sin(t * 0.65)) + py * 110, w * 0.46);
-    blob(blobs[2], w * (0.55 + 0.08 * math.sin(t * 0.55 + 2)) + px * 95, h * (0.78 + 0.05 * math.cos(t * 0.9 + 1)) - py * 130, w * 0.40);
+    blob(blobs[0], w * (0.24 + 0.07 * math.sin(t)) + px * 170,
+        h * (0.15 + 0.06 * math.cos(t * 0.75)) + py * 140, w * 0.52);
+    blob(blobs[1], w * (0.80 + 0.06 * math.cos(t * 0.85)) - px * 140,
+        h * (0.28 + 0.07 * math.sin(t * 0.65)) + py * 110, w * 0.46);
+    blob(blobs[2], w * (0.55 + 0.08 * math.sin(t * 0.55 + 2)) + px * 95,
+        h * (0.78 + 0.05 * math.cos(t * 0.9 + 1)) - py * 130, w * 0.40);
   }
 
   @override
   bool shouldRepaint(_AuroraPainter old) =>
-      old.progress != progress || old.isDark != isDark || old.bg != bg || old.pointer != pointer;
+      old.progress != progress ||
+      old.isDark != isDark ||
+      old.bg != bg ||
+      old.pointer != pointer;
 }
 
 // ── Film grain overlay ────────────────────────────────────────────────────────
@@ -3889,13 +4037,15 @@ class _FooterSection extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              width: 28, height: 28,
+                              width: 28,
+                              height: 28,
                               decoration: BoxDecoration(
                                 color: t.brandSubtle,
                                 borderRadius: BorderRadius.circular(7),
                               ),
                               clipBehavior: Clip.antiAlias,
-                              child: Image.asset('assets/logo.png', fit: BoxFit.cover),
+                              child: Image.asset('assets/logo.png',
+                                  fit: BoxFit.cover),
                             ),
                             const SizedBox(width: 10),
                             Text(
@@ -3937,12 +4087,15 @@ class _FooterSection extends StatelessWidget {
                           children: [
                             _FooterLink('X/Twitter', 'https://x.com/rdmnad'),
                             _FooterLink('Docs', 'https://docs.pulsmarket.tech'),
-                            _FooterLink('GitHub', 'https://github.com/rdmbtc/Puls'),
+                            _FooterLink(
+                                'GitHub', 'https://github.com/rdmbtc/Puls'),
                             _FooterLink('Explorer',
                                 'https://testnet.arcscan.app/address/$factoryAddress'),
                             _FooterLink('Android app', kAndroidApkUrl),
-                            _FooterLink('Terms', 'https://pulsmarket.tech/terms'),
-                            _FooterLink('Privacy', 'https://pulsmarket.tech/privacy'),
+                            _FooterLink(
+                                'Terms', 'https://pulsmarket.tech/terms'),
+                            _FooterLink(
+                                'Privacy', 'https://pulsmarket.tech/privacy'),
                           ],
                         ),
                         const SizedBox(height: 28),
@@ -3957,13 +4110,15 @@ class _FooterSection extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              width: 28, height: 28,
+                              width: 28,
+                              height: 28,
                               decoration: BoxDecoration(
                                 color: t.brandSubtle,
                                 borderRadius: BorderRadius.circular(7),
                               ),
                               clipBehavior: Clip.antiAlias,
-                              child: Image.asset('assets/logo.png', fit: BoxFit.cover),
+                              child: Image.asset('assets/logo.png',
+                                  fit: BoxFit.cover),
                             ),
                             const SizedBox(width: 10),
                             Text(
@@ -4004,15 +4159,20 @@ class _FooterSection extends StatelessWidget {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const _FooterLink('X/Twitter', 'https://x.com/rdmnad'),
+                            const _FooterLink(
+                                'X/Twitter', 'https://x.com/rdmnad'),
                             const SizedBox(width: 20),
-                            const _FooterLink('Docs', 'https://docs.pulsmarket.tech'),
+                            const _FooterLink(
+                                'Docs', 'https://docs.pulsmarket.tech'),
                             const SizedBox(width: 20),
-                            const _FooterLink('GitHub', 'https://github.com/rdmbtc/Puls'),
+                            const _FooterLink(
+                                'GitHub', 'https://github.com/rdmbtc/Puls'),
                             const SizedBox(width: 20),
-                            const _FooterLink('Terms', 'https://pulsmarket.tech/terms'),
+                            const _FooterLink(
+                                'Terms', 'https://pulsmarket.tech/terms'),
                             const SizedBox(width: 20),
-                            const _FooterLink('Privacy', 'https://pulsmarket.tech/privacy'),
+                            const _FooterLink(
+                                'Privacy', 'https://pulsmarket.tech/privacy'),
                             const SizedBox(width: 24),
                             _BackToTop(scrollCtrl: scrollCtrl),
                           ],
@@ -4105,7 +4265,8 @@ class _VerifiedBadge extends StatelessWidget {
           SizedBox(width: 4),
           Text(
             'Verified on Arc',
-            style: TextStyle(color: green, fontSize: 11, fontWeight: FontWeight.w600),
+            style: TextStyle(
+                color: green, fontSize: 11, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -4128,7 +4289,8 @@ class _FooterLinkState extends State<_FooterLink> {
   Widget build(BuildContext context) {
     final t = context.puls;
     return GestureDetector(
-      onTap: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
+      onTap: () => launchUrl(Uri.parse(widget.url),
+          mode: LaunchMode.externalApplication),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hovered = true),
@@ -4149,7 +4311,8 @@ class _FooterLinkState extends State<_FooterLink> {
 
 // ── Shared Buttons ────────────────────────────────────────────────────────────
 class _PrimaryButton extends StatefulWidget {
-  const _PrimaryButton({required this.label, required this.onTap, this.small = false});
+  const _PrimaryButton(
+      {required this.label, required this.onTap, this.small = false});
   final String label;
   final VoidCallback? onTap;
   final bool small;
@@ -4188,7 +4351,8 @@ class _PrimaryButtonState extends State<_PrimaryButton>
     final s = box.size;
     final dx = (e.localPosition.dx - s.width / 2) / (s.width / 2);
     final dy = (e.localPosition.dy - s.height / 2) / (s.height / 2);
-    setState(() => _magnet = Offset(dx.clamp(-1.0, 1.0) * 4, dy.clamp(-1.0, 1.0) * 3));
+    setState(() =>
+        _magnet = Offset(dx.clamp(-1.0, 1.0) * 4, dy.clamp(-1.0, 1.0) * 3));
   }
 
   void _onEnter() {
@@ -4216,78 +4380,91 @@ class _PrimaryButtonState extends State<_PrimaryButton>
       enabled: widget.onTap != null,
       label: widget.label,
       child: MouseRegion(
-        cursor: widget.onTap == null ? SystemMouseCursors.basic : SystemMouseCursors.click,
+        cursor: widget.onTap == null
+            ? SystemMouseCursors.basic
+            : SystemMouseCursors.click,
         onEnter: (_) => widget.onTap != null ? _onEnter() : null,
         onHover: widget.onTap != null ? _onHover : null,
         onExit: (_) => widget.onTap != null ? _onExit() : null,
         child: GestureDetector(
           onTap: widget.onTap,
-          onTapDown: widget.onTap != null ? (_) => setState(() => _pressed = true) : null,
-          onTapUp: widget.onTap != null ? (_) => setState(() => _pressed = false) : null,
-          onTapCancel: widget.onTap != null ? () => setState(() => _pressed = false) : null,
-        child: AnimatedContainer(
-          duration: _pressed ? const Duration(milliseconds: 70) : const Duration(milliseconds: 180),
-          curve: _pressed ? Curves.easeOut : Curves.easeOutCubic,
-          transformAlignment: Alignment.center,
-          transform: Matrix4.translationValues(
-            _pressed ? 0 : _magnet.dx,
-            _pressed ? 0 : _magnet.dy,
-            0,
-          )..scale(scale),
-          child: AnimatedBuilder(
-            animation: _glow,
-            builder: (context, child) => Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: widget.small ? 18 : 32,
-                vertical: widget.small ? 10 : 16,
-              ),
-              decoration: BoxDecoration(
-                gradient: PulsColors.pulseGradient,
-                borderRadius: BorderRadius.circular(widget.small ? 10 : 14),
-                boxShadow: [
-                  // Base soft shadow
-                  BoxShadow(
-                    color: t.brand.withValues(alpha: 0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                  // Glow on hover
-                  if (_glow.value > 0)
+          onTapDown: widget.onTap != null
+              ? (_) => setState(() => _pressed = true)
+              : null,
+          onTapUp: widget.onTap != null
+              ? (_) => setState(() => _pressed = false)
+              : null,
+          onTapCancel: widget.onTap != null
+              ? () => setState(() => _pressed = false)
+              : null,
+          child: AnimatedContainer(
+            duration: _pressed
+                ? const Duration(milliseconds: 70)
+                : const Duration(milliseconds: 180),
+            curve: _pressed ? Curves.easeOut : Curves.easeOutCubic,
+            transformAlignment: Alignment.center,
+            transform: Matrix4.translationValues(
+              _pressed ? 0 : _magnet.dx,
+              _pressed ? 0 : _magnet.dy,
+              0,
+            )..scale(scale),
+            child: AnimatedBuilder(
+              animation: _glow,
+              builder: (context, child) => Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.small ? 18 : 32,
+                  vertical: widget.small ? 10 : 16,
+                ),
+                decoration: BoxDecoration(
+                  gradient: PulsColors.pulseGradient,
+                  borderRadius: BorderRadius.circular(widget.small ? 10 : 14),
+                  boxShadow: [
+                    // Base soft shadow
                     BoxShadow(
-                      color: PulsColors.brandPink.withValues(
-                          alpha: _glow.value * (context.isDark ? 0.25 : 0.18)),
-                      blurRadius: 24 + 16 * _glow.value,
-                      spreadRadius: -2 * _glow.value,
+                      color: t.brand.withValues(alpha: 0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
-                  // Pressed: tighter shadow
-                  if (_pressed)
-                    BoxShadow(
-                      color: t.brand.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 1),
-                    ),
-                ],
+                    // Glow on hover
+                    if (_glow.value > 0)
+                      BoxShadow(
+                        color: PulsColors.brandPink.withValues(
+                            alpha:
+                                _glow.value * (context.isDark ? 0.25 : 0.18)),
+                        blurRadius: 24 + 16 * _glow.value,
+                        spreadRadius: -2 * _glow.value,
+                      ),
+                    // Pressed: tighter shadow
+                    if (_pressed)
+                      BoxShadow(
+                        color: t.brand.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 1),
+                      ),
+                  ],
+                ),
+                child: child,
               ),
-              child: child,
-            ),
-            child: Text(
-              widget.label,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: widget.small ? 13.5 : 14.5,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.1,
+              child: Text(
+                widget.label,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: widget.small ? 13.5 : 14.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.1,
+                ),
               ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _SecondaryButton extends StatefulWidget {
-  const _SecondaryButton({required this.label, required this.onTap, this.small = false});
+  const _SecondaryButton(
+      {required this.label, required this.onTap, this.small = false});
   final String label;
   final VoidCallback onTap;
   final bool small;
@@ -4311,9 +4488,14 @@ class _SecondaryButtonState extends State<_SecondaryButton> {
       button: true,
       label: widget.label,
       child: MouseRegion(
-        cursor: widget.onTap == null ? SystemMouseCursors.basic : SystemMouseCursors.click,
+        cursor: widget.onTap == null
+            ? SystemMouseCursors.basic
+            : SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() { _hovered = false; _pressed = false; }),
+        onExit: (_) => setState(() {
+          _hovered = false;
+          _pressed = false;
+        }),
         child: GestureDetector(
           onTap: widget.onTap,
           onTapDown: (_) => setState(() => _pressed = true),
@@ -4333,7 +4515,8 @@ class _SecondaryButtonState extends State<_SecondaryButton> {
                 color: _hovered ? t.surfaceRaised : t.surface,
                 borderRadius: BorderRadius.circular(widget.small ? 10 : 14),
                 border: Border.all(
-                  color: _hovered ? t.textMuted.withValues(alpha: 0.5) : t.border,
+                  color:
+                      _hovered ? t.textMuted.withValues(alpha: 0.5) : t.border,
                   width: _hovered ? 1.5 : 1.0,
                 ),
                 boxShadow: _hovered
@@ -4360,8 +4543,8 @@ class _SecondaryButtonState extends State<_SecondaryButton> {
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _DotGridPainter extends CustomPainter {
@@ -4440,7 +4623,8 @@ class _RevealState extends State<_Reveal> {
     // Reduce-motion: reveal everything at once, with no fade/slide ramp.
     final reduce = context.reduceMotion;
     final visibleNow = reduce || _shown || (_top != null && _top! < h * 0.92);
-    final revealDuration = context.motionDuration(const Duration(milliseconds: 650));
+    final revealDuration =
+        context.motionDuration(const Duration(milliseconds: 650));
     return AnimatedOpacity(
       duration: revealDuration,
       curve: Curves.easeOut,
@@ -4545,7 +4729,8 @@ class _ScrollCueState extends State<_ScrollCue>
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600));
+    _c = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1600));
   }
 
   @override
@@ -4647,7 +4832,8 @@ class _GatewayViz extends StatefulWidget {
   State<_GatewayViz> createState() => _GatewayVizState();
 }
 
-class _GatewayVizState extends State<_GatewayViz> with SingleTickerProviderStateMixin {
+class _GatewayVizState extends State<_GatewayViz>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _c;
 
   @override
@@ -4675,57 +4861,66 @@ class _GatewayVizState extends State<_GatewayViz> with SingleTickerProviderState
       child: AnimatedBuilder(
         animation: _c,
         builder: (context, _) {
-        final v = reduce ? 0.8 : _c.value;
-        final phase = v < 0.33 ? 0 : (v < 0.66 ? 1 : 2); // 0: Query, 1: Pay, 2: Data
-        
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _node(t, phase == 0, Icons.smart_toy_rounded, 'Agent'),
-                _line(t, phase == 1, 'x402 Pay'),
-                _node(t, phase == 2, Icons.cloud_download_rounded, 'Premium API'),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              phase == 0 ? 'Evaluating ROI...' : (phase == 1 ? 'Settling 0.000005 USDC' : 'Data Unlocked'),
-               style: TextStyle(color: t.textSubtle, fontSize: 10, fontWeight: FontWeight.w700),
-            )
-          ],
-        );
-      },
-    ),
+          final v = reduce ? 0.8 : _c.value;
+          final phase =
+              v < 0.33 ? 0 : (v < 0.66 ? 1 : 2); // 0: Query, 1: Pay, 2: Data
+
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _node(t, phase == 0, Icons.smart_toy_rounded, 'Agent'),
+                  _line(t, phase == 1, 'x402 Pay'),
+                  _node(t, phase == 2, Icons.cloud_download_rounded,
+                      'Premium API'),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                phase == 0
+                    ? 'Evaluating ROI...'
+                    : (phase == 1 ? 'Settling 0.000005 USDC' : 'Data Unlocked'),
+                style: TextStyle(
+                    color: t.textSubtle,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700),
+              )
+            ],
+          );
+        },
+      ),
     );
   }
 
   Widget _node(PulsThemeColors t, bool active, IconData icon, String label) {
-     return Column(
-       mainAxisSize: MainAxisSize.min,
-       children: [
-         AnimatedContainer(
-           duration: const Duration(milliseconds: 300),
-           padding: const EdgeInsets.all(12),
-           decoration: BoxDecoration(
-             color: active ? t.brand.withValues(alpha: 0.2) : t.surfaceRaised,
-             shape: BoxShape.circle,
-             border: Border.all(color: active ? t.brand : t.border)
-           ),
-           child: Icon(icon, size: 18, color: active ? t.brand : t.textMuted),
-         ),
-         const SizedBox(height: 6),
-         Text(label, style: TextStyle(color: t.textMuted, fontSize: 9, fontWeight: FontWeight.w800)),
-       ]
-     );
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+            color: active ? t.brand.withValues(alpha: 0.2) : t.surfaceRaised,
+            shape: BoxShape.circle,
+            border: Border.all(color: active ? t.brand : t.border)),
+        child: Icon(icon, size: 18, color: active ? t.brand : t.textMuted),
+      ),
+      const SizedBox(height: 6),
+      Text(label,
+          style: TextStyle(
+              color: t.textMuted, fontSize: 9, fontWeight: FontWeight.w800)),
+    ]);
   }
 
   Widget _line(PulsThemeColors t, bool active, String label) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: TextStyle(color: active ? t.yes : Colors.transparent, fontSize: 8, fontWeight: FontWeight.w900)),
+        Text(label,
+            style: TextStyle(
+                color: active ? t.yes : Colors.transparent,
+                fontSize: 8,
+                fontWeight: FontWeight.w900)),
         Container(
           width: 40,
           height: 2,

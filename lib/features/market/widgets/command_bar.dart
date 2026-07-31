@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/config.dart' show backendUrl;
 import '../../../core/theme/app_theme.dart';
 
-/// Command bar — text input at the bottom of the terminal.
+/// Command bar вЂ” text input at the bottom of the terminal.
 /// Sends questions to /api/agent/chat and displays the AI agent's response.
 class CommandBar extends StatefulWidget {
   const CommandBar({super.key});
@@ -36,30 +36,35 @@ class _CommandBarState extends State<CommandBar> {
     });
 
     try {
-      final res = await http.post(
-        Uri.parse('$backendUrl/api/agent/chat'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'message': text, 'agentKey': _selectedAgent}),
-      ).timeout(const Duration(seconds: 30));
+      final res = await http
+          .post(
+            Uri.parse('$backendUrl/api/agent/chat'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'message': text, 'agentKey': _selectedAgent}),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final reply = (data['reply'] as String?) ?? 'No response';
-        if (mounted) setState(() {
-          _messages.add(_ChatMsg(reply, false));
-          _sending = false;
-        });
+        if (mounted)
+          setState(() {
+            _messages.add(_ChatMsg(reply, false));
+            _sending = false;
+          });
       } else {
-        if (mounted) setState(() {
-          _messages.add(_ChatMsg('Error: ${res.statusCode}', false));
-          _sending = false;
-        });
+        if (mounted)
+          setState(() {
+            _messages.add(_ChatMsg('Error: ${res.statusCode}', false));
+            _sending = false;
+          });
       }
     } catch (e) {
-      if (mounted) setState(() {
-        _messages.add(_ChatMsg('Connection failed', false));
-        _sending = false;
-      });
+      if (mounted)
+        setState(() {
+          _messages.add(_ChatMsg('Connection failed', false));
+          _sending = false;
+        });
     }
   }
 
@@ -82,38 +87,65 @@ class _CommandBarState extends State<CommandBar> {
             child: Row(
               children: [
                 const Text('COMMAND',
-                    style: TextStyle(color: Color(0xFF2DD4BF), fontSize: 9, fontWeight: FontWeight.w800, fontFamily: PulsColors.fontMono, letterSpacing: 1.5)),
+                    style: TextStyle(
+                        color: PulsColors.brandMint,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: PulsColors.fontMono,
+                        letterSpacing: 1.5)),
                 const SizedBox(width: 8),
                 _agentSelector(),
                 const Spacer(),
                 if (_sending)
-                  const SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 1, color: Color(0xFF2DD4BF))),
+                  const SizedBox(
+                      width: 10,
+                      height: 10,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 1, color: PulsColors.brandMint)),
               ],
             ),
           ),
           Expanded(
             child: _messages.isEmpty
-                ? Center(child: Text('Ask an agent anything…', style: TextStyle(color: const Color(0xFF5E6A85), fontSize: 11, fontFamily: PulsColors.fontMono)))
+                ? Center(
+                    child: Text('Ask an agent anythingвЂ¦',
+                        style: TextStyle(
+                            color: const Color(0xFF5E6A85),
+                            fontSize: 11,
+                            fontFamily: PulsColors.fontMono)))
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     itemCount: _messages.length,
                     itemBuilder: (context, i) => _msg(_messages[i]),
                   ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFF1E293B)))),
+            decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Color(0xFF1E293B)))),
             child: Row(
               children: [
-                const Text('>', style: TextStyle(color: Color(0xFF2DD4BF), fontSize: 14, fontWeight: FontWeight.w900, fontFamily: PulsColors.fontMono)),
+                const Text('>',
+                    style: TextStyle(
+                        color: PulsColors.brandMint,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: PulsColors.fontMono)),
                 const SizedBox(width: 6),
                 Expanded(
                   child: TextField(
                     controller: _ctrl,
-                    style: const TextStyle(color: Color(0xFFEAF0FF), fontSize: 12, fontFamily: PulsColors.fontMono),
+                    style: const TextStyle(
+                        color: Color(0xFFEAF0FF),
+                        fontSize: 12,
+                        fontFamily: PulsColors.fontMono),
                     decoration: const InputDecoration(
                       hintText: 'Why did Vega go YES on btc-100k?',
-                      hintStyle: TextStyle(color: Color(0xFF5E6A85), fontSize: 11, fontFamily: PulsColors.fontMono),
+                      hintStyle: TextStyle(
+                          color: Color(0xFF5E6A85),
+                          fontSize: 11,
+                          fontFamily: PulsColors.fontMono),
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
@@ -125,9 +157,18 @@ class _CommandBarState extends State<CommandBar> {
                 GestureDetector(
                   onTap: _send,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(color: const Color(0xFF2DD4BF), borderRadius: BorderRadius.circular(4)),
-                    child: const Text('SEND', style: TextStyle(color: Color(0xFF000000), fontSize: 10, fontWeight: FontWeight.w900, fontFamily: PulsColors.fontMono, letterSpacing: 0.5)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                        color: PulsColors.brandMint,
+                        borderRadius: BorderRadius.circular(4)),
+                    child: const Text('SEND',
+                        style: TextStyle(
+                            color: Color(0xFF000000),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: PulsColors.fontMono,
+                            letterSpacing: 0.5)),
                   ),
                 ),
               ],
@@ -141,20 +182,50 @@ class _CommandBarState extends State<CommandBar> {
   Widget _agentSelector() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-      decoration: BoxDecoration(color: const Color(0xFF2DD4BF).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(
+          color: PulsColors.brandMint.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(4)),
       child: DropdownButton<String>(
         value: _selectedAgent,
         underline: const SizedBox(),
         isDense: true,
-        style: const TextStyle(color: Color(0xFF2DD4BF), fontSize: 9, fontWeight: FontWeight.w700, fontFamily: PulsColors.fontMono),
+        style: const TextStyle(
+            color: PulsColors.brandMint,
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            fontFamily: PulsColors.fontMono),
         dropdownColor: const Color(0xFF0C0F19),
         items: const [
-          DropdownMenuItem(value: 'vega', child: Text('VEGA ⚡', style: TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
-          DropdownMenuItem(value: 'cygnus', child: Text('CYGNUS 🛡️', style: TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
-          DropdownMenuItem(value: 'orion', child: Text('ORION 🔭', style: TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
-          DropdownMenuItem(value: 'atlas', child: Text('ATLAS 📈', style: TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
-          DropdownMenuItem(value: 'nova', child: Text('NOVA 🌐', style: TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
-          DropdownMenuItem(value: 'striker', child: Text('STRIKER ⚽', style: TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
+          DropdownMenuItem(
+              value: 'vega',
+              child: Text('VEGA вљЎ',
+                  style:
+                      TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
+          DropdownMenuItem(
+              value: 'cygnus',
+              child: Text('CYGNUS рџ›ЎпёЏ',
+                  style:
+                      TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
+          DropdownMenuItem(
+              value: 'orion',
+              child: Text('ORION рџ”­',
+                  style:
+                      TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
+          DropdownMenuItem(
+              value: 'atlas',
+              child: Text('ATLAS рџ“€',
+                  style:
+                      TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
+          DropdownMenuItem(
+              value: 'nova',
+              child: Text('NOVA рџЊђ',
+                  style:
+                      TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
+          DropdownMenuItem(
+              value: 'striker',
+              child: Text('STRIKER вљЅ',
+                  style:
+                      TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
         ],
         onChanged: (v) => setState(() => _selectedAgent = v ?? 'vega'),
       ),
@@ -171,14 +242,25 @@ class _CommandBarState extends State<CommandBar> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
             decoration: BoxDecoration(
-              color: (isUser ? const Color(0xFFEC4899) : const Color(0xFF2DD4BF)).withValues(alpha: 0.12),
+              color: (isUser ? PulsColors.brandPink : PulsColors.brandMint)
+                  .withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(3),
             ),
             child: Text(isUser ? 'YOU' : _selectedAgent.toUpperCase(),
-                style: TextStyle(color: isUser ? const Color(0xFFEC4899) : const Color(0xFF2DD4BF), fontSize: 8, fontWeight: FontWeight.w800, fontFamily: PulsColors.fontMono)),
+                style: TextStyle(
+                    color: isUser ? PulsColors.brandPink : PulsColors.brandMint,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: PulsColors.fontMono)),
           ),
           const SizedBox(width: 6),
-          Expanded(child: Text(m.text, style: const TextStyle(color: Color(0xFFEAF0FF), fontSize: 11, height: 1.4, fontFamily: PulsColors.fontMono))),
+          Expanded(
+              child: Text(m.text,
+                  style: const TextStyle(
+                      color: Color(0xFFEAF0FF),
+                      fontSize: 11,
+                      height: 1.4,
+                      fontFamily: PulsColors.fontMono))),
         ],
       ),
     );

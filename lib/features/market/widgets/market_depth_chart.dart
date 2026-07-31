@@ -1,11 +1,11 @@
-﻿import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// Market depth chart вЂ” visualizes YES/NO liquidity at price levels.
 /// Reads on-chain pool sizes from the market's contract via the backend.
 class MarketDepthChart extends StatefulWidget {
-  const MarketDepthChart({super.key, required this.yesPrice, this.yesPool = 0, this.noPool = 0});
+  const MarketDepthChart(
+      {super.key, required this.yesPrice, this.yesPool = 0, this.noPool = 0});
   final double yesPrice;
   final double yesPool;
   final double noPool;
@@ -21,7 +21,8 @@ class _MarketDepthChartState extends State<MarketDepthChart>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800));
     _ctrl.forward();
   }
 
@@ -39,7 +40,6 @@ class _MarketDepthChartState extends State<MarketDepthChart>
 
   @override
   Widget build(BuildContext context) {
-    final t = context.puls;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -81,7 +81,8 @@ class _MarketDepthChartState extends State<MarketDepthChart>
               child: AnimatedBuilder(
                 animation: _ctrl,
                 builder: (context, _) => CustomPaint(
-                  painter: _DepthPainter(widget.yesPrice, widget.yesPool, widget.noPool, _ctrl.value),
+                  painter: _DepthPainter(widget.yesPrice, widget.yesPool,
+                      widget.noPool, _ctrl.value),
                 ),
               ),
             ),
@@ -90,9 +91,14 @@ class _MarketDepthChartState extends State<MarketDepthChart>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _poolStat('YES LIQ', '\$${widget.yesPool.toStringAsFixed(0)}', PulsColors.brandMint),
-              _poolStat('NO LIQ', '\$${widget.noPool.toStringAsFixed(0)}', PulsColors.brandPink),
-              _poolStat('TOTAL', '\$${(widget.yesPool + widget.noPool).toStringAsFixed(0)}', PulsColors.dark900),
+              _poolStat('YES LIQ', '\$${widget.yesPool.toStringAsFixed(0)}',
+                  PulsColors.brandMint),
+              _poolStat('NO LIQ', '\$${widget.noPool.toStringAsFixed(0)}',
+                  PulsColors.brandPink),
+              _poolStat(
+                  'TOTAL',
+                  '\$${(widget.yesPool + widget.noPool).toStringAsFixed(0)}',
+                  PulsColors.dark900),
             ],
           ),
         ],
@@ -104,10 +110,18 @@ class _MarketDepthChartState extends State<MarketDepthChart>
     return Column(
       children: [
         Text(label,
-            style: TextStyle(color: PulsColors.dark400, fontSize: 8, fontWeight: FontWeight.bold, fontFamily: PulsColors.fontMono)),
+            style: TextStyle(
+                color: PulsColors.dark400,
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+                fontFamily: PulsColors.fontMono)),
         const SizedBox(height: 2),
         Text(value,
-            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w800, fontFamily: PulsColors.fontMono)),
+            style: TextStyle(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                fontFamily: PulsColors.fontMono)),
       ],
     );
   }
@@ -149,7 +163,10 @@ class _DepthPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [PulsColors.brandMint.withValues(alpha: 0.3 * anim), PulsColors.brandMint.withValues(alpha: 0.05)],
+        colors: [
+          PulsColors.brandMint.withValues(alpha: 0.3 * anim),
+          PulsColors.brandMint.withValues(alpha: 0.05)
+        ],
       ).createShader(Rect.fromLTWH(0, 0, midX, h));
     canvas.drawPath(yesPath, yesPaint);
 
@@ -157,14 +174,18 @@ class _DepthPainter extends CustomPainter {
     final noPath = Path()
       ..moveTo(midX, h)
       ..lineTo(midX, h * 0.05 * anim)
-      ..quadraticBezierTo(midX + (size.width - midX) * 0.7, h * 0.15, size.width, h * 0.3)
+      ..quadraticBezierTo(
+          midX + (size.width - midX) * 0.7, h * 0.15, size.width, h * 0.3)
       ..lineTo(size.width, h)
       ..close();
     final noPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [PulsColors.brandPink.withValues(alpha: 0.3 * anim), PulsColors.brandPink.withValues(alpha: 0.05)],
+        colors: [
+          PulsColors.brandPink.withValues(alpha: 0.3 * anim),
+          PulsColors.brandPink.withValues(alpha: 0.05)
+        ],
       ).createShader(Rect.fromLTWH(midX, 0, size.width - midX, h));
     canvas.drawPath(noPath, noPaint);
 
@@ -180,7 +201,8 @@ class _DepthPainter extends CustomPainter {
       final price = i * 10;
       labelStyle.text = TextSpan(
         text: '${price}Вў',
-        style: const TextStyle(color: PulsColors.dark400, fontSize: 8, fontFamily: 'DM Sans'),
+        style: const TextStyle(
+            color: PulsColors.dark400, fontSize: 8, fontFamily: 'DM Sans'),
       );
       labelStyle.layout();
       labelStyle.paint(canvas, Offset(size.width * i / 10 - 8, h + 2));

@@ -10,6 +10,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/lazy_indexed_stack.dart';
 import '../../core/widgets/puls_footer.dart';
 import '../../core/widgets/deferred_tab_builder.dart';
+import '../../core/widgets/puls_page_route.dart';
 import '../discover/discover_screen.dart' deferred as discover;
 import '../feed/feed_screen.dart' deferred as feed;
 import '../home/home_screen.dart' deferred as home;
@@ -394,7 +395,8 @@ class _IslandState extends State<_Island> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final size = Size(constraints.maxWidth > 0 ? constraints.maxWidth : 400, 52);
+        final size =
+            Size(constraints.maxWidth > 0 ? constraints.maxWidth : 400, 52);
         return MouseRegion(
           onHover: (e) => _onHover(e, size),
           onExit: (_) => _onExit(),
@@ -433,7 +435,10 @@ class _IslandState extends State<_Island> {
                       : widget.t.border,
                 ),
                 boxShadow: [
-                  BoxShadow(color: shadow, blurRadius: 24, offset: const Offset(0, 8)),
+                  BoxShadow(
+                      color: shadow,
+                      blurRadius: 24,
+                      offset: const Offset(0, 8)),
                   BoxShadow(
                     color: shadow.withValues(alpha: 0.06),
                     blurRadius: 4,
@@ -488,7 +493,8 @@ class _NavPill extends StatefulWidget {
   State<_NavPill> createState() => _NavPillState();
 }
 
-class _NavPillState extends State<_NavPill> with SingleTickerProviderStateMixin {
+class _NavPillState extends State<_NavPill>
+    with SingleTickerProviderStateMixin {
   bool _hovered = false;
   late final AnimationController _pulseCtrl;
 
@@ -540,7 +546,8 @@ class _NavPillState extends State<_NavPill> with SingleTickerProviderStateMixin 
               boxShadow: [
                 if (selected)
                   BoxShadow(
-                    color: t.brand.withValues(alpha: 0.35 + (_pulseCtrl.value * 0.25)),
+                    color: t.brand
+                        .withValues(alpha: 0.35 + (_pulseCtrl.value * 0.25)),
                     blurRadius: 8 + (_pulseCtrl.value * 10),
                     spreadRadius: _pulseCtrl.value * 1.2,
                   ),
@@ -799,7 +806,8 @@ class _ThemeToggleState extends State<_ThemeToggle> {
             decoration: BoxDecoration(
               color: _hovered ? t.surface : Colors.transparent,
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: _hovered ? t.border : Colors.transparent),
+              border:
+                  Border.all(color: _hovered ? t.border : Colors.transparent),
             ),
             child: Center(
               child: AnimatedSwitcher(
@@ -932,9 +940,8 @@ class _TerminalToggleState extends State<_TerminalToggle> {
               await terminal.loadLibrary();
               if (!context.mounted) return;
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => terminal.MarketTerminalScreen(),
-                ),
+                pulsRoute(context,
+                    builder: (context) => terminal.MarketTerminalScreen()),
               );
             },
             child: AnimatedContainer(
@@ -942,10 +949,14 @@ class _TerminalToggleState extends State<_TerminalToggle> {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: _hovered ? t.brand.withValues(alpha: 0.12) : Colors.transparent,
+                color: _hovered
+                    ? t.brand.withValues(alpha: 0.12)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(999),
                 border: Border.all(
-                  color: _hovered ? t.brand.withValues(alpha: 0.4) : Colors.transparent,
+                  color: _hovered
+                      ? t.brand.withValues(alpha: 0.4)
+                      : Colors.transparent,
                 ),
               ),
               child: Center(

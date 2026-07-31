@@ -22,7 +22,7 @@ Future<void> showTradePreviewSheet({
   double? maxShares,
   String owner = 'user',
 }) {
-  // Pre-deploy the market on trade intent (the moment this sheet opens) — only
+  // Pre-deploy the market on trade intent (the moment this sheet opens) вЂ” only
   // when actually about to trade, so browsing costs nothing. The deploy
   // overlaps amount entry, so the buy/sell skips the cold on-chain deploy and
   // confirms in ~2-3s. No-op if the market is already deployed.
@@ -87,6 +87,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
     final value = microShares / 1000000;
     return trimTrailingZeros(value.toStringAsFixed(6));
   }
+
   bool _isLimit = false;
   double _limitPrice = 0.5;
   late final TextEditingController _limitPriceCtrl;
@@ -96,11 +97,15 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
     super.initState();
     _isBuy = widget.initialIsBuy;
     _amount = _isBuy ? 50.0 : (widget.maxShares ?? 10.0);
-    _ctrl = TextEditingController(text: _isBuy ? _amount.toStringAsFixed(0) : _formatShares(_amount));
-    
-    final initialPrice = widget.side == MarketSide.yes ? widget.market.yesPrice : widget.market.noPrice;
+    _ctrl = TextEditingController(
+        text: _isBuy ? _amount.toStringAsFixed(0) : _formatShares(_amount));
+
+    final initialPrice = widget.side == MarketSide.yes
+        ? widget.market.yesPrice
+        : widget.market.noPrice;
     _limitPrice = initialPrice;
-    _limitPriceCtrl = TextEditingController(text: _limitPrice.toStringAsFixed(2));
+    _limitPriceCtrl =
+        TextEditingController(text: _limitPrice.toStringAsFixed(2));
   }
 
   @override
@@ -120,270 +125,284 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
     final sideBg = isYes ? t.yesBg : t.noBg;
     final sideFg = isYes ? t.yes : t.no;
     final sideLabel = isYes ? 'YES' : 'NO';
-    
+
     // Dynamic price calculation
-    final price = _isLimit ? _limitPrice : (isYes ? widget.market.yesPrice : widget.market.noPrice);
+    final price = _isLimit
+        ? _limitPrice
+        : (isYes ? widget.market.yesPrice : widget.market.noPrice);
     final estShares = _isBuy ? (price > 0 ? _amount / price : 0.0) : _amount;
     final estPayout = _isBuy ? estShares : (_amount * price);
     final profit = _isBuy ? (estPayout - _amount) : 0.0;
-    
+
     final hasRealWallet = ws.userId != null && ws.hasWallet;
 
     return PulsSheetSurface(
       raised: true,
       scrollable: true,
       child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // BUY/SELL Tabs
-              Container(
-                decoration: BoxDecoration(
-                  color: t.surface,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: t.border),
-                ),
-                padding: const EdgeInsets.all(2),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() {
-                          _isBuy = true;
-                          _amount = 50.0;
-                          _ctrl.text = '50';
-                        }),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: _isBuy ? t.surfaceRaised : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: _isBuy 
-                                ? [BoxShadow(color: const Color(0xFFEC4899).withValues(alpha: 0.05), blurRadius: 2)] 
-                                : null,
-                          ),
-                          child: Center(
-                            child: Text(
-                              'BUY',
-                              style: TextStyle(
-                                color: _isBuy ? t.text : t.textMuted,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // BUY/SELL Tabs
+          Container(
+            decoration: BoxDecoration(
+              color: t.surface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: t.border),
+            ),
+            padding: const EdgeInsets.all(2),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() {
+                      _isBuy = true;
+                      _amount = 50.0;
+                      _ctrl.text = '50';
+                    }),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _isBuy ? t.surfaceRaised : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: _isBuy
+                            ? [
+                                BoxShadow(
+                                    color: PulsColors.brandPink
+                                        .withValues(alpha: 0.05),
+                                    blurRadius: 2)
+                              ]
+                            : null,
                       ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() {
-                          _isBuy = false;
-                          _amount = widget.maxShares ?? 10.0;
-                          _ctrl.text = _formatShares(_amount);
-                        }),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: !_isBuy ? t.surfaceRaised : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: !_isBuy 
-                                ? [BoxShadow(color: const Color(0xFFEC4899).withValues(alpha: 0.05), blurRadius: 2)] 
-                                : null,
-                          ),
-                          child: Center(
-                            child: Text(
-                              'SELL',
-                              style: TextStyle(
-                                color: !_isBuy ? t.text : t.textMuted,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              
-              // Order Type Tabs: MARKET vs LIMIT
-              Container(
-                decoration: BoxDecoration(
-                  color: t.surface,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: t.border),
-                ),
-                padding: const EdgeInsets.all(2),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _isLimit = false),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: !_isLimit ? t.surfaceRaised : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Market Order',
-                              style: TextStyle(
-                                color: !_isLimit ? t.text : t.textMuted,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          final wallet = WalletServiceScope.of(context).state;
-                          final supportsLimit = wallet.userId != null && wallet.hasWallet && !wallet.isExternalWallet;
-                          if (!supportsLimit) {
-                            PulsSnack.error(context,
-                                'Limit orders are only available with email-authenticated Puls custodial wallets.');
-                          } else {
-                            setState(() => _isLimit = true);
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: _isLimit ? t.surfaceRaised : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: PulsEmojiText(
-                              'Limit Order 🎯',
-                              style: TextStyle(
-                                color: _isLimit ? t.text : t.textMuted,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: sideBg,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(sideLabel,
-                        style: TextStyle(
-                            color: sideFg,
+                      child: Center(
+                        child: Text(
+                          'BUY',
+                          style: TextStyle(
+                            color: _isBuy ? t.text : t.textMuted,
                             fontWeight: FontWeight.w800,
-                            fontSize: 12)),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: AnimatedGradientText(
-                      _isBuy ? 'Buy Prediction Shares' : 'Sell Prediction Shares',
-                      textAlign: TextAlign.left,
-                      style: Theme.of(context).textTheme.titleLarge,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.market.question,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(height: 1.4),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 18),
-              TextField(
-                controller: _ctrl,
-                keyboardType: TextInputType.number,
-                style: TextStyle(color: t.text),
-                decoration: InputDecoration(
-                  labelText: _isBuy ? 'Amount (USDC)' : 'Shares to Sell',
-                  labelStyle: TextStyle(color: t.textMuted),
-                  prefixText: _isBuy ? '\$' : '',
-                  prefixStyle: TextStyle(color: t.text),
                 ),
-                onChanged: (v) =>
-                    setState(() => _amount = double.tryParse(v) ?? 0),
-              ),
-              if (_isLimit) ...[
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _limitPriceCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: TextStyle(color: t.text),
-                  decoration: InputDecoration(
-                    labelText: 'Limit Price (USDC per share)',
-                    labelStyle: TextStyle(color: t.textMuted),
-                    prefixText: '\$',
-                    prefixStyle: TextStyle(color: t.text),
-                    hintText: 'e.g. 0.45',
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() {
+                      _isBuy = false;
+                      _amount = widget.maxShares ?? 10.0;
+                      _ctrl.text = _formatShares(_amount);
+                    }),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: !_isBuy ? t.surfaceRaised : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: !_isBuy
+                            ? [
+                                BoxShadow(
+                                    color: PulsColors.brandPink
+                                        .withValues(alpha: 0.05),
+                                    blurRadius: 2)
+                              ]
+                            : null,
+                      ),
+                      child: Center(
+                        child: Text(
+                          'SELL',
+                          style: TextStyle(
+                            color: !_isBuy ? t.text : t.textMuted,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  onChanged: (v) =>
-                      setState(() => _limitPrice = double.tryParse(v) ?? 0.5),
                 ),
               ],
-              const SizedBox(height: 12),
-              
-              // Quick action buttons
-              Row(
-                children: _isBuy 
-                  ? [25, 50, 100, 250].map((amt) {
-                      final sel = _amount == amt;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () => setState(() {
-                            _amount = amt.toDouble();
-                            _ctrl.text = amt.toString();
-                          }),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 160),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: sel ? sideBg : t.surface,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                  color: sel ? sideFg : t.border),
-                            ),
-                            child: Text('\$$amt',
-                                style: TextStyle(
-                                    color: sel ? sideFg : t.textMuted,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13)),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Order Type Tabs: MARKET vs LIMIT
+          Container(
+            decoration: BoxDecoration(
+              color: t.surface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: t.border),
+            ),
+            padding: const EdgeInsets.all(2),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _isLimit = false),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: BoxDecoration(
+                        color: !_isLimit ? t.surfaceRaised : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Market Order',
+                          style: TextStyle(
+                            color: !_isLimit ? t.text : t.textMuted,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
                           ),
                         ),
-                      );
-                    }).toList()
-                  : [
-                      if (widget.maxShares != null) ...[
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      final wallet = WalletServiceScope.of(context).state;
+                      final supportsLimit = wallet.userId != null &&
+                          wallet.hasWallet &&
+                          !wallet.isExternalWallet;
+                      if (!supportsLimit) {
+                        PulsSnack.error(context,
+                            'Limit orders are only available with email-authenticated Puls custodial wallets.');
+                      } else {
+                        setState(() => _isLimit = true);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _isLimit ? t.surfaceRaised : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: PulsEmojiText(
+                          'Limit Order рџЋЇ',
+                          style: TextStyle(
+                            color: _isLimit ? t.text : t.textMuted,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: sideBg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(sideLabel,
+                    style: TextStyle(
+                        color: sideFg,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: AnimatedGradientText(
+                  _isBuy ? 'Buy Prediction Shares' : 'Sell Prediction Shares',
+                  textAlign: TextAlign.left,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            widget.market.question,
+            style:
+                Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 18),
+          TextField(
+            controller: _ctrl,
+            keyboardType: TextInputType.number,
+            style: TextStyle(color: t.text),
+            decoration: InputDecoration(
+              labelText: _isBuy ? 'Amount (USDC)' : 'Shares to Sell',
+              labelStyle: TextStyle(color: t.textMuted),
+              prefixText: _isBuy ? '\$' : '',
+              prefixStyle: TextStyle(color: t.text),
+            ),
+            onChanged: (v) => setState(() => _amount = double.tryParse(v) ?? 0),
+          ),
+          if (_isLimit) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _limitPriceCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              style: TextStyle(color: t.text),
+              decoration: InputDecoration(
+                labelText: 'Limit Price (USDC per share)',
+                labelStyle: TextStyle(color: t.textMuted),
+                prefixText: '\$',
+                prefixStyle: TextStyle(color: t.text),
+                hintText: 'e.g. 0.45',
+              ),
+              onChanged: (v) =>
+                  setState(() => _limitPrice = double.tryParse(v) ?? 0.5),
+            ),
+          ],
+          const SizedBox(height: 12),
+
+          // Quick action buttons
+          Row(
+            children: _isBuy
+                ? [25, 50, 100, 250].map((amt) {
+                    final sel = _amount == amt;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () => setState(() {
+                          _amount = amt.toDouble();
+                          _ctrl.text = amt.toString();
+                        }),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 160),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: sel ? sideBg : t.surface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: sel ? sideFg : t.border),
+                          ),
+                          child: Text('\$$amt',
+                              style: TextStyle(
+                                  color: sel ? sideFg : t.textMuted,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13)),
+                        ),
+                      ),
+                    );
+                  }).toList()
+                : [
+                    if (widget.maxShares != null)
+                      ...[
                         widget.maxShares! * 0.25,
                         widget.maxShares! * 0.5,
                         widget.maxShares! * 0.75,
                         widget.maxShares!,
                       ].map((amt) {
                         final sel = _amount == amt;
-                        final label = amt == widget.maxShares ? 'MAX' : '${(amt / widget.maxShares! * 100).toStringAsFixed(0)}%';
+                        final label = amt == widget.maxShares
+                            ? 'MAX'
+                            : '${(amt / widget.maxShares! * 100).toStringAsFixed(0)}%';
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: GestureDetector(
@@ -398,8 +417,8 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                               decoration: BoxDecoration(
                                 color: sel ? sideBg : t.surface,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                    color: sel ? sideFg : t.border),
+                                border:
+                                    Border.all(color: sel ? sideFg : t.border),
                               ),
                               child: Text(label,
                                   style: TextStyle(
@@ -410,273 +429,287 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                           ),
                         );
                       })
-                    ],
-              ),
-              const SizedBox(height: 16),
-              
-              // Pricing breakdown box
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: t.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: t.border),
-                ),
-                child: Column(
-                  children: [
-                    _PreviewRow(
-                        label: 'Average Price',
-                        value: TradeMath.formatPrice(price),
-                        t: t),
-                    if (_isBuy) ...[
-                      _PreviewRow(
-                          label: 'Estimated Shares',
-                          value: _formatShares(estShares),
-                          t: t),
-                      _PreviewRow(
-                          label: 'Potential Payout',
-                          value: '\$${estPayout.toStringAsFixed(2)}',
-                          t: t),
-                      _PreviewRow(
-                          label: 'Estimated Profit',
-                          value: '\$${profit.toStringAsFixed(2)}',
-                          t: t,
-                          isLast: true),
-                    ] else ...[
-                      _PreviewRow(
-                          label: 'Estimated Payout',
-                          value: '\$${estPayout.toStringAsFixed(2)} USDC',
-                          t: t),
-                      _PreviewRow(
-                          label: 'Shares Owned',
-                          value: '${widget.maxShares != null ? _formatShares(widget.maxShares!) : "0"} $sideLabel',
-                          t: t,
-                          isLast: true),
-                    ]
                   ],
+          ),
+          const SizedBox(height: 16),
+
+          // Pricing breakdown box
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: t.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: t.border),
+            ),
+            child: Column(
+              children: [
+                _PreviewRow(
+                    label: 'Average Price',
+                    value: TradeMath.formatPrice(price),
+                    t: t),
+                if (_isBuy) ...[
+                  _PreviewRow(
+                      label: 'Estimated Shares',
+                      value: _formatShares(estShares),
+                      t: t),
+                  _PreviewRow(
+                      label: 'Potential Payout',
+                      value: '\$${estPayout.toStringAsFixed(2)}',
+                      t: t),
+                  _PreviewRow(
+                      label: 'Estimated Profit',
+                      value: '\$${profit.toStringAsFixed(2)}',
+                      t: t,
+                      isLast: true),
+                ] else ...[
+                  _PreviewRow(
+                      label: 'Estimated Payout',
+                      value: '\$${estPayout.toStringAsFixed(2)} USDC',
+                      t: t),
+                  _PreviewRow(
+                      label: 'Shares Owned',
+                      value:
+                          '${widget.maxShares != null ? _formatShares(widget.maxShares!) : "0"} $sideLabel',
+                      t: t,
+                      isLast: true),
+                ]
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: hasRealWallet ? t.yesBg : PulsColors.amberLight,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  hasRealWallet
+                      ? (widget.market.contractAddress != null
+                          ? Icons.bolt_rounded
+                          : Icons.check_circle_outline_rounded)
+                      : Icons.info_outline_rounded,
+                  color: hasRealWallet ? t.yes : PulsColors.amber,
+                  size: 14,
                 ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: hasRealWallet
-                      ? t.yesBg
-                      : PulsColors.amberLight,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      hasRealWallet
-                          ? (widget.market.contractAddress != null
-                              ? Icons.bolt_rounded
-                              : Icons.check_circle_outline_rounded)
-                          : Icons.info_outline_rounded,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    hasRealWallet
+                        ? (widget.market.contractAddress != null
+                            ? 'вљЎ Instant trade вЂ” already on Arc В· \$${ws.usdcBalance}'
+                            : 'Real USDC trade on Arc В· Balance: \$${ws.usdcBalance}')
+                        : 'Demo only вЂ” connect wallet in Profile for real trades.',
+                    style: TextStyle(
                       color: hasRealWallet ? t.yes : PulsColors.amber,
-                      size: 14,
+                      fontSize: 12,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        hasRealWallet
-                            ? (widget.market.contractAddress != null
-                                ? '⚡ Instant trade — already on Arc · \$${ws.usdcBalance}'
-                                : 'Real USDC trade on Arc · Balance: \$${ws.usdcBalance}')
-                            : 'Demo only — connect wallet in Profile for real trades.',
-                        style: TextStyle(
-                          color: hasRealWallet
-                              ? t.yes
-                              : PulsColors.amber,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: Semantics(
-                  // The confirm-trade button moves real USDC. Announce it as a
-                  // button with an explicit label that includes the side +
-                  // amount, so screen-reader users can confirm what they're
-                  // committing to before double-tapping.
-                  button: true,
-                  enabled: _amount > 0 && !_isExecuting,
-                  label: _isBuy
-                      ? 'Buy ${widget.side == MarketSide.yes ? 'YES' : 'NO'} for \$${_amount.toStringAsFixed(2)} USDC'
-                      : 'Sell ${_amount.toStringAsFixed(2)} ${widget.side == MarketSide.yes ? 'YES' : 'NO'} shares for USDC',
-                  hint: _isBuy
-                      ? 'Commits a real USDC trade. Cannot be undone.'
-                      : 'Sells shares from your portfolio for USDC.',
-                  excludeSemantics: true,
-                  child: TextButton(
-                    onPressed: (_amount > 0 && !_isExecuting)
-                        ? () async {
-                          final snack = PulsSnack.of(context);
-                          setState(() {
-                            _isExecuting = true;
-                            _loadingQuote = _propheticQuotes[math.Random().nextInt(_propheticQuotes.length)];
-                          });
-                          try {
-                            if (hasRealWallet) {
-                              final Map<String, dynamic> result;
-                              if (_isLimit) {
-                                result = await walletService.placeLimitOrder(
-                                  isBuy: _isBuy,
-                                  isYes: isYes,
-                                  amount: _amount,
-                                  targetPrice: _limitPrice,
-                                  slug: widget.market.slug,
-                                  marketId: widget.market.contractAddress ?? '',
-                                  deadline: widget.market.deadline.millisecondsSinceEpoch ~/ 1000,
-                                );
-                                if (!context.mounted) return;
-                                Navigator.of(context).pop();
-                                snack.show(
-                                    '🎯 Limit order placed to ${_isBuy ? "buy" : "sell"} $sideLabel at \$${_limitPrice.toStringAsFixed(2)}');
-                                // Funnel event: a real limit order was placed.
-                                // (Limit orders don't settle instantly, so we
-                                // track 'placed' rather than 'executed'.)
-                                trackEvent('limit_order_placed', {
-                                  'side': isYes ? 'yes' : 'no',
-                                  'action': _isBuy ? 'buy' : 'sell',
-                                  'target_price': _limitPrice.toStringAsFixed(2),
-                                  'amount_usdc': _amount.toStringAsFixed(2),
-                                });
-                              } else {
-                                if (_isBuy) {
-                                  result = await walletService.buyPosition(
-                                    isYes: isYes,
-                                    usdcAmount: _amount,
-                                    question: widget.market.question,
-                                    entryPrice: price,
-                                    contractAddress: widget.market.contractAddress,
-                                    slug: widget.market.slug,
-                                    deadline: widget.market.deadline.millisecondsSinceEpoch ~/ 1000,
-                                  );
-                                } else {
-                                  result = await walletService.sellPosition(
-                                    isYes: isYes,
-                                    shares: _amount,
-                                    question: widget.market.question,
-                                    entryPrice: price,
-                                    contractAddress: widget.market.contractAddress,
-                                    slug: widget.market.slug,
-                                    deadline: widget.market.deadline.millisecondsSinceEpoch ~/ 1000,
-                                    owner: widget.owner,
-                                  );
-                                }
-                                if (!context.mounted) return;
-                                Navigator.of(context).pop();
-                                TxStatusSheet.show(
-                                  context,
-                                  txId: result['txId'] as String,
-                                  side: isYes ? 'YES' : 'NO',
-                                  amount: _amount,
-                                  isBuy: _isBuy,
-                                  walletService: walletService,
-                                );
-                                // Funnel event: a real on-chain trade executed
-                                // successfully. The bottom of the
-                                // feed → market detail → trade funnel.
-                                trackEvent('trade_executed', {
-                                  'type': 'real',
-                                  'side': isYes ? 'yes' : 'no',
-                                  'action': _isBuy ? 'buy' : 'sell',
-                                  'order_type': _isLimit ? 'limit' : 'market',
-                                  'amount_usdc': _amount.toStringAsFixed(2),
-                                });
-                              }
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: Semantics(
+              // The confirm-trade button moves real USDC. Announce it as a
+              // button with an explicit label that includes the side +
+              // amount, so screen-reader users can confirm what they're
+              // committing to before double-tapping.
+              button: true,
+              enabled: _amount > 0 && !_isExecuting,
+              label: _isBuy
+                  ? 'Buy ${widget.side == MarketSide.yes ? 'YES' : 'NO'} for \$${_amount.toStringAsFixed(2)} USDC'
+                  : 'Sell ${_amount.toStringAsFixed(2)} ${widget.side == MarketSide.yes ? 'YES' : 'NO'} shares for USDC',
+              hint: _isBuy
+                  ? 'Commits a real USDC trade. Cannot be undone.'
+                  : 'Sells shares from your portfolio for USDC.',
+              excludeSemantics: true,
+              child: TextButton(
+                onPressed: (_amount > 0 && !_isExecuting)
+                    ? () async {
+                        final snack = PulsSnack.of(context);
+                        setState(() {
+                          _isExecuting = true;
+                          _loadingQuote = _propheticQuotes[
+                              math.Random().nextInt(_propheticQuotes.length)];
+                        });
+                        try {
+                          if (hasRealWallet) {
+                            final Map<String, dynamic> result;
+                            if (_isLimit) {
+                              result = await walletService.placeLimitOrder(
+                                isBuy: _isBuy,
+                                isYes: isYes,
+                                amount: _amount,
+                                targetPrice: _limitPrice,
+                                slug: widget.market.slug,
+                                marketId: widget.market.contractAddress ?? '',
+                                deadline: widget.market.deadline
+                                        .millisecondsSinceEpoch ~/
+                                    1000,
+                              );
+                              if (!context.mounted) return;
+                              Navigator.of(context).pop();
+                              snack.show(
+                                  'рџЋЇ Limit order placed to ${_isBuy ? "buy" : "sell"} $sideLabel at \$${_limitPrice.toStringAsFixed(2)}');
+                              // Funnel event: a real limit order was placed.
+                              // (Limit orders don't settle instantly, so we
+                              // track 'placed' rather than 'executed'.)
+                              trackEvent('limit_order_placed', {
+                                'side': isYes ? 'yes' : 'no',
+                                'action': _isBuy ? 'buy' : 'sell',
+                                'target_price': _limitPrice.toStringAsFixed(2),
+                                'amount_usdc': _amount.toStringAsFixed(2),
+                              });
                             } else {
-                              // Demo trade
                               if (_isBuy) {
-                                appState.addDemoPosition(
-                                  market: widget.market,
-                                  side: widget.side,
-                                  amount: _amount,
+                                result = await walletService.buyPosition(
+                                  isYes: isYes,
+                                  usdcAmount: _amount,
+                                  question: widget.market.question,
+                                  entryPrice: price,
+                                  contractAddress:
+                                      widget.market.contractAddress,
+                                  slug: widget.market.slug,
+                                  deadline: widget.market.deadline
+                                          .millisecondsSinceEpoch ~/
+                                      1000,
                                 );
                               } else {
-                                // Demo sell (remove from portfolio)
-                                // Just pop for simplicity in demo mode
+                                result = await walletService.sellPosition(
+                                  isYes: isYes,
+                                  shares: _amount,
+                                  question: widget.market.question,
+                                  entryPrice: price,
+                                  contractAddress:
+                                      widget.market.contractAddress,
+                                  slug: widget.market.slug,
+                                  deadline: widget.market.deadline
+                                          .millisecondsSinceEpoch ~/
+                                      1000,
+                                  owner: widget.owner,
+                                );
                               }
                               if (!context.mounted) return;
                               Navigator.of(context).pop();
-                              snack.show(_isBuy
-                                  ? 'Added demo ${isYes ? 'Yes' : 'No'} position.'
-                                  : 'Sold demo ${isYes ? 'Yes' : 'No'} position.');
-                              // Funnel event: a demo trade executed. Tagged as
-                              // 'demo' so we can separate real USDC trade
-                              // volume from demo-mode trades in the funnel.
+                              TxStatusSheet.show(
+                                context,
+                                txId: result['txId'] as String,
+                                side: isYes ? 'YES' : 'NO',
+                                amount: _amount,
+                                isBuy: _isBuy,
+                                walletService: walletService,
+                              );
+                              // Funnel event: a real on-chain trade executed
+                              // successfully. The bottom of the
+                              // feed в†’ market detail в†’ trade funnel.
                               trackEvent('trade_executed', {
-                                'type': 'demo',
+                                'type': 'real',
                                 'side': isYes ? 'yes' : 'no',
                                 'action': _isBuy ? 'buy' : 'sell',
+                                'order_type': _isLimit ? 'limit' : 'market',
                                 'amount_usdc': _amount.toStringAsFixed(2),
                               });
                             }
-                          } catch (e) {
-                            if (context.mounted) {
-                              snack.error(
-                                  e.toString().contains('Insufficient')
-                                      ? e.toString().replaceFirst('Exception: ', '')
-                                      : 'Trade failed: $e',
-                                  duration: const Duration(seconds: 5));
+                          } else {
+                            // Demo trade
+                            if (_isBuy) {
+                              appState.addDemoPosition(
+                                market: widget.market,
+                                side: widget.side,
+                                amount: _amount,
+                              );
+                            } else {
+                              // Demo sell (remove from portfolio)
+                              // Just pop for simplicity in demo mode
                             }
-                          } finally {
-                            if (mounted) {
-                              setState(() {
-                                _isExecuting = false;
-                              });
-                            }
+                            if (!context.mounted) return;
+                            Navigator.of(context).pop();
+                            snack.show(_isBuy
+                                ? 'Added demo ${isYes ? 'Yes' : 'No'} position.'
+                                : 'Sold demo ${isYes ? 'Yes' : 'No'} position.');
+                            // Funnel event: a demo trade executed. Tagged as
+                            // 'demo' so we can separate real USDC trade
+                            // volume from demo-mode trades in the funnel.
+                            trackEvent('trade_executed', {
+                              'type': 'demo',
+                              'side': isYes ? 'yes' : 'no',
+                              'action': _isBuy ? 'buy' : 'sell',
+                              'amount_usdc': _amount.toStringAsFixed(2),
+                            });
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            snack.error(
+                                e.toString().contains('Insufficient')
+                                    ? e
+                                        .toString()
+                                        .replaceFirst('Exception: ', '')
+                                    : 'Trade failed: $e',
+                                duration: const Duration(seconds: 5));
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isExecuting = false;
+                            });
                           }
                         }
-                      : null,
-                  style: TextButton.styleFrom(
-                    backgroundColor: (_amount > 0 && !_isExecuting) ? sideFg : t.border,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: _isExecuting
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
-                              ),
-                            ),
-                            if (_isExecuting) ...[
-                              const SizedBox(width: 10),
-                              Text(
-                                _loadingQuote,
-                                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ],
-                        )
-                      : Text(
-                          hasRealWallet 
-                              ? (_isBuy ? 'Buy $sideLabel with USDC' : 'Sell $sideLabel Shares for USDC')
-                              : 'Confirm demo trade',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15),
-                        ),
-                  ),
+                      }
+                    : null,
+                style: TextButton.styleFrom(
+                  backgroundColor:
+                      (_amount > 0 && !_isExecuting) ? sideFg : t.border,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
+                child: _isExecuting
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          ),
+                          if (_isExecuting) ...[
+                            const SizedBox(width: 10),
+                            Text(
+                              _loadingQuote,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ],
+                      )
+                    : Text(
+                        hasRealWallet
+                            ? (_isBuy
+                                ? 'Buy $sideLabel with USDC'
+                                : 'Sell $sideLabel Shares for USDC')
+                            : 'Confirm demo trade',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15),
+                      ),
               ),
-            ],
+            ),
           ),
+        ],
+      ),
     );
   }
 }
@@ -703,9 +736,7 @@ class _PreviewRow extends StatelessWidget {
           const Spacer(),
           Text(value,
               style: TextStyle(
-                  color: t.text,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13)),
+                  color: t.text, fontWeight: FontWeight.w700, fontSize: 13)),
         ],
       ),
     );

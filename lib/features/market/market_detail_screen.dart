@@ -14,6 +14,7 @@ import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/utils/image_util.dart';
 import '../../core/widgets/market_hero.dart';
 import '../../core/widgets/animated_count.dart';
+import '../../core/widgets/tactile.dart';
 import '../../core/widgets/gradient_text.dart';
 import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
@@ -61,7 +62,11 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
     if (market != null) {
       _syncShareMetadata(market);
       PriceHistoryService.fetchForMarket(market).then((h) {
-        if (mounted) setState(() { _history = h; _historyLoading = false; });
+        if (mounted)
+          setState(() {
+            _history = h;
+            _historyLoading = false;
+          });
       });
     } else if (!_marketLoading && !_marketNotFound) {
       _marketLoading = true;
@@ -70,11 +75,18 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
         if (m != null) {
           _syncShareMetadata(m);
           PriceHistoryService.fetchForMarket(m).then((h) {
-            if (mounted) setState(() { _history = h; _historyLoading = false; });
+            if (mounted)
+              setState(() {
+                _history = h;
+                _historyLoading = false;
+              });
           });
           setState(() => _marketLoading = false);
         } else {
-          setState(() { _marketLoading = false; _marketNotFound = true; });
+          setState(() {
+            _marketLoading = false;
+            _marketNotFound = true;
+          });
         }
       });
     }
@@ -89,9 +101,8 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
     _metaSynced = true;
     final routeName = '/m/${market.slug}';
     final yesCents = (market.yesPrice * 100).round();
-    final odds = yesCents == 0
-        ? 'new'
-        : '$yesCents% YES / ${100 - yesCents}% NO';
+    final odds =
+        yesCents == 0 ? 'new' : '$yesCents% YES / ${100 - yesCents}% NO';
     final description =
         '${market.context.isEmpty ? market.question : market.context} '
         '— $odds · ${market.volume} volume on Puls.';
@@ -125,15 +136,19 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
     if (market == null) {
       return Scaffold(
         backgroundColor: t.bg,
-        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0,
-          leading: BackButton(color: t.text)),
-        body: Center(child: _marketNotFound
-            ? const PulsEmptyState(
-                title: 'Market not found',
-                message: 'This market may have been removed or does not exist.',
-                icon: Icons.search_off_rounded,
-              )
-            : const PulsLoader()),
+        appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: BackButton(color: t.text)),
+        body: Center(
+            child: _marketNotFound
+                ? const PulsEmptyState(
+                    title: 'Market not found',
+                    message:
+                        'This market may have been removed or does not exist.',
+                    icon: Icons.search_off_rounded,
+                  )
+                : const PulsLoader()),
       );
     }
 
@@ -150,7 +165,8 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
             radius: 16,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: networkImage(market.imageUrl, height: 180, fit: BoxFit.cover),
+              child:
+                  networkImage(market.imageUrl, height: 180, fit: BoxFit.cover),
             ),
           ),
           const SizedBox(height: 16),
@@ -161,8 +177,10 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
           spacing: 6,
           children: [
             _Chip(label: market.category, t: t),
-            if (market.isFeatured) _Chip(label: '⭐ Featured', t: t, highlight: true),
-            if (market.createdByAgent) _Chip(label: '🤖 Created by agent', t: t, highlight: true),
+            if (market.isFeatured)
+              _Chip(label: '⭐ Featured', t: t, highlight: true),
+            if (market.createdByAgent)
+              _Chip(label: '🤖 Created by agent', t: t, highlight: true),
           ],
         ),
         const SizedBox(height: 12),
@@ -178,8 +196,12 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
         if (market.context.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(market.context,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: t.textMuted),
-              maxLines: 4, overflow: TextOverflow.ellipsis),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge
+                  ?.copyWith(color: t.textMuted),
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis),
         ],
         const SizedBox(height: 20),
 
@@ -227,7 +249,9 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
 
         // ── AI Oracle Panel (opt-in via Settings; off by default) ──────────
         if (appState.aiOracleEnabled)
-          AiOraclePanel(slug: market.slug.isNotEmpty ? market.slug : market.id, question: market.question),
+          AiOraclePanel(
+              slug: market.slug.isNotEmpty ? market.slug : market.id,
+              question: market.question),
 
         // ── Discussion / comments / activity ────────────────────────────
         const SizedBox(height: 24),
@@ -260,8 +284,11 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
             onPressed: () => AiCopilotSheet.show(context, market),
           ),
           IconButton(
-            icon: Icon(Icons.bookmark_rounded, size: 20,
-              color: appState.isWatchlisted(market.id) ? PulsColors.amber : t.textSubtle),
+            icon: Icon(Icons.bookmark_rounded,
+                size: 20,
+                color: appState.isWatchlisted(market.id)
+                    ? PulsColors.amber
+                    : t.textSubtle),
             onPressed: () => appState.toggleWatchlist(market.id),
           ),
         ],
@@ -276,30 +303,44 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
               child: WebLayout(maxWidth: 720, child: body),
             )
           : body,
-      bottomNavigationBar: kIsWeb ? null : SafeArea(
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
-          decoration: BoxDecoration(
-            color: t.bg,
-            border: Border(top: BorderSide(color: t.border)),
-          ),
-          child: Row(
-            children: [
-              Expanded(child: _TradeBtn(
-                label: 'Buy YES', price: TradeMath.formatPrice(market.yesPrice),
-                bg: t.yesBg, fg: t.yes,
-                onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.yes),
-              )),
-              const SizedBox(width: 12),
-              Expanded(child: _TradeBtn(
-                label: 'Buy NO', price: TradeMath.formatPrice(market.noPrice),
-                bg: t.noBg, fg: t.no,
-                onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.no),
-              )),
-            ],
-          ),
-        ),
-      ),
+      bottomNavigationBar: kIsWeb
+          ? null
+          : SafeArea(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
+                decoration: BoxDecoration(
+                  color: t.bg,
+                  border: Border(top: BorderSide(color: t.border)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                        child: _TradeBtn(
+                      label: 'Buy YES',
+                      price: TradeMath.formatPrice(market.yesPrice),
+                      bg: t.yesBg,
+                      fg: t.yes,
+                      onPressed: () => showTradePreviewSheet(
+                          context: context,
+                          market: market,
+                          side: MarketSide.yes),
+                    )),
+                    const SizedBox(width: 12),
+                    Expanded(
+                        child: _TradeBtn(
+                      label: 'Buy NO',
+                      price: TradeMath.formatPrice(market.noPrice),
+                      bg: t.noBg,
+                      fg: t.no,
+                      onPressed: () => showTradePreviewSheet(
+                          context: context,
+                          market: market,
+                          side: MarketSide.no),
+                    )),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }
@@ -337,14 +378,19 @@ class _ProbabilityPanel extends StatelessWidget {
                     Icon(Icons.public_rounded, size: 11, color: t.brand),
                     const SizedBox(width: 4),
                     Text('Real-world odds',
-                        style: TextStyle(color: t.brand, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.2)),
+                        style: TextStyle(
+                            color: t.brand,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.2)),
                   ],
                 ),
               ),
               const Spacer(),
               Flexible(
                 child: Text('Live · tracks consensus',
-                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.end,
                     style: TextStyle(color: t.textSubtle, fontSize: 10.5)),
               ),
@@ -357,17 +403,27 @@ class _ProbabilityPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('YES', style: TextStyle(color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w600)),
+                    Text('YES',
+                        style: TextStyle(
+                            color: t.textSubtle,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
                     Semantics(
                       label: 'Yes odds $yesPct percent',
                       child: AnimatedCount(
                         value: yesPct.toDouble(),
                         formatter: (v) => '${v.round()}%',
-                        style: TextStyle(color: t.yes, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1, fontFeatures: PulsColors.tabularFigures),
+                        style: TextStyle(
+                            color: t.yes,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -1,
+                            fontFeatures: PulsColors.tabularFigures),
                       ),
                     ),
-                    Text(TradeMath.formatPrice(market.yesPrice), style: TextStyle(color: t.textMuted, fontSize: 12)),
+                    Text(TradeMath.formatPrice(market.yesPrice),
+                        style: TextStyle(color: t.textMuted, fontSize: 12)),
                   ],
                 ),
               ),
@@ -378,17 +434,27 @@ class _ProbabilityPanel extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('NO', style: TextStyle(color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w600)),
+                      Text('NO',
+                          style: TextStyle(
+                              color: t.textSubtle,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600)),
                       const SizedBox(height: 2),
                       Semantics(
                         label: 'No odds $noPct percent',
                         child: AnimatedCount(
                           value: noPct.toDouble(),
                           formatter: (v) => '${v.round()}%',
-                          style: TextStyle(color: t.no, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1, fontFeatures: PulsColors.tabularFigures),
+                          style: TextStyle(
+                              color: t.no,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1,
+                              fontFeatures: PulsColors.tabularFigures),
                         ),
                       ),
-                      Text(TradeMath.formatPrice(market.noPrice), style: TextStyle(color: t.textMuted, fontSize: 12)),
+                      Text(TradeMath.formatPrice(market.noPrice),
+                          style: TextStyle(color: t.textMuted, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -398,17 +464,25 @@ class _ProbabilityPanel extends StatelessWidget {
                 Column(
                   children: [
                     _TradeBtn(
-                      label: 'YES', price: TradeMath.formatPrice(market.yesPrice),
-                      bg: t.yesBg, fg: t.yes,
+                      label: 'YES',
+                      price: TradeMath.formatPrice(market.yesPrice),
+                      bg: t.yesBg,
+                      fg: t.yes,
                       onPressed: () => showTradePreviewSheet(
-                        context: context, market: market, side: MarketSide.yes),
+                          context: context,
+                          market: market,
+                          side: MarketSide.yes),
                     ),
                     const SizedBox(height: 6),
                     _TradeBtn(
-                      label: 'NO', price: TradeMath.formatPrice(market.noPrice),
-                      bg: t.noBg, fg: t.no,
+                      label: 'NO',
+                      price: TradeMath.formatPrice(market.noPrice),
+                      bg: t.noBg,
+                      fg: t.no,
                       onPressed: () => showTradePreviewSheet(
-                        context: context, market: market, side: MarketSide.no),
+                          context: context,
+                          market: market,
+                          side: MarketSide.no),
                     ),
                   ],
                 ),
@@ -418,7 +492,7 @@ class _ProbabilityPanel extends StatelessWidget {
           const SizedBox(height: 14),
           // Split bar
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
             child: SizedBox(
               height: 8,
               child: Row(
@@ -433,16 +507,24 @@ class _ProbabilityPanel extends StatelessWidget {
             const SizedBox(height: 14),
             Row(
               children: [
-                Expanded(child: _TradeBtn(
-                  label: 'Buy YES', price: TradeMath.formatPrice(market.yesPrice),
-                  bg: t.yesBg, fg: t.yes,
-                  onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.yes),
+                Expanded(
+                    child: _TradeBtn(
+                  label: 'Buy YES',
+                  price: TradeMath.formatPrice(market.yesPrice),
+                  bg: t.yesBg,
+                  fg: t.yes,
+                  onPressed: () => showTradePreviewSheet(
+                      context: context, market: market, side: MarketSide.yes),
                 )),
                 const SizedBox(width: 10),
-                Expanded(child: _TradeBtn(
-                  label: 'Buy NO', price: TradeMath.formatPrice(market.noPrice),
-                  bg: t.noBg, fg: t.no,
-                  onPressed: () => showTradePreviewSheet(context: context, market: market, side: MarketSide.no),
+                Expanded(
+                    child: _TradeBtn(
+                  label: 'Buy NO',
+                  price: TradeMath.formatPrice(market.noPrice),
+                  bg: t.noBg,
+                  fg: t.no,
+                  onPressed: () => showTradePreviewSheet(
+                      context: context, market: market, side: MarketSide.no),
                 )),
               ],
             ),
@@ -467,7 +549,8 @@ class _ProbabilityPanel extends StatelessWidget {
 
 /// A tiny "[Y] Yes" keycap hint shown on web to surface keyboard shortcuts.
 class _KbHint extends StatelessWidget {
-  const _KbHint({required this.keyLabel, required this.action, required this.t});
+  const _KbHint(
+      {required this.keyLabel, required this.action, required this.t});
   final String keyLabel;
   final String action;
   final PulsThemeColors t;
@@ -527,12 +610,14 @@ class _ChartSectionState extends State<_ChartSection> {
   @override
   Widget build(BuildContext context) {
     final t = widget.t;
-    
+
     Widget chartWidget;
     if (widget.loading) {
       chartWidget = const PulsLoader();
     } else if (widget.history.isEmpty) {
-      chartWidget = Center(child: Text('Chart data unavailable for this market.', style: TextStyle(color: t.textSubtle, fontSize: 13)));
+      chartWidget = Center(
+          child: Text('Chart data unavailable for this market.',
+              style: TextStyle(color: t.textSubtle, fontSize: 13)));
     } else {
       switch (_activeTab) {
         case 'candle':
@@ -550,7 +635,8 @@ class _ChartSectionState extends State<_ChartSection> {
           break;
         case 'line':
         default:
-          chartWidget = _FullChart(prices: widget.history, color: widget.trendColor);
+          chartWidget =
+              _FullChart(prices: widget.history, color: widget.trendColor);
       }
     }
 
@@ -566,7 +652,8 @@ class _ChartSectionState extends State<_ChartSection> {
         children: [
           Row(
             children: [
-              Text('Price Analytics', style: Theme.of(context).textTheme.titleMedium),
+              Text('Price Analytics',
+                  style: Theme.of(context).textTheme.titleMedium),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -576,13 +663,17 @@ class _ChartSectionState extends State<_ChartSection> {
                 ),
                 child: Text(
                   '${widget.trendPositive ? '+' : ''}${TradeMath.formatPercent(widget.trend)} 24h',
-                  style: TextStyle(color: widget.trendColor, fontWeight: FontWeight.w700, fontSize: 12, fontFeatures: PulsColors.tabularFigures),
+                  style: TextStyle(
+                      color: widget.trendColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      fontFeatures: PulsColors.tabularFigures),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // Chart Type Selector Toggles
           Container(
             padding: const EdgeInsets.all(2),
@@ -601,21 +692,28 @@ class _ChartSectionState extends State<_ChartSection> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           SizedBox(
             height: kIsWeb ? 260 : 160,
             child: chartWidget,
           ),
-          
+
           if (_activeTab == 'line' && widget.history.length >= 2) ...[
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('${formatCents(widget.history.first )} open',
-                    style: TextStyle(color: t.textSubtle, fontSize: 11, fontFeatures: PulsColors.tabularFigures)),
-                Text('${formatCents(widget.history.last )} now',
-                    style: TextStyle(color: widget.trendColor, fontSize: 11, fontWeight: FontWeight.w700, fontFeatures: PulsColors.tabularFigures)),
+                Text('${formatCents(widget.history.first)} open',
+                    style: TextStyle(
+                        color: t.textSubtle,
+                        fontSize: 11,
+                        fontFeatures: PulsColors.tabularFigures)),
+                Text('${formatCents(widget.history.last)} now',
+                    style: TextStyle(
+                        color: widget.trendColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: PulsColors.tabularFigures)),
               ],
             ),
           ],
@@ -655,7 +753,9 @@ class _FullChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
-    final spots = prices.asMap().entries
+    final spots = prices
+        .asMap()
+        .entries
         .map((e) => FlSpot(e.key.toDouble(), e.value))
         .toList();
     final minY = prices.reduce((a, b) => a < b ? a : b);
@@ -683,21 +783,30 @@ class _FullChart extends StatelessWidget {
               reservedSize: 32,
               interval: 0.25,
               getTitlesWidget: (v, _) => Text(
-                formatCents(v ),
+                formatCents(v),
                 style: TextStyle(color: t.textSubtle, fontSize: 9),
               ),
             ),
           ),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
-            getTooltipItems: (spots) => spots.map((s) => LineTooltipItem(
-              formatCents(s.y ),
-              TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
-            )).toList(),
+            getTooltipColor: (_) => t.surfaceRaised,
+            getTooltipItems: (spots) => spots
+                .map((s) => LineTooltipItem(
+                      formatCents(s.y),
+                      TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12),
+                    ))
+                .toList(),
           ),
         ),
         lineBarsData: [
@@ -713,13 +822,18 @@ class _FullChart extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.0)],
+                colors: [
+                  color.withValues(alpha: 0.2),
+                  color.withValues(alpha: 0.0)
+                ],
               ),
             ),
           ),
         ],
       ),
-      duration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 1000),
+      duration: context.reduceMotion
+          ? Duration.zero
+          : const Duration(milliseconds: 1000),
       curve: Curves.easeOutCubic,
     );
   }
@@ -746,10 +860,10 @@ class _StatsGrid extends StatelessWidget {
       crossAxisSpacing: 10,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      children: items.map((e) => _StatTile(label: e.$1, value: e.$2, t: t)).toList(),
+      children:
+          items.map((e) => _StatTile(label: e.$1, value: e.$2, t: t)).toList(),
     );
   }
-
 }
 
 // ── Bid/Ask panel ─────────────────────────────────────────────────────────────
@@ -774,18 +888,34 @@ class _BidAskPanel extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _OrderCell(label: 'Best Bid', value: formatCents(market.bestBid), color: t.yes, t: t)),
+              Expanded(
+                  child: _OrderCell(
+                      label: 'Best Bid',
+                      value: formatCents(market.bestBid),
+                      color: t.yes,
+                      t: t)),
               const SizedBox(width: 8),
-              Expanded(child: _OrderCell(label: 'Best Ask', value: formatCents(market.bestAsk), color: t.no, t: t)),
+              Expanded(
+                  child: _OrderCell(
+                      label: 'Best Ask',
+                      value: formatCents(market.bestAsk),
+                      color: t.no,
+                      t: t)),
               const SizedBox(width: 8),
-              Expanded(child: _OrderCell(label: 'Spread', value: formatCents(market.spread), color: t.textMuted, t: t)),
+              Expanded(
+                  child: _OrderCell(
+                      label: 'Spread',
+                      value: formatCents(market.spread),
+                      color: t.textMuted,
+                      t: t)),
             ],
           ),
           if (market.competitive > 0) ...[
             const SizedBox(height: 12),
             Row(
               children: [
-                Text('Market depth', style: TextStyle(color: t.textSubtle, fontSize: 11)),
+                Text('Market depth',
+                    style: TextStyle(color: t.textSubtle, fontSize: 11)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: ClipRRect(
@@ -802,7 +932,11 @@ class _BidAskPanel extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text('${(market.competitive * 100).toStringAsFixed(0)}%',
-                    style: TextStyle(color: t.brand, fontSize: 11, fontWeight: FontWeight.w700, fontFeatures: PulsColors.tabularFigures)),
+                    style: TextStyle(
+                        color: t.brand,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: PulsColors.tabularFigures)),
               ],
             ),
           ],
@@ -813,7 +947,11 @@ class _BidAskPanel extends StatelessWidget {
 }
 
 class _OrderCell extends StatelessWidget {
-  const _OrderCell({required this.label, required this.value, required this.color, required this.t});
+  const _OrderCell(
+      {required this.label,
+      required this.value,
+      required this.color,
+      required this.t});
   final String label;
   final String value;
   final Color color;
@@ -823,13 +961,25 @@ class _OrderCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(color: t.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: t.border)),
+      decoration: BoxDecoration(
+          color: t.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: t.border)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: t.textSubtle, fontSize: 10, fontWeight: FontWeight.w500)),
+          Text(label,
+              style: TextStyle(
+                  color: t.textSubtle,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500)),
           const SizedBox(height: 2),
-          Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w700, fontFeatures: PulsColors.tabularFigures)),
+          Text(value,
+              style: TextStyle(
+                  color: color,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: PulsColors.tabularFigures)),
         ],
       ),
     );
@@ -838,7 +988,11 @@ class _OrderCell extends StatelessWidget {
 
 // ── Info row ──────────────────────────────────────────────────────────────────
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.label, required this.value, required this.t});
+  const _InfoRow(
+      {required this.icon,
+      required this.label,
+      required this.value,
+      required this.t});
   final IconData icon;
   final String label;
   final String value;
@@ -850,7 +1004,7 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: t.surfaceRaised,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: t.border),
       ),
       child: Row(
@@ -859,7 +1013,9 @@ class _InfoRow extends StatelessWidget {
           const SizedBox(width: 10),
           Text(label, style: TextStyle(color: t.textMuted, fontSize: 13)),
           const Spacer(),
-          Text(value, style: TextStyle(color: t.text, fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(value,
+              style: TextStyle(
+                  color: t.text, fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -876,14 +1032,17 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: highlight ? t.brandSubtle : t.surface,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: highlight ? t.brand : t.border),
       ),
       child: PulsEmojiText(label,
-          style: TextStyle(color: highlight ? t.brand : t.textMuted, fontSize: 11, fontWeight: FontWeight.w600)),
+          style: TextStyle(
+              color: highlight ? t.brand : t.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w600)),
     );
   }
 }
@@ -897,19 +1056,29 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: t.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: t.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 3),
-          Text(value, style: TextStyle(color: t.text, fontWeight: FontWeight.w700, fontSize: 13)),
+          Text(label.toUpperCase(),
+              style: TextStyle(
+                  color: t.textSubtle,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.6)),
+          const SizedBox(height: 4),
+          Text(value,
+              style: TextStyle(
+                  color: t.text,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13.5,
+                  fontFeatures: PulsColors.tabularFigures)),
         ],
       ),
     );
@@ -917,7 +1086,12 @@ class _StatTile extends StatelessWidget {
 }
 
 class _TradeBtn extends StatelessWidget {
-  const _TradeBtn({required this.label, required this.price, required this.bg, required this.fg, required this.onPressed});
+  const _TradeBtn(
+      {required this.label,
+      required this.price,
+      required this.bg,
+      required this.fg,
+      required this.onPressed});
   final String label;
   final String price;
   final Color bg;
@@ -927,23 +1101,45 @@ class _TradeBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
-      child: TextButton(
-        onPressed: onPressed,
-        style: TextButton.styleFrom(
-          backgroundColor: bg,
-          foregroundColor: fg,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      height: 50,
+      child: Tactile(
+        onTap: onPressed,
+        pressedScale: 0.97,
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: fg.withValues(alpha: 0.28)),
+          ),
+          child: Text('$label $price',
+              style: TextStyle(
+                  color: fg,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13.5,
+                  letterSpacing: 0.2,
+                  fontFeatures: PulsColors.tabularFigures)),
         ),
-        child: Text('$label $price',
-            style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 14)),
       ),
     );
   }
 }
 
 String _fmtDate(DateTime v) {
-  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const m = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+  ];
   return '${m[v.month - 1]} ${v.day}, ${v.year}';
 }
 

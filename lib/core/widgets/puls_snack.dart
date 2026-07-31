@@ -127,10 +127,10 @@ class PulsSnacker {
           behavior: SnackBarBehavior.floating,
           backgroundColor: surface,
           elevation: 6,
-          shadowColor: _t.brand.withValues(alpha: _isDark ? 0.35 : 0.25),
           duration: showFor,
           width: width,
-          padding: EdgeInsets.fromLTRB(14, 12, actionLabel != null ? 8 : 16, 12),
+          padding:
+              EdgeInsets.fromLTRB(14, 12, actionLabel != null ? 8 : 16, 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
             side: BorderSide(color: _t.border),

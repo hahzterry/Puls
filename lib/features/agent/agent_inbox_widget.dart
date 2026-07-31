@@ -10,6 +10,7 @@ import '../../core/utils/kv_store.dart';
 import '../../core/utils/puls_emoji.dart';
 import '../../core/widgets/tactile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/widgets/puls_page_route.dart';
 import '../../core/widgets/puls_video_illustration.dart';
 import '../../app/puls_app.dart';
 import '../chat/user_chat_screen.dart';
@@ -59,7 +60,8 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
   void initState() {
     super.initState();
     final raw = kvGet(_muteKey) ?? '';
-    _muted = raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toSet();
+    _muted =
+        raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toSet();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetch();
       _fetchUsers();
@@ -69,7 +71,8 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
 
   Future<void> _fetchUsers() async {
     try {
-      final list = await WalletServiceScope.of(context).getLeaderboard(sort: 'pnl', limit: 200, type: 'all');
+      final list = await WalletServiceScope.of(context)
+          .getLeaderboard(sort: 'pnl', limit: 200, type: 'all');
       if (mounted) {
         setState(() {
           _usersAndAgents = list;
@@ -119,7 +122,9 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
     if (uid == null) return;
     try {
       final res = await _client
-          .get(Uri.parse('$backendUrl/api/notifications?type=agent_dm&userId=$uid'),
+          .get(
+              Uri.parse(
+                  '$backendUrl/api/notifications?type=agent_dm&userId=$uid'),
               headers: _headers)
           .timeout(const Duration(seconds: 15));
       if (res.statusCode != 200) return;
@@ -263,7 +268,8 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
           height: 54,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(colors: [t.brand, const Color(0xFFEC4899)]),
+            gradient:
+                LinearGradient(colors: [t.brand, const Color(0xFFEC4899)]),
             boxShadow: [
               BoxShadow(
                   color: t.brand.withValues(alpha: 0.4),
@@ -374,7 +380,8 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
     if (dms.isEmpty) {
       return PulsEmptyState(
         title: 'No messages yet',
-        message: 'Trade a bit — the agents will start pitching you their fresh signals and calls here.',
+        message:
+            'Trade a bit — the agents will start pitching you their fresh signals and calls here.',
         iconWidget: PulsVideoIllustration(
           asset: 'assets/illustrations/cute-robot-with-speech-bubble-4.mp4',
           width: 100,
@@ -410,7 +417,9 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
           Expanded(
             child: Text('${d['fromName']}',
                 style: TextStyle(
-                    color: t.text, fontSize: 12.5, fontWeight: FontWeight.w800)),
+                    color: t.text,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800)),
           ),
           Tactile(
             onTap: () => _toggleMute(key),
@@ -432,8 +441,8 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
-                  gradient:
-                      LinearGradient(colors: [t.brand, const Color(0xFFEC4899)]),
+                  gradient: LinearGradient(
+                      colors: [t.brand, const Color(0xFFEC4899)]),
                   borderRadius: BorderRadius.circular(8)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Text('${d['ctaLabel'] ?? 'Open'}',
@@ -455,34 +464,37 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
   Widget _buildChatTab(PulsThemeColors t) {
     if (_selectedAgentKey == null) {
       final query = _searchQuery.toLowerCase();
-      
+
       final combined = <Map<String, dynamic>>[];
       for (final a in _agents) {
-         combined.add({
-           'isHuman': false,
-           'key': a['key'],
-           'name': a['name'],
-           'role': a['role'],
-           'emoji': _emojiFor(a['name']),
-         });
+        combined.add({
+          'isHuman': false,
+          'key': a['key'],
+          'name': a['name'],
+          'role': a['role'],
+          'emoji': _emojiFor(a['name']),
+        });
       }
-      
+
       for (final u in _usersAndAgents) {
-         final name = _displayName(u);
-         if (name == 'Trader') continue;
-         
-         combined.add({
-           'isHuman': true,
-           'id': u['userId'],
-           'name': name,
-           'role': (u['isAgent'] == true || u['is_agent'] == true) ? 'AI Agent' : 'Trader',
-           'emoji': (u['isAgent'] == true || u['is_agent'] == true) ? '🤖' : '👤',
-         });
+        final name = _displayName(u);
+        if (name == 'Trader') continue;
+
+        combined.add({
+          'isHuman': true,
+          'id': u['userId'],
+          'name': name,
+          'role': (u['isAgent'] == true || u['is_agent'] == true)
+              ? 'AI Agent'
+              : 'Trader',
+          'emoji':
+              (u['isAgent'] == true || u['is_agent'] == true) ? '🤖' : '👤',
+        });
       }
-      
+
       final filtered = combined.where((item) {
-         final name = (item['name'] as String).toLowerCase();
-         return name.contains(query);
+        final name = (item['name'] as String).toLowerCase();
+        return name.contains(query);
       }).toList();
 
       return Column(
@@ -495,11 +507,13 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
               decoration: InputDecoration(
                 hintText: 'Search by nickname...',
                 hintStyle: TextStyle(color: t.textMuted, fontSize: 13),
-                prefixIcon: Icon(Icons.search_rounded, color: t.textMuted, size: 16),
+                prefixIcon:
+                    Icon(Icons.search_rounded, color: t.textMuted, size: 16),
                 isDense: true,
                 filled: true,
                 fillColor: t.surfaceRaised,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
@@ -519,7 +533,12 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
                     if (item['isHuman'] == true) {
                       final uid = item['id'];
                       if (uid != null && uid != _userId) {
-                         Navigator.push(context, MaterialPageRoute(builder: (_) => UserChatScreen(targetUserId: uid, targetUserName: item['name'])));
+                        Navigator.push(
+                            context,
+                            pulsRoute(context,
+                                builder: (_) => UserChatScreen(
+                                    targetUserId: uid,
+                                    targetUserName: item['name'])));
                       }
                     } else {
                       setState(() => _selectedAgentKey = item['key']);
@@ -542,13 +561,18 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('${item['name']}',
-                                style: TextStyle(color: t.text, fontSize: 14, fontWeight: FontWeight.w900)),
+                                style: TextStyle(
+                                    color: t.text,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w900)),
                             Text('${item['role']}',
-                                style: TextStyle(color: t.textMuted, fontSize: 11)),
+                                style: TextStyle(
+                                    color: t.textMuted, fontSize: 11)),
                           ],
                         ),
                       ),
-                      Icon(Icons.chat_bubble_outline_rounded, color: t.brand, size: 18),
+                      Icon(Icons.chat_bubble_outline_rounded,
+                          color: t.brand, size: 18),
                     ]),
                   ),
                 );
@@ -575,7 +599,8 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
                 _selectedAgentKey = null;
                 _chatHistory.clear();
               }),
-              child: Icon(Icons.arrow_back_rounded, color: t.textMuted, size: 20),
+              child:
+                  Icon(Icons.arrow_back_rounded, color: t.textMuted, size: 20),
             ),
             const SizedBox(width: 10),
             CircleAvatar(
@@ -584,7 +609,8 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
                 child: PulsEmoji.icon(_emojiFor(agent['name']), size: 10)),
             const SizedBox(width: 8),
             Text('${agent['name']}',
-                style: TextStyle(color: t.text, fontSize: 13, fontWeight: FontWeight.w800)),
+                style: TextStyle(
+                    color: t.text, fontSize: 13, fontWeight: FontWeight.w800)),
           ]),
         ),
         // Chat History
@@ -603,13 +629,15 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
                         alignment: Alignment.centerLeft,
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
                             color: t.surfaceRaised,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const SizedBox(
-                            width: 14, height: 14,
+                            width: 14,
+                            height: 14,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                         ),
@@ -619,19 +647,27 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
                     final isUser = msg['role'] == 'user';
                     final isError = msg['role'] == 'error';
                     return Align(
-                      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment:
+                          isUser ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
                         constraints: const BoxConstraints(maxWidth: 240),
                         margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
-                          color: isUser ? t.brand : (isError ? t.no.withValues(alpha: 0.2) : t.surfaceRaised),
+                          color: isUser
+                              ? t.brand
+                              : (isError
+                                  ? t.no.withValues(alpha: 0.2)
+                                  : t.surfaceRaised),
                           borderRadius: BorderRadius.circular(12),
                           border: isUser ? null : Border.all(color: t.border),
                         ),
                         child: Text('${msg['text']}',
                             style: TextStyle(
-                              color: isUser ? Colors.white : (isError ? t.no : t.text),
+                              color: isUser
+                                  ? Colors.white
+                                  : (isError ? t.no : t.text),
                               fontSize: 13,
                               height: 1.3,
                             )),
@@ -646,7 +682,8 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
           decoration: BoxDecoration(
             color: t.bg,
             border: Border(top: BorderSide(color: t.border)),
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
+            borderRadius:
+                const BorderRadius.vertical(bottom: Radius.circular(18)),
           ),
           child: Row(
             children: [
@@ -658,7 +695,8 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
                     hintText: 'Message...',
                     hintStyle: TextStyle(color: t.textMuted, fontSize: 13),
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: t.border),
@@ -679,12 +717,14 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
               Tactile(
                 onTap: _chatLoading ? null : _sendMessage,
                 child: Container(
-                  width: 36, height: 36,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     color: _chatLoading ? t.surfaceRaised : t.brand,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
+                  child: const Icon(Icons.send_rounded,
+                      color: Colors.white, size: 16),
                 ),
               ),
             ],
@@ -696,8 +736,9 @@ class _AgentInboxWidgetState extends State<AgentInboxWidget> {
 
   String _emojiFor(dynamic name) {
     final n = '$name';
-    final match = RegExp(r'[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]', unicode: true)
-        .firstMatch(n);
+    final match =
+        RegExp(r'[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]', unicode: true)
+            .firstMatch(n);
     return match?.group(0) ?? '🤖';
   }
 }

@@ -929,7 +929,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             button: true,
             child: Tactile(
               onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const InboxScreen())),
+                  pulsRoute(context, builder: (_) => const InboxScreen())),
               child: Container(
                 width: 34,
                 height: 34,

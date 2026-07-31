@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../core/motion.dart';
 import '../feed/feed_screen.dart';
 import '../home/web_iframe.dart';

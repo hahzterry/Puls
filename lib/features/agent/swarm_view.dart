@@ -10,6 +10,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/agent_pfp.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/widgets/puls_sheet.dart';
+import '../../core/widgets/puls_page_route.dart';
 import '../../core/widgets/puls_loader.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/gradient_text.dart';
@@ -719,7 +720,8 @@ class AgentDetailSheet extends StatelessWidget {
             if (slug != null && slug.isNotEmpty)
               InkWell(
                 onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
+                  Navigator.of(context).push(pulsRoute(
+                    context,
                     settings: RouteSettings(name: '/m/$slug'),
                     builder: (_) => MarketDetailScreen(marketId: slug),
                   ));

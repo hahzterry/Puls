@@ -571,8 +571,8 @@ class _MarketCardState extends State<_MarketCard> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 7, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const PulsColors.agentPurple.withValues(
-                                alpha: 0.14),
+                            color:
+                                PulsColors.agentPurple.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: const PulsEmojiText('рџ¤– AGENT',
@@ -655,7 +655,7 @@ class _MarketCardState extends State<_MarketCard> {
                           style: TextStyle(
                             color: t.text,
                             fontSize: 14.5,
-                            fontWeight: FontWeight.w750,
+                            fontWeight: FontWeight.w700,
                             height: 1.35,
                             letterSpacing: -0.2,
                           ),
@@ -885,8 +885,7 @@ class _FeaturedMarketCardState extends State<_FeaturedMarketCard> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 7, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const PulsColors.agentPurple.withValues(
-                              alpha: 0.14),
+                          color: PulsColors.agentPurple.withValues(alpha: 0.14),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const PulsEmojiText('рџ¤– AGENT',
@@ -970,20 +969,21 @@ class _FeaturedMarketCardState extends State<_FeaturedMarketCard> {
                   child: _loading
                       ? const SizedBox.shrink()
                       : _spark.length >= 2
-                          ? _MiniSparkline(prices: _spark, isUp: up)
+                          ? PulsSparkline(
+                              prices: _spark, color: up ? t.yes : t.no)
                           : const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    _stat(t, 'Volume', m.volume.isEmpty ? 'вЂ”' : m.volume),
+                    _stat(t, 'Volume', m.volume.isEmpty ? '—' : m.volume),
                     Container(
                         width: 1,
                         height: 28,
                         margin: const EdgeInsets.symmetric(horizontal: 18),
                         color: t.border),
                     _stat(t, 'Liquidity',
-                        m.liquidity.isEmpty ? 'вЂ”' : m.liquidity),
+                        m.liquidity.isEmpty ? '—' : m.liquidity),
                     Container(
                         width: 1,
                         height: 28,

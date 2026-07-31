@@ -141,19 +141,23 @@ class _TradeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final side = (trade['side'] as String? ?? 'YES').toUpperCase();
     final isYes = side == 'YES';
-    final sideColor = isYes ? const Color(0xFF2DD4BF) : const Color(0xFFEC4899);
+    final sideColor = isYes ? PulsColors.brandMint : PulsColors.brandPink;
     final userId = (trade['user_id'] as String? ?? 'unknown');
     final isAgent = userId.startsWith('agent_');
     final amount = (trade['usdc_amount'] as num?)?.toDouble() ?? 0;
-    final question = (trade['question'] as String? ?? '').replaceAll('🤖 Agent:', '').trim();
-    final q = question.length > 30 ? '${question.substring(0, 29)}…' : question;
+    final question = (trade['question'] as String? ?? '')
+        .replaceAll('рџ¤– Agent:', '')
+        .trim();
+    final q =
+        question.length > 30 ? '${question.substring(0, 29)}вЂ¦' : question;
     final ts = trade['created_at'] as String? ?? '';
     final time = ts.length >= 8 ? ts.substring(11, 19) : '--:--:--';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFF0A0E1A), width: 0.5)),
+        border:
+            Border(bottom: BorderSide(color: Color(0xFF0A0E1A), width: 0.5)),
       ),
       child: Row(
         children: [
@@ -169,7 +173,9 @@ class _TradeRow extends StatelessWidget {
             width: 70,
             child: Text(isAgent ? 'AGENT' : 'HUMAN',
                 style: TextStyle(
-                    color: isAgent ? const Color(0xFFF59E0B) : const Color(0xFF9AA6C0),
+                    color: isAgent
+                        ? const Color(0xFFF59E0B)
+                        : const Color(0xFF9AA6C0),
                     fontSize: 9.5,
                     fontWeight: FontWeight.w700,
                     fontFamily: PulsColors.fontMono)),
