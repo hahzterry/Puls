@@ -7,7 +7,7 @@
     { "source": "/", "has": [{ "type": "host", "value": "www.pulsmarket.tech" }], "destination": "https://pulsmarket.tech/", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/api/market-sitemap.xml", "destination": "https://safe-spire-63835.herokuapp.com/sitemap.xml" },
+    { "source": "/api/market-sitemap.xml", "destination": "/api/market-sitemap" },
     { "source": "/m/:slug", "destination": "/api/market-share?slug=:slug" },
     { "source": "/terms", "destination": "/terms.html" },
     { "source": "/privacy", "destination": "/privacy.html" },

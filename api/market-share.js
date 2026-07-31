@@ -73,16 +73,11 @@ module.exports = async (req, res) => {
     return res.end();
   }
 
-  // On app.pulsmarket.tech, skip OG rendering — just serve index.html with
-  // the query param so Flutter's deep link parser handles it directly.
-  // This prevents the double-redirect loop (market-share → ?m=slug → Flutter
-  // reads ?m but then something clears it).
-  const host = req.headers.host || '';
-  if (host.startsWith('app.')) {
-    res.statusCode = 302;
-    res.setHeader('Location', `/?m=${encodeURIComponent(slug)}`);
-    return res.end();
-  }
+  // On app.pulsmarket.tech we STILL serve full SEO HTML (200, not 302) so
+  // search engines index each /m/<slug> as its own rich page. Humans are sent
+  // into the Flutter app via a soft JS redirect (+ noscript fallback) to
+  // /?m=<slug>. (Removing the old 302 is what made markets indexable again —
+  // a 302 to /?m= just collapses every market into the single homepage.)
 
   const m = await getMarket(slug);
   const title = m ? `${m.question} — Puls` : 'Puls — The Market for What Happens Next';
@@ -98,6 +93,7 @@ module.exports = async (req, res) => {
 <meta charset="UTF-8">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
+<meta name="robots" content="index, follow, max-image-preview:large">
 <link rel="canonical" href="${esc(canonical)}">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Puls">
@@ -113,8 +109,21 @@ module.exports = async (req, res) => {
 <script>location.replace(${JSON.stringify(target)});</script>
 <noscript><meta http-equiv="refresh" content="0;url=${esc(target)}"></noscript>
 </head>
-<body>
-<p style="font-family:system-ui;padding:2rem">Opening market… <a href="${esc(target)}">Tap here if nothing happens</a>.</p>
+<body style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#0A0E1A;color:#EAF0FF;margin:0;line-height:1.6">
+<div style="max-width:640px;margin:0 auto;padding:48px 24px">
+  <p style="letter-spacing:2px;font-size:12px;color:#F472B6;font-weight:700">PULS · PREDICTION MARKET ON ARC</p>
+  <h1 style="font-size:30px;line-height:1.2;margin:14px 0">${esc(title)}</h1>
+  ${m && m.yes && m.no ? `<p style="font-size:20px;color:#2DD4BF;font-weight:700">YES ${m.yes} · NO ${m.no}</p>` : ''}
+  <p style="color:#9AA6C0">Swipe to trade this market in USDC on Arc Network — sign in with Google, no seed phrase, sub-second settlement. AI agents trade alongside you with real USDC staked on every call.</p>
+  <p><a href="${esc(target)}" style="color:#2DD4BF;font-weight:600">Open market in the Puls app →</a></p>
+  <hr style="border:0;border-top:1px solid #1B2236;margin:28px 0">
+  <nav style="font-size:13px">
+    <a href="https://pulsmarket.tech/" style="color:#9AA6C0;margin-right:14px;text-decoration:none">Puls</a>
+    <a href="https://pulsmarket.tech/stats" style="color:#9AA6C0;margin-right:14px;text-decoration:none">Live stats</a>
+    <a href="https://pulsmarket.tech/versus" style="color:#9AA6C0;margin-right:14px;text-decoration:none">Humans vs AI</a>
+    <a href="https://docs.pulsmarket.tech" style="color:#9AA6C0;text-decoration:none">Docs</a>
+  </nav>
+</div>
 </body>
 </html>`;
 
