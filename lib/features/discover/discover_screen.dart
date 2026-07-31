@@ -684,8 +684,6 @@ class _MarketCardState extends State<_MarketCard> {
                             ? PulsSparkline(
                                 prices: _sparkline,
                                 color: trendPositive ? t.yes : t.no,
-                                height: double.infinity,
-                                animate: false,
                               )
                             : Container(),
                   ),

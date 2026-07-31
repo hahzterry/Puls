@@ -1,131 +1,195 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-import '../motion.dart';
 import '../theme/app_theme.dart';
 
-/// The single sparkline used across the app (feed, discover, home, terminal).
+/// The single sparkline used across the app (feed, discover, home).
 ///
-/// Unifies three prior hand-rolled implementations so every mini-chart shares
-/// the same curve, gradient fill, end-point dot and optional glow:
-///  • normalized Y range (with padding) so flat or short series still render
-///  • smooth quadratic curve
+/// A hand-rolled `CustomPainter` — not fl_chart — so we own every pixel:
+///  • a Catmull-Rom spline (turned into cubic Béziers) gives a genuinely
+///    smooth, flowing curve even for sparse daily samples, never a jagged
+///    polyline or a string of dots
 ///  • theme-aware YES/NO stroke with a gradient area fill
-///  • a highlighted last-point dot with a soft glow (adds "live" polish)
-/// Honors reduce-motion by skipping the drawing animation.
+///  • a single soft dot on the last point only
 class PulsSparkline extends StatelessWidget {
   const PulsSparkline({
     super.key,
     required this.prices,
     required this.color,
-    this.height = 48,
+    this.height,
     this.strokeWidth = 2,
-    this.smoothness = 0.3,
     this.showLastDot = true,
-    this.animate = true,
+    this.fillAlpha = 0.22,
   });
 
   final List<double> prices;
   final Color color;
 
-  /// Total widget height (line fills the whole box).
-  final double height;
+  /// Total widget height. When `null` the sparkline fills the available space
+  /// (e.g. inside an `Expanded` in a grid card). Defaults to 48px otherwise.
+  final double? height;
   final double strokeWidth;
-  final double smoothness;
 
-  /// Highlights the most recent point with a dot + glow.
+  /// Highlights the most recent point with a dot + soft ring.
   final bool showLastDot;
 
-  /// Plays a subtle draw-in reveal (skipped under reduce-motion).
-  final bool animate;
+  /// Max opacity of the gradient fill under the line.
+  final double fillAlpha;
 
   @override
   Widget build(BuildContext context) {
-    if (prices.length < 2) {
-      return SizedBox(
-        height: height,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(6),
-            color: context.puls.surface,
-          ),
+    final surface = context.puls.surface;
+
+    final painter = _SparklinePainter(
+      prices: prices,
+      color: color,
+      surface: surface,
+      strokeWidth: strokeWidth,
+      showLastDot: showLastDot,
+      fillAlpha: fillAlpha,
+    );
+
+    if (height == null) {
+      return RepaintBoundary(
+        child: CustomPaint(
+          painter: painter,
+          child: const SizedBox.expand(),
         ),
       );
     }
-
-    final minY = prices.reduce((a, b) => a < b ? a : b);
-    final maxY = prices.reduce((a, b) => a > b ? a : b);
-    final pad = (maxY - minY) < 0.01 ? 0.05 : (maxY - minY) * 0.2;
-    final spots = prices
-        .asMap()
-        .entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value))
-        .toList();
-
-    final lastIndex = spots.length - 1;
-
-    // Sparse series (few daily samples) need a softer curve to read as a
-    // flowing line rather than a jagged polyline. Dense series keep the
-    // default smoothness so they don't overshoot.
-    final effectiveSmoothness =
-        spots.length < 8 ? (smoothness + 0.15).clamp(0.0, 0.6) : smoothness;
-
-    final chart = LineChart(
-      duration: (!animate || context.reduceMotion)
-          ? Duration.zero
-          : const Duration(milliseconds: 800),
-      curve: Curves.easeOutCubic,
-      LineChartData(
-        minY: (minY - pad).clamp(0, 1),
-        maxY: (maxY + pad).clamp(0, 1),
-        gridData: const FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-        titlesData: const FlTitlesData(show: false),
-        lineTouchData: const LineTouchData(enabled: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            curveSmoothness: effectiveSmoothness,
-            preventCurveOverShooting: true,
-            color: color,
-            barWidth: strokeWidth,
-            // A dot ONLY on the final point. fl_chart's getDotPainter runs for
-            // every spot when show:true, so without this guard a short series
-            // renders as a string of circles instead of a smooth line.
-            dotData: FlDotData(
-              show: showLastDot,
-              getDotPainter: (spot, percent, bar, index) {
-                if (index != lastIndex) {
-                  return FlDotCirclePainter(radius: 0);
-                }
-                return FlDotCirclePainter(
-                  radius: 3,
-                  color: color,
-                  strokeWidth: 2,
-                  strokeColor: context.puls.surface,
-                );
-              },
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  color.withValues(alpha: 0.22),
-                  color.withValues(alpha: 0.0),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
     return SizedBox(
       height: height,
-      child: RepaintBoundary(child: chart),
+      width: double.infinity,
+      child: RepaintBoundary(child: CustomPaint(painter: painter)),
     );
   }
+}
+
+class _SparklinePainter extends CustomPainter {
+  _SparklinePainter({
+    required this.prices,
+    required this.color,
+    required this.surface,
+    required this.strokeWidth,
+    required this.showLastDot,
+    required this.fillAlpha,
+  });
+
+  final List<double> prices;
+  final Color color;
+  final Color surface;
+  final double strokeWidth;
+  final bool showLastDot;
+  final double fillAlpha;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (prices.length < 2 || size.width <= 0 || size.height <= 0) return;
+
+    final w = size.width;
+    final h = size.height;
+
+    // ── Normalize Y so the line fills most of the box ─────────────────────
+    var minY = prices[0];
+    var maxY = prices[0];
+    for (final p in prices) {
+      if (p < minY) minY = p;
+      if (p > maxY) maxY = p;
+    }
+    final range = (maxY - minY) == 0 ? 1.0 : (maxY - minY);
+    // Slight vertical inset (10% top/bottom) so the curve never touches the
+    // box edges.
+    final usableH = h * 0.8;
+    final yOffset = h * 0.1;
+
+    // Map each sample to a point.
+    final pts = <Offset>[];
+    for (var i = 0; i < prices.length; i++) {
+      final x = i * (w / (prices.length - 1));
+      final norm = (prices[i] - minY) / range;
+      final y = h - (norm * usableH + yOffset);
+      pts.add(Offset(x, y));
+    }
+
+    // ── Build a smooth Catmull-Rom path (cubic Béziers) ──────────────────
+    final path = Path()..moveTo(pts.first.dx, pts.first.dy);
+    if (pts.length == 2) {
+      // Straight line between two points is already as smooth as it gets.
+      path.lineTo(pts.last.dx, pts.last.dy);
+    } else {
+      for (var i = 0; i < pts.length - 1; i++) {
+        final p0 = pts[i > 0 ? i - 1 : i];
+        final p1 = pts[i];
+        final p2 = pts[i + 1];
+        final p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+
+        // Catmull-Rom → cubic Bézier control points.
+        final c1 = Offset(
+          p1.dx + (p2.dx - p0.dx) / 6,
+          p1.dy + (p2.dy - p0.dy) / 6,
+        );
+        final c2 = Offset(
+          p2.dx - (p3.dx - p1.dx) / 6,
+          p2.dy - (p3.dy - p1.dy) / 6,
+        );
+        path.cubicTo(c1.dx, c1.dy, c2.dx, c2.dy, p2.dx, p2.dy);
+      }
+    }
+
+    // ── Gradient area fill under the line ────────────────────────────────
+    final fillPath = Path.from(path)
+      ..lineTo(pts.last.dx, h)
+      ..lineTo(pts.first.dx, h)
+      ..close();
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          color.withValues(alpha: fillAlpha),
+          color.withValues(alpha: 0.0),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
+    canvas.drawPath(fillPath, fillPaint);
+
+    // ── The line itself ──────────────────────────────────────────────────
+    final linePaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(path, linePaint);
+
+    // ── Soft end dot (last point only) ───────────────────────────────────
+    if (showLastDot) {
+      final end = pts.last;
+      canvas.drawCircle(
+        end,
+        5.0,
+        Paint()..color = color.withValues(alpha: 0.25),
+      );
+      canvas.drawCircle(
+        end,
+        3.0,
+        Paint()..color = color,
+      );
+      canvas.drawCircle(
+        end,
+        3.0,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..color = surface,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SparklinePainter old) =>
+      old.prices != prices ||
+      old.color != color ||
+      old.surface != surface ||
+      old.strokeWidth != strokeWidth ||
+      old.showLastDot != showLastDot ||
+      old.fillAlpha != fillAlpha;
 }
