@@ -9,6 +9,8 @@ import '../../core/utils/analytics.dart';
 import '../../core/utils/kv_store.dart';
 import '../../core/utils/web_url.dart';
 import 'web3_wallet_bridge.dart' as web3;
+import '../../core/utils/session_fetch_stub.dart'
+    if (dart.library.js_interop) '../../core/utils/session_fetch_web.dart';
 const _backendUrl = backendUrl;
 
 final _supabase = Supabase.instance.client;
@@ -95,8 +97,28 @@ class WalletService extends ChangeNotifier {
           } catch (_) {}
           return;
         }
-      } catch (e) {
+        } catch (e) {
         debugPrint('[WalletService] OAuth URL parse error: $e');
+      }
+    }
+
+    // 1b. Claim the one-time OAuth handoff cookie (backend sets puls_session on
+    // .pulsmarket.tech and redirects to a clean URL — no token in the query
+    // string, which edge firewalls like Vercel can 403).
+    if (kIsWeb) {
+      final session = await fetchSessionWithCookies('$_backendUrl/api/auth/session');
+      if (session != null) {
+        final userId = session['userId'] as String?;
+        if (userId != null && userId.isNotEmpty) {
+          final data = {
+            'userId': userId,
+            'token': session['token'] as String? ?? '',
+          };
+          kvSet('direct_auth', jsonEncode(data));
+          _setState(_state.copyWith(userId: userId, isLoading: true));
+          _getOrCreateWallet(userId);
+          return;
+        }
       }
     }
 
