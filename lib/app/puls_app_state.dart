@@ -70,6 +70,7 @@ class PulsAppState extends ChangeNotifier {
   double fastBuyAmount = 1.0;
   // AI Oracle Panel on market detail — opt-in, off by default.
   bool aiOracleEnabled = false;
+
   /// Reduce-motion override: null = follow the OS setting, true/false = explicit.
   bool? reduceMotionOverride;
 
@@ -105,10 +106,6 @@ class PulsAppState extends ChangeNotifier {
         .where((m) => !tradedIds.contains(m.id) && !m.createdByAgent)
         .toList()
       ..sort(_byHotness);
-    debugPrint('[Puls feedMarkets] _markets=${_markets.length}, '
-        'tradedIds=${tradedIds.length}, '
-        'agentCount=${_markets.where((m) => m.createdByAgent).length}, '
-        'fresh=${fresh.length}');
     return fresh.isNotEmpty ? fresh : _markets;
   }
 
@@ -137,7 +134,8 @@ class PulsAppState extends ChangeNotifier {
   Future<Market?> ensureMarketBySlug(String slug) async {
     final clean = Uri.decodeComponent(slug).trim().toLowerCase();
     for (final m in _markets) {
-      if (m.slug.toLowerCase() == clean || m.id.toLowerCase() == clean) return m;
+      if (m.slug.toLowerCase() == clean || m.id.toLowerCase() == clean)
+        return m;
     }
     final fetched = await _polymarket.fetchMarketBySlug(clean);
     if (fetched == null) return null;
@@ -266,8 +264,7 @@ class PulsStateScope extends InheritedNotifier<PulsAppState> {
   });
 
   static PulsAppState of(BuildContext context) {
-    final scope =
-        context.dependOnInheritedWidgetOfExactType<PulsStateScope>();
+    final scope = context.dependOnInheritedWidgetOfExactType<PulsStateScope>();
     assert(scope != null, 'PulsStateScope not found');
     return scope!.notifier!;
   }

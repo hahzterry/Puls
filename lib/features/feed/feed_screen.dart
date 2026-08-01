@@ -241,7 +241,6 @@ class _FeedBody extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: PredictionFeedCard(
                   market: market,
-                  heroTag: 'feed_${market.id}_$index',
                   showSwipeHint: index == 0,
                   isWatchlisted: appState.isWatchlisted(market.id),
                   onWatchlist: () => appState.toggleWatchlist(market.id),
@@ -1256,7 +1255,9 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                           ),
                         )
                       : ListView.builder(
-                          itemCount: filteredMarkets.length,
+                          // Large count ≈ infinite loop so the feed never
+                          // runs out of cards even with a small market set.
+                          itemCount: 1000,
                           itemBuilder: (context, index) {
                             final market =
                                 filteredMarkets[index % filteredMarkets.length];
@@ -1269,7 +1270,6 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                                   padding: const EdgeInsets.only(bottom: 20),
                                   child: PredictionFeedCard(
                                     market: market,
-                                    heroTag: 'feed_${market.id}_$index',
                                     showSwipeHint: index == 0,
                                     isWatchlisted:
                                         appState.isWatchlisted(market.id),
