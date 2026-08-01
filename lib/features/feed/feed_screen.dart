@@ -1256,7 +1256,7 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                           ),
                         )
                       : ListView.builder(
-                          itemCount: 1000, // Large number to act as infinite
+                          itemCount: filteredMarkets.length,
                           itemBuilder: (context, index) {
                             final market =
                                 filteredMarkets[index % filteredMarkets.length];

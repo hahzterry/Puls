@@ -105,6 +105,10 @@ class PulsAppState extends ChangeNotifier {
         .where((m) => !tradedIds.contains(m.id) && !m.createdByAgent)
         .toList()
       ..sort(_byHotness);
+    debugPrint('[Puls feedMarkets] _markets=${_markets.length}, '
+        'tradedIds=${tradedIds.length}, '
+        'agentCount=${_markets.where((m) => m.createdByAgent).length}, '
+        'fresh=${fresh.length}');
     return fresh.isNotEmpty ? fresh : _markets;
   }
 
