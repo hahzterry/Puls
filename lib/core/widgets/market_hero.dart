@@ -16,18 +16,20 @@ class MarketImageHero extends StatelessWidget {
   const MarketImageHero({
     required this.marketId,
     required this.child,
+    this.heroTag,
     this.radius = 12,
     super.key,
   });
 
   final String marketId;
+  final String? heroTag;
   final Widget child;
   final double radius;
 
   @override
   Widget build(BuildContext context) {
     return Hero(
-      tag: marketHeroTag(marketId),
+      tag: heroTag ?? marketHeroTag(marketId),
       flightShuttleBuilder: (_, __, ___, ____, toHeroContext) => ClipRRect(
         borderRadius: BorderRadius.circular(radius),
         child: (toHeroContext.widget as Hero).child,

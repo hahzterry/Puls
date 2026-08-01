@@ -241,6 +241,7 @@ class _FeedBody extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: PredictionFeedCard(
                   market: market,
+                  heroTag: 'feed_${market.id}_$index',
                   showSwipeHint: index == 0,
                   isWatchlisted: appState.isWatchlisted(market.id),
                   onWatchlist: () => appState.toggleWatchlist(market.id),
@@ -1268,6 +1269,7 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                                   padding: const EdgeInsets.only(bottom: 20),
                                   child: PredictionFeedCard(
                                     market: market,
+                                    heroTag: 'feed_${market.id}_$index',
                                     showSwipeHint: index == 0,
                                     isWatchlisted:
                                         appState.isWatchlisted(market.id),

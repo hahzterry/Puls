@@ -24,11 +24,13 @@ class PredictionFeedCard extends StatefulWidget {
     required this.onWatchlist,
     required this.onDetails,
     required this.onChoose,
+    this.heroTag,
     this.showSwipeHint = false,
     super.key,
   });
 
   final Market market;
+  final String? heroTag;
   final bool isWatchlisted;
   final VoidCallback onWatchlist;
   final VoidCallback onDetails;
@@ -439,6 +441,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                       // Topic image — recessed into the card with a top scrim
                       MarketImageHero(
                         marketId: market.id,
+                        heroTag: widget.heroTag,
                         radius: 12,
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
@@ -682,11 +685,11 @@ class _OddsBar extends StatelessWidget {
               children: [
                 // Animate the split so price updates glide rather than snap.
                 _OddsFlexSegment(
-                  flex: (market.yesPrice * 1000).round().clamp(0, 1000),
+                  flex: (market.yesPrice * 1000).round().clamp(1, 1000),
                   color: t.yes,
                 ),
                 _OddsFlexSegment(
-                  flex: (market.noPrice * 1000).round().clamp(0, 1000),
+                  flex: (market.noPrice * 1000).round().clamp(1, 1000),
                   color: t.no,
                 ),
               ],
