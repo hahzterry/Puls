@@ -517,6 +517,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                             : market.trendIsPositive)
                         ? context.puls.yes
                         : context.puls.no,
+                    height: 48,
                   ),
                   const SizedBox(height: 8),
                   // Stats + details

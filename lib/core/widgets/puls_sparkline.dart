@@ -49,11 +49,20 @@ class PulsSparkline extends StatelessWidget {
     );
 
     if (height == null) {
-      return RepaintBoundary(
-        child: CustomPaint(
-          painter: painter,
-          child: const SizedBox.expand(),
-        ),
+      // Fill the available space (e.g. inside an Expanded grid cell). If the
+      // incoming height is unbounded (a plain Column row), falling back to a
+      // fixed height avoids a RenderFlex infinite-height crash.
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final h = constraints.hasBoundedHeight
+              ? constraints.maxHeight
+              : _fallbackHeight;
+          return SizedBox(
+            height: h,
+            width: double.infinity,
+            child: RepaintBoundary(child: CustomPaint(painter: painter)),
+          );
+        },
       );
     }
     return SizedBox(
@@ -62,6 +71,8 @@ class PulsSparkline extends StatelessWidget {
       child: RepaintBoundary(child: CustomPaint(painter: painter)),
     );
   }
+
+  static const _fallbackHeight = 48.0;
 }
 
 class _SparklinePainter extends CustomPainter {
