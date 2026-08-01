@@ -59,6 +59,7 @@ class PulsAppState extends ChangeNotifier {
   List<Market> _markets = [];
   List<Position> _positions = [];
   Set<String> _watchlistIds = {};
+  List<Market>? _cachedFeed; // invalidated whenever _markets/_positions change
 
   FeedStatus feedStatus = FeedStatus.loading;
   String? feedError;
@@ -100,14 +101,24 @@ class PulsAppState extends ChangeNotifier {
   /// The main feed: untraded, NON-agent markets, hottest (most trading
   /// activity) first. Agent-created markets are surfaced separately via
   /// [agentMarkets] / the "AI Agents" category.
+  ///
+  /// Cached: `feedMarkets` is read on every feed build (including every
+  /// live-update rebuild), and the old getter re-filtered + re-sorted the
+  /// whole market list each time. The cache is invalidated only when
+  /// `_markets`/`_positions` actually change.
   List<Market> get feedMarkets {
+    final cached = _cachedFeed;
+    if (cached != null) return cached;
     final tradedIds = _positions.map((p) => p.marketId).toSet();
     final fresh = _markets
         .where((m) => !tradedIds.contains(m.id) && !m.createdByAgent)
         .toList()
       ..sort(_byHotness);
-    return fresh.isNotEmpty ? fresh : _markets;
+    _cachedFeed = fresh.isNotEmpty ? fresh : List.of(_markets);
+    return _cachedFeed!;
   }
+
+  void _invalidateFeedCache() => _cachedFeed = null;
 
   /// Agent-created markets ("AI Agents" category), hottest first.
   List<Market> get agentMarkets {
@@ -140,6 +151,7 @@ class PulsAppState extends ChangeNotifier {
     final fetched = await _polymarket.fetchMarketBySlug(clean);
     if (fetched == null) return null;
     _markets = [fetched, ..._markets];
+    _invalidateFeedCache();
     notifyListeners();
     return fetched;
   }
@@ -153,6 +165,7 @@ class PulsAppState extends ChangeNotifier {
       debugPrint('[Puls] Fetching Polymarket markets…');
       final fetched = await _polymarket.fetchMarkets(limit: 100);
       _markets = fetched;
+      _invalidateFeedCache();
       debugPrint('[Puls] Loaded ${_markets.length} markets');
       feedStatus = FeedStatus.loaded;
     } catch (e, st) {
@@ -251,6 +264,7 @@ class PulsAppState extends ChangeNotifier {
       openedAt: DateTime.now(),
     );
     _positions.insert(0, position);
+    _invalidateFeedCache();
     notifyListeners();
     return position;
   }

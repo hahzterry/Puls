@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../core/widgets/puls_snack.dart';
-import 'package:haptic_kit/haptic_kit.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -111,7 +110,7 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
               _elapsedSeconds = elapsed;
             });
           }
-          Haptics.notification(HapticNotificationStyle.success);
+          hapticSuccess();
           _timer?.cancel();
           widget.walletService?.notifyTrade();
           if (!OnboardingFlags.firstTradeSeen) {
@@ -124,7 +123,7 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
           return;
         } else if (state == 'FAILED' || state == 'DENIED' || state == 'CANCELLED') {
           if (mounted) setState(() => _status = TxStatus.failed);
-          Haptics.notification(HapticNotificationStyle.error);
+          hapticError();
           _timer?.cancel();
           return;
         }

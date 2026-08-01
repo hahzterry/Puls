@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:haptic_kit/haptic_kit.dart';
 import 'package:picons/picons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -12,6 +11,7 @@ import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/puls_sparkline.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/trade_math.dart';
+import '../../core/utils/haptics.dart';
 import '../../data/models/market.dart';
 import '../../data/polymarket/price_history_service.dart';
 import 'package:puls/core/config.dart';
@@ -162,7 +162,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
   void _commit(MarketSide side) {
     if (_flinging) return;
     _flinging = true;
-    Haptics.impact(HapticImpactStyle.heavy);
+    hapticHeavy();
     final dir = side == MarketSide.yes ? 1.0 : -1.0;
     _animateDragTo(
       dir * 1000.0,
@@ -222,7 +222,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
             if (absDrag > 82) {
               if (!_hasTriggeredHaptic) {
                 // Crossed the commit threshold — a firm "you're about to trade" cue.
-                Haptics.impact(HapticImpactStyle.medium);
+                hapticMedium();
                 _hasTriggeredHaptic = true;
               }
             } else {

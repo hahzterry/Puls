@@ -18,6 +18,7 @@ import '../../core/utils/puls_emoji.dart';
 import '../../core/motion.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/pulse_dot.dart';
+import '../../core/widgets/puls_fade_in.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/widgets/gradient_text.dart';
 import '../../core/widgets/puls_loader.dart';
@@ -236,26 +237,30 @@ class _FeedBody extends StatelessWidget {
               // market instead of re-running the card's own fadeIn on a
               // recycled slot when you scroll back up (which left items at
               // opacity 0). The fade is owned by PredictionFeedCard itself.
-              return Padding(
+              // Lightweight one-shot entrance (safe for recycled list slots —
+              // the controller dies with the element, no stale opacity).
+              return PulsFadeIn(
                 key: ValueKey('feed_${market.id}_$index'),
-                padding: const EdgeInsets.only(bottom: 16),
-                child: PredictionFeedCard(
-                  market: market,
-                  showSwipeHint: index == 0,
-                  isWatchlisted: appState.isWatchlisted(market.id),
-                  onWatchlist: () => appState.toggleWatchlist(market.id),
-                  onDetails: () => _openDetails(context, market),
-                  onChoose: (side) {
-                    if (appState.fastBuyEnabled) {
-                      _fastBuy(context, appState, market, side);
-                    } else {
-                      showTradePreviewSheet(
-                        context: context,
-                        market: market,
-                        side: side,
-                      );
-                    }
-                  },
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: PredictionFeedCard(
+                    market: market,
+                    showSwipeHint: index == 0,
+                    isWatchlisted: appState.isWatchlisted(market.id),
+                    onWatchlist: () => appState.toggleWatchlist(market.id),
+                    onDetails: () => _openDetails(context, market),
+                    onChoose: (side) {
+                      if (appState.fastBuyEnabled) {
+                        _fastBuy(context, appState, market, side);
+                      } else {
+                        showTradePreviewSheet(
+                          context: context,
+                          market: market,
+                          side: side,
+                        );
+                      }
+                    },
+                  ),
                 ),
               );
             },
@@ -1261,34 +1266,36 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                           itemBuilder: (context, index) {
                             final market =
                                 filteredMarkets[index % filteredMarkets.length];
-                            return Center(
+                            return PulsFadeIn(
                               key: ValueKey('feed_${market.id}_$index'),
-                              child: ConstrainedBox(
-                                constraints:
-                                    const BoxConstraints(maxWidth: 600),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 20),
-                                  child: PredictionFeedCard(
-                                    market: market,
-                                    showSwipeHint: index == 0,
-                                    isWatchlisted:
-                                        appState.isWatchlisted(market.id),
-                                    onWatchlist: () =>
-                                        appState.toggleWatchlist(market.id),
-                                    onDetails: () =>
-                                        _openDetails(context, market),
-                                    onChoose: (side) {
-                                      if (appState.fastBuyEnabled) {
-                                        _fastBuy(
-                                            context, appState, market, side);
-                                      } else {
-                                        showTradePreviewSheet(
-                                          context: context,
-                                          market: market,
-                                          side: side,
-                                        );
-                                      }
-                                    },
+                              child: Center(
+                                child: ConstrainedBox(
+                                  constraints:
+                                      const BoxConstraints(maxWidth: 600),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 20),
+                                    child: PredictionFeedCard(
+                                      market: market,
+                                      showSwipeHint: index == 0,
+                                      isWatchlisted:
+                                          appState.isWatchlisted(market.id),
+                                      onWatchlist: () =>
+                                          appState.toggleWatchlist(market.id),
+                                      onDetails: () =>
+                                          _openDetails(context, market),
+                                      onChoose: (side) {
+                                        if (appState.fastBuyEnabled) {
+                                          _fastBuy(
+                                              context, appState, market, side);
+                                        } else {
+                                          showTradePreviewSheet(
+                                            context: context,
+                                            market: market,
+                                            side: side,
+                                          );
+                                        }
+                                      },
+                                    ),
                                   ),
                                 ),
                               ),

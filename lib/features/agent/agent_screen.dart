@@ -8,9 +8,9 @@ import '../../core/widgets/puls_snack.dart';
 import '../../core/widgets/tactile.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:haptic_kit/haptic_kit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
 import '../../core/utils/kv_store.dart' show kvGet;
+import '../../core/utils/haptics.dart';
 
 import '../../app/puls_app.dart';
 import '../../core/theme/app_theme.dart';
@@ -23,8 +23,7 @@ import '../../core/widgets/shimmer_text.dart';
 import '../../core/widgets/puls_page_route.dart';
 import '../shell/web_layout.dart';
 import '../shell/shell_nav.dart';
-import '../onboarding/help_button.dart';
-import 'agent_sponsorship_screen.dart';
+import '../onboarding/help_button.dart';import 'agent_sponsorship_screen.dart';
 import 'flash_arbitrage_screen.dart' deferred as flash_arb;
 import 'gladiator_arena_screen.dart' deferred as gladiator;
 import 'live_swarm_view.dart';
@@ -825,7 +824,7 @@ class _AgentScreenState extends State<AgentScreen>
     final uid = _userId;
     if (uid == null) return;
     try {
-      Haptics.impact(HapticImpactStyle.light);
+      hapticLight();
       final r = await _post(
           '/api/agent/strategy', {'userId': uid, 'strategy': value});
       setState(() {
@@ -992,7 +991,7 @@ class _AgentScreenState extends State<AgentScreen>
   // Fast one-tap buys, routed through the agent (it picks + sizes + executes).
   void _quickBuy(String instruction) {
     if (_busy || _userId == null) return;
-    Haptics.impact(HapticImpactStyle.light);
+    hapticLight();
     _input.text = instruction;
     _send();
   }
