@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/widgets/puls_snack.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-
+import '../../core/utils/haptics.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/confetti_burst.dart';
 import '../../core/utils/formatters.dart';
