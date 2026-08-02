@@ -579,6 +579,205 @@
       return !!window.ethereum;
     };
 
+    // ── Puls Invest: agent sponsorship via x402 (Arc Testnet) ───────────────
+    const INVEST_API = 'https://api.pulsmarket.tech';
+    const GATEWAY_WALLET = '0x0077777d7EBA4688BDeF3E311b846F25870A19B9';
+    const GATEWAY_API = 'https://gateway-api-testnet.circle.com/v1';
+    const GATEWAY_DOMAIN = 26;
+    const GATEWAY_BATCHING_NAME = 'GatewayWalletBatched';
+    const GATEWAY_BATCHING_VERSION = '1';
+    const GATEWAY_VALIDITY_WINDOW = 7 * 24 * 60 * 60 + 100;
+    const GATEWAY_ABI = ['function deposit(address token, uint256 value)'];
+
+    function usdcMicro(usdcStr) {
+      return BigInt(Math.round(parseFloat(usdcStr) * 1e6));
+    }
+
+    window.getUsdcBalance = async function() {
+      try {
+        const signer = await getSigner();
+        const addr = await signer.getAddress();
+        const usdc = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
+        const balance = await usdc.balanceOf(addr);
+        return JSON.stringify({ balance: balance.toString() });
+      } catch (e) {
+        return JSON.stringify({ error: e.message || 'Balance check failed' });
+      }
+    };
+
+    window.getGatewayBalance = async function() {
+      try {
+        const signer = await getSigner();
+        const addr = await signer.getAddress();
+        const res = await fetch(GATEWAY_API + '/balances', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: 'USDC',
+            sources: [{ depositor: addr, domain: GATEWAY_DOMAIN }],
+          }),
+        });
+        if (!res.ok) {
+          return JSON.stringify({ error: 'Gateway balance check failed (' + res.status + ')' });
+        }
+        const data = await res.json();
+        const b = data.balances && data.balances[0];
+        const available = (b && b.balance) ? b.balance : '0';
+        const withdrawing = (b && b.withdrawing) ? b.withdrawing : '0';
+        return JSON.stringify({
+          available,
+          total: (BigInt(available) + BigInt(withdrawing)).toString(),
+        });
+      } catch (e) {
+        return JSON.stringify({ error: e.message || 'Gateway balance check failed' });
+      }
+    };
+
+    // Deposit USDC from the wallet into the Circle Gateway wallet on Arc
+    // (approve + deposit). Returns { approvalTx?, depositTx }.
+    window.depositToGateway = async function(amountUsdc) {
+      try {
+        const signer = await getSigner();
+        const addr = await signer.getAddress();
+        const amount = usdcMicro(amountUsdc);
+        const usdc = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
+        const allowance = await usdc.allowance(addr, GATEWAY_WALLET);
+        let approvalTx = null;
+        if (allowance < amount) {
+          const approve = await usdc.approve(GATEWAY_WALLET, amount);
+          await approve.wait();
+          approvalTx = approve.hash;
+        }
+        const gw = new ethers.Contract(GATEWAY_WALLET, GATEWAY_ABI, signer);
+        const deposit = await gw.deposit(USDC_ADDRESS, amount, { gasLimit: 120000 });
+        await deposit.wait();
+        return JSON.stringify({ approvalTx, depositTx: deposit.hash });
+      } catch (e) {
+        return JSON.stringify({ error: e.message || 'Gateway deposit failed' });
+      }
+    };
+
+    // Full invest flow: ensure gateway funding, then settle an x402 payment
+    // for the agent. Returns { alreadySettled, data, depositTx? } or { error }.
+    window.investToAgent = async function(agentId, amountUsdc) {
+      try {
+        const signer = await getSigner();
+        const addr = await signer.getAddress();
+        const url = INVEST_API + '/api/invest/' + encodeURIComponent(agentId) +
+            '?amountUsdc=' + encodeURIComponent(amountUsdc);
+
+        const initial = await fetch(url);
+        if (initial.status === 200) {
+          return JSON.stringify({ alreadySettled: true, data: await initial.json() });
+        }
+        if (initial.status !== 402) {
+          return JSON.stringify({ error: 'Invest endpoint error (' + initial.status + ')' });
+        }
+        const header = initial.headers.get('PAYMENT-REQUIRED');
+        if (!header) return JSON.stringify({ error: 'Missing PAYMENT-REQUIRED header' });
+        const paymentRequired = JSON.parse(atob(header));
+
+        const option = (paymentRequired.accepts || []).find(function(o) {
+          return o.network === 'eip155:' + ARC_TESTNET.chainId &&
+              o.extra && o.extra.name === GATEWAY_BATCHING_NAME &&
+              o.extra.version === GATEWAY_BATCHING_VERSION &&
+              o.extra.verifyingContract;
+        });
+        if (!option || !option.extra || !option.extra.verifyingContract) {
+          return JSON.stringify({ error: 'Gateway batching not supported for Arc' });
+        }
+        if (String(option.asset).toLowerCase() !== USDC_ADDRESS.toLowerCase()) {
+          return JSON.stringify({ error: 'USDC required' });
+        }
+
+        // Top up the Gateway wallet if the current deposit won't cover it.
+        const gw = await fetch(GATEWAY_API + '/balances', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: 'USDC',
+            sources: [{ depositor: addr, domain: GATEWAY_DOMAIN }],
+          }),
+        }).catch(function() { return null; });
+        let gwAvailable = 0n;
+        if (gw && gw.ok) {
+          const gd = await gw.json();
+          const gb = gd.balances && gd.balances[0];
+          gwAvailable = gb && gb.balance ? BigInt(gb.balance) : 0n;
+        }
+        let depositTx = null;
+        if (gwAvailable < BigInt(option.amount)) {
+          const depositRes = JSON.parse(await window.depositToGateway(amountUsdc));
+          if (depositRes.error) return JSON.stringify({ error: depositRes.error });
+          depositTx = depositRes.depositTx;
+        }
+
+        const now = Math.floor(Date.now() / 1000);
+        const validity = Math.max(Number(option.maxTimeoutSeconds) || 0, GATEWAY_VALIDITY_WINDOW);
+        const nonce = ethers.hexlify(ethers.randomBytes(32));
+        const authorization = {
+          from: addr,
+          to: option.payTo,
+          value: String(option.amount),
+          validAfter: String(now - 600),
+          validBefore: String(now + validity),
+          nonce: nonce,
+        };
+        const domain = {
+          name: GATEWAY_BATCHING_NAME,
+          version: GATEWAY_BATCHING_VERSION,
+          chainId: ARC_TESTNET.chainId,
+          verifyingContract: option.extra.verifyingContract,
+        };
+        const types = {
+          TransferWithAuthorization: [
+            { name: 'from', type: 'address' },
+            { name: 'to', type: 'address' },
+            { name: 'value', type: 'uint256' },
+            { name: 'validAfter', type: 'uint256' },
+            { name: 'validBefore', type: 'uint256' },
+            { name: 'nonce', type: 'bytes32' },
+          ],
+        };
+        const signature = await signer.signTypedData(domain, types, {
+          from: addr,
+          to: option.payTo,
+          value: BigInt(option.amount),
+          validAfter: BigInt(authorization.validAfter),
+          validBefore: BigInt(authorization.validBefore),
+          nonce: nonce,
+        });
+
+        const payload = {
+          x402Version: paymentRequired.x402Version || 2,
+          payload: { authorization, signature },
+          resource: paymentRequired.resource,
+          accepted: option,
+        };
+        const paymentHeader = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+        const paid = await fetch(url, { headers: { 'Payment-Signature': paymentHeader } });
+        const body = await paid.json().catch(function() { return {}; });
+        if (!paid.ok) {
+          return JSON.stringify({ error: (body && body.error) || 'Payment failed (' + paid.status + ')' });
+        }
+        return JSON.stringify({ ok: true, data: body, depositTx: depositTx });
+      } catch (e) {
+        return JSON.stringify({ error: e.message || 'Investment failed' });
+      }
+    };
+
+    // Sign the EIP-191 withdraw message. Returns { address, signature } or { error }.
+    window.signWithdrawMessage = async function(agentId) {
+      try {
+        const signer = await getSigner();
+        const addr = await signer.getAddress();
+        const signature = await signer.signMessage('puls-invest:withdraw:' + agentId);
+        return JSON.stringify({ address: addr, signature: signature });
+      } catch (e) {
+        return JSON.stringify({ error: e.message || 'Signing failed' });
+      }
+    };
+
     // On-chain interaction config
     const USDC_ADDRESS = '0x3600000000000000000000000000000000000000';
     const USDC_ABI = [

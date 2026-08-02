@@ -66,3 +66,50 @@ class BridgeResult {
   final String? error;
   BridgeResult({this.arcTxHash, this.burnTxHash, this.pending = false, this.error});
 }
+
+/// Wallet USDC balance on Arc (micro USDC units).
+class UsdcBalanceResult {
+  final String? microUsdc;
+  final String? error;
+  UsdcBalanceResult({this.microUsdc, this.error});
+}
+
+/// Circle Gateway balance for the wallet (micro USDC units).
+class GatewayBalanceResult {
+  final String? availableMicro;
+  final String? totalMicro;
+  final String? error;
+  GatewayBalanceResult({this.availableMicro, this.totalMicro, this.error});
+}
+
+/// Outcome of investing into an agent via x402.
+class InvestResult {
+  final Map<String, dynamic>? data;
+  final String? depositTx;
+  final String? error;
+  final bool alreadySettled;
+  InvestResult({this.data, this.depositTx, this.error, this.alreadySettled = false});
+}
+
+/// EIP-191 withdraw message signature.
+class WithdrawSignResult {
+  final String? address;
+  final String? signature;
+  final String? error;
+  WithdrawSignResult({this.address, this.signature, this.error});
+}
+
+/// Wallet USDC balance on Arc.
+Future<UsdcBalanceResult> getUsdcBalance() => impl.getUsdcBalance();
+
+/// Circle Gateway balance for the connected wallet.
+Future<GatewayBalanceResult> getGatewayBalance() => impl.getGatewayBalance();
+
+/// Invest `amountUsdc` into an agent: top up Gateway wallet if needed, then
+/// settle the x402 payment. Returns the backend response on success.
+Future<InvestResult> investToAgent(String agentId, String amountUsdc) =>
+    impl.investToAgent(agentId, amountUsdc);
+
+/// Sign `puls-invest:withdraw:<agentId>` (EIP-191 personal message).
+Future<WithdrawSignResult> signWithdrawMessage(String agentId) =>
+    impl.signWithdrawMessage(agentId);
