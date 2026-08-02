@@ -336,6 +336,35 @@ class WalletService extends ChangeNotifier {
     }
   }
 
+  /// ── Puls Invest (agent sponsorship) via the gasless SCA wallet ────────────
+
+  /// Invest `amountUsdc` into an agent. The backend transfers USDC from this
+  /// user's Circle SCA wallet to the treasury and credits the investment.
+  /// Returns { ok, agent, invested, pool, payment, note }.
+  Future<Map<String, dynamic>> investInAgent(String agentId, double amountUsdc) {
+    final userId = _state.userId;
+    if (userId == null) throw Exception('Sign in with Google to invest');
+    return _post('/api/invest/$agentId', {
+      'userId': userId,
+      'amountUsdc': amountUsdc.toStringAsFixed(2),
+    }, timeout: const Duration(seconds: 45));
+  }
+
+  /// Withdraw the claimable share from an agent. The backend pays out from
+  /// the treasury to this user's SCA wallet (no wallet signature needed).
+  /// Returns { ok, agentId, investor, amountUsdc, txHash, claimableAfter }.
+  Future<Map<String, dynamic>> withdrawFromAgent(String agentId) {
+    final userId = _state.userId;
+    final address = _state.walletAddress;
+    if (userId == null) throw Exception('Sign in with Google to withdraw');
+    if (address == null || address.isEmpty) throw Exception('No wallet address');
+    return _post('/api/invest/withdraw', {
+      'userId': userId,
+      'agentId': agentId,
+      'address': address,
+    }, timeout: const Duration(seconds: 45));
+  }
+
   /// Reads USDC balance directly from Arc Testnet via eth_call — no backend needed.
   Future<void> _fetchBalanceFromChain(String address) async {
     const publicRpc = 'https://rpc.testnet.arc.network';

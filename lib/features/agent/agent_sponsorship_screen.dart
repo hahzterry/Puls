@@ -1,28 +1,32 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/puls_app.dart' show WalletServiceScope;
 import '../../core/config.dart' show backendUrl;
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/gradient_text.dart';
 import '../../core/widgets/puls_snack.dart';
 import '../../core/widgets/tactile.dart';
+import '../wallet/wallet_service.dart';
 import '../wallet/web3_wallet_bridge.dart';
 
 /// ── Puls Invest: sponsor an AI agent with USDC ─────────────────────────────
 ///
 /// Live protocol dashboard: every agent on Arc with its capital pool, PnL and
-/// APY. Stake USDC straight from a browser wallet (Circle Gateway + x402
-/// signature, no backend custody), and withdraw your pro-rata claim anytime.
+/// APY. Stake USDC with your Puls wallet (the gasless Circle SCA wallet that
+/// comes with Google sign-in — no MetaMask needed) or, as a fallback, from a
+/// browser wallet via Circle Gateway + x402 signature. Withdraw your pro-rata
+/// claim anytime — treasury pays out on-chain.
 ///
 /// Endpoints (https://api.pulsmarket.tech):
 ///   GET  /api/invest/agents          → all agents + live stats
 ///   GET  /api/invest/me?address=…    → my positions
-///   GET  /api/invest/:agentId?amountUsdc=…  → x402 paywall → settle
-///   POST /api/invest/withdraw        → { agentId, address, signature }
+///   POST /api/invest/:agentId        → SCA invest (Google wallet, gasless)
+///   GET  /api/invest/:agentId?amountUsdc=…  → x402 paywall → settle (web3)
+///   POST /api/invest/withdraw        → { agentId, address, signature? }
 class AgentSponsorshipScreen extends StatefulWidget {
   const AgentSponsorshipScreen({super.key});
 
@@ -113,14 +117,41 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
   List<_Position> _positions = const [];
   bool _loading = true;
   String? _walletAddress;
+  bool _scaWallet = false;
   bool _busy = false;
+  WalletService? _walletService;
 
   @override
   void initState() {
     super.initState();
+    _walletService = WalletServiceScope.of(context);
+    _walletService!.addListener(_onWalletChanged);
     _load();
-    _walletAddress = getBrowserWalletAddress();
+    final sca = _walletService!.state.walletAddress;
+    if (sca != null && sca.isNotEmpty) {
+      _walletAddress = sca;
+      _scaWallet = true;
+    } else {
+      _walletAddress = getBrowserWalletAddress();
+    }
     if (_walletAddress != null) _loadPositions(_walletAddress!);
+  }
+
+  @override
+  void dispose() {
+    _walletService?.removeListener(_onWalletChanged);
+    super.dispose();
+  }
+
+  void _onWalletChanged() {
+    final sca = _walletService!.state.walletAddress;
+    if (sca != null && sca.isNotEmpty && _walletAddress != sca) {
+      setState(() {
+        _walletAddress = sca;
+        _scaWallet = true;
+      });
+      _loadPositions(sca);
+    }
   }
 
   Future<void> _load() async {
@@ -162,13 +193,32 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
 
   Future<String?> _connect() async {
     if (_walletAddress != null) return _walletAddress;
+    // Prefer the Puls SCA wallet (Google sign-in) — no MetaMask required.
+    final sca = _walletService?.state.walletAddress;
+    if (sca != null && sca.isNotEmpty) {
+      setState(() {
+        _walletAddress = sca;
+        _scaWallet = true;
+      });
+      await _loadPositions(sca);
+      return sca;
+    }
+    if (!hasBrowserWallet()) {
+      PulsSnack.show(context,
+          'No wallet found — sign in with Google in the Wallet tab to get your Puls wallet, or install MetaMask.',
+          duration: const Duration(seconds: 5));
+      return null;
+    }
     final result = await connectBrowserWallet();
     if (!mounted) return null;
     if (result.error != null) {
       PulsSnack.error(context, result.error!);
       return null;
     }
-    setState(() => _walletAddress = result.address);
+    setState(() {
+      _walletAddress = result.address;
+      _scaWallet = false;
+    });
     if (result.address != null) await _loadPositions(result.address!);
     return result.address;
   }
@@ -187,25 +237,37 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
     );
 
     try {
-      stage.value = 'Funding Gateway wallet…';
-      final result = await investToAgent(agent.id, amount.toStringAsFixed(2));
+      Map<String, dynamic>? settled;
+      String? depositTx;
+      bool alreadySettled = false;
+      if (_scaWallet) {
+        stage.value = 'Paying from your Puls wallet…';
+        final res = await _walletService!.investInAgent(agent.id, amount);
+        settled = res;
+      } else {
+        stage.value = 'Funding Gateway wallet…';
+        final result = await investToAgent(agent.id, amount.toStringAsFixed(2));
+        if (result.error != null) throw StateError(result.error!);
+        settled = result.data;
+        depositTx = result.depositTx;
+        alreadySettled = result.alreadySettled;
+      }
       if (!mounted) return;
-      if (result.error != null) throw StateError(result.error!);
-      final investedNow = (result.data?['invested'] as num?)?.toDouble();
+      final investedNow = (settled?['invested'] as num?)?.toDouble();
       if (mounted) {
         Navigator.of(context).pop();
         setState(() => _busy = false);
       }
       PulsSnack.show(
         context,
-        result.alreadySettled
+        alreadySettled
             ? 'Already active — position refreshed'
             : '${agent.glyph} ${agent.name}: ${investedNow?.toStringAsFixed(2) ?? amount.toStringAsFixed(2)} USDC invested',
         duration: const Duration(seconds: 4),
       );
       _refresh();
-      if (result.depositTx != null && mounted) {
-        await _txActions(result.depositTx!);
+      if (depositTx != null && mounted) {
+        await _txActions(depositTx);
       }
     } catch (e) {
       if (mounted) {
@@ -263,36 +325,45 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
     );
 
     try {
-      stage.value = 'Awaiting signature…';
-      final signed = await signWithdrawMessage(agent.id);
-      if (signed.error != null) throw StateError(signed.error!);
-      if (signed.address == null || signed.signature == null) {
-        throw StateError('Withdraw signing failed');
+      String? txHash;
+      double? amountUsdc;
+      if (_scaWallet) {
+        stage.value = 'Processing payout…';
+        final res = await _walletService!.withdrawFromAgent(agent.id);
+        txHash = res['txHash'] as String?;
+        amountUsdc = (res['amountUsdc'] as num?)?.toDouble();
+      } else {
+        stage.value = 'Awaiting signature…';
+        final signed = await signWithdrawMessage(agent.id);
+        if (signed.error != null) throw StateError(signed.error!);
+        if (signed.address == null || signed.signature == null) {
+          throw StateError('Withdraw signing failed');
+        }
+        stage.value = 'Processing payout…';
+        final res = await http
+            .post(
+              Uri.parse('$backendUrl/api/invest/withdraw'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'agentId': agent.id,
+                'address': signed.address,
+                'signature': signed.signature,
+              }),
+            )
+            .timeout(const Duration(seconds: 45));
+        final body = jsonDecode(res.body) as Map<String, dynamic>;
+        if (res.statusCode != 200) {
+          throw StateError((body['error'] as String?) ?? 'Withdraw failed');
+        }
+        txHash = body['txHash'] as String?;
+        amountUsdc = (body['amountUsdc'] as num?)?.toDouble();
       }
-      stage.value = 'Processing payout…';
-      final res = await http
-          .post(
-            Uri.parse('$backendUrl/api/invest/withdraw'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'agentId': agent.id,
-              'address': signed.address,
-              'signature': signed.signature,
-            }),
-          )
-          .timeout(const Duration(seconds: 45));
-      final body = jsonDecode(res.body) as Map<String, dynamic>;
       if (!mounted) return;
       Navigator.of(context).pop();
       setState(() => _busy = false);
-      if (res.statusCode != 200) {
-        PulsSnack.error(context, (body['error'] as String?) ?? 'Withdraw failed');
-        return;
-      }
-      final txHash = body['txHash'] as String?;
       PulsSnack.show(
         context,
-        'Withdrawn \$${body['amountUsdc']} USDC — transaction ${shortHash(txHash)}',
+        'Withdrawn ${amountUsdc?.toStringAsFixed(4) ?? ''} USDC — transaction ${shortHash(txHash)}',
         duration: const Duration(seconds: 5),
       );
       _refresh();
@@ -385,7 +456,11 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: _WalletPill(t: t, address: _walletAddress),
+            child: _WalletPill(
+              t: t,
+              address: _walletAddress,
+              sca: _scaWallet,
+            ),
           ),
         ],
       ),
@@ -812,9 +887,10 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
 
 // ── Wallet pill ─────────────────────────────────────────────────────────────
 class _WalletPill extends StatelessWidget {
-  const _WalletPill({required this.t, required this.address});
+  const _WalletPill({required this.t, required this.address, required this.sca});
   final PulsThemeColors t;
   final String? address;
+  final bool sca;
 
   @override
   Widget build(BuildContext context) {
@@ -841,7 +917,9 @@ class _WalletPill extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             connected
-                ? '${address!.substring(0, 5)}…${address!.substring(address!.length - 4)}'
+                ? sca
+                    ? 'Puls wallet ${address!.substring(0, 5)}…${address!.substring(address!.length - 4)}'
+                    : '${address!.substring(0, 5)}…${address!.substring(address!.length - 4)}'
                 : 'No wallet',
             style: TextStyle(
               color: connected ? t.yes : t.textSubtle,
