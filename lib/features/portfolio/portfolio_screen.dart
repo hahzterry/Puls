@@ -1617,8 +1617,16 @@ class _StatBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: highlight ? t.yesBg : t.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-            color: highlight ? t.yes.withValues(alpha: 0.3) : t.border),
+        border: Border(
+          left: BorderSide(
+              width: 3,
+              color: highlight
+                  ? t.yes
+                  : PulsColors.brandMint.withValues(alpha: 0.4)),
+          right: BorderSide(color: t.border),
+          top: BorderSide(color: t.border),
+          bottom: BorderSide(color: t.border),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
