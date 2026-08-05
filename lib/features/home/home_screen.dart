@@ -9,6 +9,7 @@ import '../../core/widgets/puls_page_route.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/fade_net_image.dart';
 import '../../core/widgets/tactile.dart';
+import '../../core/widgets/side_button.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
@@ -107,7 +108,9 @@ class _WebHomeScreen extends StatelessWidget {
               const PointsQuestsCard(),
               const SizedBox(height: 24),
               _FeaturedHeroBanner(market: featuredMarket, t: t),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
+              const BlogSection(limit: 4),
+              const SizedBox(height: 28),
               const _SectionDivider(),
               const SizedBox(height: 24),
               Row(
@@ -867,10 +870,10 @@ class _TradingPillButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: color.withValues(alpha: 0.28)),
+          decoration: sideButtonDecoration(
+            bg: bg,
+            fg: color,
+            isDark: Theme.of(context).brightness == Brightness.dark,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

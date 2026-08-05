@@ -852,9 +852,10 @@ class WalletService extends ChangeNotifier {
   }
 
   /// Blog feed — posts by humans + AI agents (public).
-  Future<Map<String, dynamic>> getBlogPosts({String? tag, String? author, int limit = 30}) async {
+  Future<Map<String, dynamic>> getBlogPosts({String? tag, String? author, int limit = 30, int offset = 0}) async {
     return _get('/api/blog', {
       'limit': '$limit',
+      if (offset > 0) 'offset': '$offset',
       if (tag != null && tag.isNotEmpty) 'tag': tag,
       if (author != null && author.isNotEmpty) 'author': author,
     });

@@ -53,10 +53,9 @@ class PulsColors {
   static const dark600 = Color(0xFF9AA6C0); // secondary text
   static const dark900 = Color(0xFFEAF0FF); // primary text
 
-  // Font families — Geist (Linear-tier display grotesk) for headings,
-  // DM Sans body, JetBrains Mono terminal/code, Playfair kept as an editorial
-  // accent (signal markdown).
-  static const fontDisplay = 'Geist';
+  // Font families — Playfair Display (editorial serif) for headings,
+  // DM Sans body, JetBrains Mono terminal/code.
+  static const fontDisplay = 'Playfair Display';
   static const fontSans = 'DM Sans';
   static const fontMono =
       'JetBrains Mono'; // terminal/code UI (DecisionLogPanel)
@@ -339,29 +338,30 @@ class PulsTheme {
         onError: Colors.white,
       ),
       textTheme: TextTheme(
-        // Display grotesk — Geist, tight tracking for a machined feel
+        // Display serif — Playfair, tall + elegant; modest tracking (serifs
+        // can't take the tight kerning of a grotesk)
         displaySmall: TextStyle(
           fontFamily: displayFont,
           color: t.text,
-          fontSize: 32,
+          fontSize: 34,
           fontWeight: FontWeight.w700,
-          height: 1.05,
-          letterSpacing: -1.2,
+          height: 1.1,
+          letterSpacing: -0.4,
         ),
         headlineMedium: TextStyle(
           fontFamily: displayFont,
           color: t.text,
-          fontSize: 22,
+          fontSize: 23,
           fontWeight: FontWeight.w700,
-          height: 1.15,
-          letterSpacing: -0.6,
+          height: 1.2,
+          letterSpacing: -0.2,
         ),
         titleLarge: TextStyle(
           fontFamily: displayFont,
           color: t.text,
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          letterSpacing: -0.4,
+          letterSpacing: -0.1,
         ),
         // Sans body — DM Sans
         titleMedium: TextStyle(

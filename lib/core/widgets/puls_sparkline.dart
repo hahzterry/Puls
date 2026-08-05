@@ -171,26 +171,40 @@ class _SparklinePainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round;
     canvas.drawPath(path, linePaint);
 
-    // ── Soft end dot (last point only) ───────────────────────────────────
+    // ── Soft end dot (last point only) — layered glow: wide halo, tight
+    // halo, solid core, surface ring. Reads as a live "now" pin, not a blob.
     if (showLastDot) {
       final end = pts.last;
       canvas.drawCircle(
         end,
-        5.0,
-        Paint()..color = color.withValues(alpha: 0.25),
+        6.5,
+        Paint()..color = color.withValues(alpha: 0.18),
       );
       canvas.drawCircle(
         end,
-        3.0,
+        4.5,
+        Paint()..color = color.withValues(alpha: 0.32),
+      );
+      canvas.drawCircle(
+        end,
+        2.8,
         Paint()..color = color,
       );
       canvas.drawCircle(
         end,
-        3.0,
+        2.8,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5
+          ..strokeWidth = 1.2
           ..color = surface,
+      );
+      canvas.drawCircle(
+        end,
+        5.5,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0
+          ..color = color.withValues(alpha: 0.35),
       );
     }
   }

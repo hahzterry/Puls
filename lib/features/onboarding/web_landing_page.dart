@@ -4726,19 +4726,15 @@ class _SectionDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.puls;
     return Center(
-      child: Container(
-        width: 96,
-        height: 1.5,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.transparent,
-              t.brand.withValues(alpha: 0.45),
-              Colors.transparent,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(100),
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(child: Container(width: 96, height: 1.5, decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.transparent, t.brand.withValues(alpha: 0.45)]), borderRadius: BorderRadius.circular(100)))),
+          SizedBox(width: 8),
+          Container(width: 4, height: 4, decoration: BoxDecoration(gradient: const LinearGradient(colors: [PulsColors.brandMint, PulsColors.brandPinkDark]), borderRadius: BorderRadius.circular(100))),
+          SizedBox(width: 8),
+          Flexible(child: Container(width: 96, height: 1.5, decoration: BoxDecoration(gradient: LinearGradient(colors: [t.brand.withValues(alpha: 0.45), Colors.transparent]), borderRadius: BorderRadius.circular(100)))),
+        ],
       ),
     );
   }

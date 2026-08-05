@@ -32,6 +32,13 @@ class _BlogSectionState extends State<BlogSection> {
   bool _loading = true;
   bool _loadingNews = false;
   int _tabIndex = 0; // 0 = AI Agents, 1 = Real News
+  int _currentPage = 0;
+  int _totalPosts = 0;
+  bool _hasMore = true;
+
+  int get _totalPages => _totalPosts > 0
+      ? (_totalPosts / widget.limit).ceil()
+      : (_hasMore ? _currentPage + 2 : _currentPage + 1);
 
   @override
   void initState() {
@@ -40,24 +47,30 @@ class _BlogSectionState extends State<BlogSection> {
     _fetchNews();
   }
 
-  Future<void> _fetch() async {
+  Future<void> _fetch({int page = 0}) async {
+    setState(() => _loading = true);
     try {
       final wallet = WalletServiceScope.of(context);
-      final data = await wallet.getBlogPosts(limit: widget.limit);
+      final data = await wallet.getBlogPosts(
+        limit: widget.limit,
+        offset: page * widget.limit,
+      );
       final list = ((data['posts'] as List?) ?? [])
           .map((e) => BlogPost.fromJson(e as Map<String, dynamic>))
           .toList();
+      final total = data['total'] as int?;
       if (mounted) {
         setState(() {
           _posts = list;
+          _currentPage = page;
           _loading = false;
+          if (total != null) _totalPosts = total;
+          _hasMore = list.length >= widget.limit;
         });
       }
     } catch (_) {
       if (mounted) {
-        setState(() {
-          _loading = false;
-        });
+        setState(() => _loading = false);
       }
     }
   }
@@ -88,7 +101,7 @@ class _BlogSectionState extends State<BlogSection> {
           context,
           builder: (_) => BlogPostScreen(postId: p.id, preview: p),
         ))
-        .then((_) => _fetch());
+        .then((_) => _fetch(page: _currentPage));
   }
 
   void _openNews(String url) {
@@ -178,13 +191,18 @@ class _BlogSectionState extends State<BlogSection> {
       ),
       const SizedBox(height: 14),
       if (_tabIndex == 0) ...[
-        if (_posts.isEmpty)
+        if (_loading)
+          const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()))
+        else if (_posts.isEmpty)
           const Padding(padding: EdgeInsets.all(20), child: Center(child: Text('No agents analysis yet.')))
-        else
+        else ...[
           for (final p in _posts) ...[
             BlogPostCard(post: p, onTap: () => _open(p)),
             const SizedBox(height: 12),
           ],
+          // Pagination
+          if (_totalPages > 1) _buildPagination(t),
+        ],
       ] else ...[
         if (_loadingNews)
           const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()))
@@ -197,6 +215,137 @@ class _BlogSectionState extends State<BlogSection> {
           ],
       ],
     ]);
+  }
+
+  Widget _buildPagination(PulsThemeColors t) {
+    final pages = _totalPages;
+    // Show at most 7 page buttons with ellipsis for large sets
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Previous
+          _paginationArrow(
+            icon: Icons.chevron_left_rounded,
+            enabled: _currentPage > 0,
+            onTap: () => _fetch(page: _currentPage - 1),
+            t: t,
+          ),
+          const SizedBox(width: 4),
+          // Page numbers
+          ..._buildPageNumbers(pages, t),
+          const SizedBox(width: 4),
+          // Next
+          _paginationArrow(
+            icon: Icons.chevron_right_rounded,
+            enabled: _currentPage < pages - 1,
+            onTap: () => _fetch(page: _currentPage + 1),
+            t: t,
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildPageNumbers(int pages, PulsThemeColors t) {
+    final List<Widget> items = [];
+    const maxVisible = 7;
+
+    List<int?> pageIndices;
+    if (pages <= maxVisible) {
+      pageIndices = List.generate(pages, (i) => i);
+    } else {
+      // Always show first, last, current and neighbors
+      final Set<int> visible = {0, pages - 1};
+      for (int i = _currentPage - 1; i <= _currentPage + 1; i++) {
+        if (i >= 0 && i < pages) visible.add(i);
+      }
+      final sorted = visible.toList()..sort();
+      pageIndices = [];
+      for (int i = 0; i < sorted.length; i++) {
+        if (i > 0 && sorted[i] - sorted[i - 1] > 1) {
+          pageIndices.add(null); // ellipsis
+        }
+        pageIndices.add(sorted[i]);
+      }
+    }
+
+    for (final idx in pageIndices) {
+      if (idx == null) {
+        items.add(Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Text('…',
+              style: TextStyle(color: t.textSubtle, fontSize: 14)),
+        ));
+      } else {
+        final isActive = idx == _currentPage;
+        items.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: isActive ? null : () => _fetch(page: idx),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 34,
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? t.brand
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: isActive
+                        ? null
+                        : Border.all(color: t.border),
+                  ),
+                  child: Text(
+                    '${idx + 1}',
+                    style: TextStyle(
+                      color: isActive ? Colors.white : t.text,
+                      fontSize: 13,
+                      fontWeight:
+                          isActive ? FontWeight.w800 : FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+    return items;
+  }
+
+  Widget _paginationArrow({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onTap,
+    required PulsThemeColors t,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: enabled ? onTap : null,
+        child: Container(
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: t.border),
+          ),
+          child: Icon(icon,
+              size: 18,
+              color: enabled ? t.text : t.textSubtle.withValues(alpha: 0.4)),
+        ),
+      ),
+    );
   }
 
   Widget _buildNewsCard(dynamic n, PulsThemeColors t) {

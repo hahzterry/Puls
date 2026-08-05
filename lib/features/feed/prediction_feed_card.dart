@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/motion.dart';
 import '../../core/widgets/tactile.dart';
+import '../../core/widgets/side_button.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/puls_sparkline.dart';
 import '../../core/utils/formatters.dart';
@@ -651,23 +652,25 @@ class _OddsBar extends StatelessWidget {
             Text('Yes ${TradeMath.formatPrice(market.yesPrice)}',
                 style: TextStyle(
                     color: t.yes,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    letterSpacing: -0.3,
                     fontFeatures: PulsColors.tabularFigures)),
             const Spacer(),
             Text('No ${TradeMath.formatPrice(market.noPrice)}',
                 style: TextStyle(
                     color: t.no,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    letterSpacing: -0.3,
                     fontFeatures: PulsColors.tabularFigures)),
           ],
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(99),
           child: SizedBox(
-            height: 6,
+            height: 7,
             child: Row(
               children: [
                 // Animate the split so price updates glide rather than snap.
@@ -730,10 +733,10 @@ class _SideBtn extends StatelessWidget {
           onTap: onPressed,
           pressedScale: 0.97,
           child: Container(
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: fg.withValues(alpha: 0.28)),
+            decoration: sideButtonDecoration(
+              bg: bg,
+              fg: fg,
+              isDark: Theme.of(context).brightness == Brightness.dark,
             ),
             alignment: Alignment.center,
             child: Column(
@@ -842,33 +845,40 @@ class _FeedCardFrame extends StatelessWidget {
                   : t.border,
     );
 
-    return Container(
+    final shadow = BoxShadow(
+      color: progress > 0.1
+          ? swipeColor.withValues(alpha: progress * 0.22)
+          : featured
+              ? PulsColors.brandPink.withValues(alpha: 0.14)
+              : hovered
+                  ? t.brand.withValues(alpha: 0.12)
+                  : const Color(0xFFEC4899).withValues(alpha: 0.045),
+      blurRadius: 18 + (hovered ? 4 : 0) + progress * 20,
+      offset: Offset(hovered ? 0 : 0, hovered ? 6 : 5),
+    );
+
+    Widget inner = Container(
+      decoration: BoxDecoration(
+        color: t.surfaceRaised,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [shadow],
+      ),
+      child: child,
+    );
+
+    // On web, lifting the card slightly on hover feels premium. Transform is
+    // cheap (one repaint per hover state) and the frame can animate it.
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
+      curve: Curves.easeOutCubic,
+      transform: Matrix4.translationValues(0.0, hovered ? -3.0 : 0.0, 0.0),
       decoration: BoxDecoration(
         gradient: featured ? PulsColors.pulseGradient : null,
         borderRadius: BorderRadius.circular(17.5),
         border: featured ? null : border,
-        boxShadow: [
-          BoxShadow(
-            color: progress > 0.1
-                ? swipeColor.withValues(alpha: progress * 0.22)
-                : featured
-                    ? PulsColors.brandPink.withValues(alpha: 0.14)
-                    : hovered
-                        ? t.brand.withValues(alpha: 0.12)
-                        : const Color(0xFFEC4899).withValues(alpha: 0.045),
-            blurRadius: 18 + (hovered ? 4 : 0) + progress * 20,
-            offset: Offset(hovered ? 0 : 0, hovered ? 6 : 5),
-          ),
-        ],
       ),
       padding: EdgeInsets.all(featured ? 1.5 : 1),
-      child: Container(
-        decoration: BoxDecoration(
-          color: t.surfaceRaised,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: child,
-      ),
+      child: inner,
     );
   }
 }

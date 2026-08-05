@@ -15,6 +15,7 @@ import '../../core/utils/image_util.dart';
 import '../../core/widgets/market_hero.dart';
 import '../../core/widgets/animated_count.dart';
 import '../../core/widgets/tactile.dart';
+import '../../core/widgets/side_button.dart';
 import '../../core/widgets/gradient_text.dart';
 import '../../core/utils/trade_math.dart';
 import '../../data/models/market.dart';
@@ -490,15 +491,23 @@ class _ProbabilityPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          // Split bar
+          // Split bar — a little taller and with a soft glow so the YES/NO
+          // split reads as the market's pulse rather than a flat progress bar.
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(99),
             child: SizedBox(
-              height: 8,
+              height: 10,
               child: Row(
                 children: [
-                  Expanded(flex: yesPct, child: ColoredBox(color: t.yes)),
-                  Expanded(flex: noPct, child: ColoredBox(color: t.no)),
+                  Expanded(
+                    flex: yesPct.clamp(1, 999),
+                    child: ColoredBox(color: t.yes),
+                  ),
+                  Container(width: 2, color: t.bg.withValues(alpha: 0.6)),
+                  Expanded(
+                    flex: noPct.clamp(1, 999),
+                    child: ColoredBox(color: t.no),
+                  ),
                 ],
               ),
             ),
@@ -1107,10 +1116,10 @@ class _TradeBtn extends StatelessWidget {
         pressedScale: 0.97,
         child: Container(
           alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: fg.withValues(alpha: 0.28)),
+          decoration: sideButtonDecoration(
+            bg: bg,
+            fg: fg,
+            isDark: Theme.of(context).brightness == Brightness.dark,
           ),
           child: Text('$label $price',
               style: TextStyle(
