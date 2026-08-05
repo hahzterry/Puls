@@ -46,6 +46,10 @@ class _Agent {
     this.balance = 0,
     this.invested = 0,
     this.pool = 0,
+    this.tvl = 0,
+    this.realizedPnlUsdc = 0,
+    this.roi30dPct = 0,
+    this.winRatePct = 0,
     this.netUsdc = 0,
     this.apyEstimatePct = 0,
     this.isProfitable = false,
@@ -61,6 +65,10 @@ class _Agent {
   final double balance;
   final double invested;
   final double pool;
+  final double tvl;
+  final double realizedPnlUsdc;
+  final double roi30dPct;
+  final double winRatePct;
   final double netUsdc;
   final double apyEstimatePct;
   final bool isProfitable;
@@ -76,6 +84,10 @@ class _Agent {
         balance: (j['balance'] as num?)?.toDouble() ?? 0,
         invested: (j['invested'] as num?)?.toDouble() ?? 0,
         pool: (j['pool'] as num?)?.toDouble() ?? 0,
+        tvl: (j['tvlUsdc'] as num?)?.toDouble() ?? (j['pool'] as num?)?.toDouble() ?? 0,
+        realizedPnlUsdc: (j['realizedPnlUsdc'] as num?)?.toDouble() ?? (j['netUsdc'] as num?)?.toDouble() ?? 0,
+        roi30dPct: (j['roi30dPct'] as num?)?.toDouble() ?? 0,
+        winRatePct: (j['winRatePct'] as num?)?.toDouble() ?? 0,
         netUsdc: (j['netUsdc'] as num?)?.toDouble() ?? 0,
         apyEstimatePct: (j['apyEstimatePct'] as num?)?.toDouble() ?? 0,
         isProfitable: j['isProfitable'] as bool? ?? false,
@@ -681,23 +693,17 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      ShaderMask(
-                        shaderCallback: (r) =>
-                            PulsColors.pulseGradient.createShader(r),
-                        child: Text(
-                          a.apyEstimatePct >= 100
-                              ? '${a.apyEstimatePct.toStringAsFixed(0)}%'
-                              : '${a.apyEstimatePct.toStringAsFixed(1)}%',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 19,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                            fontFeatures: PulsColors.tabularFigures,
-                          ),
+                      Text(
+                        _apyLabel(a),
+                        style: TextStyle(
+                          color: _apyColor(t, a),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                          fontFeatures: PulsColors.tabularFigures,
                         ),
                       ),
-                      Text('APY',
+                      Text('EST. APY (30D)',
                           style: TextStyle(
                               color: t.textSubtle,
                               fontSize: 9.5,
@@ -710,15 +716,26 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _miniStat(t, 'POOL', _usd(a.pool)),
+                  _miniStat(t, 'REALIZED PNL',
+                      _signedUsd(a.realizedPnlUsdc),
+                      valueColor: a.realizedPnlUsdc >= 0 ? t.yes : t.no),
                   const SizedBox(width: 12),
-                  _miniStat(t, 'NET PNL',
-                      '${a.netUsdc >= 0 ? '+' : ''}${_usd(a.netUsdc)}'),
+                  _miniStat(t, 'WIN RATE',
+                      '${a.winRatePct.toStringAsFixed(1)}%'),
                   const SizedBox(width: 12),
-                  _miniStat(t, 'YOURS', _usd(a.invested)),
+                  _miniStat(t, '30D ROI', _signedPct(a.roi30dPct),
+                      valueColor: a.roi30dPct >= 0 ? t.yes : t.no),
                   const Spacer(),
                   Icon(Icons.chevron_right_rounded,
                       size: 18, color: t.textSubtle),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _miniStat(t, 'POOL', _usd(a.pool)),
+                  const SizedBox(width: 12),
+                  _miniStat(t, 'YOURS', _usd(a.invested)),
                 ],
               ),
             ],
@@ -728,13 +745,31 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
     );
   }
 
-  Widget _miniStat(PulsThemeColors t, String label, String value) {
+  static String _apyLabel(_Agent a) {
+    if (a.apyEstimatePct == 0) return 'n/a';
+    return '${a.apyEstimatePct.toStringAsFixed(1)}%';
+  }
+
+  static Color _apyColor(PulsThemeColors t, _Agent a) {
+    if (a.apyEstimatePct > 0) return t.yes;
+    if (a.apyEstimatePct < 0) return t.no;
+    return t.textSubtle;
+  }
+
+  String _signedUsd(double v) =>
+      v >= 0 ? '+${_usd(v)}' : '−${_usd(v.abs())}';
+
+  String _signedPct(double v) =>
+      v > 0 ? '+${v.toStringAsFixed(1)}%' : '${v.toStringAsFixed(1)}%';
+
+  Widget _miniStat(PulsThemeColors t, String label, String value,
+      {Color? valueColor}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(value,
             style: TextStyle(
-                color: t.text,
+                color: valueColor ?? t.text,
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
                 fontFeatures: PulsColors.tabularFigures)),
@@ -1014,7 +1049,12 @@ class _InvestSheetState extends State<_InvestSheet> {
   Widget build(BuildContext context) {
     final t = context.puls;
     final pos = widget.position;
-    final projected = _amount * 0.80;
+    final apy = widget.agent.apyEstimatePct;
+    final hasProfit = apy > 0;
+    final projected = _amount * apy / 100;
+    final fee = hasProfit ? projected * 0.20 : 0;
+    final share = hasProfit ? projected - fee : 0;
+    final apyLabel = apy == 0 ? 'n/a' : '${apy.toStringAsFixed(1)}%';
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, 14, 20, 24 + MediaQuery.of(context).viewInsets.bottom),
@@ -1053,7 +1093,7 @@ class _InvestSheetState extends State<_InvestSheet> {
                               fontWeight: FontWeight.w900,
                               letterSpacing: -0.4)),
                       Text('Pool ${_fmt(widget.agent.pool)} USDC · '
-                          '${widget.agent.apyEstimatePct.toStringAsFixed(1)}% APY',
+                          '$apyLabel APY',
                           style: TextStyle(
                               color: t.textMuted, fontSize: 12)),
                     ],
@@ -1107,9 +1147,9 @@ class _InvestSheetState extends State<_InvestSheet> {
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 11),
               ),
               child: Slider(
-                value: _amount.clamp(1, 500),
+                value: _amount.clamp(1, 1000),
                 min: 1,
-                max: 500,
+                max: 1000,
                 onChanged: widget.busy
                     ? null
                     : (v) => setState(() => _amount = v.roundToDouble()),
@@ -1155,25 +1195,44 @@ class _InvestSheetState extends State<_InvestSheet> {
               ],
             ),
             const SizedBox(height: 14),
-            Row(
-              children: [
-                Icon(Icons.pie_chart_rounded,
-                    size: 13, color: t.textSubtle),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: Text(
-                    'You keep 80% of profits · agent takes 20%',
-                    style: TextStyle(
-                        color: t.textMuted, fontSize: 11.5),
-                  ),
-                ),
-                Text('+${_fmt(projected)} est.',
-                    style: TextStyle(
-                        color: t.brand,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        fontFeatures: PulsColors.tabularFigures)),
-              ],
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: t.surfaceRaised,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: t.border),
+              ),
+              child: Column(
+                children: [
+                  _row(t, 'Est. annual yield ($apyLabel est. APY)',
+                      hasProfit
+                          ? '\$${projected.toStringAsFixed(2)}'
+                          : apy < 0
+                              ? '−\$${projected.abs().toStringAsFixed(2)}'
+                              : '\$0.00'),
+                  _row(t, 'Agent performance fee (20%)',
+                      '−\$${fee.toStringAsFixed(2)}'),
+                  _row(t, 'Your share',
+                      hasProfit ? '\$${share.toStringAsFixed(2)}' : '\$0.00',
+                      strong: true),
+                  if (!hasProfit)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          apy < 0
+                              ? 'Agent is currently net-negative — no fee is charged, losses reduce principal.'
+                              : 'No profit yet — the projection appears once the agent is net positive.',
+                          style: TextStyle(
+                              color: t.textSubtle,
+                              fontSize: 10.5,
+                              height: 1.35),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             const SizedBox(height: 18),
             Tactile(
@@ -1244,4 +1303,28 @@ class _InvestSheetState extends State<_InvestSheet> {
 
   static String _fmt(double v) =>
       v < 1 && v > 0 ? v.toStringAsFixed(4) : v.toStringAsFixed(2);
+
+  Widget _row(PulsThemeColors t, String label, String value,
+      {bool strong = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(label,
+                style: TextStyle(
+                    color: t.textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600)),
+          ),
+          Text(value,
+              style: TextStyle(
+                  color: strong ? t.brand : t.text,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: PulsColors.tabularFigures)),
+        ],
+      ),
+    );
+  }
 }
