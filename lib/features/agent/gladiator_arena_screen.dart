@@ -8,10 +8,10 @@ import '../../core/widgets/tactile.dart';
 
 /// ── AI Gladiator Arena ─────────────────────────────────────────────────────
 ///
-/// Four AI agents, $1,000 USDC each, 24 hours, one winner. A live-trading
-/// tournament rendered like a fighting-game roster crossed with a Bloomberg
-/// terminal: animated leaderboard track, PnL health bars, a trash-talk feed
-/// ticker, and massive "Bet on Agent" stake buttons.
+/// Four AI agents, $1,000 USDC each, 24 hours, one winner. A simulated
+/// live-trading tournament rendered like a fighting-game roster crossed with
+/// a Bloomberg terminal: animated leaderboard track, PnL health bars, a
+/// trash-talk feed ticker, and massive "Bet on Agent" stake buttons.
 class GladiatorArenaScreen extends StatefulWidget {
   const GladiatorArenaScreen({super.key});
 
@@ -58,11 +58,6 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
   Timer? _simTimer;
   Timer? _clockTimer;
   Duration _remaining = const Duration(hours: 13, minutes: 42, seconds: 8);
-
-  late final AnimationController _pulse = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1100),
-  )..repeat(reverse: true);
 
   late final AnimationController _ticker = AnimationController(
     vsync: this,
@@ -218,7 +213,6 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
   void dispose() {
     _simTimer?.cancel();
     _clockTimer?.cancel();
-    _pulse.dispose();
     _ticker.dispose();
     super.dispose();
   }
@@ -241,51 +235,37 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: RepaintBoundary(
-              child: AnimatedBuilder(
-                animation: _pulse,
-                builder: (_, __) => Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: t.noBg,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: t.no.withValues(alpha: 0.3 + 0.3 * _pulse.value),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      height: 7,
-                      width: 7,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: t.no,
-                        boxShadow: [
-                          BoxShadow(
-                            color: t.no.withValues(
-                                alpha: 0.4 + 0.5 * _pulse.value),
-                            blurRadius: 8,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'LIVE',
-                      style: TextStyle(
-                        color: t.no,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ],
-                ),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: t.surfaceRaised,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: t.borderStrong),
               ),
-            ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 7,
+                    width: 7,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: t.textMuted,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'SIMULATED',
+                    style: TextStyle(
+                      color: t.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -901,6 +881,11 @@ class _StakeSheetState extends State<_StakeSheet> {
                       'Tournament winner · ${g.odds.toStringAsFixed(1)}x payout',
                       style: TextStyle(color: t.textMuted, fontSize: 12),
                     ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Simulation — no real USDC is moved.',
+                      style: TextStyle(color: t.textSubtle, fontSize: 11),
+                    ),
                   ],
                 ),
               ),
@@ -1016,7 +1001,7 @@ class _StakeSheetState extends State<_StakeSheet> {
                     )
                   : Text(
                       _placed
-                          ? 'BET PLACED ✓'
+                          ? 'DEMO STAKE PLACED ✓'
                           : 'STAKE \$${_stake.round()} ON ${g.name}',
                       style: const TextStyle(
                         color: Colors.white,

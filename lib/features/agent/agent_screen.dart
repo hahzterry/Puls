@@ -5,11 +5,11 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/widgets/puls_snack.dart';
+import '../../core/widgets/tab_visibility.dart';
 import '../../core/widgets/tactile.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
-import '../../core/utils/kv_store.dart' show kvGet;
+import '../../core/auth_headers.dart';
 import '../../core/utils/haptics.dart';
 
 import '../../app/puls_app.dart';
@@ -69,8 +69,9 @@ class _PipelineTrackerState extends State<_PipelineTracker>
   @override
   void initState() {
     super.initState();
+    TabVisibility.ensureListening();
     _timer = Timer.periodic(const Duration(milliseconds: 2600), (_) {
-      if (!mounted) return;
+      if (!mounted || !TabVisibility.visible) return;
       if (_active < widget.steps.length - 1) setState(() => _active++);
     });
   }
@@ -261,32 +262,6 @@ class _AgentScreenState extends State<AgentScreen>
 
   bool _resumed = false;
 
-  Future<Map<String, String>> _buildAuthHeaders() async {
-    final headers = <String, String>{};
-    try {
-      final raw = kvGet('direct_auth');
-      if (raw != null && raw.isNotEmpty) {
-        final saved = jsonDecode(raw) as Map<String, dynamic>?;
-        final token = saved?['token'] as String?;
-        if (token != null && token.isNotEmpty) {
-          headers['Authorization'] = 'Bearer $token';
-          return headers;
-        }
-      }
-    } catch (_) {}
-    try {
-      final auth = Supabase.instance.client.auth;
-      var session = auth.currentSession;
-      if (session == null) {
-        session = (await auth.refreshSession()).session;
-      }
-      if (session?.accessToken != null) {
-        headers['Authorization'] = 'Bearer ${session!.accessToken}';
-      }
-    } catch (_) {}
-    return headers;
-  }
-
   void _resumeIfNeeded() {
     if (_resumed || _userId == null) return;
     _resumed = true;
@@ -298,7 +273,7 @@ class _AgentScreenState extends State<AgentScreen>
     final uid = _userId;
     if (uid == null) return;
     try {
-      final headers = await _buildAuthHeaders();
+      final headers = await pulsAuthHeadersWithDirectAuth();
       final res = await _client
           .get(
             Uri.parse('$backendUrl/api/agent/status?userId=$uid'),
@@ -355,7 +330,7 @@ class _AgentScreenState extends State<AgentScreen>
 
   Future<Map<String, dynamic>> _post(
       String path, Map<String, dynamic> body) async {
-    final headers = await _buildAuthHeaders();
+    final headers = await pulsAuthHeadersWithDirectAuth();
     headers['Content-Type'] = 'application/json';
     final res = await _client
         .post(
@@ -996,63 +971,135 @@ class _AgentScreenState extends State<AgentScreen>
     _send();
   }
 
-  Widget _quickBuyBar(PulsThemeColors t) => Container(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
-        child: Row(
-          children: [
-            Expanded(
-              child: _quickAction(
-                  t,
-                  Icons.trending_up_rounded,
-                  'Top Market',
-                  () => _quickBuy(
-                      'Buy \$2 on the single hottest trending market right now — pick it yourself and execute immediately.')),
+  Widget _quickBuyBar(PulsThemeColors t) => Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
+            child: Row(
+              children: [
+                Text('ONE-TAP BUYS',
+                    style: TextStyle(
+                        color: t.textSubtle,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.3)),
+                const Spacer(),
+                Text('agent picks & executes',
+                    style: TextStyle(
+                        color: t.textSubtle, fontSize: 9.5)),
+              ],
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _quickAction(
-                  t,
-                  Icons.bolt_rounded,
-                  'Top Signal',
-                  () => _quickBuy(
-                      'Find the top-rated creator signal and buy \$2 into its market right now.')),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _quickAction(
+                    t,
+                    Icons.trending_up_rounded,
+                    'Top Market',
+                    'hottest trending now',
+                    accent: t.yes,
+                    onTap: () => _quickBuy(
+                        'Buy \$2 on the single hottest trending market right now — pick it yourself and execute immediately.'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _quickAction(
+                    t,
+                    Icons.bolt_rounded,
+                    'Top Signal',
+                    'top-rated creator alpha',
+                    onTap: () => _quickBuy(
+                        'Find the top-rated creator signal and buy \$2 into its market right now.'),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       );
 
   Widget _quickAction(
-      PulsThemeColors t, IconData icon, String label, VoidCallback onTap) {
+    PulsThemeColors t,
+    IconData icon,
+    String label,
+    String sublabel, {
+    Color? accent,
+    required VoidCallback onTap,
+  }) {
     final disabled = _busy;
+    final gradient = accent == null;
     return Tactile(
       behavior: HitTestBehavior.opaque,
+      hoverScale: 1.02,
       onTap: onTap, // _quickBuy guards _busy internally
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        height: 40,
+        height: 50,
         decoration: BoxDecoration(
-          color: disabled ? t.surface : t.brandSubtle,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: disabled ? t.border : t.brand.withValues(alpha: 0.35)),
+          gradient: gradient ? PulsColors.pulseGradient : null,
+          color: gradient ? null : (disabled ? t.surface : accent.withValues(alpha: 0.10)),
+          borderRadius: BorderRadius.circular(14),
+          border: gradient
+              ? null
+              : Border.all(
+                  color: disabled
+                      ? t.border
+                      : accent.withValues(alpha: 0.40)),
+          boxShadow: gradient && !disabled
+              ? PulsColors.neonGlow(color: PulsColors.brandPink)
+              : null,
         ),
         alignment: Alignment.center,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: disabled ? t.textSubtle : t.brand),
-            const SizedBox(width: 7),
-            Text(label,
-                style: TextStyle(
-                    color: disabled ? t.textSubtle : t.brand,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800)),
-            const SizedBox(width: 5),
-            Icon(Icons.flash_on_rounded,
-                size: 12,
-                color:
-                    disabled ? t.textSubtle : t.brand.withValues(alpha: 0.7)),
-          ],
+        child: Opacity(
+          opacity: disabled ? 0.45 : 1,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 26,
+                height: 26,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: gradient
+                      ? Colors.white.withValues(alpha: 0.22)
+                      : accent.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon,
+                    size: 15,
+                    color: gradient ? Colors.white : accent),
+              ),
+              const SizedBox(width: 9),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: TextStyle(
+                          color: gradient ? Colors.white : t.text,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800)),
+                  Text(sublabel,
+                      style: TextStyle(
+                          color: gradient
+                              ? Colors.white.withValues(alpha: 0.75)
+                              : t.textSubtle,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w600)),
+                ],
+              ),
+              const SizedBox(width: 6),
+              Icon(Icons.flash_on_rounded,
+                  size: 13,
+                  color: gradient
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : accent),
+            ],
+          ),
         ),
       ),
     );

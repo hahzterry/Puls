@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/motion.dart';
 
 /// 1. Live Crypto Ticker (Binance Websocket)
 class CryptoTickerStrip extends StatefulWidget {
@@ -21,7 +22,20 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
   late final AnimationController _scrollController = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 100000),
-  )..repeat();
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Honor reduce-motion: hold the strip still (static first row).
+    if (context.reduceMotion) {
+      _scrollController
+        ..stop()
+        ..value = 0.0;
+    } else if (!_scrollController.isAnimating) {
+      _scrollController.repeat();
+    }
+  }
 
   @override
   void initState() {

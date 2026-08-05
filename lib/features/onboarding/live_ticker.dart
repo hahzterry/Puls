@@ -56,17 +56,18 @@ class _LiveMarketTickerState extends State<LiveMarketTicker>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Honor reduce-motion: hold the marquee + LIVE pulse still.
-    // The marquee is essential live content — keep it scrolling continuously
-    // (it was previously frozen under the OS "reduce motion" setting). The
-    // pulsing LIVE dot is decorative, so that still honors reduce-motion.
-    if (!_marquee.isAnimating) _marquee.repeat();
+    // Honor reduce-motion: hold the marquee + LIVE pulse still. Under reduced
+    // motion the tape renders as a static first row (offset 0).
     if (context.reduceMotion) {
+      _marquee
+        ..stop()
+        ..value = 0.0;
       _pulse
         ..stop()
         ..value = 1.0; // keep the LIVE dot fully visible, just not pulsing
-    } else if (!_pulse.isAnimating) {
-      _pulse.repeat(reverse: true);
+    } else {
+      if (!_marquee.isAnimating) _marquee.repeat();
+      if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
     }
   }
 

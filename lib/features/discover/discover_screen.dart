@@ -65,25 +65,25 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   String _getCategoryEmoji(String category) {
     switch (category.toLowerCase()) {
       case 'all':
-        return 'рџЊЌ';
+        return '🌍';
       case 'politics':
-        return 'рџ—іпёЏ';
+        return '🗳️';
       case 'crypto':
-        return 'рџЄ™';
+        return '🪙';
       case 'sports':
-        return 'вљЅ';
+        return '⚽';
       case 'pop culture':
-        return 'рџЋ¬';
+        return '🎬';
       case 'science':
-        return 'рџ§Є';
+        return '🧪';
       case 'tech':
-        return 'рџ’»';
+        return '💻';
       case 'finance':
-        return 'рџ’ј';
+        return '💼';
       case 'ai agents':
-        return 'рџ¤–';
+        return '🤖';
       default:
-        return 'рџ”®';
+        return '🔮';
     }
   }
 
@@ -337,7 +337,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     ),
                     child: Text(
                         isInitialLoading
-                            ? 'SearchingвЂ¦'
+                            ? 'Searching…'
                             : '${markets.length} found',
                         style: TextStyle(
                             color: t.textMuted,
@@ -575,7 +575,7 @@ class _MarketCardState extends State<_MarketCard> {
                                 PulsColors.agentPurple.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const PulsEmojiText('рџ¤– AGENT',
+                          child: const PulsEmojiText('🤖 AGENT',
                               style: TextStyle(
                                   color: PulsColors.agentPurple,
                                   fontSize: 9.5,
@@ -766,7 +766,7 @@ class _FeaturedLabel extends StatelessWidget {
                 letterSpacing: 1.2)),
         const SizedBox(width: 8),
         Expanded(
-          child: Text('В· highest volume right now',
+          child: Text('· highest volume right now',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(color: t.textSubtle, fontSize: 12)),
@@ -1240,7 +1240,7 @@ class _EmptyState extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            '${(m.yesPrice * 100).toStringAsFixed(0)}Вў',
+                            '${(m.yesPrice * 100).toStringAsFixed(0)}¢',
                             style: TextStyle(
                                 color: t.yes,
                                 fontSize: 13,

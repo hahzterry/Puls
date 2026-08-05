@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import '../../core/widgets/puls_snack.dart';
 import '../../core/widgets/glass_card.dart';
+import '../../core/widgets/copy_button.dart';
+import '../../core/widgets/dot_grid_painter.dart';
 import 'package:flutter_web_scroll/flutter_web_scroll.dart';
 
 import 'live_activity.dart';
@@ -15,8 +17,6 @@ import 'landing_faq.dart';
 import 'landing_kit.dart';
 import 'accountable_ai.dart';
 import 'phone_demo.dart';
-import 'package:flutter/services.dart';
-import 'mac_window_frame.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -141,7 +141,7 @@ class _WebLandingPageState extends State<WebLandingPage>
             Positioned.fill(
               child: ExcludeSemantics(
                 child: RepaintBoundary(
-                  child: CustomPaint(painter: _DotGridPainter(color: dotColor)),
+                  child: CustomPaint(painter: DotGridPainter(color: dotColor)),
                 ),
               ),
             ),
@@ -3535,7 +3535,7 @@ class _StatsSection extends StatelessWidget {
                           const SizedBox(height: 12),
                           Row(
                             children: [
-                              const _CopyButton(text: factoryAddress),
+                              const CopyButton(text: factoryAddress),
                               const SizedBox(width: 8),
                               _SecondaryButton(
                                 label: 'View ↗',
@@ -3598,7 +3598,7 @@ class _StatsSection extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const _CopyButton(text: factoryAddress),
+                          const CopyButton(text: factoryAddress),
                           const SizedBox(width: 8),
                           _SecondaryButton(
                             label: 'View ↗',
@@ -3771,40 +3771,6 @@ class _StatCardState extends State<_StatCard> {
   }
 }
 
-class _CopyButton extends StatefulWidget {
-  const _CopyButton({required this.text});
-  final String text;
-
-  @override
-  State<_CopyButton> createState() => _CopyButtonState();
-}
-
-class _CopyButtonState extends State<_CopyButton> {
-  bool _copied = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.puls;
-    return IconButton(
-      onPressed: () {
-        Clipboard.setData(ClipboardData(text: widget.text));
-        setState(() => _copied = true);
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) setState(() => _copied = false);
-        });
-        PulsSnack.show(context, 'Address copied to clipboard!');
-      },
-      icon: Icon(
-        _copied ? Icons.check_circle_outline_rounded : Icons.copy_rounded,
-        color: _copied ? t.yes : t.brand,
-        size: 18,
-      ),
-      tooltip: 'Copy contract address',
-    );
-  }
-}
-
-// ── Final CTA ─────────────────────────────────────────────────────────────────
 class _FinalCtaSection extends StatelessWidget {
   const _FinalCtaSection();
 
@@ -4433,7 +4399,6 @@ class _PrimaryButtonState extends State<_PrimaryButton>
   Widget build(BuildContext context) {
     final t = context.puls;
     final scale = _pressed ? 0.97 : (_hovered ? 1.04 : 1.0);
-    final duration = Duration(milliseconds: _pressed ? 60 : 150);
 
     return Semantics(
       button: true,
@@ -4548,9 +4513,7 @@ class _SecondaryButtonState extends State<_SecondaryButton> {
       button: true,
       label: widget.label,
       child: MouseRegion(
-        cursor: widget.onTap == null
-            ? SystemMouseCursors.basic
-            : SystemMouseCursors.click,
+        cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() {
           _hovered = false;
@@ -4605,25 +4568,6 @@ class _SecondaryButtonState extends State<_SecondaryButton> {
       ),
     );
   }
-}
-
-class _DotGridPainter extends CustomPainter {
-  const _DotGridPainter({required this.color});
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    const spacing = 32.0;
-    for (double x = 0; x < size.width; x += spacing) {
-      for (double y = 0; y < size.height; y += spacing) {
-        canvas.drawCircle(Offset(x, y), 0.75, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DotGridPainter old) => old.color != color;
 }
 
 // ── Scroll reveal ─────────────────────────────────────────────────────────────

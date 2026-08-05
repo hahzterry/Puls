@@ -9,6 +9,7 @@ import '../../core/config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/puls_loader.dart';
+import '../../core/widgets/tab_visibility.dart';
 
 /// Public feed of "Pulse" — the autonomous house AI trader agent.
 /// Shows its on-chain identity (Circle wallet, ERC-8004 id, reputation)
@@ -53,8 +54,12 @@ class _PulseFeedState extends State<PulseFeed> {
   @override
   void initState() {
     super.initState();
+    TabVisibility.ensureListening();
     _load();
-    _refresh = Timer.periodic(const Duration(seconds: 60), (_) => _load());
+    _refresh = Timer.periodic(const Duration(seconds: 60), (_) {
+      if (!TabVisibility.visible) return;
+      _load();
+    });
   }
 
   @override

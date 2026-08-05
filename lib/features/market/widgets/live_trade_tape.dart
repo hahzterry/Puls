@@ -63,7 +63,7 @@ class _LiveTradeTapeState extends State<LiveTradeTape> {
     final t = context.puls;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF000000),
+        color: t.surface,
         border: Border.all(color: t.border),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -87,14 +87,14 @@ class _LiveTradeTapeState extends State<LiveTradeTape> {
     return Container(
       height: 28,
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      color: const Color(0xFF05080F),
-      child: Row(
+      color: t.surfaceRaised,
+      child: const Row(
         children: [
-          const _Hdr('TIME', 50),
-          const _Hdr('TRADER', 70),
-          const _Hdr('SIDE', 40),
-          const _Hdr('AMOUNT', 60),
-          const _Hdr('MARKET', 0, flex: true),
+          _Hdr('TIME', 50),
+          _Hdr('TRADER', 70),
+          _Hdr('SIDE', 40),
+          _Hdr('AMOUNT', 60),
+          _Hdr('MARKET', 0, flex: true),
         ],
       ),
     );
@@ -109,12 +109,13 @@ class _Hdr extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     if (flex) {
       return Expanded(
         child: Text(label,
-            style: const TextStyle(
-                color: Color(0xFF5E6A85),
-                fontSize: 9,
+            style: TextStyle(
+                color: t.textSubtle,
+                fontSize: 11,
                 fontWeight: FontWeight.w800,
                 fontFamily: PulsColors.fontMono,
                 letterSpacing: 1)),
@@ -123,9 +124,9 @@ class _Hdr extends StatelessWidget {
     return SizedBox(
       width: width,
       child: Text(label,
-          style: const TextStyle(
-              color: Color(0xFF5E6A85),
-              fontSize: 9,
+          style: TextStyle(
+              color: t.textSubtle,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
               fontFamily: PulsColors.fontMono,
               letterSpacing: 1)),
@@ -139,6 +140,7 @@ class _TradeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final side = (trade['side'] as String? ?? 'YES').toUpperCase();
     final isYes = side == 'YES';
     final sideColor = isYes ? PulsColors.brandMint : PulsColors.brandPink;
@@ -146,27 +148,27 @@ class _TradeRow extends StatelessWidget {
     final isAgent = userId.startsWith('agent_');
     final amount = (trade['usdc_amount'] as num?)?.toDouble() ?? 0;
     final question = (trade['question'] as String? ?? '')
-        .replaceAll('рџ¤– Agent:', '')
+        .replaceAll('🤖 Agent:', '')
         .trim();
     final q =
-        question.length > 30 ? '${question.substring(0, 29)}вЂ¦' : question;
+        question.length > 30 ? '${question.substring(0, 29)}…' : question;
     final ts = trade['created_at'] as String? ?? '';
     final time = ts.length >= 8 ? ts.substring(11, 19) : '--:--:--';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border:
-            Border(bottom: BorderSide(color: Color(0xFF0A0E1A), width: 0.5)),
+            Border(bottom: BorderSide(color: t.border, width: 0.5)),
       ),
       child: Row(
         children: [
           SizedBox(
             width: 50,
             child: Text(time,
-                style: const TextStyle(
-                    color: Color(0xFF5E6A85),
-                    fontSize: 9.5,
+                style: TextStyle(
+                    color: t.textSubtle,
+                    fontSize: 11,
                     fontFamily: PulsColors.fontMono)),
           ),
           SizedBox(
@@ -175,8 +177,8 @@ class _TradeRow extends StatelessWidget {
                 style: TextStyle(
                     color: isAgent
                         ? const Color(0xFFF59E0B)
-                        : const Color(0xFF9AA6C0),
-                    fontSize: 9.5,
+                        : t.textMuted,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                     fontFamily: PulsColors.fontMono)),
           ),
@@ -185,7 +187,7 @@ class _TradeRow extends StatelessWidget {
             child: Text(side,
                 style: TextStyle(
                     color: sideColor,
-                    fontSize: 9.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     fontFamily: PulsColors.fontMono)),
           ),
@@ -194,16 +196,16 @@ class _TradeRow extends StatelessWidget {
             child: Text('\$${amount.toStringAsFixed(2)}',
                 style: TextStyle(
                     color: sideColor.withValues(alpha: 0.8),
-                    fontSize: 9.5,
+                    fontSize: 11,
                     fontFamily: PulsColors.fontMono)),
           ),
           Expanded(
             child: Text(q,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    color: Color(0xFFEAF0FF),
-                    fontSize: 9.5,
+                style: TextStyle(
+                    color: t.text,
+                    fontSize: 11,
                     fontFamily: PulsColors.fontMono)),
           ),
         ],

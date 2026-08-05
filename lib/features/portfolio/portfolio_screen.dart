@@ -514,7 +514,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                         usdcBalance: ws.usdcBalance,
                       ),
                       const SizedBox(height: 16),
-                      Text('Performance Trend',
+                      Text('P&L Since Entry',
                           style: TextStyle(
                               color: t.text,
                               fontSize: 14,
@@ -842,15 +842,7 @@ class _PortfolioChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final base = cost > 0 ? cost : 100.0;
     final end = base + pnl;
-    final spots = [
-      FlSpot(0, base * 0.95),
-      FlSpot(1, base * 1.02),
-      FlSpot(2, base * 0.98),
-      FlSpot(3, base * 1.05),
-      FlSpot(4, base * 1.01),
-      FlSpot(5, base * 1.08),
-      FlSpot(6, end),
-    ];
+    final spots = [FlSpot(0, base), FlSpot(1, end)];
     final isUp = pnl >= 0;
     final color = isUp ? t.yes : t.no;
 

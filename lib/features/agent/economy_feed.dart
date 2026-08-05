@@ -10,6 +10,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/gradient_text.dart';
 import '../../core/widgets/puls_loader.dart';
+import '../../core/widgets/tab_visibility.dart';
 
 /// Economy Explorer — a live, verifiable feed of on-chain USDC activity in the
 /// Puls economy (treasury + house agent). Every row links to its Arc Blockscout
@@ -57,8 +58,12 @@ class _EconomyFeedState extends State<EconomyFeed> {
   @override
   void initState() {
     super.initState();
+    TabVisibility.ensureListening();
     _load();
-    _refresh = Timer.periodic(const Duration(seconds: 45), (_) => _load());
+    _refresh = Timer.periodic(const Duration(seconds: 45), (_) {
+      if (!TabVisibility.visible) return;
+      _load();
+    });
   }
 
   @override

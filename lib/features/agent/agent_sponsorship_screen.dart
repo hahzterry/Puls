@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/puls_app.dart' show WalletServiceScope;
 import '../../core/config.dart' show backendUrl;
 import '../../core/theme/app_theme.dart';
+import '../../core/motion.dart';
 import '../../core/widgets/gradient_text.dart';
 import '../../core/widgets/puls_snack.dart';
 import '../../core/widgets/tactile.dart';
@@ -478,13 +479,10 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
       ),
       body: SafeArea(
         child: _loading
-            ? Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(t.brand),
-                ),
-              )
-            : Center(
+            ? const _SkeletonList()
+            : _agents.isEmpty
+                ? _EmptyState(onRetry: _load)
+                : Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 720),
                   child: RefreshIndicator(
@@ -495,22 +493,12 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
                       children: [
                         _summaryCard(t),
                         const SizedBox(height: 14),
-                        Text('CAPITAL POOL',
-                            style: TextStyle(
-                                color: t.textSubtle,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.4)),
+                        _sectionLabel(t, 'CAPITAL POOL'),
                         const SizedBox(height: 8),
-                        ..._agents.map((a) => _agentCard(t, a)),
+                        ..._agents.asMap().entries.map((e) => _agentCard(t, e.value, e.key)),
                         if (_positions.isNotEmpty) ...[
                           const SizedBox(height: 18),
-                          Text('MY INVESTMENTS',
-                              style: TextStyle(
-                                  color: t.textSubtle,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.4)),
+                          _sectionLabel(t, 'MY INVESTMENTS'),
                           const SizedBox(height: 8),
                           ..._positions.map((p) => _positionCard(t, p)),
                         ],
@@ -613,15 +601,42 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
   Widget _divider(PulsThemeColors t) =>
       Container(width: 1, height: 32, color: t.border);
 
-  Widget _agentCard(PulsThemeColors t, _Agent a) {
+  Widget _sectionLabel(PulsThemeColors t, String label) {
+    return Row(
+      children: [
+        Container(
+          width: 3,
+          height: 13,
+          decoration: BoxDecoration(
+            gradient: PulsColors.pulseGradient,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(label,
+            style: TextStyle(
+                color: t.textSubtle,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.4)),
+      ],
+    );
+  }
+
+  Widget _agentCard(PulsThemeColors t, _Agent a, int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: t.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: t.border),
+        border: Border.all(
+          color: index < 3
+              ? t.brand.withValues(alpha: 0.35)
+              : t.border,
+        ),
       ),
       child: Tactile(
+        hoverScale: 1.01,
         onTap: () => _investSheet(a),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -648,6 +663,34 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
                       children: [
                         Row(
                           children: [
+                            Container(
+                              width: 22,
+                              height: 22,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                gradient: index < 3
+                                    ? PulsColors.pulseGradient
+                                    : null,
+                                color: index < 3 ? null : t.surfaceRaised,
+                                borderRadius: BorderRadius.circular(7),
+                                border: Border.all(
+                                  color: index < 3
+                                      ? Colors.transparent
+                                      : t.border,
+                                ),
+                              ),
+                              child: Text('${index + 1}',
+                                  style: TextStyle(
+                                    color: index < 3
+                                        ? Colors.white
+                                        : t.textSubtle,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w900,
+                                    fontFeatures:
+                                        PulsColors.tabularFigures,
+                                  )),
+                            ),
+                            const SizedBox(width: 8),
                             Flexible(
                               child: Text(a.name,
                                   maxLines: 1,
@@ -856,6 +899,7 @@ class _AgentSponsorshipScreenState extends State<AgentSponsorshipScreen> {
           ),
           const SizedBox(height: 12),
           Tactile(
+            hoverScale: 1.02,
             onTap: _busy ? null : () => _withdrawPosition(p),
             child: Container(
               height: 44,
@@ -963,6 +1007,235 @@ class _WalletPill extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Skeleton loading state ───────────────────────────────────────────────────
+/// Skeleton matching the real layout (summary card + agent cards) so the
+/// first paint feels deliberate instead of a blank spinner.
+class _SkeletonList extends StatefulWidget {
+  const _SkeletonList();
+
+  @override
+  State<_SkeletonList> createState() => _SkeletonListState();
+}
+
+class _SkeletonListState extends State<_SkeletonList>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat(reverse: true);
+  late final Animation<double> _fade = _pulse.drive(
+    Tween(begin: 0.5, end: 1.0).chain(CurveTween(curve: Curves.easeInOut)),
+  );
+  bool _reduce = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduce = context.reduceMotion;
+    if (_reduce) _pulse.stop();
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  Widget _bar(PulsThemeColors t, double w, double h) => Container(
+        width: w,
+        height: h,
+        decoration: BoxDecoration(
+          color: t.textSubtle.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(5),
+        ),
+      );
+
+  Widget _block(PulsThemeColors t, Widget child) => Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: t.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: t.border),
+        ),
+        child: child,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: FadeTransition(
+          opacity: _reduce ? const AlwaysStoppedAnimation(1.0) : _fade,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            children: [
+              _block(
+                t,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: t.textSubtle.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _bar(t, 150, 15),
+                            const SizedBox(height: 8),
+                            _bar(t, 110, 10),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Expanded(child: _bar(t, 62, 16)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _bar(t, 62, 16)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _bar(t, 62, 16)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              _bar(t, 120, 12),
+              const SizedBox(height: 10),
+              for (var i = 0; i < 3; i++)
+                _block(
+                  t,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: t.textSubtle.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _bar(t, 110, 14),
+                              const SizedBox(height: 7),
+                              _bar(t, 70, 10),
+                            ],
+                          ),
+                          const Spacer(),
+                          _bar(t, 58, 18),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          _bar(t, 60, 12),
+                          const SizedBox(width: 14),
+                          _bar(t, 60, 12),
+                          const Spacer(),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Empty / error state ──────────────────────────────────────────────────────
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                gradient: PulsColors.pulseGradient,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.sensors_off_rounded,
+                  color: Colors.white, size: 26),
+            ),
+            const SizedBox(height: 16),
+            Text('Agents unavailable',
+                style: TextStyle(
+                    color: t.text,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900)),
+            const SizedBox(height: 6),
+            Text(
+              'The live pool could not be reached. Check your connection and try again.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: t.textMuted, fontSize: 12.5, height: 1.4),
+            ),
+            const SizedBox(height: 18),
+            Tactile(
+              behavior: HitTestBehavior.opaque,
+              hoverScale: 1.02,
+              onTap: onRetry,
+              child: Container(
+                height: 46,
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: PulsColors.pulseGradient,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: PulsColors.neonGlow(),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.refresh_rounded,
+                        color: Colors.white, size: 18),
+                    SizedBox(width: 8),
+                    Text('Try again',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

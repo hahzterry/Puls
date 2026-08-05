@@ -156,11 +156,11 @@ class _AlertsBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('3 mock alerts armed',
+                Text('Simulation mode',
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 2),
                 Text(
-                  'Price moves and deadlines are simulated.',
+                  'Prices are simulated for the demo — live alerts aren\'t wired yet.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],

@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
+import '../../core/auth_headers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/puls_snack.dart';
+import '../../core/widgets/tab_visibility.dart';
 import '../../core/config.dart';
 import '../../app/puls_app.dart';
 
@@ -35,8 +36,12 @@ class _UserChatScreenState extends State<UserChatScreen> {
   @override
   void initState() {
     super.initState();
+    TabVisibility.ensureListening();
     _fetch();
-    _polling = Timer.periodic(const Duration(seconds: 3), (_) => _fetch(bg: true));
+    _polling = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!TabVisibility.visible) return;
+      _fetch(bg: true);
+    });
   }
 
   @override
@@ -47,24 +52,6 @@ class _UserChatScreenState extends State<UserChatScreen> {
     super.dispose();
   }
 
-  Future<Map<String, String>> _authHeaders() async {
-    final auth = Supabase.instance.client.auth;
-    var s = auth.currentSession;
-    final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final needsRefresh = s == null || (s.expiresAt != null && s.expiresAt! - nowSec < 60);
-    if (needsRefresh) {
-      try {
-        final res = await auth.refreshSession();
-        s = res.session ?? auth.currentSession;
-      } catch (_) {
-        s = auth.currentSession;
-      }
-    }
-    final h = <String, String>{'Content-Type': 'application/json'};
-    if (s != null) h['Authorization'] = 'Bearer ${s.accessToken}';
-    return h;
-  }
-
   Future<void> _fetch({bool bg = false}) async {
     final uid = WalletServiceScope.of(context).state.userId;
     if (uid == null) return;
@@ -72,7 +59,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
     try {
       final res = await http.get(
         Uri.parse('$backendUrl/api/messages/${widget.targetUserId}?userId=$uid'),
-        headers: await _authHeaders(),
+        headers: await pulsAuthHeaders(),
       );
       if (res.statusCode == 200) {
         final List<dynamic> msgs = jsonDecode(res.body);
@@ -126,7 +113,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
     try {
       await http.post(
         Uri.parse('$backendUrl/api/messages/${widget.targetUserId}'),
-        headers: await _authHeaders(),
+        headers: await pulsAuthHeaders(),
         body: jsonEncode({
           'userId': uid,
           'body': body,

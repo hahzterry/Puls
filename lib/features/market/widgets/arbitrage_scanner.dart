@@ -70,12 +70,13 @@ class _ArbitrageScannerState extends State<ArbitrageScanner> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final opps = _loading ? [] : _findArbitrage();
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF000000),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        color: t.surface,
+        border: Border.all(color: t.borderStrong),
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -84,21 +85,21 @@ class _ArbitrageScannerState extends State<ArbitrageScanner> {
           Container(
             height: 28,
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            color: const Color(0xFF05080F),
+            color: t.surfaceRaised,
             child: Row(
               children: [
-                const Text('ARBITRAGE SCANNER',
+                Text('ARBITRAGE SCANNER',
                     style: TextStyle(
-                        color: Color(0xFF5E6A85),
-                        fontSize: 9,
+                        color: t.textSubtle,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         fontFamily: PulsColors.fontMono,
                         letterSpacing: 1.5)),
                 const Spacer(),
                 Text('${opps.length} OPPS',
                     style: const TextStyle(
-                        color: Color(0xFF2DD4BF),
-                        fontSize: 10,
+                        color: PulsColors.brandMint,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         fontFamily: PulsColors.fontMono)),
               ],
@@ -108,12 +109,12 @@ class _ArbitrageScannerState extends State<ArbitrageScanner> {
             child: _loading
                 ? const Center(
                     child: CircularProgressIndicator(
-                        strokeWidth: 1.5, color: Color(0xFF2DD4BF)))
+                        strokeWidth: 1.5, color: PulsColors.brandMint))
                 : opps.isEmpty
                     ? Center(
                         child: Text('No arbitrage opportunities',
                             style: TextStyle(
-                                color: const Color(0xFF5E6A85),
+                                color: t.textSubtle,
                                 fontSize: 12,
                                 fontFamily: PulsColors.fontMono)))
                     : ListView.builder(
@@ -144,26 +145,27 @@ class _ArbRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final q = opp.slug.replaceAll('-', ' ');
-    final qShort = q.length > 35 ? '${q.substring(0, 34)}вЂ¦' : q;
+    final qShort = q.length > 35 ? '${q.substring(0, 34)}…' : q;
     final spreadPct = (opp.spread * 100).toStringAsFixed(1);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
           border:
-              Border(bottom: BorderSide(color: Color(0xFF0A0E1A), width: 0.5))),
+              Border(bottom: BorderSide(color: t.border, width: 0.5))),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
             decoration: BoxDecoration(
-                color: const Color(0xFF2DD4BF).withValues(alpha: 0.12),
+                color: PulsColors.brandMint.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(3)),
             child: Text('+$spreadPct%',
                 style: const TextStyle(
-                    color: Color(0xFF2DD4BF),
-                    fontSize: 10,
+                    color: PulsColors.brandMint,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     fontFamily: PulsColors.fontMono)),
           ),
@@ -172,26 +174,26 @@ class _ArbRow extends StatelessWidget {
               child: Text(qShort,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color: Color(0xFFEAF0FF),
-                      fontSize: 10,
+                  style: TextStyle(
+                      color: t.text,
+                      fontSize: 11,
                       fontFamily: PulsColors.fontMono))),
           const SizedBox(width: 6),
-          Text('${(opp.yesPrice * 100).round()}Вў',
+          Text('${(opp.yesPrice * 100).round()}¢',
               style: const TextStyle(
-                  color: Color(0xFF2DD4BF),
-                  fontSize: 10,
+                  color: PulsColors.brandMint,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
                   fontFamily: PulsColors.fontMono)),
-          const Text('/',
+          Text('/',
               style: TextStyle(
-                  color: Color(0xFF5E6A85),
-                  fontSize: 10,
+                  color: t.textSubtle,
+                  fontSize: 11,
                   fontFamily: PulsColors.fontMono)),
-          Text('${(opp.noPrice * 100).round()}Вў',
+          Text('${(opp.noPrice * 100).round()}¢',
               style: const TextStyle(
                   color: Color(0xFFEC4899),
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
                   fontFamily: PulsColors.fontMono)),
         ],

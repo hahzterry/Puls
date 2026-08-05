@@ -78,7 +78,7 @@ class _PnlChartState extends State<PnlChart> {
               const Text('AGENT P&L',
                   style: TextStyle(
                       color: PulsColors.dark400,
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                       fontFamily: PulsColors.fontMono,
                       letterSpacing: 1.5)),
@@ -130,7 +130,7 @@ class _PnlChartState extends State<PnlChart> {
                       '${name.toUpperCase()} ${net >= 0 ? '+' : ''}\$${net.toStringAsFixed(2)}',
                       style: TextStyle(
                           color: color,
-                          fontSize: 9,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                           fontFamily: PulsColors.fontMono)),
                 ],

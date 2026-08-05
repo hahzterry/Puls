@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/widgets/puls_snack.dart';
 import '../../core/widgets/puls_page_route.dart';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/auth_headers.dart';
 import '../../core/config.dart' show backendUrl;
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/gradient_text.dart';
@@ -31,36 +31,6 @@ class _SupportScreenState extends State<SupportScreen> {
     _fetch();
   }
 
-  /// Builds auth headers from a *valid* session.
-  ///
-  /// On a cold web load `currentSession` may not be restored yet, or it may
-  /// hold an expired access token (Supabase JWTs expire ~1h and reading the
-  /// cached session does NOT refresh it). Sending that stale/absent token makes
-  /// the server's `supabase.auth.getUser()` reject the request with 401. So we
-  /// proactively refresh when the session is missing or about to expire.
-  Future<Map<String, String>> _authHeaders() async {
-    final auth = Supabase.instance.client.auth;
-    var s = auth.currentSession;
-
-    final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final needsRefresh = s == null ||
-        (s.expiresAt != null &&
-            s.expiresAt! - nowSec < 60); // expired/<60s left
-    if (needsRefresh) {
-      try {
-        final res = await auth.refreshSession();
-        s = res.session ?? auth.currentSession;
-      } catch (_) {
-        // Refresh failed (e.g. truly signed out) — fall back to whatever we have.
-        s = auth.currentSession;
-      }
-    }
-
-    final h = <String, String>{'Content-Type': 'application/json'};
-    if (s != null) h['Authorization'] = 'Bearer ${s.accessToken}';
-    return h;
-  }
-
   Future<void> _fetch() async {
     try {
       // Identity comes from the Bearer token; the server derives the verified
@@ -68,7 +38,7 @@ class _SupportScreenState extends State<SupportScreen> {
       // mismatches the server's expected `supabase_` id and 403s).
       final res = await http.get(
         Uri.parse('$backendUrl/api/support/tickets'),
-        headers: await _authHeaders(),
+        headers: await pulsAuthHeaders(),
       );
       if (res.statusCode != 200) throw Exception('Failed');
       final data = jsonDecode(res.body);
@@ -92,7 +62,7 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 
   void _newTicket() async {
-    final headers = await _authHeaders();
+    final headers = await pulsAuthHeaders();
     if (!mounted) return;
     PulsSheet.show(
       context,
@@ -106,7 +76,7 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 
   void _openTicket(Map<String, dynamic> ticket) async {
-    final headers = await _authHeaders();
+    final headers = await pulsAuthHeaders();
     if (!mounted) return;
     Navigator.of(context)
         .push(

@@ -50,14 +50,15 @@ class _BondSlashFeedState extends State<BondSlashFeed> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final agents =
         (_bondData?['agents'] as List? ?? []).cast<Map<String, dynamic>>();
     final totalBonds = (_bondData?['totalBonds'] as num?)?.toInt() ?? 0;
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF000000),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        color: t.surface,
+        border: Border.all(color: t.borderStrong),
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -66,13 +67,13 @@ class _BondSlashFeedState extends State<BondSlashFeed> {
           Container(
             height: 28,
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            color: const Color(0xFF05080F),
+            color: t.surfaceRaised,
             child: Row(
               children: [
-                const Text('AGENTBOND FEED',
+                Text('AGENTBOND FEED',
                     style: TextStyle(
-                        color: Color(0xFF5E6A85),
-                        fontSize: 9,
+                        color: t.textSubtle,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         fontFamily: PulsColors.fontMono,
                         letterSpacing: 1.5)),
@@ -80,7 +81,7 @@ class _BondSlashFeedState extends State<BondSlashFeed> {
                 Text('$totalBonds BONDS',
                     style: const TextStyle(
                         color: Color(0xFFF59E0B),
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         fontFamily: PulsColors.fontMono)),
               ],
@@ -95,7 +96,7 @@ class _BondSlashFeedState extends State<BondSlashFeed> {
                     ? Center(
                         child: Text('No bonds posted',
                             style: TextStyle(
-                                color: const Color(0xFF5E6A85),
+                                color: t.textSubtle,
                                 fontSize: 12,
                                 fontFamily: PulsColors.fontMono)))
                     : ListView.builder(
@@ -116,6 +117,7 @@ class _BondRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final agentName =
         (agent['agent'] as String? ?? 'agent').split('_').last.toUpperCase();
     final bonds = agent['bonds'] as Map<String, dynamic>? ?? {};
@@ -131,17 +133,17 @@ class _BondRow extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
           border:
-              Border(bottom: BorderSide(color: Color(0xFF0A0E1A), width: 0.5))),
+              Border(bottom: BorderSide(color: t.border, width: 0.5))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Text(agentName,
-                  style: const TextStyle(
-                      color: Color(0xFFEAF0FF),
+                  style: TextStyle(
+                      color: t.text,
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                       fontFamily: PulsColors.fontMono)),
@@ -152,7 +154,7 @@ class _BondRow extends StatelessWidget {
                         color: accuracy >= 70
                             ? PulsColors.brandMint
                             : PulsColors.brandPink,
-                        fontSize: 9,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         fontFamily: PulsColors.fontMono)),
             ],
@@ -167,7 +169,7 @@ class _BondRow extends StatelessWidget {
                   'RETURNED',
                   returned,
                   '\$${usdcReturned.toStringAsFixed(2)}',
-                  const Color(0xFF06B6D4)),
+                  PulsColors.brandMint),
               const SizedBox(width: 6),
               _bondTag(
                   'SLASHED',
@@ -195,7 +197,7 @@ class _BondRow extends StatelessWidget {
             Text(label,
                 style: TextStyle(
                     color: color.withValues(alpha: 0.7),
-                    fontSize: 7,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                     fontFamily: PulsColors.fontMono,
                     letterSpacing: 0.5)),
@@ -209,7 +211,7 @@ class _BondRow extends StatelessWidget {
             Text(usdc,
                 style: TextStyle(
                     color: color.withValues(alpha: 0.6),
-                    fontSize: 8,
+                    fontSize: 11,
                     fontFamily: PulsColors.fontMono)),
           ],
         ),

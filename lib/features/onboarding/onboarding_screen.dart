@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../../core/widgets/puls_video_illustration.dart';
 
 import '../../app/puls_app_state.dart';
-import '../../core/motion.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/pulse_button.dart';
 import 'web_landing_page.dart';
@@ -65,7 +64,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     // until dismissed; the app subdomain (app.pulsmarket.tech) never shows it.
     if (kIsWeb &&
         (isLandingHost || (!onAppHost && !appState.webLandingDismissed))) {
-      return const OverrideReduceMotion(child: WebLandingPage());
+      // No OverrideReduceMotion here — the landing honors the platform
+      // reduce-motion setting like the rest of the app.
+      return const WebLandingPage();
     }
 
     return Scaffold(

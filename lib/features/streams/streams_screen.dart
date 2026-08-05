@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/puls_app.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/widgets/puls_loader.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/puls_snack.dart';
 
 /// Puls Streams — pay-per-second USDC streaming on Arc.
@@ -88,7 +88,7 @@ class _StreamsScreenState extends State<StreamsScreen> {
         iconTheme: IconThemeData(color: t.text),
       ),
       body: _loading
-          ? const Center(child: PulsLoader())
+          ? const _StreamsSkeleton()
           : RefreshIndicator(
               onRefresh: _fetch,
               child: ListView(
@@ -245,6 +245,89 @@ class _StreamsScreenState extends State<StreamsScreen> {
           ),
         ],
       ]),
+    );
+  }
+}
+
+/// Layout-matched skeleton while stream data loads — cards hold their shape
+/// instead of a bare centered spinner.
+class _StreamsSkeleton extends StatelessWidget {
+  const _StreamsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    Widget card(Widget child) => Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: t.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: t.border),
+          ),
+          child: child,
+        );
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+      children: [
+        card(const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Skeleton(width: 130, height: 14, radius: 6),
+            SizedBox(height: 10),
+            Skeleton(height: 12, width: 210, radius: 6),
+          ],
+        )),
+        card(const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Skeleton(width: 60, height: 22, radius: 6),
+                Spacer(),
+                Skeleton(width: 70, height: 12, radius: 6),
+              ],
+            ),
+            SizedBox(height: 14),
+            Skeleton(height: 10, radius: 6),
+            SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: Skeleton(height: 12, radius: 6)),
+                SizedBox(width: 10),
+                Expanded(child: Skeleton(height: 12, radius: 6)),
+              ],
+            ),
+          ],
+        )),
+        card(const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Skeleton(width: 60, height: 22, radius: 6),
+                Spacer(),
+                Skeleton(width: 70, height: 12, radius: 6),
+              ],
+            ),
+            SizedBox(height: 14),
+            Skeleton(height: 10, radius: 6),
+          ],
+        )),
+        const SizedBox(height: 14),
+        const Skeleton(width: 110, height: 14, radius: 6),
+        const SizedBox(height: 10),
+        for (var i = 0; i < 3; i++)
+          card(const Row(
+            children: [
+              Skeleton(width: 40, height: 40, radius: 10),
+              SizedBox(width: 12),
+              Expanded(child: Skeleton(height: 12, radius: 6)),
+              SizedBox(width: 12),
+              Skeleton(width: 60, height: 24, radius: 8),
+            ],
+          )),
+      ],
     );
   }
 }

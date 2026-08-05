@@ -8,6 +8,7 @@ import '../../core/config.dart';
 import '../../core/tour_keys.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/lazy_indexed_stack.dart';
+import '../../core/widgets/dot_grid_painter.dart';
 import '../../core/widgets/puls_footer.dart';
 import '../../core/widgets/deferred_tab_builder.dart';
 import '../discover/discover_screen.dart' deferred as discover;
@@ -187,7 +188,7 @@ class _WebShellState extends State<WebShell>
             ),
             Positioned.fill(
               child: RepaintBoundary(
-                child: CustomPaint(painter: _DotGridPainter(color: dotColor)),
+                child: CustomPaint(painter: DotGridPainter(color: dotColor, radius: 1.0)),
               ),
             ),
             // ── Shell: top island nav · content · footer ───────────────────
@@ -883,25 +884,6 @@ class _NavItem {
   final PiconData icon;
   final String label;
   final GlobalKey key;
-}
-
-class _DotGridPainter extends CustomPainter {
-  _DotGridPainter({required this.color}) : _paint = Paint()..color = color;
-  final Color color;
-  final Paint _paint;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const spacing = 32.0;
-    for (double x = 0; x < size.width; x += spacing) {
-      for (double y = 0; y < size.height; y += spacing) {
-        canvas.drawCircle(Offset(x, y), 1, _paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DotGridPainter old) => old.color != color;
 }
 
 class _TerminalToggle extends StatefulWidget {

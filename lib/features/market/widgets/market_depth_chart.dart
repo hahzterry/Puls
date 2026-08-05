@@ -55,19 +55,19 @@ class _MarketDepthChartState extends State<MarketDepthChart>
               const Text('MARKET DEPTH',
                   style: TextStyle(
                       color: PulsColors.dark400,
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                       fontFamily: PulsColors.fontMono,
                       letterSpacing: 1.5)),
               const Spacer(),
-              Text('${(widget.yesPrice * 100).round()}Вў YES',
+              Text('${(widget.yesPrice * 100).round()}¢ YES',
                   style: const TextStyle(
                       color: PulsColors.brandMint,
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                       fontFamily: PulsColors.fontMono)),
               const SizedBox(width: 8),
-              Text('${((1 - widget.yesPrice) * 100).round()}Вў NO',
+              Text('${((1 - widget.yesPrice) * 100).round()}¢ NO',
                   style: const TextStyle(
                       color: PulsColors.brandPink,
                       fontSize: 12,
@@ -112,7 +112,7 @@ class _MarketDepthChartState extends State<MarketDepthChart>
         Text(label,
             style: TextStyle(
                 color: PulsColors.dark400,
-                fontSize: 8,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
                 fontFamily: PulsColors.fontMono)),
         const SizedBox(height: 2),
@@ -200,9 +200,9 @@ class _DepthPainter extends CustomPainter {
     for (var i = 0; i <= 10; i += 2) {
       final price = i * 10;
       labelStyle.text = TextSpan(
-        text: '${price}Вў',
+        text: '${price}¢',
         style: const TextStyle(
-            color: PulsColors.dark400, fontSize: 8, fontFamily: 'DM Sans'),
+            color: PulsColors.dark400, fontSize: 11, fontFamily: 'DM Sans'),
       );
       labelStyle.layout();
       labelStyle.paint(canvas, Offset(size.width * i / 10 - 8, h + 2));

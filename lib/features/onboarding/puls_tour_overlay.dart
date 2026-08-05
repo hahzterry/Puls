@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/motion.dart';
 import '../../core/theme/app_theme.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -153,13 +154,26 @@ class _TourOverlayState extends State<_TourOverlay>
     _breath = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1600),
-    )..repeat(reverse: true);
+    );
     _stepAnim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 420),
     );
     widget.controller.addListener(_onStepChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _resolveTarget());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Honor reduce-motion: hold the glow static (decorative loop).
+    if (context.reduceMotion) {
+      _breath
+        ..stop()
+        ..value = 0.5;
+    } else if (!_breath.isAnimating) {
+      _breath.repeat(reverse: true);
+    }
   }
 
   void _onStepChanged() {

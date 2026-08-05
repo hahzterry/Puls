@@ -70,11 +70,12 @@ class _CommandBarState extends State<CommandBar> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return Container(
       height: 180,
       decoration: BoxDecoration(
-        color: const Color(0xFF05080F),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        color: t.surfaceRaised,
+        border: Border.all(color: t.borderStrong),
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -83,13 +84,13 @@ class _CommandBarState extends State<CommandBar> {
           Container(
             height: 24,
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            color: const Color(0xFF0C0F19),
+            color: t.surface,
             child: Row(
               children: [
                 const Text('COMMAND',
                     style: TextStyle(
                         color: PulsColors.brandMint,
-                        fontSize: 9,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         fontFamily: PulsColors.fontMono,
                         letterSpacing: 1.5)),
@@ -108,9 +109,9 @@ class _CommandBarState extends State<CommandBar> {
           Expanded(
             child: _messages.isEmpty
                 ? Center(
-                    child: Text('Ask an agent anythingвЂ¦',
+                    child: Text('Ask an agent anything…',
                         style: TextStyle(
-                            color: const Color(0xFF5E6A85),
+                            color: t.textSubtle,
                             fontSize: 11,
                             fontFamily: PulsColors.fontMono)))
                 : ListView.builder(
@@ -122,8 +123,8 @@ class _CommandBarState extends State<CommandBar> {
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Color(0xFF1E293B)))),
+            decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: t.borderStrong))),
             child: Row(
               children: [
                 const Text('>',
@@ -136,14 +137,14 @@ class _CommandBarState extends State<CommandBar> {
                 Expanded(
                   child: TextField(
                     controller: _ctrl,
-                    style: const TextStyle(
-                        color: Color(0xFFEAF0FF),
+                    style: TextStyle(
+                        color: t.text,
                         fontSize: 12,
                         fontFamily: PulsColors.fontMono),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Why did Vega go YES on btc-100k?',
                       hintStyle: TextStyle(
-                          color: Color(0xFF5E6A85),
+                          color: t.textSubtle,
                           fontSize: 11,
                           fontFamily: PulsColors.fontMono),
                       border: InputBorder.none,
@@ -162,10 +163,10 @@ class _CommandBarState extends State<CommandBar> {
                     decoration: BoxDecoration(
                         color: PulsColors.brandMint,
                         borderRadius: BorderRadius.circular(4)),
-                    child: const Text('SEND',
+                    child: Text('SEND',
                         style: TextStyle(
-                            color: Color(0xFF000000),
-                            fontSize: 10,
+                            color: t.surface,
+                            fontSize: 11,
                             fontWeight: FontWeight.w900,
                             fontFamily: PulsColors.fontMono,
                             letterSpacing: 0.5)),
@@ -180,6 +181,7 @@ class _CommandBarState extends State<CommandBar> {
   }
 
   Widget _agentSelector() {
+    final t = context.puls;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
@@ -191,41 +193,41 @@ class _CommandBarState extends State<CommandBar> {
         isDense: true,
         style: const TextStyle(
             color: PulsColors.brandMint,
-            fontSize: 9,
+            fontSize: 11,
             fontWeight: FontWeight.w700,
             fontFamily: PulsColors.fontMono),
-        dropdownColor: const Color(0xFF0C0F19),
+        dropdownColor: t.surface,
         items: const [
           DropdownMenuItem(
               value: 'vega',
-              child: Text('VEGA вљЎ',
+              child: Text('VEGA ⚡',
                   style:
-                      TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
+                      TextStyle(fontSize: 11, fontFamily: PulsColors.fontMono))),
           DropdownMenuItem(
               value: 'cygnus',
-              child: Text('CYGNUS рџ›ЎпёЏ',
+              child: Text('CYGNUS 🛡️',
                   style:
-                      TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
+                      TextStyle(fontSize: 11, fontFamily: PulsColors.fontMono))),
           DropdownMenuItem(
               value: 'orion',
-              child: Text('ORION рџ”­',
+              child: Text('ORION 🔭',
                   style:
-                      TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
+                      TextStyle(fontSize: 11, fontFamily: PulsColors.fontMono))),
           DropdownMenuItem(
               value: 'atlas',
-              child: Text('ATLAS рџ“€',
+              child: Text('ATLAS 📀',
                   style:
-                      TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
+                      TextStyle(fontSize: 11, fontFamily: PulsColors.fontMono))),
           DropdownMenuItem(
               value: 'nova',
-              child: Text('NOVA рџЊђ',
+              child: Text('NOVA 🌐',
                   style:
-                      TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
+                      TextStyle(fontSize: 11, fontFamily: PulsColors.fontMono))),
           DropdownMenuItem(
               value: 'striker',
-              child: Text('STRIKER вљЅ',
+              child: Text('STRIKER ⚽',
                   style:
-                      TextStyle(fontSize: 9, fontFamily: PulsColors.fontMono))),
+                      TextStyle(fontSize: 11, fontFamily: PulsColors.fontMono))),
         ],
         onChanged: (v) => setState(() => _selectedAgent = v ?? 'vega'),
       ),
@@ -233,6 +235,7 @@ class _CommandBarState extends State<CommandBar> {
   }
 
   Widget _msg(_ChatMsg m) {
+    final t = context.puls;
     final isUser = m.isUser;
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -249,15 +252,15 @@ class _CommandBarState extends State<CommandBar> {
             child: Text(isUser ? 'YOU' : _selectedAgent.toUpperCase(),
                 style: TextStyle(
                     color: isUser ? PulsColors.brandPink : PulsColors.brandMint,
-                    fontSize: 8,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     fontFamily: PulsColors.fontMono)),
           ),
           const SizedBox(width: 6),
           Expanded(
               child: Text(m.text,
-                  style: const TextStyle(
-                      color: Color(0xFFEAF0FF),
+                  style: TextStyle(
+                      color: t.text,
                       fontSize: 11,
                       height: 1.4,
                       fontFamily: PulsColors.fontMono))),

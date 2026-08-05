@@ -14,6 +14,7 @@ import '../../core/widgets/puls_page_route.dart';
 import '../../core/widgets/puls_loader.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/gradient_text.dart';
+import '../../core/widgets/tab_visibility.dart';
 import 'agent_brain_visualizer.dart' deferred as brain;
 import '../analytics/swarm_analytics_dashboard.dart' deferred as analytics;
 import '../market/market_detail_screen.dart';
@@ -42,6 +43,7 @@ class _SwarmViewState extends State<SwarmView> {
   @override
   void initState() {
     super.initState();
+    TabVisibility.ensureListening();
     // Load the roster immediately so the ColonyFeed (segment 0, the default
     // view) has agents available for the tap-to-open-detail-sheet interaction.
     // Previously, the roster only loaded when the user switched to segment 1
@@ -75,7 +77,10 @@ class _SwarmViewState extends State<SwarmView> {
       });
       _refresh ??= Timer.periodic(
         const Duration(seconds: 45),
-        (_) => _load(),
+        (_) {
+          if (!TabVisibility.visible) return;
+          _load();
+        },
       );
     } catch (_) {
       if (mounted) setState(() => _loading = false);

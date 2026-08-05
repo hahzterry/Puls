@@ -912,7 +912,7 @@ class _TradingPillButton extends StatelessWidget {
 }
 
 /// Home promo carousel — HD banner slides (text overlaid in-app, not baked into
-/// the image) for referral, World Cup, social, and the paid-alpha narrative.
+/// the image) for referral, social, and the paid-alpha narrative.
 /// Tapping a slide deep-links into the relevant tab.
 class _HomePromoCarousel extends StatelessWidget {
   const _HomePromoCarousel();
@@ -927,13 +927,6 @@ class _HomePromoCarousel extends StatelessWidget {
         subtitle: 'Invite friends and climb the leaderboard together · testnet',
         cta: 'Invite →',
         onTap: () => nav?.goToTab(PulsTab.leaderboard),
-      ),
-      PromoSlide(
-        imageAsset: 'assets/promo/worldcup.png',
-        title: 'World Cup 2026',
-        subtitle: 'Make your call on the hottest predictions',
-        cta: 'Predict now →',
-        onTap: () => nav?.goToTab(PulsTab.discover),
       ),
       PromoSlide(
         imageAsset: 'assets/promo/alpha.png',

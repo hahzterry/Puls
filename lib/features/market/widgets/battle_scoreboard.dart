@@ -44,6 +44,7 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final agentTrades = (_stats?['agentTrades'] as num?)?.toInt() ?? 0;
     final humanTrades = (_stats?['humanTrades'] as num?)?.toInt() ?? 0;
     final agentVol = (_stats?['agentVolumeUsdc'] as num?)?.toDouble() ?? 0;
@@ -58,19 +59,19 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF0C0F19),
+        color: t.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: t.borderStrong),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text('AI vs HUMANS',
+              Text('AI vs HUMANS',
                   style: TextStyle(
-                      color: Color(0xFF5E6A85),
-                      fontSize: 10,
+                      color: t.textSubtle,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                       fontFamily: PulsColors.fontMono,
                       letterSpacing: 1.5)),
@@ -79,17 +80,17 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
                 width: 6,
                 height: 6,
                 decoration: const BoxDecoration(
-                    color: Color(0xFF2DD4BF),
+                    color: PulsColors.brandMint,
                     shape: BoxShape.circle,
                     boxShadow: [
-                      BoxShadow(color: Color(0xFF2DD4BF), blurRadius: 4)
+                      BoxShadow(color: PulsColors.brandMint, blurRadius: 4)
                     ]),
               ),
               const SizedBox(width: 6),
               const Text('LIVE',
                   style: TextStyle(
-                      color: Color(0xFF2DD4BF),
-                      fontSize: 9,
+                      color: PulsColors.brandMint,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                       fontFamily: PulsColors.fontMono)),
             ],
@@ -102,7 +103,7 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
           const SizedBox(height: 14),
           Row(
             children: [
-              _scoreCard('AI AGENTS', '$agentCount', const Color(0xFF2DD4BF)),
+              _scoreCard('AI AGENTS', '$agentCount', PulsColors.brandMint),
               const SizedBox(width: 10),
               _scoreCard('AI TRADES', '$agentTrades', const Color(0xFFF59E0B)),
               const SizedBox(width: 10),
@@ -122,6 +123,7 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
 
   Widget _battleBar(String label, num aiVal, num humanVal, double aiPct,
       {bool isMoney = false}) {
+    final t = context.puls;
     final fmt = (v) => isMoney ? '\$${v.toStringAsFixed(0)}' : '$v';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,14 +133,14 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
           children: [
             Text('${fmt(aiVal)} AI',
                 style: const TextStyle(
-                    color: Color(0xFF2DD4BF),
+                    color: PulsColors.brandMint,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     fontFamily: PulsColors.fontMono)),
             Text(label,
-                style: const TextStyle(
-                    color: Color(0xFF5E6A85),
-                    fontSize: 9,
+                style: TextStyle(
+                    color: t.textSubtle,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     fontFamily: PulsColors.fontMono,
                     letterSpacing: 1)),
@@ -159,7 +161,7 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
               children: [
                 Expanded(
                     flex: (aiPct * 1000).round().clamp(1, 999),
-                    child: Container(color: const Color(0xFF2DD4BF))),
+                    child: Container(color: PulsColors.brandMint)),
                 Expanded(
                     flex: ((1 - aiPct) * 1000).round().clamp(1, 999),
                     child: Container(color: const Color(0xFFEC4899))),
@@ -185,7 +187,7 @@ class _BattleScoreboardState extends State<BattleScoreboard> {
             Text(label,
                 style: TextStyle(
                     color: color.withValues(alpha: 0.7),
-                    fontSize: 7.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                     fontFamily: PulsColors.fontMono,
                     letterSpacing: 0.5)),

@@ -53,12 +53,13 @@ class _X40FlowTrackerState extends State<X40FlowTracker> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final totalVol = _payments.fold<double>(0, (s, p) => s + ((p['amount_usdc'] as num?)?.toDouble() ?? 0));
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF000000),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        color: t.surface,
+        border: Border.all(color: t.borderStrong),
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -67,14 +68,14 @@ class _X40FlowTrackerState extends State<X40FlowTracker> {
           Container(
             height: 28,
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            color: const Color(0xFF05080F),
+            color: t.surfaceRaised,
             child: Row(
               children: [
-                const Text('x402 NANOPAYMENT FLOW',
-                    style: TextStyle(color: Color(0xFF5E6A85), fontSize: 9, fontWeight: FontWeight.w800, fontFamily: PulsColors.fontMono, letterSpacing: 1.5)),
+                Text('x402 NANOPAYMENT FLOW',
+                    style: TextStyle(color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w800, fontFamily: PulsColors.fontMono, letterSpacing: 1.5)),
                 const Spacer(),
                 Text('\$${totalVol.toStringAsFixed(2)} VOL',
-                    style: const TextStyle(color: Color(0xFFA855F7), fontSize: 10, fontWeight: FontWeight.w800, fontFamily: PulsColors.fontMono)),
+                    style: const TextStyle(color: Color(0xFFA855F7), fontSize: 11, fontWeight: FontWeight.w800, fontFamily: PulsColors.fontMono)),
               ],
             ),
           ),
@@ -82,7 +83,7 @@ class _X40FlowTrackerState extends State<X40FlowTracker> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFFA855F7)))
                 : _payments.isEmpty
-                    ? Center(child: Text('No nanopayments yet', style: TextStyle(color: const Color(0xFF5E6A85), fontSize: 12, fontFamily: PulsColors.fontMono)))
+                    ? Center(child: Text('No nanopayments yet', style: TextStyle(color: t.textSubtle, fontSize: 12, fontFamily: PulsColors.fontMono)))
                     : ListView.builder(
                         padding: EdgeInsets.zero,
                         itemCount: _payments.length,
@@ -101,6 +102,7 @@ class _PaymentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final endpoint = (payment['endpoint'] as String? ?? 'unknown').toUpperCase();
     final amount = (payment['amountUsdc'] as num?)?.toDouble() ?? (payment['amount_usdc'] as num?)?.toDouble() ?? (payment['amount'] as num?)?.toDouble() ?? 0;
     final payerStr = payment['from'] as String? ?? payment['fromLabel'] as String? ?? payment['payerShort'] as String? ?? payment['payer'] as String? ?? 'HUMAN';
@@ -115,32 +117,32 @@ class _PaymentRow extends StatelessWidget {
     Color color;
     switch (endpoint) {
       case 'TIP': case 'BLOG_TIP': color = const Color(0xFFEC4899); break;
-      case 'SIGNAL_UNLOCK': case 'ALPHA_UNLOCK': color = const Color(0xFF2DD4BF); break;
+      case 'SIGNAL_UNLOCK': case 'ALPHA_UNLOCK': color = PulsColors.brandMint; break;
       case 'AGENT_TO_AGENT': color = const Color(0xFFA855F7); break;
-      case 'COPY_FEE': color = const Color(0xFF06B6D4); break;
+      case 'COPY_FEE': color = PulsColors.brandMint; break;
       case 'STREAM_SETTLE': color = const Color(0xFFEAB308); break;
       case 'DIRECTOR': color = const Color(0xFF3B82F6); break;
-      default: color = const Color(0xFF9AA6C0);
+      default: color = t.textMuted;
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFF0A0E1A), width: 0.5))),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: t.border, width: 0.5))),
       child: Row(
         children: [
-          SizedBox(width: 50, child: Text(time, style: const TextStyle(color: Color(0xFF5E6A85), fontSize: 9, fontFamily: PulsColors.fontMono))),
-          SizedBox(width: 60, child: Text(payerShort, style: TextStyle(color: const Color(0xFFF59E0B), fontSize: 9, fontWeight: FontWeight.w700, fontFamily: PulsColors.fontMono))),
-          const Icon(Icons.arrow_forward_rounded, size: 10, color: Color(0xFF5E6A85)),
+          SizedBox(width: 50, child: Text(time, style: TextStyle(color: t.textSubtle, fontSize: 11, fontFamily: PulsColors.fontMono))),
+          SizedBox(width: 60, child: Text(payerShort, style: TextStyle(color: const Color(0xFFF59E0B), fontSize: 11, fontWeight: FontWeight.w700, fontFamily: PulsColors.fontMono))),
+          Icon(Icons.arrow_forward_rounded, size: 10, color: t.textSubtle),
           const SizedBox(width: 2),
-          SizedBox(width: 60, child: Text(payeeShort, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700, fontFamily: PulsColors.fontMono))),
+          SizedBox(width: 60, child: Text(payeeShort, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700, fontFamily: PulsColors.fontMono))),
           const SizedBox(width: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
             decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(3)),
-            child: Text(endpoint, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.w700, fontFamily: PulsColors.fontMono, letterSpacing: 0.3)),
+            child: Text(endpoint, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700, fontFamily: PulsColors.fontMono, letterSpacing: 0.3)),
           ),
           const Spacer(),
-          Text('\$${amount.toStringAsFixed(4)}', style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w800, fontFamily: PulsColors.fontMono)),
+          Text('\$${amount.toStringAsFixed(4)}', style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800, fontFamily: PulsColors.fontMono)),
         ],
       ),
     );

@@ -50,6 +50,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
   List<double> _sparkline = [];
   bool _hasTriggeredHaptic = false;
   AnimationController? _hintCtrl;
+  bool _hovered = false;
 
   // Release animation: spring-return to centre, or fling the card off-screen.
   AnimationController? _releaseCtrl;
@@ -206,8 +207,12 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
         // excluded so the reader doesn't announce a meaningless "custom" action.
         excludeSemantics: false,
         child: RepaintBoundary(
-            child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
+            child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
           onHorizontalDragStart: (_) {
             _cancelSwipeHint();
             _releaseCtrl?.dispose();
@@ -256,26 +261,12 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                 child: Transform.rotate(
                   angle: (dragX / 180) * 0.18, // tilt up to ~10° at full drag
                   alignment: Alignment.bottomCenter,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: t.surfaceRaised,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: progress > 0.1
-                            ? swipeColor.withValues(alpha: progress * 0.5)
-                            : t.border,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: progress > 0.1
-                              ? swipeColor.withValues(alpha: progress * 0.25)
-                              : const Color(0xFFEC4899)
-                                  .withValues(alpha: 0.045),
-                          blurRadius: 18 + progress * 20,
-                          offset: Offset(dragX * 0.05, 5),
-                        ),
-                      ],
-                    ),
+                  child: _FeedCardFrame(
+                    featured: market.isFeatured,
+                    hovered: _hovered,
+                    progress: progress,
+                    swipeColor: swipeColor,
+                    t: t,
                     child: Stack(
                       children: [
                         // Swipe color wave — rises from the bottom as you drag.
@@ -800,6 +791,72 @@ class _Tag extends StatelessWidget {
       child: Text(label,
           style: TextStyle(
               color: t.textMuted, fontSize: 11, fontWeight: FontWeight.w500)),
+    );
+  }
+}
+
+/// Tactile frame around every feed card: adds the featured glow border, the
+/// web hover lift, and the swipe-tinted border/shadow. Reads the drag state
+/// via [ValueListenableBuilder] so the expensive card body never rebuilds.
+class _FeedCardFrame extends StatelessWidget {
+  const _FeedCardFrame({
+    required this.child,
+    required this.t,
+    required this.featured,
+    required this.hovered,
+    required this.progress,
+    required this.swipeColor,
+  });
+
+  final Widget child;
+  final PulsThemeColors t;
+  final bool featured;
+  final bool hovered;
+  final double progress;
+  final Color swipeColor;
+
+  @override
+  Widget build(BuildContext context) {
+    // Two-box trick: outer box paints the gradient border (1.5px), inner box is
+    // the card surface. Hover + swipe tint both live here so the child is
+    // unaffected.
+    final border = Border.all(
+      color: progress > 0.1
+          ? swipeColor.withValues(alpha: progress * 0.6)
+          : hovered
+              ? t.brand.withValues(alpha: 0.5)
+              : featured
+                  ? Colors.transparent
+                  : t.border,
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: featured ? PulsColors.pulseGradient : null,
+        borderRadius: BorderRadius.circular(17.5),
+        border: featured ? null : border,
+        boxShadow: [
+          BoxShadow(
+            color: progress > 0.1
+                ? swipeColor.withValues(alpha: progress * 0.22)
+                : featured
+                    ? PulsColors.brandPink.withValues(alpha: 0.14)
+                    : hovered
+                        ? t.brand.withValues(alpha: 0.12)
+                        : const Color(0xFFEC4899).withValues(alpha: 0.045),
+            blurRadius: 18 + (hovered ? 4 : 0) + progress * 20,
+            offset: Offset(hovered ? 0 : 0, hovered ? 6 : 5),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.all(featured ? 1.5 : 1),
+      child: Container(
+        decoration: BoxDecoration(
+          color: t.surfaceRaised,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: child,
+      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/copy_button.dart';
 import 'landing_kit.dart';
 
 /// "Connect your AI to Pulsmarket" — a developer/agent call-to-action band with
@@ -296,7 +297,7 @@ class _Terminal extends StatelessWidget {
               ),
             ),
           ),
-          _CopyButton(copied: copied, onTap: onCopy),
+          CopyButton(copied: copied, onTap: onCopy, compact: true),
         ],
       ),
     );
@@ -363,41 +364,6 @@ class _Terminal extends StatelessWidget {
           s('(id);', dim),
         ]),
       ],
-    );
-  }
-}
-
-class _CopyButton extends StatelessWidget {
-  const _CopyButton({required this.copied, required this.onTap});
-
-  final bool copied;
-  final VoidCallback onTap;
-
-  static const _mint = Color(0xFF2DD4BF);
-
-  @override
-  Widget build(BuildContext context) {
-    final color = copied ? _mint : Colors.white.withValues(alpha: 0.55);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(copied ? Icons.check_rounded : Icons.copy_rounded, size: 14, color: color),
-              const SizedBox(width: 5),
-              Text(
-                copied ? 'Copied' : 'Copy',
-                style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

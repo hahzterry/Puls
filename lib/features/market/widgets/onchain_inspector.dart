@@ -55,10 +55,11 @@ class _OnchainInspectorState extends State<OnchainInspector> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF000000),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        color: t.surface,
+        border: Border.all(color: t.borderStrong),
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -67,21 +68,21 @@ class _OnchainInspectorState extends State<OnchainInspector> {
           Container(
             height: 28,
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            color: const Color(0xFF05080F),
+            color: t.surfaceRaised,
             child: Row(
               children: [
-                const Text('ON-CHAIN INSPECTOR',
+                Text('ON-CHAIN INSPECTOR',
                     style: TextStyle(
-                        color: Color(0xFF5E6A85),
-                        fontSize: 9,
+                        color: t.textSubtle,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         fontFamily: PulsColors.fontMono,
                         letterSpacing: 1.5)),
                 const Spacer(),
                 Text('${_trades.length} TXS',
                     style: const TextStyle(
-                        color: Color(0xFF06B6D4),
-                        fontSize: 10,
+                        color: PulsColors.brandMint,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         fontFamily: PulsColors.fontMono)),
               ],
@@ -91,12 +92,12 @@ class _OnchainInspectorState extends State<OnchainInspector> {
             child: _loading
                 ? const Center(
                     child: CircularProgressIndicator(
-                        strokeWidth: 1.5, color: Color(0xFF06B6D4)))
+                        strokeWidth: 1.5, color: PulsColors.brandMint))
                 : _trades.isEmpty
                     ? Center(
                         child: Text('No on-chain transactions',
                             style: TextStyle(
-                                color: const Color(0xFF5E6A85),
+                                color: t.textSubtle,
                                 fontSize: 12,
                                 fontFamily: PulsColors.fontMono)))
                     : ListView.builder(
@@ -117,16 +118,17 @@ class _TxRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final side = (trade['side'] as String? ?? 'YES').toUpperCase();
     final isYes = side == 'YES';
     final sideColor = isYes ? PulsColors.brandMint : PulsColors.brandPink;
     final amount = (trade['usdc_amount'] as num?)?.toDouble() ?? 0;
     final txHash = (trade['tx_hash'] as String? ?? '');
     final shortHash =
-        '${txHash.substring(0, 6)}вЂ¦${txHash.substring(txHash.length - 4)}';
+        '${txHash.substring(0, 6)}…${txHash.substring(txHash.length - 4)}';
     final marketId = (trade['market_id'] as String? ?? '');
     final shortMarket = marketId.length > 10
-        ? '${marketId.substring(0, 6)}вЂ¦${marketId.substring(marketId.length - 4)}'
+        ? '${marketId.substring(0, 6)}…${marketId.substring(marketId.length - 4)}'
         : marketId;
     final userId = (trade['user_id'] as String? ?? 'unknown');
     final isAgent = userId.startsWith('agent_');
@@ -141,17 +143,16 @@ class _TxRow extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: const BoxDecoration(
-          border:
-              Border(bottom: BorderSide(color: Color(0xFF0A0E1A), width: 0.5))),
+      decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: t.border, width: 0.5))),
       child: Row(
         children: [
           SizedBox(
               width: 50,
               child: Text(time,
-                  style: const TextStyle(
-                      color: Color(0xFF5E6A85),
-                      fontSize: 9,
+                  style: TextStyle(
+                      color: t.textSubtle,
+                      fontSize: 11,
                       fontFamily: PulsColors.fontMono))),
           SizedBox(
             width: 35,
@@ -159,8 +160,8 @@ class _TxRow extends StatelessWidget {
                 style: TextStyle(
                     color: isAgent
                         ? const Color(0xFFF59E0B)
-                        : const Color(0xFF9AA6C0),
-                    fontSize: 9,
+                        : t.textMuted,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                     fontFamily: PulsColors.fontMono)),
           ),
@@ -169,7 +170,7 @@ class _TxRow extends StatelessWidget {
               child: Text(side,
                   style: TextStyle(
                       color: sideColor,
-                      fontSize: 9,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                       fontFamily: PulsColors.fontMono))),
           SizedBox(
@@ -177,22 +178,22 @@ class _TxRow extends StatelessWidget {
               child: Text('\$${amount.toStringAsFixed(2)}',
                   style: TextStyle(
                       color: sideColor.withValues(alpha: 0.8),
-                      fontSize: 9,
+                      fontSize: 11,
                       fontFamily: PulsColors.fontMono))),
           SizedBox(
               width: 50,
               child: Text(shortHash,
                   style: const TextStyle(
-                      color: Color(0xFF06B6D4),
-                      fontSize: 8.5,
+                      color: PulsColors.brandMint,
+                      fontSize: 11,
                       fontFamily: PulsColors.fontMono))),
           Expanded(
               child: Text(shortMarket,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color: Color(0xFF5E6A85),
-                      fontSize: 8.5,
+                  style: TextStyle(
+                      color: t.textSubtle,
+                      fontSize: 11,
                       fontFamily: PulsColors.fontMono))),
           const SizedBox(width: 4),
           Container(
@@ -203,7 +204,7 @@ class _TxRow extends StatelessWidget {
             child: Text(state.substring(0, 4),
                 style: TextStyle(
                     color: stateColor,
-                    fontSize: 7.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                     fontFamily: PulsColors.fontMono)),
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/puls_app_state.dart';
+import '../../core/motion.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:puls/core/utils/formatters.dart';
 
@@ -38,7 +39,20 @@ class _WebTickerStripState extends State<WebTickerStrip>
     _ctrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: _periodSec),
-    )..repeat();
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Honor reduce-motion: hold the tape still (static first row).
+    if (context.reduceMotion) {
+      _ctrl
+        ..stop()
+        ..value = 0.0;
+    } else if (!_ctrl.isAnimating) {
+      _ctrl.repeat();
+    }
   }
 
   @override

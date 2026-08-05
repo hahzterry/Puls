@@ -280,7 +280,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                       ),
                       child: Center(
                         child: PulsEmojiText(
-                          'Limit Order рџЋЇ',
+                          'Limit Order 🎯',
                           style: TextStyle(
                             color: _isLimit ? t.text : t.textMuted,
                             fontWeight: FontWeight.w700,
@@ -499,8 +499,8 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                   child: Text(
                     hasRealWallet
                         ? (widget.market.contractAddress != null
-                            ? 'вљЎ Instant trade вЂ” already on Arc В· \$${ws.usdcBalance}'
-                            : 'Real USDC trade on Arc В· Balance: \$${ws.usdcBalance}')
+                            ? '⚡ Instant trade — already on Arc · \$${ws.usdcBalance}'
+                            : 'Real USDC trade on Arc · Balance: \$${ws.usdcBalance}')
                         : 'Demo only вЂ” connect wallet in Profile for real trades.',
                     style: TextStyle(
                       color: hasRealWallet ? t.yes : PulsColors.amber,
@@ -556,7 +556,7 @@ class _TradePreviewSheetState extends State<TradePreviewSheet> {
                               if (!context.mounted) return;
                               Navigator.of(context).pop();
                               snack.show(
-                                  'рџЋЇ Limit order placed to ${_isBuy ? "buy" : "sell"} $sideLabel at \$${_limitPrice.toStringAsFixed(2)}');
+                                  '🎯 Limit order placed to ${_isBuy ? "buy" : "sell"} $sideLabel at \$${_limitPrice.toStringAsFixed(2)}');
                               // Funnel event: a real limit order was placed.
                               // (Limit orders don't settle instantly, so we
                               // track 'placed' rather than 'executed'.)

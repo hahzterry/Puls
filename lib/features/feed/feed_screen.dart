@@ -21,7 +21,6 @@ import '../../core/widgets/pulse_dot.dart';
 import '../../core/widgets/puls_fade_in.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/widgets/gradient_text.dart';
-import '../../core/widgets/puls_loader.dart';
 import '../../core/widgets/state_views.dart';
 import '../../data/models/market.dart';
 import '../market/market_detail_screen.dart';
@@ -1363,7 +1362,7 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                     const SizedBox(height: 16),
                     Expanded(
                       child: _isLoadingActivities
-                          ? const PulsLoader(size: 24, strokeWidth: 2)
+                          ? const _ActivitySkeleton()
                           : AnimatedList(
                               key: _listKey,
                               initialItemCount: _activities.length,
@@ -1701,6 +1700,37 @@ String _feedCategoryEmoji(String? category) {
   if (cat == 'all') return '🌍';
 
   return '🔮';
+}
+
+/// Compact skeleton for the live-activity panel while it loads.
+class _ActivitySkeleton extends StatelessWidget {
+  const _ActivitySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(top: 4),
+      itemCount: 5,
+      separatorBuilder: (_, __) => const SizedBox(height: 14),
+      itemBuilder: (_, __) => const Row(
+        children: [
+          Skeleton(width: 36, height: 36, radius: 18),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Skeleton(height: 12, radius: 6),
+                SizedBox(height: 7),
+                Skeleton(height: 10, width: 140, radius: 6),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Avatar for a live-feed row — a gradient "bot" disc (with the agent's emoji)

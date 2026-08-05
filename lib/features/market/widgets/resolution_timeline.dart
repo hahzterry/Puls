@@ -50,10 +50,11 @@ class _ResolutionTimelineState extends State<ResolutionTimeline> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF000000),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        color: t.surface,
+        border: Border.all(color: t.borderStrong),
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -62,13 +63,13 @@ class _ResolutionTimelineState extends State<ResolutionTimeline> {
           Container(
             height: 28,
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            color: const Color(0xFF05080F),
+            color: t.surfaceRaised,
             child: Row(
               children: [
-                const Text('MARKET RESOLUTION TIMELINE',
+                Text('MARKET RESOLUTION TIMELINE',
                     style: TextStyle(
-                        color: Color(0xFF5E6A85),
-                        fontSize: 9,
+                        color: t.textSubtle,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         fontFamily: PulsColors.fontMono,
                         letterSpacing: 1.5)),
@@ -76,7 +77,7 @@ class _ResolutionTimelineState extends State<ResolutionTimeline> {
                 Text('${_resolved.length} RESOLVED',
                     style: const TextStyle(
                         color: PulsColors.brandMint,
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         fontFamily: PulsColors.fontMono)),
               ],
@@ -91,7 +92,7 @@ class _ResolutionTimelineState extends State<ResolutionTimeline> {
                     ? Center(
                         child: Text('No resolved markets',
                             style: TextStyle(
-                                color: const Color(0xFF5E6A85),
+                                color: t.textSubtle,
                                 fontSize: 12,
                                 fontFamily: PulsColors.fontMono)))
                     : ListView.builder(
@@ -113,19 +114,19 @@ class _ResolutionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
     final outcome = market['outcome'];
     final isYes = outcome == true || outcome == 'true';
     final outcomeColor = isYes ? PulsColors.brandMint : PulsColors.brandPink;
     final slug = (market['slug'] as String? ?? 'unknown');
     final question = slug.replaceAll('-', ' ');
     final q =
-        question.length > 40 ? '${question.substring(0, 39)}вЂ¦' : question;
+        question.length > 40 ? '${question.substring(0, 39)}…' : question;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: const BoxDecoration(
-          border:
-              Border(bottom: BorderSide(color: Color(0xFF0A0E1A), width: 0.5))),
+      decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: t.border, width: 0.5))),
       child: Row(
         children: [
           Container(
@@ -139,9 +140,9 @@ class _ResolutionRow extends StatelessWidget {
             child: Text(q,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    color: Color(0xFFEAF0FF),
-                    fontSize: 10,
+                style: TextStyle(
+                    color: t.text,
+                    fontSize: 11,
                     fontFamily: PulsColors.fontMono)),
           ),
           const SizedBox(width: 8),
@@ -153,7 +154,7 @@ class _ResolutionRow extends StatelessWidget {
             child: Text(isYes ? 'YES' : 'NO',
                 style: TextStyle(
                     color: outcomeColor,
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     fontFamily: PulsColors.fontMono)),
           ),

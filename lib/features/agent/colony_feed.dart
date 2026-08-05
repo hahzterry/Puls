@@ -14,6 +14,7 @@ import '../../core/widgets/puls_page_route.dart';
 import '../../core/utils/agent_pfp.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/puls_sheet.dart';
+import '../../core/widgets/tab_visibility.dart';
 import '../market/market_detail_screen.dart';
 import 'swarm_view.dart';
 
@@ -37,8 +38,12 @@ class _ColonyFeedState extends State<ColonyFeed> {
   @override
   void initState() {
     super.initState();
+    TabVisibility.ensureListening();
     _load();
-    _refresh = Timer.periodic(const Duration(seconds: 20), (_) => _load());
+    _refresh = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (!TabVisibility.visible) return;
+      _load();
+    });
   }
 
   @override
