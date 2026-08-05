@@ -9,6 +9,7 @@ import '../../core/tour_keys.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/lazy_indexed_stack.dart';
 import '../../core/widgets/dot_grid_painter.dart';
+import '../../core/widgets/puls_backdrop.dart';
 import '../../core/widgets/puls_footer.dart';
 import '../../core/widgets/deferred_tab_builder.dart';
 import '../discover/discover_screen.dart' deferred as discover;
@@ -186,11 +187,29 @@ class _WebShellState extends State<WebShell>
                 ),
               ),
             ),
+            // Soft indigo depth orb, center-bottom — breaks the flat canvas.
             Positioned.fill(
-              child: RepaintBoundary(
-                child: CustomPaint(painter: DotGridPainter(color: dotColor, radius: 1.0)),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0.1, 0.95),
+                    radius: 1.3,
+                    colors: [
+                      isDark
+                          ? const Color(0xFF6366F1).withValues(alpha: 0.07)
+                          : const Color(0xFF6366F1).withValues(alpha: 0.05),
+                      canvas.withValues(alpha: 0.0),
+                    ],
+                    stops: const [0.0, 0.6],
+                  ),
+                ),
               ),
             ),
+            Positioned.fill(
+              child: CustomPaint(painter: DotGridPainter(color: dotColor, radius: 1.0)),
+            ),
+            // Fixed film grain — physical paper feel, never repaints.
+            const FilmGrain(),
             // ── Shell: top island nav · content · footer ───────────────────
             Column(
               children: [

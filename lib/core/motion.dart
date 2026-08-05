@@ -28,6 +28,15 @@ class OverrideReduceMotion extends InheritedWidget {
   bool updateShouldNotify(OverrideReduceMotion oldWidget) => false;
 }
 
+/// Signature motion curves — one place for the "expensive" easing language.
+///
+/// `easeOutMagical` is the house curve: fast attack, long luxurious settle
+/// (≈ cubic-bezier(0.32, 0.72, 0, 1)). Use it on reveals, hovers, and state
+/// transitions instead of bare `easeInOut`.
+abstract final class PulsCurves {
+  static const easeOutMagical = Cubic(0.32, 0.72, 0, 1);
+}
+
 /// Accessibility helper for honoring the platform "reduce motion" setting.
 ///
 /// iOS *Reduce Motion*, Android *Remove animations*, macOS/Windows reduce-motion

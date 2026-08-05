@@ -5,6 +5,7 @@ import '../../core/widgets/puls_snack.dart';
 import '../../core/widgets/tactile.dart';
 import '../../core/widgets/puls_page_route.dart';
 import '../../core/widgets/glass_card.dart';
+import '../../core/widgets/fade_net_image.dart';
 
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
@@ -23,7 +24,6 @@ import '../shell/shell_nav.dart';
 import '../onboarding/help_button.dart';
 import '../../app/puls_app.dart';
 import 'create_market_dialog.dart';
-import 'package:puls/core/config.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -222,8 +222,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   focusNode: _focusNode,
                   style: TextStyle(color: t.text, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText:
-                        'Search prediction markets (e.g., Bitcoin, Election)...',
+                    hintText: 'Search markets (Bitcoin, Election, AI…)',
                     hintStyle: TextStyle(color: t.textSubtle, fontSize: 14),
                     prefixIcon: Icon(Icons.search_rounded,
                         color: _searchFocused ? t.brand : t.textSubtle,
@@ -632,19 +631,12 @@ class _MarketCardState extends State<_MarketCard> {
                       if (market.imageUrl.isNotEmpty) ...[
                         ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            proxifyImageUrl(market.imageUrl),
+                          child: FadeNetImage(
+                            url: market.imageUrl,
                             width: 44,
                             height: 44,
                             cacheHeight: 88,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              width: 44,
-                              height: 44,
-                              color: t.brandSubtle,
-                              child: Icon(Icons.show_chart_rounded,
-                                  color: t.brand, size: 20),
-                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -932,19 +924,12 @@ class _FeaturedMarketCardState extends State<_FeaturedMarketCard> {
                     if (m.imageUrl.isNotEmpty) ...[
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          proxifyImageUrl(m.imageUrl),
+                        child: FadeNetImage(
+                          url: m.imageUrl,
                           width: 52,
                           height: 52,
                           cacheHeight: 104,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 52,
-                            height: 52,
-                            color: t.brandSubtle,
-                            child: Icon(Icons.show_chart_rounded,
-                                color: t.brand, size: 24),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 14),

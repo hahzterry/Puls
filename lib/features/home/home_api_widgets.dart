@@ -16,8 +16,8 @@ class CryptoTickerStrip extends StatefulWidget {
 
 class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTickerProviderStateMixin {
   WebSocketChannel? _channel;
-  final Map<String, double> _prices = {'BTCUSDT': 64000, 'ETHUSDT': 3450, 'SOLUSDT': 145};
-  final Map<String, double> _oldPrices = {'BTCUSDT': 64000, 'ETHUSDT': 3450, 'SOLUSDT': 145};
+  final Map<String, double> _prices = {};
+  final Map<String, double> _oldPrices = {};
   
   late final AnimationController _scrollController = AnimationController(
     vsync: this,
@@ -40,7 +40,30 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
   @override
   void initState() {
     super.initState();
+    _fetchInitialPrices();
     _connectWebSocket();
+  }
+
+  /// Seeds the strip with real spot prices so it never flashes stale
+  /// placeholders before the first websocket tick.
+  Future<void> _fetchInitialPrices() async {
+    try {
+      final res = await http.get(Uri.parse(
+          'https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","SOLUSDT"]'));
+      if (res.statusCode != 200 || !mounted) return;
+      final list = jsonDecode(res.body) as List<dynamic>;
+      final next = <String, double>{};
+      for (final e in list) {
+        final symbol = e['symbol'] as String?;
+        final price = double.tryParse(e['price'] as String? ?? '');
+        if (symbol != null && price != null) next[symbol] = price;
+      }
+      if (next.isEmpty) return;
+      setState(() {
+        _prices..clear()..addAll(next);
+        _oldPrices..clear()..addAll(next);
+      });
+    } catch (_) {}
   }
 
   void _connectWebSocket() {
@@ -73,9 +96,9 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
   }
 
   Widget _buildPair(String label, String symbol, PulsThemeColors t) {
-    final price = _prices[symbol] ?? 0.0;
-    final oldPrice = _oldPrices[symbol] ?? price;
-    final up = price >= oldPrice;
+    final price = _prices[symbol];
+    final oldPrice = _oldPrices[symbol] ?? price ?? 0.0;
+    final up = price != null && price >= oldPrice;
     final color = up ? t.yes : t.no;
     final icon = up ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
 
@@ -91,11 +114,13 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
           ),
           const SizedBox(width: 6),
           Text(
-            '\$${price.toStringAsFixed(price > 1000 ? 0 : 2)}',
+            price == null
+                ? '—'
+                : '\$${price.toStringAsFixed(price > 1000 ? 0 : 2)}',
             style: TextStyle(color: t.text, fontSize: 12, fontWeight: FontWeight.w800, fontFeatures: PulsColors.tabularFigures),
           ),
           const SizedBox(width: 4),
-          Icon(icon, color: color, size: 10),
+          if (price != null) Icon(icon, color: color, size: 10),
         ],
       ),
     );
@@ -156,8 +181,8 @@ class FearAndGreedWidget extends StatefulWidget {
 }
 
 class _FearAndGreedWidgetState extends State<FearAndGreedWidget> {
-  int _value = 74;
-  String _classification = 'Greed';
+  int? _value;
+  String? _classification;
 
   @override
   void initState() {
@@ -185,7 +210,10 @@ class _FearAndGreedWidgetState extends State<FearAndGreedWidget> {
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
-    final color = _value < 40 ? t.no : (_value > 60 ? t.yes : Colors.orange);
+    final value = _value;
+    final color = value == null
+        ? t.textSubtle
+        : (value < 40 ? t.no : (value > 60 ? t.yes : Colors.orange));
     
     return Container(
       padding: const EdgeInsets.all(20),
@@ -212,7 +240,7 @@ class _FearAndGreedWidgetState extends State<FearAndGreedWidget> {
           Row(
             children: [
               Text(
-                '$_value',
+                value?.toString() ?? '—',
                 style: TextStyle(
                   color: color,
                   fontSize: 32,
@@ -226,7 +254,7 @@ class _FearAndGreedWidgetState extends State<FearAndGreedWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _classification,
+                      _classification ?? 'Loading…',
                       style: TextStyle(
                         color: t.text,
                         fontSize: 14,

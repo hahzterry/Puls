@@ -489,28 +489,35 @@ class _StickyNavbar extends StatelessWidget {
       child: AnimatedOpacity(
         duration: Duration.zero,
         opacity: reveal,
-        child: Container(
-          decoration: BoxDecoration(
-            color: t.bg.withValues(alpha: 0.8),
-            border: Border(
-              bottom: BorderSide(color: t.border.withValues(alpha: 0.5)),
-            ),
-            boxShadow: reveal > 0.5
-                ? [
-                    BoxShadow(
-                      color: isDark
-                          ? Colors.black.withValues(alpha: 0.3)
-                          : Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 24,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
-          ),
-          child: ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-              child: Padding(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(16, 10, 16, 0),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 1240),
+              decoration: BoxDecoration(
+                color: t.bg.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(isMobile ? 20 : 999),
+                border: Border.all(
+                  color: t.border.withValues(alpha: 0.6),
+                ),
+                boxShadow: reveal > 0.5
+                    ? [
+                        BoxShadow(
+                          color: isDark
+                              ? Colors.black.withValues(alpha: 0.35)
+                              : Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 28,
+                          offset: const Offset(0, 10),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(isMobile ? 20 : 999),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: isMobile ? 16 : 48,
                   vertical: isMobile ? 10 : 14,
@@ -610,7 +617,9 @@ class _StickyNavbar extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+    ),
+  );
   }
 }
 
@@ -812,22 +821,39 @@ class _NavIconState extends State<_NavIcon> {
 
 // Compact dropdown for mobile, where inline nav links don't fit. Surfaces the
 // flagship pages + key links so judges on a phone can still discover them.
-class _MobileNavMenu extends StatelessWidget {
+class _MobileNavMenu extends StatefulWidget {
   const _MobileNavMenu();
+
+  @override
+  State<_MobileNavMenu> createState() => _MobileNavMenuState();
+}
+
+class _MobileNavMenuState extends State<_MobileNavMenu> {
+  bool _open = false;
+
+  void _setOpen(bool value) {
+    if (_open == value) return;
+    setState(() => _open = value);
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
+    final reduce = context.reduceMotion;
+
     return PopupMenuButton<String>(
       tooltip: 'Menu',
-      icon: Icon(Icons.menu_rounded, size: 22, color: t.textMuted),
+      onOpened: () => _setOpen(true),
+      onCanceled: () => _setOpen(false),
+      onSelected: (url) {
+        _setOpen(false);
+        launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      },
       color: t.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(color: t.border),
       ),
-      onSelected: (url) =>
-          launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
       itemBuilder: (context) => [
         _item(t, 'Live agent', _pageUrl('/pulse')),
         _item(t, 'Decision trace', _pageUrl('/agent')),
@@ -840,6 +866,36 @@ class _MobileNavMenu extends StatelessWidget {
         _item(t, 'Docs', 'https://docs.pulsmarket.tech'),
         _item(t, 'GitHub', 'https://github.com/rdmbtc/Puls'),
       ],
+      // Icon well that morphs between hamburger and close while the menu is open.
+      child: AnimatedContainer(
+        duration: reduce ? Duration.zero : const Duration(milliseconds: 260),
+        curve: PulsCurves.easeOutMagical,
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: _open ? t.brand.withValues(alpha: 0.16) : t.brandSubtle,
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(
+            color: _open
+                ? t.brand.withValues(alpha: 0.4)
+                : t.border.withValues(alpha: 0.6),
+          ),
+        ),
+        child: AnimatedRotation(
+          duration: reduce ? Duration.zero : const Duration(milliseconds: 300),
+          turns: _open ? 0.5 : 0,
+          curve: Curves.easeOutCubic,
+          child: AnimatedSwitcher(
+            duration: reduce ? Duration.zero : const Duration(milliseconds: 160),
+            child: Icon(
+              _open ? Icons.close_rounded : Icons.menu_rounded,
+              key: ValueKey(_open),
+              size: 20,
+              color: _open ? t.brand : t.textMuted,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -934,10 +990,27 @@ class _HeroSectionState extends State<_HeroSection> {
               offset: Offset(0, parallaxY),
               child: Opacity(
                 opacity: heroOpacity,
-                child: _HeroContent(
-                  phrase: _phrases[_phraseIndex],
-                  phraseIndex: _phraseIndex,
-                ),
+                child: context.reduceMotion
+                    ? _HeroContent(
+                        phrase: _phrases[_phraseIndex],
+                        phraseIndex: _phraseIndex,
+                      )
+                    : _HeroContent(
+                        phrase: _phrases[_phraseIndex],
+                        phraseIndex: _phraseIndex,
+                      ).animate(
+                          key: const ValueKey('hero-entrance'),
+                        ).fadeIn(
+                          duration: 1100.ms,
+                          delay: 150.ms,
+                          curve: PulsCurves.easeOutMagical,
+                        ).blur(
+                          begin: const Offset(0, 28),
+                          end: Offset.zero,
+                          duration: 900.ms,
+                          delay: 150.ms,
+                          curve: PulsCurves.easeOutMagical,
+                        ),
               ),
             ),
           ),

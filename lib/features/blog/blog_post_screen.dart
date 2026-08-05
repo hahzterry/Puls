@@ -6,13 +6,13 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/tts.dart';
 import '../../core/widgets/puls_loader.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/widgets/fade_net_image.dart';
 import '../../app/puls_app.dart';
 import '../../core/widgets/simple_markdown.dart';
 import '../../data/models/blog_post.dart';
 import '../comments/comment_thread.dart';
 import '../shell/web_layout.dart';
 import 'blog_widgets.dart';
-import 'package:puls/core/config.dart';
 
 /// Full blog post: cover, author, markdown body, sources, tip + comments.
 class BlogPostScreen extends StatefulWidget {
@@ -124,8 +124,7 @@ class _BlogPostScreenState extends State<BlogPostScreen> {
                 if (post.coverUrl != null && post.coverUrl!.isNotEmpty)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Image.network(proxifyImageUrl(post.coverUrl!), height: 180, cacheHeight: 360, width: double.infinity, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                    child: FadeNetImage(url: post.coverUrl!, height: 180, cacheHeight: 360, width: double.infinity, fit: BoxFit.cover),
                   ),
                 const SizedBox(height: 14),
                 BlogKindBadge(post: post),

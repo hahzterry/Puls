@@ -54,6 +54,24 @@ flutter:
     - assets/emoji/
     - assets/illustrations/
   fonts:
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Geist-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Geist-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Geist-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Geist-Black.ttf
+          weight: 900
+        - asset: assets/fonts/Geist-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/fonts/Geist-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
     - family: Playfair Display
       fonts:
         - asset: assets/fonts/PlayfairDisplay-Medium.ttf

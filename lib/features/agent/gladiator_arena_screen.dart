@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/puls_button.dart';
 import '../../core/widgets/tactile.dart';
 
 /// ── AI Gladiator Arena ─────────────────────────────────────────────────────
@@ -56,8 +57,7 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
     with TickerProviderStateMixin {
   final _rnd = math.Random(42);
   Timer? _simTimer;
-  Timer? _clockTimer;
-  Duration _remaining = const Duration(hours: 13, minutes: 42, seconds: 8);
+  double _demoStakes = 0;
 
   late final AnimationController _ticker = AnimationController(
     vsync: this,
@@ -167,13 +167,6 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
       if (!mounted) return;
       _simulateTick();
     });
-    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      setState(() {
-        _remaining -= const Duration(seconds: 1);
-        if (_remaining.isNegative) _remaining = Duration.zero;
-      });
-    });
   }
 
   void _simulateTick() {
@@ -212,14 +205,8 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
   @override
   void dispose() {
     _simTimer?.cancel();
-    _clockTimer?.cancel();
     _ticker.dispose();
     super.dispose();
-  }
-
-  String get _clock {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(_remaining.inHours)}:${two(_remaining.inMinutes % 60)}:${two(_remaining.inSeconds % 60)}';
   }
 
   List<_Gladiator> get _ranked =>
@@ -344,11 +331,11 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _headerStat(t, 'TIME LEFT', _clock, t.no),
+              _headerStat(t, 'MODE', 'SIM', t.no),
               _headerDivider(t),
               _headerStat(t, 'PRIZE POOL', '\$4,000', PulsColors.brandMint),
               _headerDivider(t),
-              _headerStat(t, 'TOTAL BETS', '\$18,240', t.text),
+              _headerStat(t, 'YOUR STAKES', '\$${_demoStakes.toStringAsFixed(0)}', t.text),
             ],
           ),
         ],
@@ -699,7 +686,12 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: context.puls.bg,
-      builder: (_) => _StakeSheet(agent: g),
+      builder: (_) => _StakeSheet(
+        agent: g,
+        onStake: (amount) {
+          if (mounted) setState(() => _demoStakes += amount);
+        },
+      ),
     );
   }
 
@@ -802,8 +794,9 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
 
 // ── Stake sheet ──────────────────────────────────────────────────────────────
 class _StakeSheet extends StatefulWidget {
-  const _StakeSheet({required this.agent});
+  const _StakeSheet({required this.agent, required this.onStake});
   final _Gladiator agent;
+  final ValueChanged<double> onStake;
 
   @override
   State<_StakeSheet> createState() => _StakeSheetState();
@@ -818,6 +811,7 @@ class _StakeSheetState extends State<_StakeSheet> {
     setState(() => _placing = true);
     await Future<void>.delayed(const Duration(milliseconds: 1600));
     if (!mounted) return;
+    widget.onStake(_stake);
     setState(() {
       _placing = false;
       _placed = true;
@@ -964,53 +958,21 @@ class _StakeSheetState extends State<_StakeSheet> {
             ),
           ),
           const SizedBox(height: 16),
-          Tactile(
+          PulsButton(
+            label: _placed
+                ? 'DEMO STAKE PLACED ✓'
+                : 'STAKE \$${_stake.round()} ON ${g.name}',
             onTap: _placing || _placed ? null : _place,
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              height: 54,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                gradient: _placed
-                    ? LinearGradient(colors: [t.yes, t.yes])
-                    : LinearGradient(
-                        colors: [
-                          g.color,
-                          Color.lerp(g.color, Colors.black, 0.3)!,
-                        ],
-                      ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: (_placed ? t.yes : g.color)
-                        .withValues(alpha: _placing ? 0.55 : 0.35),
-                    blurRadius: _placing ? 28 : 18,
-                    offset: const Offset(0, 5),
+            loading: _placing,
+            icon: _placed ? Icons.check_rounded : Icons.arrow_outward_rounded,
+            gradient: _placed
+                ? LinearGradient(colors: [t.yes, t.yes])
+                : LinearGradient(
+                    colors: [
+                      g.color,
+                      Color.lerp(g.color, Colors.black, 0.3)!,
+                    ],
                   ),
-                ],
-              ),
-              child: _placing
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.4,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Text(
-                      _placed
-                          ? 'DEMO STAKE PLACED ✓'
-                          : 'STAKE \$${_stake.round()} ON ${g.name}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1,
-                      ),
-                    ),
-            ),
           ),
         ],
       ),

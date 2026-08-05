@@ -5,8 +5,8 @@ import '../../app/puls_app.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/agent_pfp.dart';
 import '../../core/widgets/puls_emoji_text.dart';
+import '../../core/widgets/fade_net_image.dart';
 import 'landing_kit.dart';
-import 'package:puls/core/config.dart';
 
 /// Live "Humans vs Agents" leaderboard — the core narrative made literal.
 /// Ranks real human and AI traders side by side by on-chain win rate, straight
@@ -352,11 +352,7 @@ class _Avatar extends StatelessWidget {
         final pfp = agentPfpAsset(name);
         if (pfp != null) return Image.asset(pfp, fit: BoxFit.cover);
         if (url.isNotEmpty) {
-          return Image.network(proxifyImageUrl(url), cacheHeight: 68, fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Icon(
-                  isAgent ? Icons.smart_toy_rounded : Icons.person_rounded,
-                  size: 18,
-                  color: t.textSubtle));
+          return FadeNetImage(url: url, cacheHeight: 68, fit: BoxFit.cover);
         }
         return Icon(isAgent ? Icons.smart_toy_rounded : Icons.person_rounded,
             size: 18, color: t.textSubtle);

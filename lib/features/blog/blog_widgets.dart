@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/agent_pfp.dart';
+import '../../core/widgets/fade_net_image.dart';
 import '../../data/models/blog_post.dart';
 import 'package:puls/core/config.dart';
 
@@ -125,8 +126,7 @@ class BlogPostCard extends StatelessWidget {
           if (post.coverUrl != null && post.coverUrl!.isNotEmpty) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(proxifyImageUrl(post.coverUrl!), height: 130, cacheHeight: 260, width: double.infinity, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+              child: FadeNetImage(url: post.coverUrl!, height: 130, cacheHeight: 260, width: double.infinity, fit: BoxFit.cover),
             ),
             const SizedBox(height: 10),
           ],

@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/widgets/puls_page_route.dart';
 import '../../core/widgets/skeleton.dart';
+import '../../core/widgets/fade_net_image.dart';
 import '../../core/widgets/tactile.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/utils/trade_math.dart';
@@ -26,7 +27,6 @@ import '../rewards/points_quests_card.dart';
 import '../rewards/season_leaderboard_card.dart';
 import '../blog/blog_section.dart';
 import 'home_api_widgets.dart';
-import 'package:puls/core/config.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -107,9 +107,9 @@ class _WebHomeScreen extends StatelessWidget {
               const PointsQuestsCard(),
               const SizedBox(height: 24),
               _FeaturedHeroBanner(market: featuredMarket, t: t),
-              const SizedBox(height: 28),
-              const BlogSection(limit: 4),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
+              const _SectionDivider(),
+              const SizedBox(height: 24),
               Row(
                 children: [
                   Text('Trending Predictions',
@@ -213,6 +213,8 @@ class _WebHomeScreen extends StatelessWidget {
                           const PointsQuestsCard(),
                           const SizedBox(height: 20),
                           _FeaturedHeroBanner(market: featuredMarket, t: t),
+                          const SizedBox(height: 20),
+                          const _SectionDivider(),
                           const SizedBox(height: 20),
                           const BlogSection(limit: 4),
                           const SizedBox(height: 20),
@@ -535,19 +537,12 @@ class _WebTrendingCardState extends State<_WebTrendingCard> {
                     if (widget.market.imageUrl.isNotEmpty) ...[
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          proxifyImageUrl(widget.market.imageUrl),
+                        child: FadeNetImage(
+                          url: widget.market.imageUrl,
                           width: 40,
                           height: 40,
                           cacheHeight: 80,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 40,
-                            height: 40,
-                            color: t.brandSubtle,
-                            child: Icon(Icons.show_chart_rounded,
-                                color: t.brand, size: 18),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -951,5 +946,27 @@ class _HomePromoCarousel extends StatelessWidget {
       ),
     ];
     return PromoCarousel(slides: slides, height: 170);
+  }
+}
+
+/// Faint hairline that separates home sections; fades out at both edges.
+class _SectionDivider extends StatelessWidget {
+  const _SectionDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return Container(
+      height: 1,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            t.border.withValues(alpha: 0),
+            t.border,
+            t.border.withValues(alpha: 0),
+          ],
+        ),
+      ),
+    );
   }
 }

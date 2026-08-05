@@ -7,6 +7,10 @@ import '../theme/app_theme.dart';
 /// A glassmorphic surface: blurred backdrop + semi-transparent fill + hairline
 /// border. Gives the UI depth over dark navy backgrounds.
 ///
+/// Defaults to a "double-bezel" (machined) construction: an outer tray shell
+/// (hairline ring + inset padding + slightly larger radius) with the glass core
+/// nested inside, so cards read as physical plates rather than flat panels.
+///
 /// Perf notes for Flutter Web / CanvasKit:
 ///   - BackdropFilter is expensive; this widget is intentionally simple (no
 ///     nested shadows, no clipped animations) so it composites in one pass.
@@ -26,6 +30,7 @@ class GlassCard extends StatelessWidget {
     this.padding,
     this.margin,
     this.onTap,
+    this.bezelled = true,
   });
 
   final Widget child;
@@ -37,6 +42,10 @@ class GlassCard extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
   final VoidCallback? onTap;
+
+  /// Nested "tray + core" construction (double-bezel). Disable for tiny
+  /// inline chips where the extra ring reads as noise.
+  final bool bezelled;
 
   @override
   Widget build(BuildContext context) {
@@ -53,35 +62,66 @@ class GlassCard extends StatelessWidget {
         ? PulsColors.brandMint.withValues(alpha: borderAlpha)
         : Colors.white.withValues(alpha: borderAlpha * 1.6);
 
-    return Container(
-      margin: margin,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: Container(
-            decoration: BoxDecoration(
-              color: fill,
-              borderRadius: BorderRadius.circular(radius),
-              border: Border.all(color: border, width: 0.6),
-              gradient: elevation > 0
-                  ? LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        fill,
-                        t.surface.withValues(alpha: fillAlpha * 0.6),
-                      ],
-                    )
-                  : null,
-            ),
-            child: padding != null
-                ? Padding(padding: padding!, child: child)
-                : child,
+    final core = ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: Container(
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(color: border, width: 0.6),
+            // Inner top highlight — the "glass edge" catch-light.
+            boxShadow: [
+              BoxShadow(
+                color: Colors.white.withValues(alpha: isDark ? 0.06 : 0.35),
+                blurRadius: 0,
+                spreadRadius: -1,
+                offset: const Offset(0, 1),
+              ),
+            ],
+            gradient: elevation > 0
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      fill,
+                      t.surface.withValues(alpha: fillAlpha * 0.6),
+                    ],
+                  )
+                : null,
           ),
+          child: padding != null
+              ? Padding(padding: padding!, child: child)
+              : child,
         ),
       ),
     );
+
+    final body = bezelled
+        ? Container(
+            // Outer tray — machined aluminium ring around the glass core.
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(radius + 3),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.055)
+                    : Colors.black.withValues(alpha: 0.06),
+                width: 1,
+              ),
+            ),
+            child: core,
+          )
+        : core;
+
+    if (onTap != null) {
+      return GestureDetector(onTap: onTap, child: Container(margin: margin, child: body));
+    }
+    return Container(margin: margin, child: body);
   }
 }
 
@@ -106,6 +146,7 @@ class GlassChip extends StatelessWidget {
     return GlassCard(
       radius: 10,
       blur: 6,
+      bezelled: false,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       child: Row(
         mainAxisSize: MainAxisSize.min,

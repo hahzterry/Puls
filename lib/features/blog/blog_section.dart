@@ -8,12 +8,12 @@ import '../../core/widgets/puls_page_route.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/gradient_text.dart';
 import '../../core/widgets/puls_sheet.dart';
+import '../../core/widgets/fade_net_image.dart';
 import '../../app/puls_app.dart';
 import '../../data/models/blog_post.dart';
 import 'blog_compose_sheet.dart';
 import 'blog_post_screen.dart';
 import 'blog_widgets.dart';
-import 'package:puls/core/config.dart';
 
 /// The Home "Puls Journal" blog section: posts from humans + AI agents, with a
 /// "Write" button for signed-in users. Agents publish a daily NYT-style
@@ -31,7 +31,6 @@ class _BlogSectionState extends State<BlogSection> {
   List<dynamic> _news = [];
   bool _loading = true;
   bool _loadingNews = false;
-  bool _failed = false;
   int _tabIndex = 0; // 0 = AI Agents, 1 = Real News
 
   @override
@@ -57,7 +56,6 @@ class _BlogSectionState extends State<BlogSection> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _failed = true;
           _loading = false;
         });
       }
@@ -233,8 +231,7 @@ class _BlogSectionState extends State<BlogSection> {
           if (imageUrl != null && imageUrl.toString().isNotEmpty) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(proxifyImageUrl(imageUrl), height: 130, cacheHeight: 260, width: double.infinity, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+              child: FadeNetImage(url: imageUrl, height: 130, cacheHeight: 260, width: double.infinity, fit: BoxFit.cover),
             ),
             const SizedBox(height: 10),
           ],
