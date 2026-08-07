@@ -18,7 +18,6 @@ import '../../core/utils/puls_emoji.dart';
 import '../../core/motion.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/pulse_dot.dart';
-import '../../core/widgets/puls_fade_in.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/widgets/gradient_text.dart';
 import '../../core/widgets/state_views.dart';
@@ -32,7 +31,7 @@ import '../profile/notifications_screen.dart';
 import '../profile/user_profile_screen.dart';
 import '../shell/shell_nav.dart';
 import '../onboarding/help_button.dart';
-import 'prediction_feed_card.dart';
+import 'feed_stream.dart';
 import 'ticker_strip.dart';
 import '../agent/agent_screen.dart' show agentSubTabRequest;
 
@@ -228,41 +227,17 @@ class _FeedBody extends StatelessWidget {
         return RefreshIndicator(
           color: t.brand,
           onRefresh: appState.refresh,
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-            itemBuilder: (context, index) {
-              final market = markets[index % markets.length];
-              // Keyed by market id so the list reuses a stable element per
-              // market instead of re-running the card's own fadeIn on a
-              // recycled slot when you scroll back up (which left items at
-              // opacity 0). The fade is owned by PredictionFeedCard itself.
-              // Lightweight one-shot entrance (safe for recycled list slots —
-              // the controller dies with the element, no stale opacity).
-              return PulsFadeIn(
-                key: ValueKey('feed_${market.id}_$index'),
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: PredictionFeedCard(
-                    market: market,
-                    showSwipeHint: index == 0,
-                    isWatchlisted: appState.isWatchlisted(market.id),
-                    onWatchlist: () => appState.toggleWatchlist(market.id),
-                    onDetails: () => _openDetails(context, market),
-                    onChoose: (side) {
-                      if (appState.fastBuyEnabled) {
-                        _fastBuy(context, appState, market, side);
-                      } else {
-                        showTradePreviewSheet(
-                          context: context,
-                          market: market,
-                          side: side,
-                        );
-                      }
-                    },
-                  ),
-                ),
-              );
-            },
+          child: FeedStream(
+            appState: appState,
+            allMarkets: markets,
+            categories: appState.categories,
+            onOpenDetails: _openDetails,
+            onFastBuy: _fastBuy,
+            onTradePreview: (ctx, market, side) => showTradePreviewSheet(
+              context: ctx,
+              market: market,
+              side: side,
+            ),
           ),
         );
     }
@@ -1248,59 +1223,23 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
                   ),
                 ),
                 Expanded(
-                  child: filteredMarkets.isEmpty
-                      ? const Center(
-                          child: PulsEmptyState(
-                            icon: Icons.filter_list_off_rounded,
-                            title: 'No predictions found',
-                            message:
-                                'Try a different category or check back later.',
-                            compact: true,
-                          ),
-                        )
-                      : ListView.builder(
-                          // Large count ≈ infinite loop so the feed never
-                          // runs out of cards even with a small market set.
-                          itemCount: 1000,
-                          itemBuilder: (context, index) {
-                            final market =
-                                filteredMarkets[index % filteredMarkets.length];
-                            return PulsFadeIn(
-                              key: ValueKey('feed_${market.id}_$index'),
-                              child: Center(
-                                child: ConstrainedBox(
-                                  constraints:
-                                      const BoxConstraints(maxWidth: 600),
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 20),
-                                    child: PredictionFeedCard(
-                                      market: market,
-                                      showSwipeHint: index == 0,
-                                      isWatchlisted:
-                                          appState.isWatchlisted(market.id),
-                                      onWatchlist: () =>
-                                          appState.toggleWatchlist(market.id),
-                                      onDetails: () =>
-                                          _openDetails(context, market),
-                                      onChoose: (side) {
-                                        if (appState.fastBuyEnabled) {
-                                          _fastBuy(
-                                              context, appState, market, side);
-                                        } else {
-                                          showTradePreviewSheet(
-                                            context: context,
-                                            market: market,
-                                            side: side,
-                                          );
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                  child: FeedStream(
+                    appState: appState,
+                    allMarkets: filteredMarkets,
+                    // The left sidebar already owns categories on desktop —
+                    // repeating them as pills would be two controls for one job.
+                    categories: const [],
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 40),
+                    maxWidth: 600,
+                    onOpenDetails: _openDetails,
+                    onFastBuy: _fastBuy,
+                    onTradePreview: (ctx, market, side) =>
+                        showTradePreviewSheet(
+                      context: ctx,
+                      market: market,
+                      side: side,
+                    ),
+                  ),
                 ),
               ],
             ),

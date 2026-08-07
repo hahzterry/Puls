@@ -25,6 +25,7 @@ class PredictionFeedCard extends StatefulWidget {
     required this.onDetails,
     required this.onChoose,
     this.showSwipeHint = false,
+    this.focused = false,
     super.key,
   });
 
@@ -37,6 +38,9 @@ class PredictionFeedCard extends StatefulWidget {
   /// When true (first card in the feed), plays a one-time "peek" animation
   /// nudging the card right then left so users discover swipe-to-trade.
   final bool showSwipeHint;
+
+  /// When true (keyboard focus), shows brand accent ring.
+  final bool focused;
 
   @override
   State<PredictionFeedCard> createState() => _PredictionFeedCardState();
@@ -265,6 +269,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                     child: _FeedCardFrame(
                       featured: market.isFeatured,
                       hovered: _hovered,
+                      focused: widget.focused,
                       progress: progress,
                       swipeColor: swipeColor,
                       t: t,
@@ -796,6 +801,7 @@ class _FeedCardFrame extends StatelessWidget {
     required this.t,
     required this.featured,
     required this.hovered,
+    required this.focused,
     required this.progress,
     required this.swipeColor,
   });
@@ -804,6 +810,7 @@ class _FeedCardFrame extends StatelessWidget {
   final PulsThemeColors t;
   final bool featured;
   final bool hovered;
+  final bool focused;
   final double progress;
   final Color swipeColor;
 
@@ -815,8 +822,10 @@ class _FeedCardFrame extends StatelessWidget {
     final reduceMotion = context.reduceMotion;
     final swiping = progress > 0.08;
 
-    // One accent at a time: swipe side > hover brand > featured ring > none.
-    final accent = swiping ? swipeColor : (hovered ? t.brand : null);
+    // One accent at a time: swipe > focus > hover > featured > none.
+    final accent = swiping
+        ? swipeColor
+        : (focused ? t.brand : (hovered ? t.brand : null));
 
     final card = AnimatedContainer(
       duration: context.motionDuration(const Duration(milliseconds: 240)),
@@ -825,7 +834,7 @@ class _FeedCardFrame extends StatelessWidget {
         t,
         radius: _radius,
         isDark: isDark,
-        raised: hovered || swiping,
+        raised: hovered || focused || swiping,
         accent: accent,
         borderColor: featured && accent == null ? Colors.transparent : null,
       ),
@@ -862,3 +871,6 @@ String _proxied(String url) {
   if (!kIsWeb || url.isEmpty) return url;
   return 'https://images.weserv.nl/?url=${Uri.encodeComponent(url)}&w=600&output=webp';
 }
+
+// Note: duplicate of proxiedMarketImage in feed_controls.dart kept here
+// to avoid circular deps — this file predates the controls module.
