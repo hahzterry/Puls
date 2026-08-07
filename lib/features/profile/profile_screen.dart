@@ -1392,7 +1392,7 @@ class _ThemeModeSelector extends StatelessWidget {
   }
 }
 
-class _ThemeSegment extends StatelessWidget {
+class _ThemeSegment extends StatefulWidget {
   const _ThemeSegment({
     required this.label,
     required this.icon,
@@ -1410,47 +1410,63 @@ class _ThemeSegment extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
+  State<_ThemeSegment> createState() => _ThemeSegmentState();
+}
+
+class _ThemeSegmentState extends State<_ThemeSegment> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
+    final t = widget.t;
+    final selected = widget.selected;
     return Semantics(
       button: true,
       selected: selected,
-      label: '$label theme',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          canRequestFocus: true,
-          borderRadius: BorderRadius.circular(11),
-          child: AnimatedContainer(
-            duration: duration,
-            curve: PulsCurves.easeOutMagical,
-            decoration: BoxDecoration(
-              gradient: selected ? PulsColors.pulseGradient : null,
-              color: selected ? null : Colors.transparent,
-              borderRadius: BorderRadius.circular(11),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: t.brand.withValues(alpha: 0.2),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4),
-                      )
-                    ]
-                  : null,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon,
-                    size: 19, color: selected ? Colors.white : t.textMuted),
-                const SizedBox(width: 8),
-                Text(label,
-                    style: TextStyle(
-                      color: selected ? Colors.white : t.textMuted,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                    )),
-              ],
+      label: '${widget.label} theme',
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            canRequestFocus: true,
+            borderRadius: BorderRadius.circular(11),
+            child: AnimatedContainer(
+              duration: widget.duration,
+              curve: PulsCurves.easeOutMagical,
+              decoration: BoxDecoration(
+                gradient: selected ? PulsColors.pulseGradient : null,
+                color: !selected
+                    ? t.surface
+                        .withValues(alpha: _hovered ? 0.65 : 0.35)
+                    : null,
+                borderRadius: BorderRadius.circular(11),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: t.brand.withValues(alpha: 0.2),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        )
+                      ]
+                    : null,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(widget.icon,
+                      size: 19, color: selected ? Colors.white : t.textMuted),
+                  const SizedBox(width: 8),
+                  Text(widget.label,
+                      style: TextStyle(
+                        color: selected ? Colors.white : t.textMuted,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      )),
+                ],
+              ),
             ),
           ),
         ),
