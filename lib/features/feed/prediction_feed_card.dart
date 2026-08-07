@@ -857,25 +857,60 @@ class _FeedCardFrame extends StatelessWidget {
       offset: Offset(hovered ? 0 : 0, hovered ? 6 : 5),
     );
 
-    Widget inner = Container(
+    final isDark = context.isDark;
+    final reduceMotion = context.reduceMotion;
+    final glassTop = isDark
+        ? t.surfaceGlass.withValues(alpha: 0.92)
+        : t.surfaceRaised.withValues(alpha: 0.98);
+    final glassBottom = isDark
+        ? t.surfaceRaised.withValues(alpha: 0.88)
+        : t.surface.withValues(alpha: 0.94);
+
+    final inner = Container(
       decoration: BoxDecoration(
-        color: t.surfaceRaised,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [glassTop, glassBottom],
+        ),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: isDark ? 0.055 : 0.42),
+        ),
         boxShadow: [shadow],
       ),
       child: child,
     );
 
-    // On web, lifting the card slightly on hover feels premium. Transform is
-    // cheap (one repaint per hover state) and the frame can animate it.
+    // A restrained 3D settle gives web cards depth without repainting their
+    // expensive image/sparkline subtree. Reduced motion keeps a still frame.
+    final transform = Matrix4.identity()
+      ..setEntry(3, 2, 0.0007)
+      ..translateByDouble(0.0, reduceMotion ? 0.0 : (hovered ? -5.0 : 0.0), 0.0, 1.0)
+      ..rotateX(reduceMotion ? 0.0 : (hovered ? -0.008 : 0.0));
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      curve: Curves.easeOutCubic,
-      transform: Matrix4.translationValues(0.0, hovered ? -3.0 : 0.0, 0.0),
+      duration: context.motionDuration(const Duration(milliseconds: 260)),
+      curve: PulsCurves.easeOutMagical,
+      transform: transform,
+      transformAlignment: Alignment.center,
       decoration: BoxDecoration(
         gradient: featured ? PulsColors.pulseGradient : null,
         borderRadius: BorderRadius.circular(17.5),
         border: featured ? null : border,
+        boxShadow: hovered && !reduceMotion
+            ? [
+                BoxShadow(
+                  color: PulsColors.brandMint.withValues(alpha: 0.08),
+                  blurRadius: 28,
+                  offset: const Offset(-8, 10),
+                ),
+                BoxShadow(
+                  color: PulsColors.brandPink.withValues(alpha: 0.08),
+                  blurRadius: 30,
+                  offset: const Offset(10, 12),
+                ),
+              ]
+            : null,
       ),
       padding: EdgeInsets.all(featured ? 1.5 : 1),
       child: inner,

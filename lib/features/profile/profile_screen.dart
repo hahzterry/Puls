@@ -1,4 +1,5 @@
 import 'package:animate_do/animate_do.dart';
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/widgets/puls_snack.dart';
@@ -967,6 +968,10 @@ class GlassCard extends StatefulWidget {
     this.border,
     this.gradient,
     this.onTap,
+    this.radius = 16,
+    this.blur = 0,
+    this.fillAlpha,
+    this.borderAlpha,
   });
 
   final Widget child;
@@ -974,6 +979,10 @@ class GlassCard extends StatefulWidget {
   final BoxBorder? border;
   final Gradient? gradient;
   final VoidCallback? onTap;
+  final double radius;
+  final double blur;
+  final double? fillAlpha;
+  final double? borderAlpha;
 
   @override
   State<GlassCard> createState() => _GlassCardState();
@@ -987,8 +996,8 @@ class _GlassCardState extends State<GlassCard> {
     final t = context.puls;
     final defaultBorder = Border.all(
       color: _isHovered
-          ? t.brand.withValues(alpha: 0.6)
-          : t.border.withValues(alpha: 0.4),
+          ? t.brand.withValues(alpha: widget.borderAlpha ?? 0.6)
+          : t.border.withValues(alpha: widget.borderAlpha ?? 0.4),
       width: _isHovered ? 1.5 : 1.0,
     );
 
@@ -997,10 +1006,9 @@ class _GlassCardState extends State<GlassCard> {
       curve: Curves.easeInOut,
       padding: widget.padding,
       decoration: BoxDecoration(
-        color: _isHovered
-            ? t.surfaceRaised.withValues(alpha: 0.8)
-            : t.surfaceRaised.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
+        color: t.surfaceRaised
+            .withValues(alpha: widget.fillAlpha ?? (_isHovered ? 0.8 : 0.5)),
+        borderRadius: BorderRadius.circular(widget.radius),
         border: widget.border ?? defaultBorder,
         gradient: widget.gradient,
         boxShadow: [
@@ -1020,6 +1028,16 @@ class _GlassCardState extends State<GlassCard> {
       ),
       child: widget.child,
     );
+
+    if (widget.blur > 0) {
+      container = ClipRRect(
+        borderRadius: BorderRadius.circular(widget.radius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: widget.blur, sigmaY: widget.blur),
+          child: container,
+        ),
+      );
+    }
 
     if (widget.onTap != null) {
       // Outer MouseRegion drives the hover decoration (border/glow); Tactile
@@ -1275,6 +1293,10 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassCard(
+      radius: 16,
+      blur: context.reduceMotion ? 0 : 12,
+      fillAlpha: context.isDark ? 0.055 : 0.72,
+      borderAlpha: context.isDark ? 0.16 : 0.42,
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

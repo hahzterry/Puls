@@ -428,11 +428,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     final gridSliver = SliverPadding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
       sliver: SliverGrid.builder(
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 440,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: MediaQuery.sizeOf(context).width >= 1180 ? 3 : 2,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.45,
+          childAspectRatio: 1.34,
         ),
         itemCount: gridMarkets.length,
         itemBuilder: (context, i) => FadeInUp(

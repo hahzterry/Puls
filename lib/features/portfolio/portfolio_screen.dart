@@ -23,6 +23,7 @@ import '../market/trade_preview_sheet.dart';
 import '../shell/shell_nav.dart';
 import '../onboarding/help_button.dart';
 import 'share_bet_card_dialog.dart';
+import 'liquid_wealth_terrain.dart';
 import '../../core/widgets/count_up_text.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/gradient_text.dart';
@@ -512,6 +513,15 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                         t: t,
                         walletAddress: ws.walletAddress,
                         usdcBalance: ws.usdcBalance,
+                      ),
+                      const SizedBox(height: 16),
+                      LiquidWealthTerrain(
+                        pnlUsdc: totalPnl,
+                        pnlRange: invested > 0 ? invested : 100,
+                        height: 260,
+                        title: 'LIQUID WEALTH TERRAIN',
+                        positiveColor: t.yes,
+                        negativeColor: t.no,
                       ),
                       const SizedBox(height: 16),
                       Text('P&L Since Entry',
