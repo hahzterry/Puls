@@ -65,9 +65,16 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
   void initState() {
     super.initState();
     _dragX = ValueNotifier<double>(0.0);
-    PriceHistoryService.fetch(widget.market.clobTokenId).then((prices) {
-      if (mounted) setState(() => _sparkline = prices);
-    });
+
+    // Paint from cache on frame 0 — no empty sparkline then flash-fill.
+    final cached = PriceHistoryService.cachedFor(widget.market);
+    if (cached != null) {
+      _sparkline = cached;
+    } else {
+      PriceHistoryService.fetchForMarket(widget.market).then((prices) {
+        if (mounted) setState(() => _sparkline = prices);
+      });
+    }
     if (widget.showSwipeHint && !_swipeHintPlayed) {
       _swipeHintPlayed = true;
       _scheduleSwipeHint();

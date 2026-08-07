@@ -56,24 +56,55 @@ extension FeedSmartFilterX on FeedSmartFilter {
       };
 }
 
+/// Sort order, kept as its own axis from [FeedSmartFilter] so "Crypto, by
+/// volume" is expressible. Pills used to own sorting, which made those two
+/// choices fight over one slot.
+enum FeedSort { hot, volume, endingSoon, closest }
+
+extension FeedSortX on FeedSort {
+  String get label => switch (this) {
+        FeedSort.hot => 'Hot',
+        FeedSort.volume => '24h volume',
+        FeedSort.endingSoon => 'Ending soonest',
+        FeedSort.closest => 'Closest call',
+      };
+
+  IconData get icon => switch (this) {
+        FeedSort.hot => Icons.bolt_rounded,
+        FeedSort.volume => Icons.bar_chart_rounded,
+        FeedSort.endingSoon => Icons.timer_outlined,
+        FeedSort.closest => Icons.balance_rounded,
+      };
+}
+
 /// Immutable feed filter state — free-text search + one smart pill + one
-/// category. Kept as a value object so the list rebuild is a pure function of
-/// (markets, query, watchlist).
+/// category + sort. Kept as a value object so the list rebuild is a pure
+/// function of (markets, query, watchlist).
 @immutable
 class FeedQuery {
-  const FeedQuery({this.text = '', this.filter, this.category});
+  const FeedQuery({
+    this.text = '',
+    this.filter,
+    this.category,
+    this.sort = FeedSort.hot,
+  });
 
   final String text;
   final FeedSmartFilter? filter;
   final String? category;
+  final FeedSort sort;
 
   bool get hasText => text.trim().isNotEmpty;
   bool get isActive => hasText || filter != null || category != null;
+
+  /// Whether the result order is something other than the feed's own ranking.
+  bool get isSorted => sort != FeedSort.hot;
 
   FeedQuery copyWith({
     String? text,
     FeedSmartFilter? filter,
     String? category,
+    FeedSort? sort,
     bool clearFilter = false,
     bool clearCategory = false,
   }) =>
@@ -81,15 +112,22 @@ class FeedQuery {
         text: text ?? this.text,
         filter: clearFilter ? null : (filter ?? this.filter),
         category: clearCategory ? null : (category ?? this.category),
+        sort: sort ?? this.sort,
       );
 
   /// Filter + sort in one pass. Search matches the question, category and
-  /// tags — the three things people actually type.
+  /// tags — the three things people actually type. Words are ANDed and may
+  /// land in different fields, so "btc 2025" matches a Crypto market asking
+  /// about 2025 even though no single field holds both words.
   List<Market> apply(List<Market> markets, Set<String> watchlistIds) {
-    final needle = text.trim().toLowerCase();
+    final words = text
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
     final now = DateTime.now();
 
-    var out = markets.where((m) {
+    final out = markets.where((m) {
       if (category != null && m.category != category) return false;
 
       switch (filter) {
@@ -103,26 +141,179 @@ class FeedQuery {
           final left = m.deadline.difference(now);
           if (left.isNegative || left.inDays > 14) return false;
         case FeedSmartFilter.trending:
+          // Now that sorting is its own axis, this pill has to *filter*
+          // something or it does nothing: markets with real 24h flow.
+          if (m.volume24hr <= 0) return false;
         case null:
           break;
       }
 
-      if (needle.isEmpty) return true;
-      return m.question.toLowerCase().contains(needle) ||
-          m.category.toLowerCase().contains(needle) ||
-          m.tags.any((tag) => tag.toLowerCase().contains(needle));
+      if (words.isEmpty) return true;
+
+      // Haystack: question + category + tag list concatenated.
+      final haystack =
+          '${m.question} ${m.category} ${m.tags.join(' ')}'.toLowerCase();
+
+      // Every word must appear somewhere in the combined haystack for an AND.
+      return words.every((w) => haystack.contains(w));
     }).toList();
 
-    if (filter == FeedSmartFilter.trending) {
-      out.sort((a, b) {
-        final byDay = b.volume24hr.compareTo(a.volume24hr);
-        return byDay != 0 ? byDay : b.volumeNum.compareTo(a.volumeNum);
-      });
-    } else if (filter == FeedSmartFilter.endingSoon) {
-      out.sort((a, b) => a.deadline.compareTo(b.deadline));
+    // Sort is its own axis now — the pill no longer decides order, so
+    // "Crypto, by volume" and "Watchlist, ending soonest" both work.
+    switch (sort) {
+      case FeedSort.hot:
+        // The feed arrives ranked by Puls-native activity. Leave it be.
+        break;
+      case FeedSort.volume:
+        out.sort((a, b) {
+          final byDay = b.volume24hr.compareTo(a.volume24hr);
+          return byDay != 0 ? byDay : b.volumeNum.compareTo(a.volumeNum);
+        });
+      case FeedSort.endingSoon:
+        out.sort((a, b) => a.deadline.compareTo(b.deadline));
+      case FeedSort.closest:
+        // Nearest to a coin-flip first — that's where disagreement lives.
+        out.sort((a, b) =>
+            (a.yesPrice - 0.5).abs().compareTo((b.yesPrice - 0.5).abs()));
     }
 
     return out;
+  }
+}
+
+// ── Keyboard cheat sheet ──────────────────────────────────────────────────────
+
+/// One row of the shortcut sheet.
+const _shortcuts = <(String, String)>[
+  ('↑  ↓', 'Move between markets'),
+  ('Enter', 'Open the focused market'),
+  ('Y', 'Buy YES on the focused market'),
+  ('N', 'Buy NO on the focused market'),
+  ('/', 'Jump to search'),
+  ('Esc', 'Clear focus, or leave search'),
+  ('?', 'Show this sheet'),
+];
+
+/// Shortcuts exist but are invisible, so nobody finds them. `?` opens this.
+Future<void> showFeedShortcuts(BuildContext context) {
+  final t = context.puls;
+  return showDialog<void>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.55),
+    builder: (ctx) => Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(22),
+            decoration: pulsCardDecoration(
+              t,
+              radius: 22,
+              isDark: Theme.of(ctx).brightness == Brightness.dark,
+              raised: true,
+              accent: t.brand,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: t.brandSubtle,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.keyboard_rounded,
+                          size: 16, color: t.brand),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Keyboard',
+                        style: TextStyle(
+                          color: t.text,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                    ),
+                    Tactile(
+                      onTap: () => Navigator.of(ctx).pop(),
+                      child: Icon(Icons.close_rounded,
+                          size: 18, color: t.textMuted),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                for (final (keys, what) in _shortcuts)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 9),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 74,
+                          child: Wrap(
+                            spacing: 4,
+                            children: keys
+                                .split('  ')
+                                .map((k) => _Kbd(label: k))
+                                .toList(),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            what,
+                            style: TextStyle(
+                              color: t.textMuted,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// A keycap. Raised surface + hairline, so it reads as a physical key.
+class _Kbd extends StatelessWidget {
+  const _Kbd({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: t.surfaceRaised,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: t.border),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: t.text,
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
+          fontFeatures: PulsColors.tabularFigures,
+        ),
+      ),
+    );
   }
 }
 
@@ -316,45 +507,61 @@ class FeedFilterPills extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
+    // Fade the strip at both edges so a cut-off pill reads as "keep
+    // scrolling" instead of a clipped mistake.
     return SizedBox(
       height: 36,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.zero,
-        physics: const BouncingScrollPhysics(),
-        children: [
-          _Pill(
-            label: 'All',
-            icon: Icons.bolt_rounded,
-            active: query.filter == null && query.category == null,
-            count: countFor(),
-            t: t,
-            onTap: () {
-              onSmartFilter(null);
-              onCategory(null);
-            },
-          ),
-          for (final f in FeedSmartFilter.values)
-            _Pill(
-              label: f.label,
-              icon: f.icon,
-              active: query.filter == f,
-              count: countFor(filter: f),
-              t: t,
-              onTap: () => onSmartFilter(query.filter == f ? null : f),
-            ),
-          if (categories.isNotEmpty) ...[
-            _PillDivider(t: t),
-            for (final c in categories)
-              _Pill(
-                label: c,
-                active: query.category == c,
-                count: countFor(category: c),
-                t: t,
-                onTap: () => onCategory(query.category == c ? null : c),
-              ),
+      child: ShaderMask(
+        shaderCallback: (rect) => const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Colors.transparent,
+            Colors.black,
+            Colors.black,
+            Colors.transparent,
           ],
-        ],
+          stops: [0, 0.02, 0.96, 1],
+        ).createShader(rect),
+        blendMode: BlendMode.dstIn,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.zero,
+          physics: const BouncingScrollPhysics(),
+          children: [
+            _Pill(
+              label: 'All',
+              icon: Icons.bolt_rounded,
+              active: query.filter == null && query.category == null,
+              count: countFor(),
+              t: t,
+              onTap: () {
+                onSmartFilter(null);
+                onCategory(null);
+              },
+            ),
+            for (final f in FeedSmartFilter.values)
+              _Pill(
+                label: f.label,
+                icon: f.icon,
+                active: query.filter == f,
+                count: countFor(filter: f),
+                t: t,
+                onTap: () => onSmartFilter(query.filter == f ? null : f),
+              ),
+            if (categories.isNotEmpty) ...[
+              _PillDivider(t: t),
+              for (final c in categories)
+                _Pill(
+                  label: c,
+                  active: query.category == c,
+                  count: countFor(category: c),
+                  t: t,
+                  onTap: () => onCategory(query.category == c ? null : c),
+                ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -392,7 +599,15 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = active ? Colors.white : t.textMuted;
+    // A pill that would return nothing stays tappable but reads as inert, so
+    // nobody spends a tap to discover an empty list.
+    final empty = count == 0 && !active;
+    final fg = active
+        ? Colors.white
+        : empty
+            ? t.textSubtle
+            : t.textMuted;
+
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: Tactile(
@@ -404,12 +619,18 @@ class _Pill extends StatelessWidget {
         child: AnimatedContainer(
           duration: context.motionDuration(const Duration(milliseconds: 220)),
           curve: PulsCurves.easeOutMagical,
-          padding: const EdgeInsets.symmetric(horizontal: 13),
+          padding: const EdgeInsets.only(left: 13, right: 8),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: active ? t.brand : t.surface,
             borderRadius: BorderRadius.circular(99),
-            border: Border.all(color: active ? t.brand : t.border),
+            border: Border.all(
+              color: active
+                  ? t.brand
+                  : empty
+                      ? t.border.withValues(alpha: 0.5)
+                      : t.border,
+            ),
             boxShadow: active
                 ? [
                     BoxShadow(
@@ -436,16 +657,30 @@ class _Pill extends StatelessWidget {
                   letterSpacing: -0.1,
                 ),
               ),
-              const SizedBox(width: 6),
-              Text(
-                '$count',
-                style: TextStyle(
+              const SizedBox(width: 7),
+              // Counts sit in their own capsule: at a glance the strip reads as
+              // label + volume, and the digits stop colliding with the label.
+              AnimatedContainer(
+                duration:
+                    context.motionDuration(const Duration(milliseconds: 220)),
+                curve: PulsCurves.easeOutMagical,
+                constraints: const BoxConstraints(minWidth: 22),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
                   color: active
-                      ? Colors.white.withValues(alpha: 0.75)
-                      : t.textSubtle,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  fontFeatures: PulsColors.tabularFigures,
+                      ? Colors.white.withValues(alpha: 0.22)
+                      : t.surfaceRaised,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    color: active ? Colors.white : t.textSubtle,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    fontFeatures: PulsColors.tabularFigures,
+                  ),
                 ),
               ),
             ],
@@ -457,6 +692,96 @@ class _Pill extends StatelessWidget {
 }
 
 // ── Density toggle ────────────────────────────────────────────────────────────
+
+/// Sort dropdown. Active sort shows in button, tap opens menu. "Hot" is the
+/// feed's own ranking (default), others impose a reorder.
+class FeedSortDropdown extends StatelessWidget {
+  const FeedSortDropdown(
+      {required this.sort, required this.onChanged, super.key});
+
+  final FeedSort sort;
+  final ValueChanged<FeedSort> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return PopupMenuButton<FeedSort>(
+      initialValue: sort,
+      onSelected: onChanged,
+      offset: const Offset(0, 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      color: t.surfaceRaised,
+      elevation: 8,
+      tooltip: 'Sort order',
+      child: AnimatedContainer(
+        duration: context.motionDuration(const Duration(milliseconds: 220)),
+        curve: PulsCurves.easeOutMagical,
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: t.surface,
+          borderRadius: BorderRadius.circular(99),
+          border: Border.all(color: sort == FeedSort.hot ? t.border : t.brand),
+          boxShadow: sort != FeedSort.hot
+              ? [
+                  BoxShadow(
+                    color: t.brand.withValues(alpha: 0.18),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(sort.icon,
+                size: 14, color: sort == FeedSort.hot ? t.textMuted : t.brand),
+            const SizedBox(width: 6),
+            Text(
+              sort.label,
+              style: TextStyle(
+                color: sort == FeedSort.hot ? t.textMuted : t.brand,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.1,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.arrow_drop_down_rounded,
+                size: 16, color: sort == FeedSort.hot ? t.textMuted : t.brand),
+          ],
+        ),
+      ),
+      itemBuilder: (ctx) => FeedSort.values.map((s) {
+        final active = s == sort;
+        return PopupMenuItem(
+          value: s,
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(
+            children: [
+              Icon(s.icon, size: 15, color: active ? t.brand : t.textMuted),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  s.label,
+                  style: TextStyle(
+                    color: active ? t.brand : t.text,
+                    fontSize: 13,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (active)
+                Icon(Icons.check_rounded, size: 16, color: t.brand),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
 
 /// Two-icon segmented control with a sliding brand thumb.
 class FeedDensityToggle extends StatelessWidget {
@@ -971,6 +1296,96 @@ class UndoTradeBar extends StatelessWidget {
 }
 
 // ── Empty state for a search that found nothing ───────────────────────────────
+
+class FeedEndCap extends StatelessWidget {
+  const FeedEndCap({
+    required this.count,
+    required this.filtered,
+    this.onClear,
+    super.key,
+  });
+
+  final int count;
+  final bool filtered;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: t.brandSubtle,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              filtered ? Icons.filter_list_rounded : Icons.check_circle_rounded,
+              size: 32,
+              color: t.brand,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            filtered
+                ? 'Filtered $count ${count == 1 ? "market" : "markets"}'
+                : "You've seen all $count markets",
+            style: TextStyle(
+              color: t.text,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            filtered
+                ? "That's everything matching your filters."
+                : 'Check back soon for new predictions.',
+            style: TextStyle(
+              color: t.textMuted,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          if (filtered && onClear != null) ...[
+            const SizedBox(height: 16),
+            Tactile(
+              onTap: onClear,
+              pressedScale: 0.96,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                decoration: BoxDecoration(
+                  color: t.surface,
+                  borderRadius: BorderRadius.circular(99),
+                  border: Border.all(color: t.border),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.clear_all_rounded, size: 16, color: t.textMuted),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Show all markets',
+                      style: TextStyle(
+                        color: t.text,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 class FeedNoResults extends StatelessWidget {
   const FeedNoResults({required this.query, required this.onClear, super.key});
