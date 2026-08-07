@@ -352,7 +352,7 @@ class _ApiKeysCardState extends State<ApiKeysCard> {
     final prefix = k['prefix'] as String? ?? 'pk_live_…';
     final label = (k['label'] as String?)?.trim();
     final lastUsed = k['lastUsedAt'];
-    final id = k['id'] as String?;
+    final id = '${k['id']}';
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
