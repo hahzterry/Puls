@@ -479,7 +479,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                       winRate: (wins + losses) > 0
                           ? '${((wins / (wins + losses)) * 100).toStringAsFixed(0)}%'
                           : '—',
+                      wins: wins,
+                      losses: losses,
                       tradeCount: _positions.length,
+                      openCount: _positions
+                          .where((p) => !(p['resolved'] as bool? ?? false))
+                          .length,
                       t: t,
                       walletAddress: ws.walletAddress,
                       usdcBalance: ws.usdcBalance,
@@ -625,7 +630,10 @@ class _PortfolioHero extends StatelessWidget {
     required this.openValue,
     required this.totalPnl,
     required this.winRate,
+    required this.wins,
+    required this.losses,
     required this.tradeCount,
+    required this.openCount,
     required this.t,
     required this.walletAddress,
     required this.usdcBalance,
@@ -636,7 +644,10 @@ class _PortfolioHero extends StatelessWidget {
   final double openValue;
   final double totalPnl;
   final String winRate;
+  final int wins;
+  final int losses;
   final int tradeCount;
+  final int openCount;
   final PulsThemeColors t;
   final String? walletAddress;
   final String usdcBalance;
@@ -767,20 +778,49 @@ class _PortfolioHero extends StatelessWidget {
       borderRadius: 20,
     );
 
+    // The third box used to repeat Invested, which is the headline number two
+    // rows up — the same figure twice in one card. Average size is derived from
+    // it and is the thing that number doesn't already say.
+    final settled = wins + losses;
+    final avg = tradeCount > 0 ? invested / tradeCount : 0.0;
     final stats = Row(
       children: [
         Expanded(
-            child: _StatBox(
-                label: 'Win Rate',
-                value: winRate,
-                t: t,
-                highlight: winRate != '—' && totalPnl >= 0)),
-        const SizedBox(width: 10),
-        Expanded(child: _StatBox(label: 'Trades', value: '$tradeCount', t: t)),
+          child: _StatBox(
+            label: 'Win Rate',
+            value: winRate,
+            sub: settled > 0 ? '${wins}W · ${losses}L' : 'no settled trades',
+            icon: Icons.emoji_events_rounded,
+            accent: settled == 0
+                ? null
+                : wins >= losses
+                    ? t.yes
+                    : t.no,
+            t: t,
+          ),
+        ),
         const SizedBox(width: 10),
         Expanded(
-            child: _StatBox(
-                label: 'Invested', value: '\$${invested.toStringAsFixed(0)}', t: t)),
+          child: _StatBox(
+            label: 'Positions',
+            value: '$tradeCount',
+            sub: openCount > 0 ? '$openCount open' : 'all settled',
+            icon: Icons.layers_rounded,
+            accent: t.brand,
+            t: t,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _StatBox(
+            label: 'Avg Size',
+            value: '\$${avg.toStringAsFixed(avg >= 100 ? 0 : 2)}',
+            sub: 'per position',
+            icon: Icons.straighten_rounded,
+            accent: PulsColors.amber,
+            t: t,
+          ),
+        ),
       ],
     );
 
@@ -1275,49 +1315,108 @@ class _PositionCardState extends State<_PositionCard> {
   }
 }
 
+/// One stat in the hero footer rail.
+///
+/// Each box carries its own [accent] — an icon chip and a hairline down the
+/// leading edge — so the three read as distinct meters instead of three
+/// identical grey tiles. [accent] null means "nothing to colour yet" (no
+/// settled trades), which stays neutral rather than guessing a good/bad hue.
 class _StatBox extends StatelessWidget {
-  const _StatBox(
-      {required this.label,
-      required this.value,
-      required this.t,
-      this.highlight = false});
+  const _StatBox({
+    required this.label,
+    required this.value,
+    required this.t,
+    this.sub,
+    this.icon,
+    this.accent,
+  });
   final String label;
   final String value;
   final PulsThemeColors t;
-  final bool highlight;
+  final String? sub;
+  final IconData? icon;
+  final Color? accent;
 
   @override
   Widget build(BuildContext context) {
+    final a = accent;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: highlight ? t.yesBg : t.surfaceRaised,
+        color: t.surfaceRaised,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-            color: highlight ? t.yes.withValues(alpha: 0.35) : t.border),
+          color: a == null ? t.border : a.withValues(alpha: 0.22),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(label.toUpperCase(),
-              style: TextStyle(
-                  color: t.textSubtle,
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8)),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(value,
-                maxLines: 1,
-                style: TextStyle(
-                  color: highlight ? t.yes : t.text,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
-                  fontFeatures: PulsColors.tabularFigures,
-                )),
+          // Colour rail: enough to tell the boxes apart at a glance, not
+          // enough to compete with the numbers they sit beside.
+          Container(width: 3, color: a ?? t.border),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(11, 10, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      if (icon != null) ...[
+                        Icon(icon, size: 11, color: a ?? t.textSubtle),
+                        const SizedBox(width: 5),
+                      ],
+                      Flexible(
+                        child: Text(
+                          label.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: t.textSubtle,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: t.text,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.4,
+                        height: 1.0,
+                        fontFeatures: PulsColors.tabularFigures,
+                      ),
+                    ),
+                  ),
+                  if (sub != null) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      sub!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: t.textSubtle,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: PulsColors.tabularFigures,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ],
       ),

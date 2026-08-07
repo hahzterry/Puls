@@ -35,13 +35,52 @@ class LiquidWealthTerrain extends StatefulWidget {
   State<LiquidWealthTerrain> createState() => _LiquidWealthTerrainState();
 }
 
+/// Terrain palette, derived from the app theme rather than fixed to one.
+///
+/// The field used to hardcode a near-black canvas, which in light mode read as
+/// a black slab dropped into a white card. Both modes now come from the same
+/// tokens; light mode also gets an alpha boost, because the accent washes that
+/// register on navy vanish on off-white.
+class _TerrainPalette {
+  const _TerrainPalette({
+    required this.background,
+    required this.panel,
+    required this.line,
+    required this.label,
+    required this.grid,
+    required this.neutral,
+    required this.lift,
+  });
+
+  factory _TerrainPalette.of(BuildContext context) {
+    final t = context.puls;
+    final dark = context.isDark;
+    return _TerrainPalette(
+      // Sits one step deeper than the card it lives in, either direction.
+      background: dark ? t.bg : t.surfaceRaised,
+      panel: t.surface,
+      line: t.border,
+      label: dark ? t.textSubtle : t.textMuted,
+      grid: dark ? t.border : t.borderStrong,
+      neutral: dark ? t.textSubtle : t.textMuted,
+      lift: dark ? 1.0 : 1.7,
+    );
+  }
+
+  final Color background;
+  final Color panel;
+  final Color line;
+  final Color label;
+  final Color grid;
+  final Color neutral;
+
+  /// Multiplier on wash and grid alpha, so the mesh stays legible on a light
+  /// canvas without blowing out on a dark one.
+  final double lift;
+}
+
 class _LiquidWealthTerrainState extends State<LiquidWealthTerrain>
     with TickerProviderStateMixin {
-  static const _background = Color(0xFF030405);
-  static const _surface = Color(0xFF090B0D);
-  static const _line = Color(0xFF20252C);
-  static const _muted = Color(0xFF7F8986);
-
   final _interaction = _TerrainInteraction();
   final _renderCache = _TerrainRenderCache();
   final _clock = Stopwatch()..start();
@@ -177,6 +216,7 @@ class _LiquidWealthTerrainState extends State<LiquidWealthTerrain>
   Widget build(BuildContext context) {
     final positive = widget.pnlUsdc >= 0;
     final pnlColor = positive ? widget.positiveColor : widget.negativeColor;
+    final palette = _TerrainPalette.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.hasBoundedWidth
@@ -197,9 +237,9 @@ class _LiquidWealthTerrainState extends State<LiquidWealthTerrain>
                 height: widget.height,
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
-                  color: _background,
+                  color: palette.background,
                   borderRadius: BorderRadius.circular(widget.borderRadius),
-                  border: Border.all(color: _line),
+                  border: Border.all(color: palette.line),
                 ),
                 child: Stack(
                   children: [
@@ -218,6 +258,7 @@ class _LiquidWealthTerrainState extends State<LiquidWealthTerrain>
                             history: widget.portfolioHistory,
                             positiveColor: widget.positiveColor,
                             negativeColor: widget.negativeColor,
+                            palette: palette,
                             cache: _renderCache,
                           ),
                         ),
@@ -236,8 +277,8 @@ class _LiquidWealthTerrainState extends State<LiquidWealthTerrain>
                               children: [
                                 Text(
                                   widget.title,
-                                  style: const TextStyle(
-                                    color: _muted,
+                                  style: TextStyle(
+                                    color: palette.label,
                                     fontFamily: PulsColors.fontSans,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w900,
@@ -271,9 +312,9 @@ class _LiquidWealthTerrainState extends State<LiquidWealthTerrain>
                               vertical: 7,
                             ),
                             decoration: BoxDecoration(
-                              color: _surface,
+                              color: palette.panel,
                               borderRadius: BorderRadius.circular(99),
-                              border: Border.all(color: _line),
+                              border: Border.all(color: palette.line),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -302,7 +343,7 @@ class _LiquidWealthTerrainState extends State<LiquidWealthTerrain>
                         ],
                       ),
                     ),
-                    const Positioned(
+                    Positioned(
                       left: 20,
                       bottom: 17,
                       child: Row(
@@ -310,13 +351,13 @@ class _LiquidWealthTerrainState extends State<LiquidWealthTerrain>
                           Icon(
                             Icons.swipe_rounded,
                             size: 14,
-                            color: _muted,
+                            color: palette.label,
                           ),
-                          SizedBox(width: 7),
+                          const SizedBox(width: 7),
                           Text(
                             'SWIPE TO SHAPE THE FIELD',
                             style: TextStyle(
-                              color: _muted,
+                              color: palette.label,
                               fontFamily: PulsColors.fontSans,
                               fontSize: 9,
                               fontWeight: FontWeight.w800,
@@ -350,6 +391,7 @@ class _TerrainPainter extends CustomPainter {
     required this.history,
     required this.positiveColor,
     required this.negativeColor,
+    required this.palette,
     required this.cache,
   }) : super(
           repaint: Listenable.merge([
@@ -362,8 +404,6 @@ class _TerrainPainter extends CustomPainter {
 
   static const _columns = 28;
   static const _rows = 18;
-  static const _neutral = Color(0xFF5E6972);
-  static const _grid = Color(0xFF273039);
 
   final Animation<double> time;
   final Animation<double> pnlTransition;
@@ -376,6 +416,7 @@ class _TerrainPainter extends CustomPainter {
   final List<double> history;
   final Color positiveColor;
   final Color negativeColor;
+  final _TerrainPalette palette;
   final _TerrainRenderCache cache;
 
   @override
@@ -389,13 +430,17 @@ class _TerrainPainter extends CustomPainter {
         pnlRange <= 0 ? 0.0 : (pnl / pnlRange).clamp(-1.0, 1.0).toDouble();
     final magnitude = normalizedPnl.abs();
     final accent = normalizedPnl >= 0
-        ? Color.lerp(_neutral, positiveColor, magnitude)!
-        : Color.lerp(_neutral, negativeColor, magnitude)!;
+        ? Color.lerp(palette.neutral, positiveColor, magnitude)!
+        : Color.lerp(palette.neutral, negativeColor, magnitude)!;
     final now = clock.elapsedMicroseconds / Duration.microsecondsPerSecond;
 
+    cache.verticalPaint.color = palette.grid.withValues(
+      alpha: (0.76 * palette.lift).clamp(0.0, 1.0),
+    );
+
     canvas
-      ..drawPicture(cache.staticBackground)
-      ..drawRect(Offset.zero & size, cache.accentPaint(accent));
+      ..drawPicture(cache.staticBackground(palette.background))
+      ..drawRect(Offset.zero & size, cache.accentPaint(accent, palette.lift));
 
     final phaseSin = FastTrig.sinTurns(time.value);
     final phaseCos = FastTrig.cosTurns(time.value);
@@ -467,12 +512,14 @@ class _TerrainPainter extends CustomPainter {
       }
       strip.close();
       cache.stripPaint.color = accent.withValues(
-        alpha: 0.018 + row / _rows * 0.055,
+        alpha: ((0.018 + row / _rows * 0.055) * palette.lift).clamp(0.0, 1.0),
       );
       canvas.drawPath(strip, cache.stripPaint);
     }
 
-    cache.horizontalPaint.color = accent.withValues(alpha: 0.38);
+    cache.horizontalPaint.color = accent.withValues(
+      alpha: (0.38 * palette.lift).clamp(0.0, 1.0),
+    );
     for (var row = 0; row < _rows; row++) {
       final path = cache.horizontalPaths[row]..reset();
       for (var column = 0; column < _columns; column++) {
@@ -564,8 +611,7 @@ class _TerrainRenderCache {
     ..strokeWidth = 1;
   final Paint verticalPaint = Paint()
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 0.8
-    ..color = _TerrainPainter._grid.withValues(alpha: 0.76);
+    ..strokeWidth = 0.8;
   final Paint ridgePaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2.2
@@ -579,14 +625,34 @@ class _TerrainRenderCache {
 
   Size _size = Size.zero;
   ui.Picture? _staticBackground;
+  Color? _staticBackgroundKey;
   int _accentKey = -1;
+  double _accentLift = 1.0;
   List<double>? _history;
 
-  ui.Picture get staticBackground => _staticBackground!;
+  ui.Picture staticBackground(Color bg) {
+    if (_staticBackground != null && _staticBackgroundKey == bg) {
+      return _staticBackground!;
+    }
+    _staticBackground?.dispose();
+    _staticBackgroundKey = bg;
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    canvas.drawRect(
+      Offset.zero & _size,
+      Paint()..color = bg,
+    );
+    _staticBackground = recorder.endRecording();
+    return _staticBackground!;
+  }
 
   void ensureGeometry(Size size) {
-    if (_size == size && _staticBackground != null) return;
+    if (_size == size) return;
     _size = size;
+    _staticBackground?.dispose();
+    _staticBackground = null;
+    _staticBackgroundKey = null;
+    _accentKey = -1;
     for (var row = 0; row < rows; row++) {
       final rowZ = -1 + row * 2 / (rows - 1);
       for (var column = 0; column < columns; column++) {
@@ -602,8 +668,6 @@ class _TerrainRenderCache {
         secondaryCos[index] = FastTrig.cosRadians(secondaryAngle);
       }
     }
-    _recordBackground(size);
-    _accentKey = -1;
     if (_history != null) _precomputeHistory(_history!);
   }
 
@@ -613,15 +677,18 @@ class _TerrainRenderCache {
     _precomputeHistory(history);
   }
 
-  Paint accentPaint(Color accent) {
+  Paint accentPaint(Color accent, double lift) {
     final key = accent.toARGB32();
-    if (_accentKey != key) {
+    // Lift is part of the key: switching theme keeps the accent but changes
+    // how hard it has to push, and a stale shader would ignore that.
+    if (_accentKey != key || _accentLift != lift) {
       _accentKey = key;
+      _accentLift = lift;
       _accentPaint.shader = RadialGradient(
         center: const Alignment(0.2, -0.1),
         radius: 1.2,
         colors: [
-          accent.withValues(alpha: 0.13),
+          accent.withValues(alpha: (0.13 * lift).clamp(0.0, 1.0)),
           Colors.transparent,
         ],
       ).createShader(Offset.zero & _size);
@@ -644,17 +711,6 @@ class _TerrainRenderCache {
       activeRipple[index] = null;
     }
     return count;
-  }
-
-  void _recordBackground(Size size) {
-    _staticBackground?.dispose();
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = const Color(0xFF030405),
-    );
-    _staticBackground = recorder.endRecording();
   }
 
   void _precomputeHistory(List<double> history) {
