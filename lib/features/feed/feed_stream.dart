@@ -54,8 +54,10 @@ class _FeedStreamState extends State<FeedStream> {
   PendingTrade? _pendingTrade;
   Timer? _pendingTimer;
 
-  /// Per-row keys so arrow-key focus can scroll itself into view.
-  final _cardKeys = <int, GlobalKey>{};
+  /// Per-row keys so arrow-key focus can scroll itself into view. Keyed by
+  /// density too: switching density swaps card widgets in the same frame, and
+  /// a GlobalKey reused across both would trip duplicate-key detection.
+  final _cardKeys = <String, GlobalKey>{};
 
   @override
   void initState() {
@@ -171,7 +173,7 @@ class _FeedStreamState extends State<FeedStream> {
   /// Scrolls the keyboard-focused card into view. Only built rows have a
   /// context, which is fine: focus moves one step at a time from a visible row.
   void _revealFocused() {
-    final ctx = _cardKeys[_focusedIndex]?.currentContext;
+    final ctx = _cardKeys['${_density.name}_$_focusedIndex']?.currentContext;
     if (ctx == null) return;
     Scrollable.ensureVisible(
       ctx,
@@ -182,17 +184,50 @@ class _FeedStreamState extends State<FeedStream> {
   }
 
   GlobalKey _keyFor(int index) =>
-      _cardKeys.putIfAbsent(index, () => GlobalKey());
+      _cardKeys.putIfAbsent('${_density.name}_$index', () => GlobalKey());
 
-  /// Keeps the controls on the same column width as the cards on desktop.
-  Widget _constrain(Widget child) => widget.maxWidth == null
-      ? child
-      : Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: widget.maxWidth!),
-            child: child,
-          ),
-        );
+  /// Keeps the controls and cards on one column width on desktop. [wide] gives
+  /// the two-up compact grid room for both cards.
+  Widget _constrain(Widget child, {bool wide = false}) {
+    final max = widget.maxWidth;
+    if (max == null) return child;
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: wide ? max + 320 : max),
+        child: child,
+      ),
+    );
+  }
+
+  /// One card at a real market index — shared by the single- and two-column
+  /// layouts so focus, watchlist and undo behave identically in both.
+  Widget _cardAt(BuildContext ctx, int i, List<Market> filtered) {
+    final market = filtered[i % filtered.length];
+    final focused = kIsWeb && _focusedIndex == i;
+
+    if (_density == FeedDensity.compact) {
+      return CompactMarketCard(
+        key: _keyFor(i),
+        market: market,
+        focused: focused,
+        isWatchlisted: widget.appState.isWatchlisted(market.id),
+        onWatchlist: () => widget.appState.toggleWatchlist(market.id),
+        onDetails: () => widget.onOpenDetails(ctx, market),
+        onChoose: (side) => _buyWithUndo(market, side),
+      );
+    }
+
+    return PredictionFeedCard(
+      key: _keyFor(i),
+      market: market,
+      focused: focused,
+      showSwipeHint: i == 0,
+      isWatchlisted: widget.appState.isWatchlisted(market.id),
+      onWatchlist: () => widget.appState.toggleWatchlist(market.id),
+      onDetails: () => widget.onOpenDetails(ctx, market),
+      onChoose: (side) => _buyWithUndo(market, side),
+    );
+  }
 
   /// Fast-buy sends immediately with no confirm step, so that is the path that
   /// needs a way out: hold it for [_undoWindow] with a visible countdown and
@@ -250,6 +285,10 @@ class _FeedStreamState extends State<FeedStream> {
     final filtered = _applyQuery();
     final compact = _density == FeedDensity.compact;
 
+    // Compact on a wide column pairs up: two cards per line, ~2.5× the markets
+    // per screen against the full card.
+    final twoCol = compact && widget.maxWidth != null;
+
     final controls = Padding(
       padding: EdgeInsets.fromLTRB(
         widget.padding.left,
@@ -258,6 +297,7 @@ class _FeedStreamState extends State<FeedStream> {
         0,
       ),
       child: _constrain(
+        wide: twoCol,
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -313,6 +353,10 @@ class _FeedStreamState extends State<FeedStream> {
     // So: loop only while nothing is filtered.
     final loop = !_query.isActive && !compact;
 
+    final rowCount = twoCol
+        ? (filtered.length / 2).ceil()
+        : (loop ? 1000 : filtered.length);
+
     final list = filtered.isEmpty
         ? FeedNoResults(
             query: _query,
@@ -326,50 +370,34 @@ class _FeedStreamState extends State<FeedStream> {
           )
         : ListView.builder(
             padding: widget.padding.copyWith(top: 14),
-            itemCount: loop ? 1000 : filtered.length,
-            itemBuilder: (ctx, i) {
-              final index = i % filtered.length;
-              final market = filtered[index];
-              final focused = kIsWeb && _focusedIndex == i;
-
-              final Widget child = compact
-                  ? CompactMarketCard(
-                      market: market,
-                      focused: focused,
-                      isWatchlisted: widget.appState.isWatchlisted(market.id),
-                      onWatchlist: () =>
-                          widget.appState.toggleWatchlist(market.id),
-                      onDetails: () => widget.onOpenDetails(ctx, market),
-                      onChoose: (side) => _buyWithUndo(market, side),
-                    )
-                  : PredictionFeedCard(
-                      market: market,
-                      focused: focused,
-                      showSwipeHint: i == 0,
-                      isWatchlisted: widget.appState.isWatchlisted(market.id),
-                      onWatchlist: () =>
-                          widget.appState.toggleWatchlist(market.id),
-                      onDetails: () => widget.onOpenDetails(ctx, market),
-                      onChoose: (side) => _buyWithUndo(market, side),
-                    );
-
-              final row = Padding(
-                key: _keyFor(i),
-                padding: EdgeInsets.only(bottom: compact ? 10 : 16),
-                child: widget.maxWidth == null
-                    ? child
-                    : Center(
-                        child: ConstrainedBox(
-                          constraints:
-                              BoxConstraints(maxWidth: widget.maxWidth!),
-                          child: child,
-                        ),
-                      ),
-              );
+            itemCount: rowCount,
+            itemBuilder: (ctx, row) {
+              final Widget line;
+              if (twoCol) {
+                final left = row * 2;
+                final right = left + 1;
+                line = Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _cardAt(ctx, left, filtered)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: right < filtered.length
+                          ? _cardAt(ctx, right, filtered)
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                );
+              } else {
+                line = _cardAt(ctx, row, filtered);
+              }
 
               return PulsFadeIn(
-                key: ValueKey('feed_${market.id}_$i'),
-                child: row,
+                key: ValueKey('feed_row_${_density.name}_$row'),
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: compact ? 12 : 16),
+                  child: _constrain(line, wide: twoCol),
+                ),
               );
             },
           );
