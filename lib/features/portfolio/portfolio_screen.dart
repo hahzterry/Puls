@@ -1,8 +1,6 @@
 import 'package:puls/core/config.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ui';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/widgets/puls_snack.dart';
@@ -28,8 +26,6 @@ import '../../core/widgets/count_up_text.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/gradient_text.dart';
 import '../../core/widgets/state_views.dart';
-import '../../core/widgets/puls_video_illustration.dart';
-import '../../core/widgets/puls_svg_illustration.dart';
 import '../../core/utils/formatters.dart';
 
 import '../../core/config.dart' show backendUrl;
@@ -506,31 +502,15 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _HeroCard(
-                        totalSpent: _totalSpent,
+                      _TerrainPortfolioHero(
+                        invested: invested,
                         positionCount: completePositionCount,
                         totalPnl: totalPnl,
                         t: t,
                         walletAddress: ws.walletAddress,
                         usdcBalance: ws.usdcBalance,
+                        desktop: true,
                       ),
-                      const SizedBox(height: 16),
-                      LiquidWealthTerrain(
-                        pnlUsdc: totalPnl,
-                        pnlRange: invested > 0 ? invested : 100,
-                        height: 260,
-                        title: 'LIQUID WEALTH TERRAIN',
-                        positiveColor: t.yes,
-                        negativeColor: t.no,
-                      ),
-                      const SizedBox(height: 16),
-                      Text('P&L Since Entry',
-                          style: TextStyle(
-                              color: t.text,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 10),
-                      _PortfolioChart(cost: invested, pnl: totalPnl, t: t),
                       const SizedBox(height: 16),
                       Row(
                         children: [
@@ -676,13 +656,14 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _HeroCard(
-                      totalSpent: _totalSpent,
+                    _TerrainPortfolioHero(
+                      invested: invested,
                       positionCount: completePositionCount,
                       totalPnl: totalPnl,
                       t: t,
                       walletAddress: ws.walletAddress,
                       usdcBalance: ws.usdcBalance,
+                      desktop: false,
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -841,351 +822,177 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   }
 }
 
-class _PortfolioChart extends StatelessWidget {
-  const _PortfolioChart(
-      {required this.cost, required this.pnl, required this.t});
-  final double cost;
-  final double pnl;
-  final PulsThemeColors t;
-
-  @override
-  Widget build(BuildContext context) {
-    final base = cost > 0 ? cost : 100.0;
-    final end = base + pnl;
-    final spots = [FlSpot(0, base), FlSpot(1, end)];
-    final isUp = pnl >= 0;
-    final color = isUp ? t.yes : t.no;
-
-    return GlassCard(
-      radius: 16,
-      blur: 10,
-      fillAlpha: 0.04,
-      borderAlpha: 0.12,
-      padding: const EdgeInsets.fromLTRB(14, 20, 14, 10),
-      child: SizedBox(
-        height: 130, // constrain chart height inside GlassCard padding
-        child: RepaintBoundary(
-          child: LineChart(
-            LineChartData(
-              gridData: const FlGridData(show: false),
-              borderData: FlBorderData(show: false),
-              titlesData: const FlTitlesData(show: false),
-              lineTouchData: LineTouchData(
-                touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (_) => t.surface.withValues(alpha: 0.92),
-                  tooltipBorder: BorderSide(
-                      color: color.withValues(alpha: 0.5), width: 0.8),
-                  getTooltipItems: (touchedSpots) {
-                    return touchedSpots.map((spot) {
-                      return LineTooltipItem(
-                        '\$${spot.y.toStringAsFixed(2)} USDC',
-                        TextStyle(
-                            color: t.text,
-                            fontFamily: PulsColors.fontMono,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11),
-                      );
-                    }).toList();
-                  },
-                ),
-              ),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: spots,
-                  isCurved: true,
-                  curveSmoothness: 0.35,
-                  color: color,
-                  barWidth: 3.2,
-                  shadow: Shadow(
-                    color: color.withValues(alpha: 0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                  dotData: const FlDotData(show: false),
-                  belowBarData: BarAreaData(
-                    show: true,
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        color.withValues(alpha: 0.18),
-                        color.withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HologramSheenPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Colors.white.withValues(alpha: 0.0),
-          Colors.white.withValues(alpha: 0.15),
-          Colors.white.withValues(alpha: 0.0),
-          Colors.white.withValues(alpha: 0.2),
-          Colors.white.withValues(alpha: 0.0),
-        ],
-        stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final linePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.05)
-      ..strokeWidth = 1.0;
-
-    canvas.drawLine(Offset(0, size.height * 0.3),
-        Offset(size.width, size.height * 0.3), linePaint);
-    canvas.drawLine(Offset(size.width * 0.4, 0),
-        Offset(size.width * 0.4, size.height), linePaint);
-
-    canvas.drawRect(Offset.zero & size, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _HeroCard extends StatelessWidget {
-  const _HeroCard({
-    required this.totalSpent,
+class _TerrainPortfolioHero extends StatelessWidget {
+  const _TerrainPortfolioHero({
+    required this.invested,
     required this.positionCount,
     required this.totalPnl,
     required this.t,
     required this.walletAddress,
     required this.usdcBalance,
+    required this.desktop,
   });
-  final String totalSpent;
+
+  final double invested;
   final int positionCount;
   final double totalPnl;
   final PulsThemeColors t;
   final String? walletAddress;
   final String usdcBalance;
+  final bool desktop;
 
   @override
   Widget build(BuildContext context) {
-    final hasPnl = totalPnl != 0;
-    final pnlPositive = totalPnl >= 0;
     final shortAddress = walletAddress != null && walletAddress!.length > 12
         ? '${walletAddress!.substring(0, 6)}...${walletAddress!.substring(walletAddress!.length - 4)}'
         : '—';
+    final metrics = Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: t.surface.withValues(alpha: context.isDark ? 0.9 : 0.96),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: t.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('CAPITAL DEPLOYED',
+              style: TextStyle(
+                  color: t.textSubtle,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2)),
+          const SizedBox(height: 6),
+          CountUpText(
+            invested,
+            duration: context.motionDuration(const Duration(milliseconds: 700)),
+            builder: (context, value) => Text(
+              '\$${value.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: t.text,
+                fontFamily: PulsColors.fontMono,
+                fontSize: desktop ? 28 : 25,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -1,
+                fontFeatures: PulsColors.tabularFigures,
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          _HeroMetric(label: 'USDC BALANCE', value: '\$$usdcBalance', t: t),
+          const SizedBox(height: 12),
+          _HeroMetric(label: 'POSITIONS', value: '$positionCount', t: t),
+          const SizedBox(height: 16),
+          Semantics(
+            button: walletAddress != null,
+            label: 'Copy wallet address',
+            child: InkWell(
+              onTap: walletAddress == null
+                  ? null
+                  : () {
+                      Clipboard.setData(ClipboardData(text: walletAddress!));
+                      PulsSnack.show(context, 'Address copied to clipboard',
+                          duration: const Duration(seconds: 2));
+                    },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: t.brandSubtle,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: t.brand.withValues(alpha: 0.25)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.account_balance_wallet_outlined,
+                        color: t.brand, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(shortAddress,
+                          style: TextStyle(
+                              color: t.text,
+                              fontFamily: PulsColors.fontMono,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                    Icon(Icons.copy_rounded, color: t.brand, size: 14),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    final terrain = LiquidWealthTerrain(
+      pnlUsdc: totalPnl,
+      pnlRange: invested > 0 ? invested : 100,
+      height: desktop ? 360 : 300,
+      title: 'PORTFOLIO TERRAIN · P&L',
+      positiveColor: t.yes,
+      negativeColor: t.no,
+    );
 
     return Container(
-      width: double.infinity,
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: t.brand.withValues(alpha: 0.3),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        gradient: LinearGradient(
+          colors: [
+            t.brand.withValues(alpha: 0.2),
+            PulsColors.brandPink.withValues(alpha: 0.12),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: t.brand.withValues(alpha: 0.18)),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: PulsColors.pulseGradient,
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.12),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _HologramSheenPainter(),
-            ),
-          ),
-          const Positioned(
-            right: -20,
-            top: -10,
-            bottom: -10,
-            width: 150,
-            child: Opacity(
-              opacity: 0.22,
-              child: PulsVideoIllustration(
-                asset:
-                    'assets/illustrations/lucent-analyzing-statistics-in-interactive-dashboard.mp4',
-                fit: BoxFit.cover,
-                borderRadius: 20,
-                fallback: SizedBox.shrink(),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: desktop
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Text('TOTAL INVESTED',
-                        style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8)),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(radius: 3, backgroundColor: t.yes),
-                          const SizedBox(width: 5),
-                          Text('Arc Network',
-                              style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                CountUpText(
-                  double.tryParse(totalSpent) ?? 0,
-                  builder: (context, v) => Text(
-                      '\$${v.toStringAsFixed(2)} USDC',
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 34,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -1.0,
-                          height: 1.1,
-                          fontFeatures: PulsColors.tabularFigures)),
-                ),
+                Expanded(flex: 5, child: terrain),
+                const SizedBox(width: 8),
+                Expanded(flex: 3, child: metrics),
+              ],
+            )
+          : Column(
+              children: [
+                terrain,
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    if (hasPnl) ...[
-                      Icon(
-                        pnlPositive
-                            ? Icons.trending_up_rounded
-                            : Icons.trending_down_rounded,
-                        color: pnlPositive ? t.yes : t.no,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      CountUpText(
-                        totalPnl,
-                        builder: (context, v) => Text(
-                          'PNL ${pnlPositive ? '+' : ''}\$${v.toStringAsFixed(2)} USDC',
-                          style: TextStyle(
-                            color: pnlPositive ? t.yes : t.no,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            fontFeatures: PulsColors.tabularFigures,
-                          ),
-                        ),
-                      ),
-                      if (pnlPositive) ...[
-                        const SizedBox(width: 6),
-                        const PulsSvgIllustration(
-                          asset:
-                              'assets/illustrations/lucent-financial-income-growth-with-upward-arrow-and-falling-coins.svg',
-                          width: 18,
-                          height: 18,
-                        ),
-                      ],
-                    ] else ...[
-                      Text('Place your first trade to see P&L',
-                          style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 13)),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                    height: 1, color: Colors.white.withValues(alpha: 0.1)),
-                const SizedBox(height: 14),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('USDC BALANCE',
-                            style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.6),
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 2),
-                        Text('\$$usdcBalance USDC',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text('WALLET',
-                            style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.6),
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 2),
-                        GestureDetector(
-                          onTap: () {
-                            if (walletAddress != null) {
-                              Clipboard.setData(
-                                  ClipboardData(text: walletAddress!));
-                              PulsSnack.show(
-                                  context, 'Address copied to clipboard',
-                                  duration: const Duration(seconds: 2));
-                            }
-                          },
-                          child: Row(
-                            children: [
-                              Text(shortAddress,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      decoration: TextDecoration.underline)),
-                              const SizedBox(width: 4),
-                              Icon(Icons.copy_rounded,
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                  size: 12),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                metrics,
               ],
             ),
-          ),
-        ],
-      ),
+    );
+  }
+}
+
+class _HeroMetric extends StatelessWidget {
+  const _HeroMetric(
+      {required this.label, required this.value, required this.t});
+  final String label;
+  final String value;
+  final PulsThemeColors t;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label,
+            style: TextStyle(
+                color: t.textSubtle,
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.7)),
+        Text(value,
+            style: TextStyle(
+                color: t.text,
+                fontFamily: PulsColors.fontMono,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                fontFeatures: PulsColors.tabularFigures)),
+      ],
     );
   }
 }

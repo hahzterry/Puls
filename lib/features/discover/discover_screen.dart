@@ -9,6 +9,7 @@ import '../../core/widgets/fade_net_image.dart';
 
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/motion.dart';
 import '../../core/utils/puls_emoji.dart';
 import '../../core/utils/trade_math.dart';
 import '../../core/widgets/gradient_text.dart';
@@ -427,30 +428,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
     final gridSliver = SliverPadding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-      sliver: SliverGrid.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: MediaQuery.sizeOf(context).width >= 1180 ? 3 : 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.34,
-        ),
-        itemCount: gridMarkets.length,
-        itemBuilder: (context, i) => FadeInUp(
-          delay: Duration(milliseconds: 50 + i * 30),
-          duration: const Duration(milliseconds: 250),
-          child: _MarketCard(
-            market: gridMarkets[i],
-            t: t,
-            isWatchlisted: appState.isWatchlisted(gridMarkets[i].id),
-            onWatchlist: () => appState.toggleWatchlist(gridMarkets[i].id),
-            onTap: () => Navigator.of(context).push(
-              pulsRoute(
-                context,
-                settings: RouteSettings(name: '/m/${gridMarkets[i].slug}'),
-                builder: (_) => MarketDetailScreen(marketId: gridMarkets[i].id),
-              ),
-            ),
-          ),
+      sliver: SliverToBoxAdapter(
+        child: _MarketBento(
+          markets: gridMarkets,
+          t: t,
+          isWatchlisted: appState.isWatchlisted,
+          onWatchlist: appState.toggleWatchlist,
         ),
       ),
     );
@@ -474,6 +457,109 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         child: kIsWeb ? WebLayout(child: scrollView) : scrollView,
       ),
     );
+  }
+}
+
+class _MarketBento extends StatelessWidget {
+  const _MarketBento({
+    required this.markets,
+    required this.t,
+    required this.isWatchlisted,
+    required this.onWatchlist,
+  });
+
+  final List<Market> markets;
+  final PulsThemeColors t;
+  final bool Function(String) isWatchlisted;
+  final void Function(String) onWatchlist;
+
+  Widget _card(BuildContext context, int index) {
+    final market = markets[index];
+    final card = _MarketCard(
+      market: market,
+      t: t,
+      isWatchlisted: isWatchlisted(market.id),
+      onWatchlist: () => onWatchlist(market.id),
+      onTap: () => Navigator.of(context).push(
+        pulsRoute(
+          context,
+          settings: RouteSettings(name: '/m/${market.slug}'),
+          builder: (_) => MarketDetailScreen(marketId: market.id),
+        ),
+      ),
+    );
+    if (context.reduceMotion) return card;
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(market.id),
+      duration: Duration(milliseconds: 480 + (index % 6) * 65),
+      curve: PulsCurves.easeOutMagical,
+      tween: Tween(begin: 0, end: 1),
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 18 * (1 - value)),
+          child: Transform.scale(
+            scale: 0.975 + value * 0.025,
+            alignment: Alignment.bottomCenter,
+            child: child,
+          ),
+        ),
+      ),
+      child: card,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const gap = 16.0;
+    const groupHeight = 456.0;
+    final groups = <Widget>[];
+    for (var start = 0; start < markets.length; start += 3) {
+      final count = (markets.length - start).clamp(0, 3);
+      final reversed = (start ~/ 3).isOdd;
+      Widget group;
+      if (count == 1) {
+        group = SizedBox(height: 286, child: _card(context, start));
+      } else if (count == 2) {
+        group = SizedBox(
+          height: 286,
+          child: Row(
+            children: [
+              Expanded(child: _card(context, start)),
+              const SizedBox(width: gap),
+              Expanded(child: _card(context, start + 1)),
+            ],
+          ),
+        );
+      } else {
+        final large = Expanded(
+          flex: 2,
+          child: SizedBox(height: groupHeight, child: _card(context, start)),
+        );
+        final stack = Expanded(
+          child: Column(
+            children: [
+              Expanded(child: _card(context, start + 1)),
+              const SizedBox(height: gap),
+              Expanded(child: _card(context, start + 2)),
+            ],
+          ),
+        );
+        group = SizedBox(
+          height: groupHeight,
+          child: Row(
+            children: reversed
+                ? [stack, const SizedBox(width: gap), large]
+                : [large, const SizedBox(width: gap), stack],
+          ),
+        );
+      }
+      groups.add(group);
+      if (start + count < markets.length) {
+        groups.add(const SizedBox(height: gap));
+      }
+    }
+    return Column(children: groups);
   }
 }
 

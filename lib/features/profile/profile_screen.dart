@@ -385,19 +385,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: 'Preferences',
                       t: t,
                       children: [
-                        _Row(
-                          icon: isDark
-                              ? Icons.dark_mode_outlined
-                              : Icons.light_mode_outlined,
-                          title: 'Dark mode',
-                          subtitle:
-                              isDark ? 'Currently dark' : 'Currently light',
+                        _ThemeModeSelector(
+                          isDark: isDark,
                           t: t,
-                          trailing: Switch(
-                            value: isDark,
-                            activeTrackColor: t.brand,
-                            onChanged: (_) => appState.toggleThemeMode(),
-                          ),
+                          onChanged: appState.toggleThemeMode,
                         ),
                         _Row(
                           icon: Icons.hub_outlined,
@@ -671,18 +662,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               title: 'Appearance',
               t: t,
               children: [
-                _Row(
-                  icon: isDark
-                      ? Icons.dark_mode_outlined
-                      : Icons.light_mode_outlined,
-                  title: 'Dark mode',
-                  subtitle: isDark ? 'Currently dark' : 'Currently light',
+                _ThemeModeSelector(
+                  isDark: isDark,
                   t: t,
-                  trailing: Switch(
-                    value: isDark,
-                    activeTrackColor: t.brand,
-                    onChanged: (_) => appState.toggleThemeMode(),
-                  ),
+                  onChanged: appState.toggleThemeMode,
                 ),
                 _Row(
                   icon: Icons.hub_outlined,
@@ -1333,6 +1316,144 @@ class _Section extends StatelessWidget {
             itemBuilder: (context, i) => children[i],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ThemeModeSelector extends StatelessWidget {
+  const _ThemeModeSelector({
+    required this.isDark,
+    required this.t,
+    required this.onChanged,
+  });
+
+  final bool isDark;
+  final PulsThemeColors t;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final duration = context.motionDuration(const Duration(milliseconds: 420));
+    return Semantics(
+      container: true,
+      label: 'Color theme',
+      value: isDark ? 'Dark' : 'Light',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Theme',
+                style: TextStyle(
+                    color: t.text, fontSize: 14, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 3),
+            Text('Choose the atmosphere that fits your desk.',
+                style: TextStyle(color: t.textMuted, fontSize: 12)),
+            const SizedBox(height: 12),
+            Container(
+              height: 58,
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: t.surface,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: t.border),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _ThemeSegment(
+                      label: 'Light',
+                      icon: Icons.light_mode_rounded,
+                      selected: !isDark,
+                      t: t,
+                      duration: duration,
+                      onTap: isDark ? onChanged : null,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: _ThemeSegment(
+                      label: 'Dark',
+                      icon: Icons.dark_mode_rounded,
+                      selected: isDark,
+                      t: t,
+                      duration: duration,
+                      onTap: isDark ? null : onChanged,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeSegment extends StatelessWidget {
+  const _ThemeSegment({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.t,
+    required this.duration,
+    this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final PulsThemeColors t;
+  final Duration duration;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '$label theme',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          canRequestFocus: true,
+          borderRadius: BorderRadius.circular(11),
+          child: AnimatedContainer(
+            duration: duration,
+            curve: PulsCurves.easeOutMagical,
+            decoration: BoxDecoration(
+              gradient: selected ? PulsColors.pulseGradient : null,
+              color: selected ? null : Colors.transparent,
+              borderRadius: BorderRadius.circular(11),
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color: t.brand.withValues(alpha: 0.2),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      )
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon,
+                    size: 19, color: selected ? Colors.white : t.textMuted),
+                const SizedBox(width: 8),
+                Text(label,
+                    style: TextStyle(
+                      color: selected ? Colors.white : t.textMuted,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    )),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
