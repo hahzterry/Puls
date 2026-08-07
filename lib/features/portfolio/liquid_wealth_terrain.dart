@@ -18,6 +18,7 @@ class LiquidWealthTerrain extends StatefulWidget {
     this.title = 'LIQUID WEALTH',
     this.positiveColor = const Color(0xFF31F5B0),
     this.negativeColor = const Color(0xFFFF4968),
+    this.borderRadius = 28,
     super.key,
   });
 
@@ -28,6 +29,7 @@ class LiquidWealthTerrain extends StatefulWidget {
   final String title;
   final Color positiveColor;
   final Color negativeColor;
+  final double borderRadius;
 
   @override
   State<LiquidWealthTerrain> createState() => _LiquidWealthTerrainState();
@@ -196,7 +198,7 @@ class _LiquidWealthTerrainState extends State<LiquidWealthTerrain>
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   color: _background,
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(widget.borderRadius),
                   border: Border.all(color: _line),
                 ),
                 child: Stack(

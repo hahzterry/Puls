@@ -410,6 +410,52 @@ class PulsTheme {
 }
 
 // ── Shared card decoration ────────────────────────────────────────────────────
+
+/// The single card surface used by Feed and Portfolio.
+///
+/// Deliberately *not* glass: a solid theme surface, one hairline border and one
+/// soft shadow. Depth comes from the shadow, accent from the brand — no white
+/// rim overlays, no black trays, no off-brand tints. [accent] tints the border
+/// and adds a brand glow (hover / swipe / "you won" states).
+BoxDecoration pulsCardDecoration(
+  PulsThemeColors t, {
+  double radius = 18,
+  bool isDark = false,
+  bool raised = false,
+  Color? accent,
+  Color? borderColor,
+  Color? fill,
+}) {
+  final glow = accent ?? t.brand;
+  return BoxDecoration(
+    color: fill ?? t.surface,
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(
+      color: borderColor ??
+          (accent != null
+              ? glow.withValues(alpha: raised ? 0.55 : 0.35)
+              : raised
+                  ? t.brand.withValues(alpha: 0.45)
+                  : t.border),
+    ),
+    boxShadow: [
+      BoxShadow(
+        color: isDark
+            ? Colors.black.withValues(alpha: raised ? 0.42 : 0.28)
+            : PulsColors.gray900.withValues(alpha: raised ? 0.09 : 0.05),
+        blurRadius: raised ? 26 : 16,
+        offset: Offset(0, raised ? 10 : 6),
+      ),
+      if (raised)
+        BoxShadow(
+          color: glow.withValues(alpha: 0.16),
+          blurRadius: 32,
+          offset: const Offset(0, 10),
+        ),
+    ],
+  );
+}
+
 BoxDecoration cardDecoration(PulsThemeColors t, {double radius = 16}) =>
     BoxDecoration(
       color: t.surfaceRaised,

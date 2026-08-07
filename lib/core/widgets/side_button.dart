@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Depth treatment for YES/NO buy buttons: a soft tinted glow + a glass
-/// catch-light on the top edge instead of a hard outline ring. The colored
-/// fill carries the side; the glow separates it from the card beneath.
+/// Depth treatment for YES/NO buy buttons: the tinted fill carries the side,
+/// a hairline in the side colour defines the edge, and one soft tinted shadow
+/// lifts it off the card. No white catch-light — the surfaces underneath are
+/// solid brand colours, not glass, so a fake highlight only muddies them.
 BoxDecoration sideButtonDecoration({
   required Color bg,
   required Color fg,
@@ -12,17 +13,12 @@ BoxDecoration sideButtonDecoration({
   return BoxDecoration(
     color: bg,
     borderRadius: BorderRadius.circular(radius),
+    border: Border.all(color: fg.withValues(alpha: isDark ? 0.34 : 0.24)),
     boxShadow: [
       BoxShadow(
-        color: fg.withValues(alpha: isDark ? 0.18 : 0.14),
-        blurRadius: 12,
+        color: fg.withValues(alpha: isDark ? 0.16 : 0.12),
+        blurRadius: 14,
         offset: const Offset(0, 5),
-      ),
-      BoxShadow(
-        color: Colors.white.withValues(alpha: isDark ? 0.07 : 0.55),
-        blurRadius: 0,
-        spreadRadius: -1,
-        offset: const Offset(0, 1),
       ),
     ],
   );

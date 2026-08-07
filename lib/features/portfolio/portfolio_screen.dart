@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/widgets/puls_snack.dart';
-import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/tactile.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -91,12 +90,11 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       child: GestureDetector(
         onTap: _claimingAll ? null : _claimAll,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-                colors: [t.yes.withValues(alpha: 0.18), t.surface]),
+            color: t.yesBg,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: t.yes.withValues(alpha: 0.5)),
+            border: Border.all(color: t.yes.withValues(alpha: 0.4)),
           ),
           child: Row(children: [
             Icon(Icons.redeem_rounded, color: t.yes, size: 20),
@@ -316,55 +314,29 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
   Widget _tabToggle(PulsThemeColors t) {
     return Container(
-      height: 40,
-      padding: const EdgeInsets.all(3),
+      height: 44,
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: t.surfaceRaised,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: t.border),
       ),
       child: Row(
         children: [
           Expanded(
-            child: Tactile(
-              behavior: HitTestBehavior.opaque,
+            child: _TabChip(
+              label: 'Positions (${_positions.length})',
+              active: !_showOrdersTab,
               onTap: () => setState(() => _showOrdersTab = false),
-              child: Container(
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: !_showOrdersTab ? t.brand : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  'Positions (${_positions.length})',
-                  style: TextStyle(
-                    color: !_showOrdersTab ? Colors.white : t.textMuted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              t: t,
             ),
           ),
           Expanded(
-            child: Tactile(
-              behavior: HitTestBehavior.opaque,
+            child: _TabChip(
+              label: 'Limit Orders (${_limitOrders.length})',
+              active: _showOrdersTab,
               onTap: () => setState(() => _showOrdersTab = true),
-              child: Container(
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: _showOrdersTab ? t.brand : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  'Limit Orders (${_limitOrders.length})',
-                  style: TextStyle(
-                    color: _showOrdersTab ? Colors.white : t.textMuted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              t: t,
             ),
           ),
         ],
@@ -380,12 +352,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         pressedScale: 0.98,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 13),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: t.brand.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: t.brand.withValues(alpha: 0.3)),
+            color: t.brandSubtle,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: t.brand.withValues(alpha: 0.28)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -395,8 +367,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               Text('Trade Prediction Markets',
                   style: TextStyle(
                       color: t.brand,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold)),
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800)),
             ],
           ),
         ),
@@ -442,10 +414,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     double totalPnl = 0;
     double openValue = 0;
     int wins = 0, losses = 0;
-    var completePositionCount = 0;
     for (final p in _positions) {
       if (p['state'] != 'COMPLETE') continue;
-      completePositionCount++;
       final pnl = _calcPnl(p, marketsByQuestion);
       if (pnl != null) {
         totalPnl += pnl;
@@ -490,229 +460,55 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         ),
       );
     } else {
-      if (isDesktop) {
-        body = Padding(
-          padding: const EdgeInsets.all(24),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 4,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _TerrainPortfolioHero(
-                        invested: invested,
-                        positionCount: completePositionCount,
-                        totalPnl: totalPnl,
-                        t: t,
-                        walletAddress: ws.walletAddress,
-                        usdcBalance: ws.usdcBalance,
-                        desktop: true,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                              child: _StatBox(
-                                  label: 'Open Value',
-                                  value: '\$${openValue.toStringAsFixed(2)}',
-                                  t: t)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                              child: _StatBox(
-                                  label: 'Win Rate',
-                                  value: (wins + losses) > 0
-                                      ? '${((wins / (wins + losses)) * 100).toStringAsFixed(0)}%'
-                                      : '—',
-                                  t: t,
-                                  highlight: wins > losses)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                              child: _StatBox(
-                                  label: 'Trades',
-                                  value: '${_positions.length}',
-                                  t: t)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                flex: 5,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (_positions.isNotEmpty || _limitOrders.isNotEmpty)
-                      _tradeMarketsBtn(t),
-                    Row(
-                      children: [
-                        Expanded(child: _tabToggle(t)),
-                        const SizedBox(width: 16),
-                        if (!_showOrdersTab && _positions.length > 1)
-                          _sortToggle(t),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (!_showOrdersTab) _claimAllBar(t),
-                    Expanded(
-                      child: _showOrdersTab
-                          ? _limitOrders.isEmpty
-                              ? const PulsEmptyState(
-                                  icon: Icons.history_rounded,
-                                  title: 'No pending orders',
-                                  message:
-                                      'Place a limit order on any prediction to see it here.',
-                                )
-                              : CustomScrollView(
-                                  slivers: [
-                                    SliverList.builder(
-                                      itemCount: _limitOrders.length,
-                                      itemBuilder: (context, i) {
-                                        final item = Padding(
-                                          padding:
-                                              const EdgeInsets.only(bottom: 12),
-                                          child: _LimitOrderCard(
-                                            order: _limitOrders[i],
-                                            t: t,
-                                            appState: appState,
-                                            onCancel: () => _cancelLimitOrder(
-                                              _limitOrders[i]['id'] as String,
-                                            ),
-                                          ),
-                                        );
-                                        if (context.reduceMotion) return item;
-                                        return item
-                                            .animate(delay: (i * 30).ms)
-                                            .fadeIn(
-                                                duration: 400.ms,
-                                                curve: Curves.easeOutCubic)
-                                            .slideY(
-                                                begin: 0.05,
-                                                duration: 400.ms,
-                                                curve: Curves.easeOutCubic);
-                                      },
-                                    ),
-                                  ],
-                                )
-                          : _positions.isEmpty
-                              ? PulsEmptyState(
-                                  icon: Icons.bar_chart_rounded,
-                                  title:
-                                      'No positions yet — swipe on a market to start.',
-                                  message:
-                                      'Buy YES or NO on any prediction to get started.',
-                                  actionLabel: 'Browse markets',
-                                  actionIcon: Icons.explore_rounded,
-                                  onAction: () => ShellNavScope.maybeOf(context)
-                                      ?.goToTab(PulsTab.feed),
-                                )
-                              : CustomScrollView(
-                                  slivers: [
-                                    SliverList.builder(
-                                      itemCount: _positions.length,
-                                      itemBuilder: (context, i) {
-                                        final item = Padding(
-                                          padding:
-                                              const EdgeInsets.only(bottom: 12),
-                                          child: _PositionCard(
-                                            position: _positions[i],
-                                            t: t,
-                                            appState: appState,
-                                            walletService: walletService,
-                                            onRefresh: _load,
-                                          ),
-                                        );
-                                        if (context.reduceMotion) return item;
-                                        return item
-                                            .animate(delay: (i * 30).ms)
-                                            .fadeIn(
-                                                duration: 400.ms,
-                                                curve: Curves.easeOutCubic)
-                                            .slideY(
-                                                begin: 0.05,
-                                                duration: 400.ms,
-                                                curve: Curves.easeOutCubic);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      } else {
-        body = CustomScrollView(
+      // One scroll view for every breakpoint. The old desktop branch nested a
+      // second SingleChildScrollView beside a CustomScrollView, which gave the
+      // page two competing scrollbars and squeezed the hero into a 4/9 column.
+      final pad = isDesktop ? 24.0 : 20.0;
+      body = CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                padding: EdgeInsets.fromLTRB(pad, isDesktop ? 12 : 18, pad, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _TerrainPortfolioHero(
+                    _PortfolioHero(
                       invested: invested,
-                      positionCount: completePositionCount,
+                      openValue: openValue,
                       totalPnl: totalPnl,
+                      winRate: (wins + losses) > 0
+                          ? '${((wins / (wins + losses)) * 100).toStringAsFixed(0)}%'
+                          : '—',
+                      tradeCount: _positions.length,
                       t: t,
                       walletAddress: ws.walletAddress,
                       usdcBalance: ws.usdcBalance,
-                      desktop: false,
+                      desktop: isDesktop,
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                            child: _StatBox(
-                                label: 'Open Value',
-                                value: '\$${openValue.toStringAsFixed(2)}',
-                                t: t)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                            child: _StatBox(
-                                label: 'Win Rate',
-                                value: (wins + losses) > 0
-                                    ? '${((wins / (wins + losses)) * 100).toStringAsFixed(0)}%'
-                                    : '—',
-                                t: t,
-                                highlight: wins > losses)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                            child: _StatBox(
-                                label: 'Trades',
-                                value: '${_positions.length}',
-                                t: t)),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     if (_positions.isNotEmpty || _limitOrders.isNotEmpty)
                       _tradeMarketsBtn(t),
                     Row(
                       children: [
                         Expanded(child: _tabToggle(t)),
                         if (!_showOrdersTab && _positions.length > 1) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           _sortToggle(t),
                         ],
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
+                    if (!_showOrdersTab) _claimAllBar(t),
                   ],
                 ),
               ),
             ),
             if (_showOrdersTab)
               if (_limitOrders.isEmpty)
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: PulsEmptyState(
+                    padding: EdgeInsets.symmetric(horizontal: pad),
+                    child: const PulsEmptyState(
                       icon: Icons.history_rounded,
                       title: 'No pending orders',
                       message:
@@ -722,7 +518,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                  padding: EdgeInsets.fromLTRB(pad, 0, pad, 40),
                   sliver: SliverList.builder(
                     itemCount: _limitOrders.length,
                     itemBuilder: (context, i) {
@@ -751,7 +547,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             else if (_positions.isEmpty)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: EdgeInsets.symmetric(horizontal: pad),
                   child: PulsEmptyState(
                     icon: Icons.bar_chart_rounded,
                     title: 'No positions yet — swipe on a market to start.',
@@ -765,12 +561,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                sliver: SliverToBoxAdapter(child: _claimAllBar(t)),
-              ),
-            if (!_showOrdersTab && _positions.isNotEmpty)
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                padding: EdgeInsets.fromLTRB(pad, 0, pad, 40),
                 sliver: SliverList.builder(
                   itemCount: _positions.length,
                   itemBuilder: (context, i) {
@@ -797,7 +588,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               ),
           ],
         );
-      }
     }
 
     return Scaffold(
@@ -822,11 +612,20 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   }
 }
 
-class _TerrainPortfolioHero extends StatelessWidget {
-  const _TerrainPortfolioHero({
+/// Portfolio hero — one card, brand colours only.
+///
+/// Left/top: the money (capital deployed, live P&L, wallet). Right/bottom: the
+/// terrain visual. The old version nested the terrain and a metrics box inside
+/// a pink gradient tray and pushed the three stat boxes outside the hero, so
+/// the page read as four unrelated blocks. Now the numbers live in the hero
+/// with the stats as its footer rail.
+class _PortfolioHero extends StatelessWidget {
+  const _PortfolioHero({
     required this.invested,
-    required this.positionCount,
+    required this.openValue,
     required this.totalPnl,
+    required this.winRate,
+    required this.tradeCount,
     required this.t,
     required this.walletAddress,
     required this.usdcBalance,
@@ -834,8 +633,10 @@ class _TerrainPortfolioHero extends StatelessWidget {
   });
 
   final double invested;
-  final int positionCount;
+  final double openValue;
   final double totalPnl;
+  final String winRate;
+  final int tradeCount;
   final PulsThemeColors t;
   final String? walletAddress;
   final String usdcBalance;
@@ -844,125 +645,176 @@ class _TerrainPortfolioHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shortAddress = walletAddress != null && walletAddress!.length > 12
-        ? '${walletAddress!.substring(0, 6)}...${walletAddress!.substring(walletAddress!.length - 4)}'
+        ? '${walletAddress!.substring(0, 6)}…${walletAddress!.substring(walletAddress!.length - 4)}'
         : '—';
-    final metrics = Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: t.surface.withValues(alpha: context.isDark ? 0.9 : 0.96),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: t.border),
+    final up = totalPnl >= 0;
+    final pnlColor = up ? t.yes : t.no;
+
+    final money = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('CAPITAL DEPLOYED',
+            style: TextStyle(
+                color: t.textSubtle,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.4)),
+        const SizedBox(height: 8),
+        CountUpText(
+          invested,
+          duration: context.motionDuration(const Duration(milliseconds: 700)),
+          builder: (context, value) => Text(
+            '\$${value.toStringAsFixed(2)}',
+            style: TextStyle(
+              color: t.text,
+              fontSize: desktop ? 44 : 34,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -1.6,
+              height: 1.0,
+              fontFeatures: PulsColors.tabularFigures,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        // P&L pill — the one number that should be readable from across the
+        // room, in the semantic YES/NO colours (both drawn from the logo).
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: up ? t.yesBg : t.noBg,
+            borderRadius: BorderRadius.circular(99),
+            border: Border.all(color: pnlColor.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(up ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                  size: 14, color: pnlColor),
+              const SizedBox(width: 6),
+              Text(
+                '${up ? '+' : '−'}\$${totalPnl.abs().toStringAsFixed(2)}',
+                style: TextStyle(
+                    color: pnlColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    fontFeatures: PulsColors.tabularFigures),
+              ),
+              const SizedBox(width: 6),
+              Text('P&L',
+                  style: TextStyle(
+                      color: pnlColor.withValues(alpha: 0.75),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _HeroMetric(label: 'USDC BALANCE', value: '\$$usdcBalance', t: t),
+        Divider(height: 17, color: t.border),
+        _HeroMetric(label: 'OPEN VALUE', value: '\$${openValue.toStringAsFixed(2)}', t: t),
+        const SizedBox(height: 16),
+        Semantics(
+          button: walletAddress != null,
+          label: 'Copy wallet address',
+          child: InkWell(
+            onTap: walletAddress == null
+                ? null
+                : () {
+                    Clipboard.setData(ClipboardData(text: walletAddress!));
+                    PulsSnack.show(context, 'Address copied to clipboard',
+                        duration: const Duration(seconds: 2));
+                  },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: t.brandSubtle,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: t.brand.withValues(alpha: 0.28)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.account_balance_wallet_outlined,
+                      color: t.brand, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(shortAddress,
+                        style: TextStyle(
+                            color: t.text,
+                            fontFamily: PulsColors.fontMono,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                  Icon(Icons.copy_rounded, color: t.brand, size: 14),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    final terrain = LiquidWealthTerrain(
+      pnlUsdc: totalPnl,
+      pnlRange: invested > 0 ? invested : 100,
+      height: desktop ? 300 : 240,
+      title: 'PORTFOLIO TERRAIN · P&L',
+      positiveColor: t.yes,
+      negativeColor: t.no,
+      borderRadius: 20,
+    );
+
+    final stats = Row(
+      children: [
+        Expanded(
+            child: _StatBox(
+                label: 'Win Rate',
+                value: winRate,
+                t: t,
+                highlight: winRate != '—' && totalPnl >= 0)),
+        const SizedBox(width: 10),
+        Expanded(child: _StatBox(label: 'Trades', value: '$tradeCount', t: t)),
+        const SizedBox(width: 10),
+        Expanded(
+            child: _StatBox(
+                label: 'Invested', value: '\$${invested.toStringAsFixed(0)}', t: t)),
+      ],
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: pulsCardDecoration(
+        t,
+        radius: 24,
+        isDark: context.isDark,
+        raised: true,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('CAPITAL DEPLOYED',
-              style: TextStyle(
-                  color: t.textSubtle,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.2)),
-          const SizedBox(height: 6),
-          CountUpText(
-            invested,
-            duration: context.motionDuration(const Duration(milliseconds: 700)),
-            builder: (context, value) => Text(
-              '\$${value.toStringAsFixed(2)}',
-              style: TextStyle(
-                color: t.text,
-                fontFamily: PulsColors.fontMono,
-                fontSize: desktop ? 28 : 25,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -1,
-                fontFeatures: PulsColors.tabularFigures,
+          if (desktop)
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 4, child: money),
+                  const SizedBox(width: 24),
+                  Expanded(flex: 6, child: terrain),
+                ],
               ),
-            ),
-          ),
+            )
+          else ...[
+            money,
+            const SizedBox(height: 16),
+            terrain,
+          ],
           const SizedBox(height: 18),
-          _HeroMetric(label: 'USDC BALANCE', value: '\$$usdcBalance', t: t),
-          const SizedBox(height: 12),
-          _HeroMetric(label: 'POSITIONS', value: '$positionCount', t: t),
-          const SizedBox(height: 16),
-          Semantics(
-            button: walletAddress != null,
-            label: 'Copy wallet address',
-            child: InkWell(
-              onTap: walletAddress == null
-                  ? null
-                  : () {
-                      Clipboard.setData(ClipboardData(text: walletAddress!));
-                      PulsSnack.show(context, 'Address copied to clipboard',
-                          duration: const Duration(seconds: 2));
-                    },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: t.brandSubtle,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: t.brand.withValues(alpha: 0.25)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.account_balance_wallet_outlined,
-                        color: t.brand, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(shortAddress,
-                          style: TextStyle(
-                              color: t.text,
-                              fontFamily: PulsColors.fontMono,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700)),
-                    ),
-                    Icon(Icons.copy_rounded, color: t.brand, size: 14),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          stats,
         ],
       ),
-    );
-    final terrain = LiquidWealthTerrain(
-      pnlUsdc: totalPnl,
-      pnlRange: invested > 0 ? invested : 100,
-      height: desktop ? 360 : 300,
-      title: 'PORTFOLIO TERRAIN · P&L',
-      positiveColor: t.yes,
-      negativeColor: t.no,
-    );
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            t.brand.withValues(alpha: 0.2),
-            PulsColors.brandPink.withValues(alpha: 0.12),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: t.brand.withValues(alpha: 0.18)),
-      ),
-      child: desktop
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(flex: 5, child: terrain),
-                const SizedBox(width: 8),
-                Expanded(flex: 3, child: metrics),
-              ],
-            )
-          : Column(
-              children: [
-                terrain,
-                const SizedBox(height: 8),
-                metrics,
-              ],
-            ),
     );
   }
 }
@@ -982,16 +834,19 @@ class _HeroMetric extends StatelessWidget {
         Text(label,
             style: TextStyle(
                 color: t.textSubtle,
-                fontSize: 9,
+                fontSize: 10,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 0.7)),
-        Text(value,
-            style: TextStyle(
-                color: t.text,
-                fontFamily: PulsColors.fontMono,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                fontFeatures: PulsColors.tabularFigures)),
+                letterSpacing: 0.8)),
+        Flexible(
+          child: Text(value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: t.text,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: PulsColors.tabularFigures)),
+        ),
       ],
     );
   }
@@ -1135,12 +990,16 @@ class _PositionCardState extends State<_PositionCard> {
         stateLabel = 'Pending';
     }
 
-    return GlassCard(
+    return Container(
       padding: const EdgeInsets.all(16),
-      radius: 16,
-      borderAlpha: userWon ? 0.35 : 0.12,
-      fillAlpha: userWon ? 0.1 : 0.05,
-      elevation: userWon ? 1 : 0,
+      decoration: pulsCardDecoration(
+        t,
+        radius: 18,
+        isDark: context.isDark,
+        // A won-but-unclaimed position is the only card that earns an accent.
+        accent: userWon && !claimed ? t.yes : null,
+        raised: userWon && !claimed,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1430,20 +1289,12 @@ class _StatBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
-        color: highlight ? t.yesBg : t.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border(
-          left: BorderSide(
-              width: 3,
-              color: highlight
-                  ? t.yes
-                  : PulsColors.brandMint.withValues(alpha: 0.4)),
-          right: BorderSide(color: t.border),
-          top: BorderSide(color: t.border),
-          bottom: BorderSide(color: t.border),
-        ),
+        color: highlight ? t.yesBg : t.surfaceRaised,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+            color: highlight ? t.yes.withValues(alpha: 0.35) : t.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1452,17 +1303,72 @@ class _StatBox extends StatelessWidget {
               style: TextStyle(
                   color: t.textSubtle,
                   fontSize: 9.5,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.6)),
-          const SizedBox(height: 3),
-          Text(value,
-              style: TextStyle(
-                color: highlight ? t.yes : t.text,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                fontFeatures: PulsColors.tabularFigures,
-              )),
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.8)),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(value,
+                maxLines: 1,
+                style: TextStyle(
+                  color: highlight ? t.yes : t.text,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                  fontFeatures: PulsColors.tabularFigures,
+                )),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _TabChip extends StatelessWidget {
+  const _TabChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+    required this.t,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  final PulsThemeColors t;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tactile(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: context.motionDuration(const Duration(milliseconds: 200)),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? t.brand : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: t.brand.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? Colors.white : t.textMuted,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
     );
   }
@@ -1525,9 +1431,13 @@ class _LimitOrderCard extends StatelessWidget {
         statusColor = t.no;
     }
 
-    return GlassCard(
+    return Container(
       padding: const EdgeInsets.all(16),
-      radius: 16,
+      decoration: pulsCardDecoration(
+        t,
+        radius: 18,
+        isDark: context.isDark,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

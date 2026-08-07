@@ -274,7 +274,7 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                           if (progress > 0)
                             Positioned.fill(
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(18),
                                 child: Align(
                                   alignment: Alignment.bottomCenter,
                                   child: DecoratedBox(
@@ -360,15 +360,16 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF8B5CF6)
-                                  .withValues(alpha: 0.14),
+                              color: t.brandSubtle,
                               borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                  color: t.brand.withValues(alpha: 0.3)),
                             ),
-                            child: const PulsEmojiText('🤖 Agent',
+                            child: PulsEmojiText('🤖 Agent',
                                 style: TextStyle(
-                                    color: Color(0xFF8B5CF6),
+                                    color: t.brand,
                                     fontSize: 11,
-                                    fontWeight: FontWeight.w800)),
+                                    fontWeight: FontWeight.w700)),
                           ),
                         ],
                         const Spacer(),
@@ -392,10 +393,12 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                               height: 48,
                               alignment: Alignment.centerRight,
                               child: Icon(
-                                Icons.bookmark_rounded,
+                                widget.isWatchlisted
+                                    ? Icons.bookmark_rounded
+                                    : Icons.bookmark_border_rounded,
                                 size: 20,
                                 color: widget.isWatchlisted
-                                    ? PulsColors.amber
+                                    ? t.brand
                                     : t.textSubtle,
                               ),
                             ),
@@ -417,72 +420,42 @@ class _PredictionFeedCardState extends State<PredictionFeedCard>
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 10),
-                    // Topic image — recessed into the card with a top scrim.
+                    // Topic image — a clean plate inside the card. No scrim
+                    // wash over it: the hairline border already seats it.
                     // NOTE: intentionally NOT a Hero. A Hero whose tag repeats
                     // across recycled list slots throws "multiple heroes share
                     // the same tag" and blanked the whole feed. The detail
                     // screen keeps its own hero image; the cross-fade flight
                     // is simply skipped from the feed side.
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              color: t.border.withValues(alpha: 0.5)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Stack(
-                          fit: StackFit.passthrough,
-                          children: [
-                            market.imageUrl.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: proxifyImageUrl(
-                                        _proxied(market.imageUrl)),
-                                    height: 130,
-                                    width: double.infinity,
-                                    memCacheHeight: 260,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) =>
-                                        const Skeleton(height: 130, radius: 0),
-                                    errorWidget: (context, url, error) =>
-                                        Container(
-                                      height: 130,
-                                      width: double.infinity,
-                                      decoration: const BoxDecoration(
-                                          gradient: PulsColors.pulseGradient),
-                                    ),
-                                  )
-                                : Container(
-                                    height: 130,
-                                    width: double.infinity,
-                                    decoration: const BoxDecoration(
-                                      gradient: PulsColors.pulseGradient,
-                                    ),
-                                  ),
-                            // Soft top scrim — visually recesses the image
-                            // into the card instead of floating on it.
-                            Positioned.fill(
-                              child: IgnorePointer(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Theme.of(context)
-                                            .scaffoldBackgroundColor
-                                            .withValues(alpha: 0.16),
-                                        Colors.transparent,
-                                      ],
-                                      stops: const [0.0, 0.32],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                    Container(
+                      height: 132,
+                      width: double.infinity,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        color: t.surfaceRaised,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: t.border),
                       ),
+                      child: market.imageUrl.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl:
+                                  proxifyImageUrl(_proxied(market.imageUrl)),
+                              height: 132,
+                              width: double.infinity,
+                              memCacheHeight: 264,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) =>
+                                  const Skeleton(height: 132, radius: 0),
+                              errorWidget: (context, url, error) =>
+                                  const DecoratedBox(
+                                decoration: BoxDecoration(
+                                    gradient: PulsColors.pulseGradient),
+                              ),
+                            )
+                          : const DecoratedBox(
+                              decoration: BoxDecoration(
+                                  gradient: PulsColors.pulseGradient),
+                            ),
                     ),
                     const SizedBox(height: 10),
                     if (market.context.isNotEmpty) ...[
@@ -799,20 +772,24 @@ class _Tag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: t.surface,
+        color: t.surfaceRaised,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: t.border),
       ),
       child: Text(label,
           style: TextStyle(
-              color: t.textMuted, fontSize: 11, fontWeight: FontWeight.w500)),
+              color: t.textMuted, fontSize: 11, fontWeight: FontWeight.w600)),
     );
   }
 }
 
-/// Tactile frame around every feed card: adds the featured glow border, the
-/// web hover lift, and the swipe-tinted border/shadow. Reads the drag state
-/// via [ValueListenableBuilder] so the expensive card body never rebuilds.
+/// Tactile frame around every feed card.
+///
+/// Solid brand surface — no glass fill, no white rim, no black tray. Depth is
+/// one soft shadow; the only colour is the brand (pink border + glow on hover,
+/// the logo mint→pink gradient ring on featured) or the semantic YES/NO tint
+/// while swiping. Reads the drag state via [ValueListenableBuilder] so the
+/// expensive card body never rebuilds.
 class _FeedCardFrame extends StatelessWidget {
   const _FeedCardFrame({
     required this.child,
@@ -830,90 +807,53 @@ class _FeedCardFrame extends StatelessWidget {
   final double progress;
   final Color swipeColor;
 
+  static const _radius = 18.0;
+
   @override
   Widget build(BuildContext context) {
-    // Two-box trick: outer box paints the gradient border (1.5px), inner box is
-    // the card surface. Hover + swipe tint both live here so the child is
-    // unaffected.
-    final border = Border.all(
-      color: progress > 0.1
-          ? swipeColor.withValues(alpha: progress * 0.6)
-          : hovered
-              ? t.brand.withValues(alpha: 0.5)
-              : featured
-                  ? Colors.transparent
-                  : t.border,
-    );
-
-    final shadow = BoxShadow(
-      color: progress > 0.1
-          ? swipeColor.withValues(alpha: progress * 0.22)
-          : featured
-              ? PulsColors.brandPink.withValues(alpha: 0.14)
-              : hovered
-                  ? t.brand.withValues(alpha: 0.12)
-                  : const Color(0xFFEC4899).withValues(alpha: 0.045),
-      blurRadius: 18 + (hovered ? 4 : 0) + progress * 20,
-      offset: Offset(hovered ? 0 : 0, hovered ? 6 : 5),
-    );
-
     final isDark = context.isDark;
     final reduceMotion = context.reduceMotion;
-    final glassTop = isDark
-        ? t.surfaceGlass.withValues(alpha: 0.92)
-        : t.surfaceRaised.withValues(alpha: 0.98);
-    final glassBottom = isDark
-        ? t.surfaceRaised.withValues(alpha: 0.88)
-        : t.surface.withValues(alpha: 0.94);
+    final swiping = progress > 0.08;
 
-    final inner = Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [glassTop, glassBottom],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: isDark ? 0.055 : 0.42),
-        ),
-        boxShadow: [shadow],
+    // One accent at a time: swipe side > hover brand > featured ring > none.
+    final accent = swiping ? swipeColor : (hovered ? t.brand : null);
+
+    final card = AnimatedContainer(
+      duration: context.motionDuration(const Duration(milliseconds: 240)),
+      curve: PulsCurves.easeOutMagical,
+      decoration: pulsCardDecoration(
+        t,
+        radius: _radius,
+        isDark: isDark,
+        raised: hovered || swiping,
+        accent: accent,
+        borderColor: featured && accent == null ? Colors.transparent : null,
       ),
       child: child,
     );
 
-    // A restrained 3D settle gives web cards depth without repainting their
-    // expensive image/sparkline subtree. Reduced motion keeps a still frame.
-    final transform = Matrix4.identity()
-      ..setEntry(3, 2, 0.0007)
-      ..translateByDouble(0.0, reduceMotion ? 0.0 : (hovered ? -5.0 : 0.0), 0.0, 1.0)
-      ..rotateX(reduceMotion ? 0.0 : (hovered ? -0.008 : 0.0));
-    return AnimatedContainer(
-      duration: context.motionDuration(const Duration(milliseconds: 260)),
+    // Featured markets get the logo gradient as a hairline ring — the one
+    // decorative gradient in the card, straight from the brand mark.
+    final body = featured
+        ? Container(
+            padding: const EdgeInsets.all(1.5),
+            decoration: BoxDecoration(
+              gradient: PulsColors.pulseGradient,
+              borderRadius: BorderRadius.circular(_radius + 1.5),
+            ),
+            child: card,
+          )
+        : card;
+
+    if (reduceMotion) return body;
+
+    // A restrained lift on hover — translation only, so the expensive
+    // image/sparkline subtree never re-rasterises for a 3D transform.
+    return AnimatedSlide(
+      duration: context.motionDuration(const Duration(milliseconds: 240)),
       curve: PulsCurves.easeOutMagical,
-      transform: transform,
-      transformAlignment: Alignment.center,
-      decoration: BoxDecoration(
-        gradient: featured ? PulsColors.pulseGradient : null,
-        borderRadius: BorderRadius.circular(17.5),
-        border: featured ? null : border,
-        boxShadow: hovered && !reduceMotion
-            ? [
-                BoxShadow(
-                  color: PulsColors.brandMint.withValues(alpha: 0.08),
-                  blurRadius: 28,
-                  offset: const Offset(-8, 10),
-                ),
-                BoxShadow(
-                  color: PulsColors.brandPink.withValues(alpha: 0.08),
-                  blurRadius: 30,
-                  offset: const Offset(10, 12),
-                ),
-              ]
-            : null,
-      ),
-      padding: EdgeInsets.all(featured ? 1.5 : 1),
-      child: inner,
+      offset: Offset(0, hovered ? -0.008 : 0),
+      child: body,
     );
   }
 }
