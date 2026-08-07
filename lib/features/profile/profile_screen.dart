@@ -383,6 +383,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 20),
                     _Section(
                       title: 'Preferences',
+                      icon: Icons.tune_rounded,
+                      accent: t.brand,
                       t: t,
                       children: [
                         _ThemeModeSelector(
@@ -423,6 +425,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 20),
                     _Section(
                       title: 'Testnet Operations',
+                      icon: Icons.science_outlined,
+                      accent: PulsColors.amber,
                       t: t,
                       children: [
                         _Row(
@@ -468,6 +472,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 20),
                     _Section(
                       title: 'Built on Arc + Circle',
+                      icon: Icons.layers_rounded,
+                      accent: PulsColors.brandMint,
                       t: t,
                       children: [
                         _Row(
@@ -535,6 +541,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 20),
                     _Section(
                       title: 'Wallet & resources',
+                      icon: Icons.account_balance_wallet_outlined,
+                      accent: PulsColors.green,
                       t: t,
                       children: [
                         _Row(
@@ -660,6 +668,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             duration: const Duration(milliseconds: 350),
             child: _Section(
               title: 'Appearance',
+              icon: Icons.tune_rounded,
+              accent: t.brand,
               t: t,
               children: [
                 _ThemeModeSelector(
@@ -708,6 +718,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             duration: const Duration(milliseconds: 350),
             child: _Section(
               title: 'Testnet',
+              icon: Icons.science_outlined,
+              accent: PulsColors.amber,
               t: t,
               children: [
                 _Row(
@@ -757,6 +769,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             duration: const Duration(milliseconds: 350),
             child: _Section(
               title: 'Built on Arc + Circle',
+              icon: Icons.layers_rounded,
+              accent: PulsColors.brandMint,
               t: t,
               children: [
                 _Row(
@@ -792,6 +806,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             duration: const Duration(milliseconds: 350),
             child: _Section(
               title: 'Wallet & resources',
+              icon: Icons.account_balance_wallet_outlined,
+              accent: PulsColors.green,
               t: t,
               children: [
                 _Row(
@@ -883,16 +899,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Image.asset('assets/logo.png', fit: BoxFit.cover),
               ),
               const SizedBox(width: 10),
-              Row(
+              const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Puls',
+                  Text('Puls',
                       style: TextStyle(
                           fontFamily: PulsColors.fontDisplay,
                           fontWeight: FontWeight.w700,
                           fontSize: 18,
                           letterSpacing: -0.3)),
-                  const AnimatedGradientText('Profile',
+                  AnimatedGradientText('Profile',
                       style: TextStyle(
                           fontFamily: PulsColors.fontDisplay,
                           fontSize: 18,
@@ -1263,18 +1279,38 @@ class _ProfileCard extends StatelessWidget {
 }
 
 // ── Settings Sections ────────────────────────────────────────────────────────
+/// A titled settings group.
+///
+/// [accent] tints the header rail and icon. Six sections all wearing the same
+/// brand pink tick made the page one long undifferentiated stack; a per-group
+/// hue plus [icon] lets you find "Testnet Operations" without reading it.
 class _Section extends StatelessWidget {
   const _Section({
     required this.title,
     required this.t,
     required this.children,
+    this.icon,
+    this.accent,
   });
   final String title;
   final PulsThemeColors t;
   final List<Widget> children;
+  final IconData? icon;
+  final Color? accent;
 
   @override
   Widget build(BuildContext context) {
+    final a = accent ?? t.brand;
+    // Children are statically known, so a shrink-wrapped ListView here only
+    // buys scroll machinery this never uses. Interleave the dividers directly.
+    final rows = <Widget>[];
+    for (var i = 0; i < children.length; i++) {
+      if (i > 0) {
+        rows.add(Divider(color: t.border.withValues(alpha: 0.5), height: 1));
+      }
+      rows.add(children[i]);
+    }
+
     return GlassCard(
       radius: 16,
       blur: context.reduceMotion ? 0 : 12,
@@ -1290,31 +1326,32 @@ class _Section extends StatelessWidget {
                 width: 4,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: t.brand,
+                  color: a,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                title.toUpperCase(),
-                style: TextStyle(
-                  color: t.textSubtle,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.2,
+              if (icon != null) ...[
+                Icon(icon, size: 12, color: a),
+                const SizedBox(width: 6),
+              ],
+              Expanded(
+                child: Text(
+                  title.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: t.textSubtle,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: children.length,
-            separatorBuilder: (_, __) =>
-                Divider(color: t.border.withValues(alpha: 0.5), height: 1),
-            itemBuilder: (context, i) => children[i],
-          ),
+          ...rows,
         ],
       ),
     );
