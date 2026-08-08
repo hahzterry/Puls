@@ -470,102 +470,59 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       // page two competing scrollbars and squeezed the hero into a 4/9 column.
       final pad = isDesktop ? 24.0 : 20.0;
       body = CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(pad, isDesktop ? 12 : 18, pad, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _PortfolioHero(
-                      invested: invested,
-                      openValue: openValue,
-                      totalPnl: totalPnl,
-                      winRate: (wins + losses) > 0
-                          ? '${((wins / (wins + losses)) * 100).toStringAsFixed(0)}%'
-                          : '—',
-                      wins: wins,
-                      losses: losses,
-                      tradeCount: _positions.length,
-                      openCount: _positions
-                          .where((p) => !(p['resolved'] as bool? ?? false))
-                          .length,
-                      t: t,
-                      walletAddress: ws.walletAddress,
-                      usdcBalance: ws.usdcBalance,
-                      desktop: isDesktop,
-                    ),
-                    const SizedBox(height: 20),
-                    if (_positions.isNotEmpty || _limitOrders.isNotEmpty)
-                      _tradeMarketsBtn(t),
-                    Row(
-                      children: [
-                        Expanded(child: _tabToggle(t)),
-                        if (!_showOrdersTab && _positions.length > 1) ...[
-                          const SizedBox(width: 10),
-                          _sortToggle(t),
-                        ],
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(pad, isDesktop ? 12 : 18, pad, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _PortfolioHero(
+                    invested: invested,
+                    openValue: openValue,
+                    totalPnl: totalPnl,
+                    winRate: (wins + losses) > 0
+                        ? '${((wins / (wins + losses)) * 100).toStringAsFixed(0)}%'
+                        : '—',
+                    wins: wins,
+                    losses: losses,
+                    tradeCount: _positions.length,
+                    openCount: _positions
+                        .where((p) => !(p['resolved'] as bool? ?? false))
+                        .length,
+                    t: t,
+                    walletAddress: ws.walletAddress,
+                    usdcBalance: ws.usdcBalance,
+                    desktop: isDesktop,
+                  ),
+                  const SizedBox(height: 20),
+                  if (_positions.isNotEmpty || _limitOrders.isNotEmpty)
+                    _tradeMarketsBtn(t),
+                  Row(
+                    children: [
+                      Expanded(child: _tabToggle(t)),
+                      if (!_showOrdersTab && _positions.length > 1) ...[
+                        const SizedBox(width: 10),
+                        _sortToggle(t),
                       ],
-                    ),
-                    const SizedBox(height: 14),
-                    if (!_showOrdersTab) _claimAllBar(t),
-                  ],
-                ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  if (!_showOrdersTab) _claimAllBar(t),
+                ],
               ),
             ),
-            if (_showOrdersTab)
-              if (_limitOrders.isEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: pad),
-                    child: const PulsEmptyState(
-                      icon: Icons.history_rounded,
-                      title: 'No pending orders',
-                      message:
-                          'Place a limit order on any prediction to see it here.',
-                    ),
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(pad, 0, pad, 40),
-                  sliver: SliverList.builder(
-                    itemCount: _limitOrders.length,
-                    itemBuilder: (context, i) {
-                      final item = Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _LimitOrderCard(
-                          order: _limitOrders[i],
-                          t: t,
-                          appState: appState,
-                          onCancel: () => _cancelLimitOrder(
-                            _limitOrders[i]['id'] as String,
-                          ),
-                        ),
-                      );
-                      if (context.reduceMotion) return item;
-                      return item
-                          .animate(delay: (i * 30).ms)
-                          .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
-                          .slideY(
-                              begin: 0.05,
-                              duration: 400.ms,
-                              curve: Curves.easeOutCubic);
-                    },
-                  ),
-                )
-            else if (_positions.isEmpty)
+          ),
+          if (_showOrdersTab)
+            if (_limitOrders.isEmpty)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: pad),
-                  child: PulsEmptyState(
-                    icon: Icons.bar_chart_rounded,
-                    title: 'No positions yet — swipe on a market to start.',
-                    message: 'Buy YES or NO on any prediction to get started.',
-                    actionLabel: 'Browse markets',
-                    actionIcon: Icons.explore_rounded,
-                    onAction: () =>
-                        ShellNavScope.maybeOf(context)?.goToTab(PulsTab.feed),
+                  child: const PulsEmptyState(
+                    icon: Icons.history_rounded,
+                    title: 'No pending orders',
+                    message:
+                        'Place a limit order on any prediction to see it here.',
                   ),
                 ),
               )
@@ -573,16 +530,17 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(pad, 0, pad, 40),
                 sliver: SliverList.builder(
-                  itemCount: _positions.length,
+                  itemCount: _limitOrders.length,
                   itemBuilder: (context, i) {
                     final item = Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: _PositionCard(
-                        position: _positions[i],
+                      child: _LimitOrderCard(
+                        order: _limitOrders[i],
                         t: t,
                         appState: appState,
-                        walletService: walletService,
-                        onRefresh: _load,
+                        onCancel: () => _cancelLimitOrder(
+                          _limitOrders[i]['id'] as String,
+                        ),
                       ),
                     );
                     if (context.reduceMotion) return item;
@@ -595,9 +553,51 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                             curve: Curves.easeOutCubic);
                   },
                 ),
+              )
+          else if (_positions.isEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: pad),
+                child: PulsEmptyState(
+                  icon: Icons.bar_chart_rounded,
+                  title: 'No positions yet — swipe on a market to start.',
+                  message: 'Buy YES or NO on any prediction to get started.',
+                  actionLabel: 'Browse markets',
+                  actionIcon: Icons.explore_rounded,
+                  onAction: () =>
+                      ShellNavScope.maybeOf(context)?.goToTab(PulsTab.feed),
+                ),
               ),
-          ],
-        );
+            )
+          else
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(pad, 0, pad, 40),
+              sliver: SliverList.builder(
+                itemCount: _positions.length,
+                itemBuilder: (context, i) {
+                  final item = Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _PositionCard(
+                      position: _positions[i],
+                      t: t,
+                      appState: appState,
+                      walletService: walletService,
+                      onRefresh: _load,
+                    ),
+                  );
+                  if (context.reduceMotion) return item;
+                  return item
+                      .animate(delay: (i * 30).ms)
+                      .fadeIn(duration: 400.ms, curve: Curves.easeOutCubic)
+                      .slideY(
+                          begin: 0.05,
+                          duration: 400.ms,
+                          curve: Curves.easeOutCubic);
+                },
+              ),
+            ),
+        ],
+      );
     }
 
     return Scaffold(
@@ -729,7 +729,10 @@ class _PortfolioHero extends StatelessWidget {
         const SizedBox(height: 16),
         _HeroMetric(label: 'USDC BALANCE', value: '\$$usdcBalance', t: t),
         Divider(height: 17, color: t.border),
-        _HeroMetric(label: 'OPEN VALUE', value: '\$${openValue.toStringAsFixed(2)}', t: t),
+        _HeroMetric(
+            label: 'OPEN VALUE',
+            value: '\$${openValue.toStringAsFixed(2)}',
+            t: t),
         const SizedBox(height: 16),
         Semantics(
           button: walletAddress != null,
@@ -985,9 +988,7 @@ class _PositionCardState extends State<_PositionCard> {
     double? currentPrice;
     final hasRealEntryPrice = entryPrice > 0 && entryPrice != 0.5;
     final double shares = (position['shares'] as num?)?.toDouble() ??
-        (amount > 0
-            ? (amount / (hasRealEntryPrice ? entryPrice : 0.5))
-            : 0.0);
+        (amount > 0 ? (amount / (hasRealEntryPrice ? entryPrice : 0.5)) : 0.0);
     Market? matchedMarket;
     // Resolve the real market for live pricing whenever the feed carries it
     // (also gives the sell preview a true price for still-pending positions
@@ -1296,8 +1297,7 @@ class _PositionCardState extends State<_PositionCard> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: t.brand,
                       side: BorderSide(
-                          color: canSell ? t.brand : t.border,
-                          width: 1.5),
+                          color: canSell ? t.brand : t.border, width: 1.5),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
                     ),
@@ -1313,8 +1313,7 @@ class _PositionCardState extends State<_PositionCard> {
                           child: SizedBox(
                               width: 18,
                               height: 18,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2)))
+                              child: CircularProgressIndicator(strokeWidth: 2)))
                       : OutlinedButton.icon(
                           onPressed: canClaim ? _claim : null,
                           icon: const Icon(Icons.redeem_rounded, size: 14),
@@ -1338,8 +1337,7 @@ class _PositionCardState extends State<_PositionCard> {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: t.yes,
                             side: BorderSide(
-                                color: canClaim ? t.yes : t.border,
-                                width: 1.5),
+                                color: canClaim ? t.yes : t.border, width: 1.5),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14)),
                           ),
@@ -1388,74 +1386,87 @@ class _StatBox extends StatelessWidget {
           color: a == null ? t.border : a.withValues(alpha: 0.22),
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Stack(
         children: [
-          // Colour rail: enough to tell the boxes apart at a glance, not
-          // enough to compete with the numbers they sit beside.
-          Container(width: 3, color: a ?? t.border),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(11, 10, 10, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      if (icon != null) ...[
-                        Icon(icon, size: 11, color: a ?? t.textSubtle),
-                        const SizedBox(width: 5),
-                      ],
-                      Flexible(
-                        child: Text(
-                          label.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: t.textSubtle,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                      ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: 11, color: a ?? t.textSubtle),
+                      const SizedBox(width: 5),
                     ],
-                  ),
-                  const SizedBox(height: 5),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      value,
-                      maxLines: 1,
-                      style: TextStyle(
-                        color: t.text,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
-                        height: 1.0,
-                        fontFeatures: PulsColors.tabularFigures,
-                      ),
-                    ),
-                  ),
-                  if (sub != null) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      sub!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: t.textSubtle,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        fontFeatures: PulsColors.tabularFigures,
+                    Flexible(
+                      child: Text(
+                        label.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: t.textSubtle,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                        ),
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 5),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: t.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
+                      height: 1.0,
+                      fontFeatures: PulsColors.tabularFigures,
+                    ),
+                  ),
+                ),
+                if (sub != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    sub!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: t.textSubtle,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: PulsColors.tabularFigures,
+                    ),
+                  ),
                 ],
-              ),
+              ],
             ),
+          ),
+          // Colour rail: enough to tell the boxes apart at a glance, not enough
+          // to compete with the numbers they sit beside.
+          //
+          // A `Positioned` strip rather than a `Row` with
+          // `CrossAxisAlignment.stretch`. Stretch resolves to
+          // `BoxConstraints.tightFor(height: constraints.maxHeight)`, and this
+          // card is built inside a `SliverToBoxAdapter`, where maxHeight is
+          // infinity — so the rail became infinitely tall, and with it the stat
+          // row, the hero and the sliver's whole scroll extent. Everything below
+          // (tabs, claim bar, every position card) then sat at scroll offset
+          // infinity: unreachable and unpainted. The Stack takes its size from
+          // the padded column and the rail just follows it.
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 3,
+            child: ColoredBox(color: a ?? t.border),
           ),
         ],
       ),

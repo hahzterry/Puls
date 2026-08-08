@@ -65,4 +65,69 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('positions-below'), findsOneWidget);
   });
+
+  // The second, and the one that actually shipped to production.
+  //
+  // The hero's stat boxes drew their accent rail as
+  // `Row(crossAxisAlignment: stretch)` + a fixed-width `Container`. `RenderFlex`
+  // implements stretch as `BoxConstraints.tightFor(height: constraints.maxHeight)`,
+  // and every child of a `SliverToBoxAdapter` is laid out with maxHeight
+  // infinity — so the rail came back `Size(3, Infinity)`, which propagated up
+  // through the stat row, the hero card and the sliver's whole scroll extent.
+  // The tab toggle, the claim banner and every position card were then parked
+  // at scroll offset infinity: unreachable, unpainted, and (in release, where
+  // asserts are stripped) completely silent.
+  //
+  // These two tests pin the rule the stat box now follows: an accent rail
+  // inside an unbounded sliver has to take its height from a sibling, not from
+  // the incoming constraints.
+  Widget railCard({required Widget rail}) => MaterialApp(
+        theme: PulsTheme.dark(),
+        home: Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(children: [rail, const Text('below-the-hero')]),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  testWidgets('stretch rail inside a sliver blows the height up to infinity',
+      (tester) async {
+    await tester.pumpWidget(railCard(
+      rail: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: const [
+          SizedBox(width: 3, child: ColoredBox(color: Color(0xFF14B8A6))),
+          Expanded(child: Text('42%')),
+        ],
+      ),
+    ));
+
+    expect(tester.takeException(), isNotNull,
+        reason: 'stretch under an unbounded sliver must not be considered safe');
+  });
+
+  testWidgets('Positioned rail keeps the sliver finite and the page scrollable',
+      (tester) async {
+    await tester.pumpWidget(railCard(
+      rail: Stack(
+        children: const [
+          Padding(padding: EdgeInsets.fromLTRB(14, 10, 10, 10), child: Text('42%')),
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 3,
+            child: ColoredBox(color: Color(0xFF14B8A6)),
+          ),
+        ],
+      ),
+    ));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('below-the-hero'), findsOneWidget);
+  });
 }
