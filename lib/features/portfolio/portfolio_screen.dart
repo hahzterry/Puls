@@ -314,14 +314,19 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
   Widget _tabToggle(PulsThemeColors t) {
     return Container(
-      height: 44,
+      height: 48,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: t.surfaceRaised,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: t.border),
       ),
+      // stretch is the same crucial fix as the profile theme selector: without
+      // it the Row shrink-wraps to the label height, leaving each chip a tiny
+      // strip instead of a full-height button (48 − 8 padding − 2 border =
+      // 38px).
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
             child: _TabChip(
@@ -1455,7 +1460,7 @@ class _StatBox extends StatelessWidget {
   }
 }
 
-class _TabChip extends StatelessWidget {
+class _TabChip extends StatefulWidget {
   const _TabChip({
     required this.label,
     required this.active,
@@ -1469,34 +1474,71 @@ class _TabChip extends StatelessWidget {
   final PulsThemeColors t;
 
   @override
+  State<_TabChip> createState() => _TabChipState();
+}
+
+class _TabChipState extends State<_TabChip> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Tactile(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: context.motionDuration(const Duration(milliseconds: 200)),
-        curve: Curves.easeOutCubic,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: active ? t.brand : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: t.brand.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active ? Colors.white : t.textMuted,
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
+    final active = widget.active;
+    final t = widget.t;
+    // Rest stays transparent on the surfaceRaised tray; hover adds a brand
+    // tint + border + brighter label so the whole cell reacts, matching the
+    // theme selector segments. The selected chip keeps the brand fill.
+    final fill = active
+        ? t.brand
+        : _hovered
+            ? t.brand.withValues(alpha: 0.10)
+            : Colors.transparent;
+    final borderColor = active
+        ? t.brand
+        : _hovered
+            ? t.brand.withValues(alpha: 0.45)
+            : Colors.transparent;
+    final fg = active
+        ? Colors.white
+        : _hovered
+            ? t.text
+            : t.textMuted;
+
+    return Semantics(
+      button: true,
+      selected: active,
+      label: widget.label,
+      child: Tactile(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: AnimatedContainer(
+            duration: context.motionDuration(const Duration(milliseconds: 200)),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: fill,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: borderColor),
+              boxShadow: active
+                  ? [
+                      BoxShadow(
+                        color: t.brand.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Text(
+              widget.label,
+              style: TextStyle(
+                color: fg,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ),
       ),
