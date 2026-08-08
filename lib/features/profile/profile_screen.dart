@@ -1480,14 +1480,20 @@ class _ThemeModeSelector extends StatelessWidget {
                 style: TextStyle(color: t.textMuted, fontSize: 12)),
             const SizedBox(height: 12),
             Container(
-              height: 58,
+              height: 64,
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: t.surface,
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(color: t.border),
               ),
+              // stretch is the crucial bit: without it the Row shrink-wraps
+              // to the icon+label height (~20px), leaving the Light/Dark
+              // buttons as tiny strips floating in the tray instead of full
+              // cells. stretch forces each segment to fill the whole cell
+              // (64 − 8 padding − 2 border = 54px).
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
                     child: _ThemeSegment(
@@ -1548,6 +1554,32 @@ class _ThemeSegmentState extends State<_ThemeSegment> {
   Widget build(BuildContext context) {
     final t = widget.t;
     final selected = widget.selected;
+    final hovered = _hovered;
+    // Rest state uses surfaceRaised (distinct from the surface tray) so the
+    // button is visible in BOTH themes — the old t.surface fill was white on
+    // white (light) / navy on navy (dark), i.e. invisible. Hover adds a brand
+    // tint + border + icon/text colour shift so the whole cell clearly reacts.
+    final fill = selected
+        ? null
+        : hovered
+            ? t.brand.withValues(alpha: 0.10)
+            : t.surfaceRaised;
+    final borderColor = selected
+        ? t.brand.withValues(alpha: 0.5)
+        : hovered
+            ? t.brand.withValues(alpha: 0.45)
+            : t.border;
+    final fg = selected
+        ? Colors.white
+        : hovered
+            ? t.text
+            : t.textMuted;
+    final iconFg = selected
+        ? Colors.white
+        : hovered
+            ? t.brand
+            : t.textMuted;
+
     return Semantics(
       button: true,
       selected: selected,
@@ -1555,6 +1587,7 @@ class _ThemeSegmentState extends State<_ThemeSegment> {
       child: MouseRegion(
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -1564,17 +1597,16 @@ class _ThemeSegmentState extends State<_ThemeSegment> {
             child: AnimatedContainer(
               duration: widget.duration,
               curve: PulsCurves.easeOutMagical,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 gradient: selected ? PulsColors.pulseGradient : null,
-                color: !selected
-                    ? t.surface
-                        .withValues(alpha: _hovered ? 0.65 : 0.35)
-                    : null,
+                color: fill,
                 borderRadius: BorderRadius.circular(11),
+                border: Border.all(color: borderColor, width: 1.2),
                 boxShadow: selected
                     ? [
                         BoxShadow(
-                          color: t.brand.withValues(alpha: 0.2),
+                          color: t.brand.withValues(alpha: 0.25),
                           blurRadius: 14,
                           offset: const Offset(0, 4),
                         )
@@ -1584,15 +1616,16 @@ class _ThemeSegmentState extends State<_ThemeSegment> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(widget.icon,
-                      size: 19, color: selected ? Colors.white : t.textMuted),
+                  Icon(widget.icon, size: 20, color: iconFg),
                   const SizedBox(width: 8),
-                  Text(widget.label,
-                      style: TextStyle(
-                        color: selected ? Colors.white : t.textMuted,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                      )),
+                  Text(
+                    widget.label,
+                    style: TextStyle(
+                      color: fg,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
             ),
