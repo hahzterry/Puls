@@ -383,7 +383,7 @@ class _ApiKeysCardState extends State<ApiKeysCard> {
               ],
             ),
           ),
-          if (id != null)
+          if (id.isNotEmpty)
             GestureDetector(
               onTap: () => _revoke(id),
               child: Container(

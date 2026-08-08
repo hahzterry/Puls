@@ -22,6 +22,7 @@ import '../shell/web_layout.dart';
 import '../shell/shell_nav.dart';
 import '../onboarding/help_button.dart';
 import '../support/support_screen.dart';
+import 'trade_history_row.dart';
 import '../portfolio/bridge_sheet.dart';
 import '../portfolio/swap_sheet.dart';
 import '../portfolio/funds_sheet.dart';
@@ -40,6 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _bio;
   String? _avatarUrl;
   bool _loadingProfile = false;
+  List<dynamic> _trades = [];
 
   /// True once we know the signed-in user has no display name set yet — used to
   /// nudge them to pick a nickname (so they don't show up nameless on the
@@ -93,6 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _displayName = data['profile']?['display_name'];
           _bio = data['profile']?['bio'];
           _avatarUrl = data['profile']?['avatar_url'];
+          _trades = data['trades'] as List<dynamic>? ?? const [];
           _loadingProfile = false;
         });
       }
@@ -101,6 +104,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() => _loadingProfile = false);
       }
     }
+  }
+
+  /// Bottom-of-profile section listing every trade the signed-in user made
+  /// (Bought/Sold/Claimed), newest first — mirror of the public profile's
+  /// trade history, but for your own account.
+  Widget _myTradesSection(PulsThemeColors t) {
+    const cap = 25;
+    final trades = _trades.take(cap).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 12,
+              decoration: BoxDecoration(
+                color: t.brand,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.receipt_long_rounded, size: 12, color: t.brand),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'MY TRADES',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: t.textSubtle,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (trades.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: t.surfaceRaised,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: t.border),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.history_rounded, color: t.textMuted, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'No trades yet — buy YES or NO on any market to start.',
+                    style: TextStyle(color: t.textMuted, fontSize: 12.5),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          for (var i = 0; i < trades.length; i++) ...[
+            TradeHistoryRow(trade: trades[i], t: t),
+            if (i < trades.length - 1) const SizedBox(height: 10),
+          ],
+        if (_trades.length > cap) ...[
+          const SizedBox(height: 10),
+          Text(
+            'Showing $cap of ${_trades.length} trades',
+            style:
+                TextStyle(color: t.textSubtle, fontSize: 10.5, letterSpacing: 0.3),
+          ),
+        ],
+      ],
+    );
   }
 
   void _showEditProfileDialog() {
@@ -611,6 +690,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
+                    if (ws.userId != null) ...[
+                      const SizedBox(height: 20),
+                      _myTradesSection(t),
+                    ],
                   ],
                 ),
               ),
@@ -875,8 +958,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
+        if (ws.userId != null) ...[
+          const SizedBox(height: 16),
+          FadeInUp(
+            delay: const Duration(milliseconds: 190),
+            duration: const Duration(milliseconds: 350),
+            child: _myTradesSection(t),
+          ),
         ],
-      );
+      ],
+    );
     }
 
     return Scaffold(

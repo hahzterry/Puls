@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../../core/utils/web_url.dart';
 import '../../core/widgets/puls_snack.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../app/puls_app.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/gradient_text.dart';
@@ -23,6 +22,7 @@ import 'creator_earnings_card.dart';
 import 'signals_section.dart';
 import 'erc8004_badge.dart';
 import 'profile_screen.dart' show GlassCard;
+import 'trade_history_row.dart';
 
 String _profileDisplayName(Map<String, dynamic>? profile, String userId) {
   final name = profile?['display_name'] as String?;
@@ -543,7 +543,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   final trade = _trades[idx];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: _TradeHistoryRow(trade: trade, t: t),
+                    child: TradeHistoryRow(trade: trade, t: t),
                   );
                 },
               ),
@@ -1044,139 +1044,6 @@ class _StatCard extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TradeHistoryRow extends StatelessWidget {
-  const _TradeHistoryRow({required this.trade, required this.t});
-
-  final dynamic trade;
-  final PulsThemeColors t;
-
-  @override
-  Widget build(BuildContext context) {
-    final side = trade['side'] as String? ?? 'YES';
-    final amt = _parseFloat(trade['usdc_amount']);
-    final isBuy = amt > 0;
-    final isClaim = side == 'CLAIM';
-
-    Color amountColor = t.text;
-    String actionLabel = '';
-
-    if (isClaim) {
-      amountColor = t.yes;
-      actionLabel = 'Claimed Winnings';
-    } else if (isBuy) {
-      amountColor = t.no; // spending money
-      actionLabel = 'Bought $side';
-    } else {
-      amountColor = t.yes; // earning money from sell
-      actionLabel = 'Sold $side';
-    }
-
-    final displayAmt = isClaim
-        ? '\$0.00'
-        : '${isBuy ? '-' : '+'}\$${amt.abs().toStringAsFixed(2)}';
-
-    final date = DateTime.tryParse(trade['created_at'] as String? ?? '') ??
-        DateTime.now();
-    final formattedDate =
-        '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-
-    return GlassCard(
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          // Action indicator icon
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: isClaim
-                  ? t.yesBg
-                  : isBuy
-                      ? t.noBg
-                      : t.yesBg,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isClaim
-                  ? Icons.emoji_events_outlined
-                  : isBuy
-                      ? Icons.shopping_basket_outlined
-                      : Icons.sell_outlined,
-              color: isClaim
-                  ? t.yes
-                  : isBuy
-                      ? t.no
-                      : t.yes,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  trade['question'] ?? 'Prediction Trade',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                      color: t.text, fontSize: 13, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$actionLabel · $formattedDate',
-                  style: TextStyle(
-                      color: t.textMuted,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          // Amount + Tx Hash link
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                displayAmt,
-                style: TextStyle(
-                    color: amountColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 2),
-              if (trade['tx_hash'] != null &&
-                  (trade['tx_hash'] as String).isNotEmpty)
-                GestureDetector(
-                  onTap: () => launchUrl(
-                    Uri.parse(
-                        'https://testnet.arcscan.app/tx/${trade['tx_hash']}'),
-                    mode: LaunchMode.externalApplication,
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'View Tx',
-                        style: TextStyle(
-                            color: t.brand,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(Icons.open_in_new_rounded, size: 8, color: t.brand),
-                    ],
-                  ),
-                ),
-            ],
           ),
         ],
       ),
