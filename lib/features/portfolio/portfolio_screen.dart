@@ -841,15 +841,18 @@ class _PortfolioHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (desktop)
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(flex: 4, child: money),
-                  const SizedBox(width: 24),
-                  Expanded(flex: 6, child: terrain),
-                ],
-              ),
+            // No IntrinsicHeight here. The terrain is a fixed-height block, so
+            // the row already sizes to it — and an intrinsic query would have
+            // to travel into the terrain's painter subtree, which is exactly
+            // the kind of speculative layout that used to throw and blank out
+            // everything below this card.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(flex: 4, child: money),
+                const SizedBox(width: 24),
+                Expanded(flex: 6, child: terrain),
+              ],
             )
           else ...[
             money,

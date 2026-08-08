@@ -94,8 +94,21 @@ class _LiquidWealthTerrainState extends State<LiquidWealthTerrain>
   double _inertiaEndYaw = 0;
   double _inertiaEndPitch = 0;
   Offset? _lastRipplePosition;
-  Size _viewport = Size.zero;
   bool? _reduceMotion;
+
+  /// The painted area, read straight off our own render box.
+  ///
+  /// This used to come from a `LayoutBuilder` wrapped around the entire widget.
+  /// `LayoutBuilder` cannot answer intrinsic-dimension queries, so *any* parent
+  /// that asks for one — `IntrinsicHeight`, an unbounded `Row` — threw during
+  /// layout and took every sibling below it down with it (the portfolio hero
+  /// did exactly that, wiping the tab bar and the whole position list off the
+  /// page). Ripples only fire from gestures, which happen after layout, so the
+  /// render box is always sized by the time we ask.
+  Size get _viewport {
+    final box = context.findRenderObject() as RenderBox?;
+    return box != null && box.hasSize ? box.size : Size.zero;
+  }
 
   @override
   void initState() {
@@ -189,11 +202,12 @@ class _LiquidWealthTerrainState extends State<LiquidWealthTerrain>
   }
 
   void _addRipple(Offset position) {
-    if (_viewport.isEmpty) return;
+    final viewport = _viewport;
+    if (viewport.isEmpty) return;
     _interaction.addRipple(
       _TerrainRipple(
-        x: (position.dx / _viewport.width * 2 - 1).clamp(-1.0, 1.0),
-        z: (position.dy / _viewport.height * 2 - 1).clamp(-1.0, 1.0),
+        x: (position.dx / viewport.width * 2 - 1).clamp(-1.0, 1.0),
+        z: (position.dy / viewport.height * 2 - 1).clamp(-1.0, 1.0),
         bornAt: _clock.elapsedMicroseconds / Duration.microsecondsPerSecond,
       ),
       _clock.elapsedMicroseconds / Duration.microsecondsPerSecond,
@@ -217,163 +231,155 @@ class _LiquidWealthTerrainState extends State<LiquidWealthTerrain>
     final positive = widget.pnlUsdc >= 0;
     final pnlColor = positive ? widget.positiveColor : widget.negativeColor;
     final palette = _TerrainPalette.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.hasBoundedWidth
-            ? constraints.maxWidth
-            : MediaQuery.sizeOf(context).width;
-        _viewport = Size(width, widget.height);
-        return RepaintBoundary(
-          child: Semantics(
-            label:
-                '${widget.title}, portfolio PNL ${widget.pnlUsdc.toStringAsFixed(2)} USDC. Swipe to rotate.',
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onPanStart: _panStart,
-              onPanUpdate: _panUpdate,
-              onPanEnd: _panEnd,
-              child: Container(
-                width: double.infinity,
-                height: widget.height,
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: palette.background,
-                  borderRadius: BorderRadius.circular(widget.borderRadius),
-                  border: Border.all(color: palette.line),
+    return RepaintBoundary(
+      child: Semantics(
+        label:
+            '${widget.title}, portfolio PNL ${widget.pnlUsdc.toStringAsFixed(2)} USDC. Swipe to rotate.',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanStart: _panStart,
+          onPanUpdate: _panUpdate,
+          onPanEnd: _panEnd,
+          child: Container(
+            width: double.infinity,
+            height: widget.height,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: palette.background,
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+              border: Border.all(color: palette.line),
+            ),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: _TerrainPainter(
+                        time: _time,
+                        pnlTransition: _pnlTransition,
+                        inertia: _inertia,
+                        interaction: _interaction,
+                        clock: _clock,
+                        fromPnl: _fromPnl,
+                        targetPnl: _targetPnl,
+                        pnlRange: widget.pnlRange,
+                        history: widget.portfolioHistory,
+                        positiveColor: widget.positiveColor,
+                        negativeColor: widget.negativeColor,
+                        palette: palette,
+                        cache: _renderCache,
+                      ),
+                    ),
+                  ),
                 ),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: RepaintBoundary(
-                        child: CustomPaint(
-                          painter: _TerrainPainter(
-                            time: _time,
-                            pnlTransition: _pnlTransition,
-                            inertia: _inertia,
-                            interaction: _interaction,
-                            clock: _clock,
-                            fromPnl: _fromPnl,
-                            targetPnl: _targetPnl,
-                            pnlRange: widget.pnlRange,
-                            history: widget.portfolioHistory,
-                            positiveColor: widget.positiveColor,
-                            negativeColor: widget.negativeColor,
-                            palette: palette,
-                            cache: _renderCache,
-                          ),
+                Positioned(
+                  left: 20,
+                  top: 18,
+                  right: 20,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.title,
+                              style: TextStyle(
+                                color: palette.label,
+                                fontFamily: PulsColors.fontSans,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 7),
+                            CountUpText(
+                              widget.pnlUsdc,
+                              duration: context.motionDuration(
+                                const Duration(milliseconds: 760),
+                              ),
+                              builder: (context, value) => Text(
+                                '${value >= 0 ? '+' : '−'}\$${value.abs().toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  color: pnlColor,
+                                  fontFamily: PulsColors.fontSans,
+                                  fontSize: 27,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.8,
+                                  fontFeatures: PulsColors.tabularFigures,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    Positioned(
-                      left: 20,
-                      top: 18,
-                      right: 20,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.title,
-                                  style: TextStyle(
-                                    color: palette.label,
-                                    fontFamily: PulsColors.fontSans,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 1.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 7),
-                                CountUpText(
-                                  widget.pnlUsdc,
-                                  duration: context.motionDuration(
-                                    const Duration(milliseconds: 760),
-                                  ),
-                                  builder: (context, value) => Text(
-                                    '${value >= 0 ? '+' : '−'}\$${value.abs().toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      color: pnlColor,
-                                      fontFamily: PulsColors.fontSans,
-                                      fontSize: 27,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: -0.8,
-                                      fontFeatures: PulsColors.tabularFigures,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: palette.panel,
+                          borderRadius: BorderRadius.circular(99),
+                          border: Border.all(color: palette.line),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              positive
+                                  ? Icons.trending_up_rounded
+                                  : Icons.trending_down_rounded,
+                              color: pnlColor,
+                              size: 15,
                             ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 7,
+                            const SizedBox(width: 6),
+                            Text(
+                              positive ? 'PROFIT' : 'DRAWDOWN',
+                              style: TextStyle(
+                                color: pnlColor,
+                                fontFamily: PulsColors.fontSans,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.8,
+                              ),
                             ),
-                            decoration: BoxDecoration(
-                              color: palette.panel,
-                              borderRadius: BorderRadius.circular(99),
-                              border: Border.all(color: palette.line),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  positive
-                                      ? Icons.trending_up_rounded
-                                      : Icons.trending_down_rounded,
-                                  color: pnlColor,
-                                  size: 15,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  positive ? 'PROFIT' : 'DRAWDOWN',
-                                  style: TextStyle(
-                                    color: pnlColor,
-                                    fontFamily: PulsColors.fontSans,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    Positioned(
-                      left: 20,
-                      bottom: 17,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.swipe_rounded,
-                            size: 14,
-                            color: palette.label,
-                          ),
-                          const SizedBox(width: 7),
-                          Text(
-                            'SWIPE TO SHAPE THE FIELD',
-                            style: TextStyle(
-                              color: palette.label,
-                              fontFamily: PulsColors.fontSans,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                Positioned(
+                  left: 20,
+                  bottom: 17,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.swipe_rounded,
+                        size: 14,
+                        color: palette.label,
+                      ),
+                      const SizedBox(width: 7),
+                      Text(
+                        'SWIPE TO SHAPE THE FIELD',
+                        style: TextStyle(
+                          color: palette.label,
+                          fontFamily: PulsColors.fontSans,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
