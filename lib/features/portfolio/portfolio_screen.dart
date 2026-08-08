@@ -415,7 +415,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     double openValue = 0;
     int wins = 0, losses = 0;
     for (final p in _positions) {
-      if (p['state'] != 'COMPLETE') continue;
+      if ((p['state'] as String? ?? '').toUpperCase() != 'COMPLETE') continue;
       final pnl = _calcPnl(p, marketsByQuestion);
       if (pnl != null) {
         totalPnl += pnl;
@@ -951,7 +951,17 @@ class _PositionCardState extends State<_PositionCard> {
     final isYes = position['side'] == 'YES';
     final sideBg = isYes ? t.yesBg : t.noBg;
     final sideFg = isYes ? t.yes : t.no;
-    final state = position['state'] as String? ?? 'UNKNOWN';
+    // `state` arrives from the backend as raw strings ('COMPLETE', 'INITIATED',
+    // 'PENDING', 'PROCESSING', 'SUBMITTED', 'FAILED', ...). The Sell/Claim row
+    // used to render only when the state was EXACTLY 'COMPLETE' — any other
+    // value (or casing) silently hid every action button on that card. Compare
+    // case-insensitively and treat only genuine failures as dead so no position
+    // ever appears action-less.
+    final rawState = (position['state'] as String? ?? '').toUpperCase();
+    final isConfirmed = rawState == 'COMPLETE';
+    final isFailed = rawState == 'FAILED' || rawState == 'DENIED';
+    final isCancelled = rawState == 'CANCELLED';
+
     final amount = (position['usdcAmount'] as num?)?.toDouble() ?? 0.0;
     final entryPrice = (position['entryPrice'] as num?)?.toDouble() ?? 0.0;
     final question = position['question'] as String? ?? 'Prediction';
@@ -966,22 +976,26 @@ class _PositionCardState extends State<_PositionCard> {
     double? pnl;
     double? currentPrice;
     final hasRealEntryPrice = entryPrice > 0 && entryPrice != 0.5;
+    final double shares = (position['shares'] as num?)?.toDouble() ??
+        (amount > 0
+            ? (amount / (hasRealEntryPrice ? entryPrice : 0.5))
+            : 0.0);
     Market? matchedMarket;
+    // Resolve the real market for live pricing whenever the feed carries it
+    // (also gives the sell preview a true price for still-pending positions
+    // instead of the 0.5 placeholder). Falls back gracefully when unmatched.
+    try {
+      matchedMarket = (widget.appState.markets as List).firstWhere(
+        (m) => (m.question as String).toLowerCase().contains(
+              question.toLowerCase().split(' ').take(5).join(' '),
+            ),
+      ) as Market;
+      currentPrice = isYes ? matchedMarket.yesPrice : matchedMarket.noPrice;
+    } catch (_) {}
 
-    if (state == 'COMPLETE') {
-      try {
-        matchedMarket = (widget.appState.markets as List).firstWhere(
-          (m) => (m.question as String).toLowerCase().contains(
-                question.toLowerCase().split(' ').take(5).join(' '),
-              ),
-        ) as Market;
-        currentPrice = isYes ? matchedMarket.yesPrice : matchedMarket.noPrice;
-        final shares = (position['shares'] as num?)?.toDouble() ??
-            (amount > 0
-                ? (amount / (hasRealEntryPrice ? entryPrice : 0.5))
-                : 0.0);
-        pnl = (shares * currentPrice) - amount;
-      } catch (_) {}
+    // P&L is only meaningful once the trade is confirmed on-chain.
+    if (isConfirmed && matchedMarket != null) {
+      pnl = (shares * currentPrice!) - amount;
     }
 
     matchedMarket ??= Market(
@@ -1013,9 +1027,25 @@ class _PositionCardState extends State<_PositionCard> {
         positionContract.startsWith('0x') &&
         positionContract.length == 42;
 
+    // Sell is available while the market is open and shares are held; Claim
+    // when the market resolved in our favour and winnings are unclaimed.
+    // Failed/cancelled trades are never actionable. Pending rows keep the
+    // buttons visible (disabled, with an honest label) instead of hiding them.
+    final canSell = hasValidContract &&
+        !resolved &&
+        shares > 0 &&
+        !isFailed &&
+        !isCancelled;
+    final canClaim = hasValidContract &&
+        resolved &&
+        userWon &&
+        !claimed &&
+        !isFailed &&
+        !isCancelled;
+
     Color stateColor;
     String stateLabel;
-    switch (state) {
+    switch (rawState) {
       case 'COMPLETE':
         stateColor = t.yes;
         stateLabel = 'Confirmed';
@@ -1024,6 +1054,10 @@ class _PositionCardState extends State<_PositionCard> {
       case 'DENIED':
         stateColor = t.no;
         stateLabel = 'Failed';
+        break;
+      case 'CANCELLED':
+        stateColor = t.textSubtle;
+        stateLabel = 'Cancelled';
         break;
       default:
         stateColor = PulsColors.amber;
@@ -1125,7 +1159,7 @@ class _PositionCardState extends State<_PositionCard> {
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14,
                                 fontFeatures: PulsColors.tabularFigures)),
-                        if (state == 'COMPLETE') ...[
+                        if (isConfirmed) ...[
                           const SizedBox(width: 8),
                           GestureDetector(
                             onTap: () =>
@@ -1212,103 +1246,100 @@ class _PositionCardState extends State<_PositionCard> {
               ],
             ),
           ],
-          if (state == 'COMPLETE') ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 36,
-                    child: OutlinedButton.icon(
-                      onPressed: hasValidContract && !resolved
-                          ? () {
-                              showTradePreviewSheet(
-                                context: context,
-                                market: matchedMarket!.copyWith(
-                                  contractAddress: positionContract,
-                                  slug: position['slug'] as String?,
-                                ),
-                                side: isYes ? MarketSide.yes : MarketSide.no,
-                                initialIsBuy: false,
-                                owner: (position['owner'] as String?) ?? 'user',
-                                maxShares:
-                                    (position['shares'] as num?)?.toDouble() ??
-                                        (amount > 0
-                                            ? (amount /
-                                                (hasRealEntryPrice
-                                                    ? entryPrice
-                                                    : 0.5))
-                                            : 0.0),
-                              ).then((_) => widget.onRefresh?.call());
-                            }
-                          : null,
-                      icon: const Icon(Icons.sell_rounded, size: 14),
-                      label: Text(
-                          resolved ? 'Market Resolved' : 'Sell Position',
-                          style: const TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.bold)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: t.brand,
-                        side: BorderSide(
-                            color: (hasValidContract && !resolved)
-                                ? t.brand
-                                : t.border,
-                            width: 1.5),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                      ),
+          const SizedBox(height: 10),
+          // Sell / Claim action row — always rendered so no card ever looks
+          // dead. While a trade is still confirming the buttons stay visible
+          // but disabled with an honest label; once confirmed they enable when
+          // the position can actually be acted on.
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: OutlinedButton.icon(
+                    onPressed: canSell
+                        ? () {
+                            showTradePreviewSheet(
+                              context: context,
+                              market: matchedMarket!.copyWith(
+                                contractAddress: positionContract,
+                                slug: position['slug'] as String?,
+                              ),
+                              side: isYes ? MarketSide.yes : MarketSide.no,
+                              initialIsBuy: false,
+                              owner: (position['owner'] as String?) ?? 'user',
+                              maxShares: shares,
+                            ).then((_) => widget.onRefresh?.call());
+                          }
+                        : null,
+                    icon: const Icon(Icons.sell_rounded, size: 14),
+                    label: Text(
+                        isFailed
+                            ? 'Trade Failed'
+                            : isCancelled
+                                ? 'Order Cancelled'
+                                : resolved
+                                    ? 'Market Resolved'
+                                    : isConfirmed
+                                        ? 'Sell Position'
+                                        : 'Pending…',
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: t.brand,
+                      side: BorderSide(
+                          color: canSell ? t.brand : t.border,
+                          width: 1.5),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SizedBox(
-                    height: 36,
-                    child: _claiming
-                        ? const Center(
-                            child: SizedBox(
-                                width: 18,
-                                height: 18,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2)))
-                        : OutlinedButton.icon(
-                            onPressed: (hasValidContract &&
-                                    resolved &&
-                                    userWon &&
-                                    !claimed)
-                                ? _claim
-                                : null,
-                            icon: const Icon(Icons.redeem_rounded, size: 14),
-                            label: Text(
-                              !resolved
-                                  ? 'Market Active'
-                                  : claimed
-                                      ? 'Winnings Claimed'
-                                      : userWon
-                                          ? 'Claim Winnings'
-                                          : 'Position Lost',
-                              style: const TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.bold),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: t.yes,
-                              side: BorderSide(
-                                  color: (hasValidContract &&
-                                          resolved &&
-                                          userWon &&
-                                          !claimed)
-                                      ? t.yes
-                                      : t.border,
-                                  width: 1.5),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14)),
-                            ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: _claiming
+                      ? const Center(
+                          child: SizedBox(
+                              width: 18,
+                              height: 18,
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 2)))
+                      : OutlinedButton.icon(
+                          onPressed: canClaim ? _claim : null,
+                          icon: const Icon(Icons.redeem_rounded, size: 14),
+                          label: Text(
+                            isFailed
+                                ? 'Trade Failed'
+                                : isCancelled
+                                    ? 'Order Cancelled'
+                                    : !resolved
+                                        ? (isConfirmed
+                                            ? 'Market Active'
+                                            : 'Pending…')
+                                        : claimed
+                                            ? 'Winnings Claimed'
+                                            : userWon
+                                                ? 'Claim Winnings'
+                                                : 'Position Lost',
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold),
                           ),
-                  ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: t.yes,
+                            side: BorderSide(
+                                color: canClaim ? t.yes : t.border,
+                                width: 1.5),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                          ),
+                        ),
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ],
       ),
     );
