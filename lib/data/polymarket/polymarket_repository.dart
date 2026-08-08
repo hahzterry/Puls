@@ -56,8 +56,9 @@ class PolymarketRepository {
         final mkts = (ev['markets'] as List<dynamic>?) ?? const [];
         for (final raw in mkts) {
           final j = raw as Map<String, dynamic>;
-          // Skip closed/inactive/zero-liquidity placeholder team slots.
-          if (j['closed'] == true || j['active'] == false) continue;
+          // Skip closed/inactive/zero-liquidity placeholder team slots, and any
+          // fixture whose kickoff deadline has already passed.
+          if (!_isTradeable(j)) continue;
           final m = _parse(j);
           if (m == null) continue;
           // _parse already infers the "World Cup" category from the FIFA
@@ -133,9 +134,34 @@ class PolymarketRepository {
     if (res.statusCode != 200) return [];
     final list = json.decode(res.body) as List<dynamic>;
     return list
-        .map((j) => _parse(j as Map<String, dynamic>))
+        .cast<Map<String, dynamic>>()
+        .where(_isTradeable)
+        .map(_parse)
         .whereType<Market>()
         .toList();
+  }
+
+  /// Whether a raw market JSON is still open for trading.
+  ///
+  /// The feed used to list anything the backend returned. A finished event —
+  /// deadline in the past, `closed`, or `acceptingOrders: false` — looked
+  /// exactly like a live one, right up until the buy sheet came back with
+  /// "This market has closed" from `/api/trade/buy`, which rejects any trade
+  /// whose deadline has passed. The backend filters these out now; this is the
+  /// second line of defence, because `/api/markets` is served from a 30s cache
+  /// (and a last-known-good fallback that can be considerably older).
+  static bool _isTradeable(Map<String, dynamic> j) {
+    if (j['closed'] == true) return false;
+    if (j['active'] == false) return false;
+    if (j['ended'] == true) return false;
+    if (j['resolved'] == true) return false;
+    if (j['acceptingOrders'] == false) return false;
+
+    final endRaw = j['endDate'] as String? ?? j['endDateIso'] as String?;
+    final end = endRaw == null ? null : DateTime.tryParse(endRaw);
+    if (end != null && end.isBefore(DateTime.now())) return false;
+
+    return true;
   }
 
   Market? _parse(Map<String, dynamic> j) {
