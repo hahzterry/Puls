@@ -24,6 +24,7 @@ import '../../app/puls_app_state.dart';
 import '../../app/puls_app.dart';
 import 'hero_market_stack.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/gradient_text.dart';
 import '../../core/motion.dart';
 import '../../core/config.dart';
 
@@ -199,7 +200,7 @@ class _WebLandingPageState extends State<WebLandingPage>
                       scrollOffset: _scrollOffset,
                       builder: (_) => _Reveal(
                         scrollOffset: _scrollOffset,
-                        child: RepaintBoundary(child: const LiveMarketTicker()),
+                        child: const RepaintBoundary(child: LiveMarketTicker()),
                       ),
                     ),
                     const _SectionDivider(),
@@ -309,8 +310,7 @@ class _WebLandingPageState extends State<WebLandingPage>
                               gradient: PulsColors.pulseGradient,
                               boxShadow: [
                                 BoxShadow(
-                                    color: Color(0x66F65FA9),
-                                    blurRadius: 8),
+                                    color: Color(0x66F65FA9), blurRadius: 8),
                               ],
                             ),
                           ),
@@ -373,8 +373,8 @@ class _WebLandingPageState extends State<WebLandingPage>
                                       Color(0xFFF65FA9),
                                     ],
                                   ),
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(100)),
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(100)),
                                   boxShadow: [
                                     BoxShadow(
                                       color: PulsColors.brandPink
@@ -468,6 +468,13 @@ class _InlineNavbar extends StatelessWidget {
               ],
             ),
             const SizedBox(width: 4),
+            const _NavDropdown(
+              label: 'Mainnet',
+              items: [
+                ('Countdown', 'https://mainnet.pulsmarket.tech'),
+              ],
+            ),
+            const SizedBox(width: 4),
             const _NavItemButton(
               label: 'Invest',
               url: 'https://invest.pulsmarket.tech',
@@ -557,7 +564,7 @@ class _StickyNavbarContent extends StatelessWidget {
         child: Align(
           alignment: Alignment.topCenter,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(16, 10, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
             child: Container(
               constraints: const BoxConstraints(maxWidth: 1240),
               decoration: BoxDecoration(
@@ -583,108 +590,117 @@ class _StickyNavbarContent extends StatelessWidget {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                   child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 16 : 48,
-                  vertical: isMobile ? 10 : 14,
-                ),
-                child: Row(
-                  children: [
-                    // Logo + wordmark
-                    Container(
-                      width: isMobile ? 26 : 28,
-                      height: isMobile ? 26 : 28,
-                      decoration: BoxDecoration(
-                        color: t.brandSubtle,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Image.asset('assets/logo.png', fit: BoxFit.cover),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 16 : 48,
+                      vertical: isMobile ? 10 : 14,
                     ),
-                    SizedBox(width: isMobile ? 8 : 10),
-                    if (!isMobile)
-                      Text(
-                        'Puls',
-                        style: TextStyle(
-                          fontFamily: PulsColors.fontDisplay,
-                          color: t.text,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.4,
+                    child: Row(
+                      children: [
+                        // Logo + wordmark
+                        Container(
+                          width: isMobile ? 26 : 28,
+                          height: isMobile ? 26 : 28,
+                          decoration: BoxDecoration(
+                            color: t.brandSubtle,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child:
+                              Image.asset('assets/logo.png', fit: BoxFit.cover),
                         ),
-                      ),
-                    const Spacer(),
-                    // Full nav links — always visible on desktop
-                    if (!isMobile) ...[
-                      _NavDropdown(
-                        label: 'Product',
-                        items: [
-                          ('Pulse', _pageUrl('/pulse')),
-                          ('Agent', _pageUrl('/agent')),
-                          ('Versus', _pageUrl('/versus')),
-                          ('Explorer', _pageUrl('/explorer')),
-                        ],
-                      ),
-                      const SizedBox(width: 4),
-                      _NavDropdown(
-                        label: 'Developers',
-                        items: [
-                          ('Docs', 'https://docs.pulsmarket.tech'),
-                          ('CLI', _pageUrl('/cli')),
-                          ('Build', _pageUrl('/build')),
-                          ('GitHub', 'https://github.com/rdmbtc/Puls'),
-                        ],
-                      ),
-                      const SizedBox(width: 4),
-                      const _NavItemButton(
-                        label: 'Invest',
-                        url: 'https://invest.pulsmarket.tech',
-                      ),
-                      const SizedBox(width: 8),
-                      _NavIcon(
-                        icon: Icons.android_rounded,
-                        url: _pageUrl('/mobile-download'),
-                        tooltip: 'Download for Android',
-                      ),
-                      const SizedBox(width: 12),
-                      _SecondaryButton(
-                        label: 'Terminal',
-                        onTap: () => launchUrl(
-                          Uri.parse('https://terminal.pulsmarket.tech'),
-                          mode: LaunchMode.externalApplication,
+                        SizedBox(width: isMobile ? 8 : 10),
+                        if (!isMobile)
+                          Text(
+                            'Puls',
+                            style: TextStyle(
+                              fontFamily: PulsColors.fontDisplay,
+                              color: t.text,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.4,
+                            ),
+                          ),
+                        const Spacer(),
+                        // Full nav links — always visible on desktop
+                        if (!isMobile) ...[
+                          _NavDropdown(
+                            label: 'Product',
+                            items: [
+                              ('Pulse', _pageUrl('/pulse')),
+                              ('Agent', _pageUrl('/agent')),
+                              ('Versus', _pageUrl('/versus')),
+                              ('Explorer', _pageUrl('/explorer')),
+                            ],
+                          ),
+                          const SizedBox(width: 4),
+                          _NavDropdown(
+                            label: 'Developers',
+                            items: [
+                              ('Docs', 'https://docs.pulsmarket.tech'),
+                              ('CLI', _pageUrl('/cli')),
+                              ('Build', _pageUrl('/build')),
+                              ('GitHub', 'https://github.com/rdmbtc/Puls'),
+                            ],
+                          ),
+                          const SizedBox(width: 4),
+                          const _NavDropdown(
+                            label: 'Mainnet',
+                            items: [
+                              ('Countdown', 'https://mainnet.pulsmarket.tech'),
+                            ],
+                          ),
+                          const SizedBox(width: 4),
+                          const _NavItemButton(
+                            label: 'Invest',
+                            url: 'https://invest.pulsmarket.tech',
+                          ),
+                          const SizedBox(width: 8),
+                          _NavIcon(
+                            icon: Icons.android_rounded,
+                            url: _pageUrl('/mobile-download'),
+                            tooltip: 'Download for Android',
+                          ),
+                          const SizedBox(width: 12),
+                          _SecondaryButton(
+                            label: 'Terminal',
+                            onTap: () => launchUrl(
+                              Uri.parse('https://terminal.pulsmarket.tech'),
+                              mode: LaunchMode.externalApplication,
+                            ),
+                            small: true,
+                          ),
+                          const SizedBox(width: 8),
+                        ] else
+                          const _MobileNavMenu(),
+                        // Always-visible controls
+                        IconButton(
+                          onPressed: appState.toggleThemeMode,
+                          icon: Icon(
+                            isDark
+                                ? Icons.light_mode_rounded
+                                : Icons.dark_mode_rounded,
+                            size: 18,
+                            color: t.textMuted,
+                          ),
+                          tooltip: isDark ? 'Light mode' : 'Dark mode',
                         ),
-                        small: true,
-                      ),
-                      const SizedBox(width: 8),
-                    ] else
-                      const _MobileNavMenu(),
-                    // Always-visible controls
-                    IconButton(
-                      onPressed: appState.toggleThemeMode,
-                      icon: Icon(
-                        isDark
-                            ? Icons.light_mode_rounded
-                            : Icons.dark_mode_rounded,
-                        size: 18,
-                        color: t.textMuted,
-                      ),
-                      tooltip: isDark ? 'Light mode' : 'Dark mode',
+                        SizedBox(width: isMobile ? 4 : 8),
+                        _PrimaryButton(
+                          label: isMobile ? 'Launch' : 'Launch App',
+                          onTap: () =>
+                              appState.dismissWebLanding(terminal: false),
+                          small: true,
+                        ),
+                      ],
                     ),
-                    SizedBox(width: isMobile ? 4 : 8),
-                    _PrimaryButton(
-                      label: isMobile ? 'Launch' : 'Launch App',
-                      onTap: () => appState.dismissWebLanding(terminal: false),
-                      small: true,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
-    ),
-    ),
-  );
+    );
   }
 }
 
@@ -928,6 +944,7 @@ class _MobileNavMenuState extends State<_MobileNavMenu> {
         _item(t, 'Build an agent', _pageUrl('/build')),
         _item(t, 'Economy Explorer', _pageUrl('/explorer')),
         _item(t, 'Live stats', _pageUrl('/stats')),
+        _item(t, 'Mainnet countdown', 'https://mainnet.pulsmarket.tech'),
         _item(t, 'Docs', 'https://docs.pulsmarket.tech'),
         _item(t, 'GitHub', 'https://github.com/rdmbtc/Puls'),
       ],
@@ -951,7 +968,8 @@ class _MobileNavMenuState extends State<_MobileNavMenu> {
           turns: _open ? 0.5 : 0,
           curve: Curves.easeOutCubic,
           child: AnimatedSwitcher(
-            duration: reduce ? Duration.zero : const Duration(milliseconds: 160),
+            duration:
+                reduce ? Duration.zero : const Duration(milliseconds: 160),
             child: Icon(
               _open ? Icons.close_rounded : Icons.menu_rounded,
               key: ValueKey(_open),
@@ -1088,13 +1106,16 @@ class _HeroSectionState extends State<_HeroSection> {
                     : _HeroContent(
                         phrase: _phrases[_phraseIndex],
                         phraseIndex: _phraseIndex,
-                      ).animate(
+                      )
+                        .animate(
                           key: const ValueKey('hero-entrance'),
-                        ).fadeIn(
+                        )
+                        .fadeIn(
                           duration: 1100.ms,
                           delay: 150.ms,
                           curve: PulsCurves.easeOutMagical,
-                        ).blur(
+                        )
+                        .blur(
                           begin: const Offset(0, 28),
                           end: Offset.zero,
                           duration: 900.ms,
@@ -1678,8 +1699,8 @@ class _SectionEyebrow extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ShaderMask(
-            shaderCallback: (r) => PulsColors.pulseGradient.createShader(r),
+          CachedGradientMask(
+            gradient: PulsColors.pulseGradient,
             child: const Icon(Icons.auto_awesome_rounded,
                 size: 14, color: Colors.white),
           ),
@@ -4286,6 +4307,8 @@ class _FooterSection extends StatelessWidget {
                             _FooterLink('Docs', 'https://docs.pulsmarket.tech'),
                             _FooterLink(
                                 'GitHub', 'https://github.com/rdmbtc/Puls'),
+                            _FooterLink('Mainnet countdown',
+                                'https://mainnet.pulsmarket.tech'),
                             _FooterLink('Explorer',
                                 'https://testnet.arcscan.app/address/$factoryAddress'),
                             _FooterLink('Android app', kAndroidApkUrl),
@@ -4364,6 +4387,9 @@ class _FooterSection extends StatelessWidget {
                             const SizedBox(width: 20),
                             const _FooterLink(
                                 'GitHub', 'https://github.com/rdmbtc/Puls'),
+                            const SizedBox(width: 20),
+                            const _FooterLink('Mainnet countdown',
+                                'https://mainnet.pulsmarket.tech'),
                             const SizedBox(width: 20),
                             const _FooterLink(
                                 'Terms', 'https://pulsmarket.tech/terms'),
@@ -4603,7 +4629,7 @@ class _PrimaryButtonState extends State<_PrimaryButton>
               _pressed ? 0 : _magnet.dx,
               _pressed ? 0 : _magnet.dy,
               0,
-            )..scale(scale),
+            )..scaleByDouble(scale, scale, scale, 1),
             child: AnimatedBuilder(
               animation: _glow,
               builder: (context, child) => Container(
@@ -4826,11 +4852,35 @@ class _SectionDivider extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Flexible(child: Container(width: 96, height: 1.5, decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.transparent, t.brand.withValues(alpha: 0.45)]), borderRadius: BorderRadius.circular(100)))),
-          SizedBox(width: 8),
-          Container(width: 4, height: 4, decoration: BoxDecoration(gradient: const LinearGradient(colors: [PulsColors.brandMint, PulsColors.brandPinkDark]), borderRadius: BorderRadius.circular(100))),
-          SizedBox(width: 8),
-          Flexible(child: Container(width: 96, height: 1.5, decoration: BoxDecoration(gradient: LinearGradient(colors: [t.brand.withValues(alpha: 0.45), Colors.transparent]), borderRadius: BorderRadius.circular(100)))),
+          Flexible(
+              child: Container(
+                  width: 96,
+                  height: 1.5,
+                  decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [
+                        Colors.transparent,
+                        t.brand.withValues(alpha: 0.45)
+                      ]),
+                      borderRadius: BorderRadius.circular(100)))),
+          const SizedBox(width: 8),
+          Container(
+              width: 4,
+              height: 4,
+              decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      colors: [PulsColors.brandMint, PulsColors.brandPinkDark]),
+                  borderRadius: BorderRadius.circular(100))),
+          const SizedBox(width: 8),
+          Flexible(
+              child: Container(
+                  width: 96,
+                  height: 1.5,
+                  decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [
+                        t.brand.withValues(alpha: 0.45),
+                        Colors.transparent
+                      ]),
+                      borderRadius: BorderRadius.circular(100)))),
         ],
       ),
     );
