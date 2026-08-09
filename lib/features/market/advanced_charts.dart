@@ -38,6 +38,13 @@ class CandlestickChart extends StatefulWidget {
 class _CandlestickChartState extends State<CandlestickChart> {
   int? _hoveredIndex;
   late List<CandleData> _cachedCandles;
+  // Grid scale + labels, computed ONCE per data/theme change (not per hover
+  // move). Text layout is the expensive part of this painter, and hover
+  // repaints fire on every pixel of a drag across the chart.
+  late double _yMax;
+  late double _yMin;
+  List<TextPainter> _gridLabels = const [];
+  Color _labelColor = const Color(0);
 
   @override
   void initState() {
@@ -50,7 +57,36 @@ class _CandlestickChartState extends State<CandlestickChart> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.prices != widget.prices) {
       _cachedCandles = _generateCandles();
+      // Invalidate the cached grid so it recomputes for the new data.
+      _labelColor = const Color(0);
     }
+  }
+
+  void _precomputeGrid(Color textColor) {
+    var maxVal = 0.0;
+    var minVal = 1.0;
+    for (final c in _cachedCandles) {
+      if (c.high > maxVal) maxVal = c.high;
+      if (c.low < minVal) minVal = c.low;
+    }
+    final pad = (maxVal - minVal) < 0.02 ? 0.05 : (maxVal - minVal) * 0.1;
+    _yMax = (maxVal + pad).clamp(0.0, 1.0);
+    _yMin = (minVal - pad).clamp(0.0, 1.0);
+    _gridLabels = List.generate(_CandlePainter._gridLines + 1, (i) {
+      final gridVal = _yMax - (_yMax - _yMin) * i / _CandlePainter._gridLines;
+      return TextPainter(
+        text: TextSpan(
+          text: formatCents(gridVal),
+          style: TextStyle(
+            color: textColor,
+            fontSize: 8,
+            fontFamily: 'monospace',
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+    });
+    _labelColor = textColor;
   }
 
   List<CandleData> _generateCandles() {
@@ -97,6 +133,9 @@ class _CandlestickChartState extends State<CandlestickChart> {
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
+    // Rebuild the cached grid labels only when the label colour changes
+    // (theme switch / first build) — hover moves skip this entirely.
+    if (_labelColor != t.textSubtle) _precomputeGrid(t.textSubtle);
     final candles = _cachedCandles;
     if (candles.isEmpty) {
       return Center(
@@ -157,9 +196,11 @@ class _CandlestickChartState extends State<CandlestickChart> {
                     candles: candles,
                     upColor: widget.upColor,
                     downColor: widget.downColor,
-                    textColor: t.textSubtle,
                     gridColor: t.border,
                     hoveredIndex: _hoveredIndex,
+                    yMax: _yMax,
+                    yMin: _yMin,
+                    gridLabels: _gridLabels,
                   ),
                 ),
               ),
@@ -196,26 +237,33 @@ class _CandlePainter extends CustomPainter {
     required this.candles,
     required this.upColor,
     required this.downColor,
-    required this.textColor,
     required this.gridColor,
     required this.hoveredIndex,
-  }) : _gridPaint = Paint()
-         ..color = gridColor
-         ..strokeWidth = 1.0
-         ..style = PaintingStyle.stroke,
-       _highlightPaint = Paint()..style = PaintingStyle.fill,
-       _wickPaint = Paint()
-         ..strokeWidth = 1.5
-         ..style = PaintingStyle.stroke,
-       _bodyPaint = Paint()..style = PaintingStyle.fill,
-       _glowPaint = Paint()..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    required this.yMax,
+    required this.yMin,
+    required this.gridLabels,
+  })  : _gridPaint = Paint()
+          ..color = gridColor
+          ..strokeWidth = 1.0
+          ..style = PaintingStyle.stroke,
+        _highlightPaint = Paint()..style = PaintingStyle.fill,
+        _wickPaint = Paint()
+          ..strokeWidth = 1.5
+          ..style = PaintingStyle.stroke,
+        _bodyPaint = Paint()..style = PaintingStyle.fill,
+        _glowPaint = Paint()
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+
+  static const _gridLines = 4;
 
   final List<CandleData> candles;
   final Color upColor;
   final Color downColor;
-  final Color textColor;
   final Color gridColor;
   final int? hoveredIndex;
+  final double yMax;
+  final double yMin;
+  final List<TextPainter> gridLabels;
 
   final Paint _gridPaint;
   final Paint _highlightPaint;
@@ -225,28 +273,12 @@ class _CandlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double maxVal = candles.map((c) => c.high).reduce((a, b) => a > b ? a : b);
-    final double minVal = candles.map((c) => c.low).reduce((a, b) => a < b ? a : b);
-    final double pad = (maxVal - minVal) < 0.02 ? 0.05 : (maxVal - minVal) * 0.1;
-    final double yMax = (maxVal + pad).clamp(0.0, 1.0);
-    final double yMin = (minVal - pad).clamp(0.0, 1.0);
-
-    // Draw Grid Lines (Horizontal)
-    const gridLines = 4;
-    for (int i = 0; i <= gridLines; i++) {
-      final y = size.height * i / gridLines;
+    // Draw Grid Lines (Horizontal) — scale + labels are precomputed by the
+    // owning State, so this loop is pure draw calls (cheap on hover drags).
+    for (int i = 0; i <= _gridLines; i++) {
+      final y = size.height * i / _gridLines;
       canvas.drawLine(Offset(0, y), Offset(size.width, y), _gridPaint);
-      
-      // Draw grid text label
-      final gridVal = yMax - (yMax - yMin) * i / gridLines;
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: formatCents(gridVal ),
-          style: TextStyle(color: textColor, fontSize: 8, fontFamily: 'monospace'),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      textPainter.paint(canvas, Offset(4, y - 10));
+      gridLabels[i].paint(canvas, Offset(4, y - 10));
     }
 
     final double candleWidth = size.width / candles.length;

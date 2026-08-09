@@ -44,7 +44,14 @@ class _LazyIndexedStackState extends State<LazyIndexedStack> {
       sizing: StackFit.expand,
       children: [
         for (var i = 0; i < widget.children.length; i++)
-          _activated[i] ? widget.children[i] : const SizedBox.shrink(),
+          // TickerMode mutes every Ticker in non-active tabs (gradient text,
+          // pulse dots, marquees…) so hidden tabs don't keep burning 60fps
+          // frames while offstage. State is preserved and each animation
+          // resumes exactly where it left off when the tab returns.
+          TickerMode(
+            enabled: i == widget.index,
+            child: _activated[i] ? widget.children[i] : const SizedBox.shrink(),
+          ),
       ],
     );
   }

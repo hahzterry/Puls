@@ -680,6 +680,11 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
   final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
   final List<_BetActivity> _activities = [];
   bool _isLoadingActivities = true;
+  // Guards the "no new trades → refresh relative time labels" path: the
+  // watchdog polls every 8s, but "time ago" only changes meaningfully every
+  // ~20s+. Without this, all 20 activity rows rebuilt 2.5× more often than
+  // the labels could possibly change.
+  DateTime _lastTimeRefreshAt = DateTime.fromMillisecondsSinceEpoch(0);
   Timer? _pollingTimer;
   WebSocketChannel? _channel;
   bool _isWebSocketConnected = false;
@@ -974,6 +979,15 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
         }
       }
     } else {
+      // No new trades — only the relative "time ago" labels can change.
+      // Refresh them on a slow cadence (>=20s) instead of on every 8s
+      // watchdog tick so the panel doesn't rebuild all rows needlessly.
+      final now = DateTime.now();
+      if (now.difference(_lastTimeRefreshAt) <
+          const Duration(seconds: 20)) {
+        return;
+      }
+      _lastTimeRefreshAt = now;
       setState(() {
         for (var i = 0; i < _activities.length; i++) {
           final old = _activities[i];

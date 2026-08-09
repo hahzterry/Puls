@@ -37,13 +37,18 @@ class WebLandingPage extends StatefulWidget {
 class _WebLandingPageState extends State<WebLandingPage>
     with SingleTickerProviderStateMixin {
   final _scrollCtrl = ScrollController();
-  double _scrollOffset = 0;
+  // Scroll offset as a ValueNotifier so scroll-driven UI (hero parallax,
+  // progress bars, sticky navbar, reveal/lazy triggers) rebuilds locally via
+  // ValueListenableBuilder WITHOUT rebuilding the whole page tree — and thus
+  // re-laying-out every section of this ~10k-px column — on every scroll tick.
+  final _scrollOffset = ValueNotifier<double>(0);
   int _lastScrollNotified = 0;
-  static const _scrollThrottleMs = 50; // ~20 rebuilds/s max for scroll effects
+  static const _scrollThrottleMs = 50; // ~20 updates/s max for scroll effects
   late final AnimationController _aurora;
   // Normalized cursor position (-0.5..0.5 on each axis) for the reactive aurora.
   // A ValueNotifier so mouse moves repaint only the aurora, not the whole page.
   final _pointer = ValueNotifier<Offset>(Offset.zero);
+  Offset _lastPointerSent = Offset.zero;
 
   @override
   void initState() {
@@ -52,15 +57,15 @@ class _WebLandingPageState extends State<WebLandingPage>
     // in build() so motion-sensitive users get a single still frame.
     _aurora =
         AnimationController(vsync: this, duration: const Duration(seconds: 18));
-    // Throttled scroll listener: setState fires at most ~20×/s instead of once
-    // per scroll pixel. The rebuild only feeds the scroll-progress bar + hero
-    // parallax, so sub-frame updates are invisible — but skipping them removes
-    // a full-page rebuild from every scroll frame (biggest landing FPS win).
+    // Throttled scroll listener: the notifier fires at most ~20×/s instead of
+    // once per scroll pixel. Only the scroll-driven leaf widgets (progress bar,
+    // hero parallax, sticky navbar, reveal/lazy triggers) listen to it, so a
+    // scroll frame never rebuilds — or re-lays-out — the whole page.
     _scrollCtrl.addListener(() {
       final now = DateTime.now().millisecondsSinceEpoch;
       if (now - _lastScrollNotified < _scrollThrottleMs) return;
       _lastScrollNotified = now;
-      if (mounted) setState(() => _scrollOffset = _scrollCtrl.offset);
+      _scrollOffset.value = _scrollCtrl.offset;
     });
   }
 
@@ -68,6 +73,7 @@ class _WebLandingPageState extends State<WebLandingPage>
   void dispose() {
     _aurora.dispose();
     _scrollCtrl.dispose();
+    _scrollOffset.dispose();
     _pointer.dispose();
     super.dispose();
   }
@@ -90,14 +96,7 @@ class _WebLandingPageState extends State<WebLandingPage>
     final dotColor = isDark
         ? PulsColors.brandMint.withValues(alpha: 0.045)
         : PulsColors.brandPink.withValues(alpha: 0.04);
-
-    // Scroll progress (0..1) for the top progress bar.
-    final maxExtent =
-        _scrollCtrl.hasClients && _scrollCtrl.position.hasContentDimensions
-            ? _scrollCtrl.position.maxScrollExtent
-            : 0.0;
-    final progress =
-        maxExtent > 0 ? (_scrollOffset / maxExtent).clamp(0.0, 1.0) : 0.0;
+    final size = MediaQuery.sizeOf(context);
 
     return Scaffold(
       backgroundColor: t.bg,
@@ -105,12 +104,18 @@ class _WebLandingPageState extends State<WebLandingPage>
         opaque: false,
         onHover: (e) {
           if (context.reduceMotion) return;
-          final size = MediaQuery.sizeOf(context);
           if (size.width == 0 || size.height == 0) return;
-          _pointer.value = Offset(
+          final p = Offset(
             e.position.dx / size.width - 0.5,
             e.position.dy / size.height - 0.5,
           );
+          // Only notify the aurora when the cursor actually moved (>= ~2% of
+          // an axis). A still mouse repaints nothing, and frantic sweeping is
+          // decimated to a few parallax steps per frame instead of every
+          // pointer event.
+          if ((p - _lastPointerSent).distance < 0.01) return;
+          _lastPointerSent = p;
+          _pointer.value = p;
         },
         child: Stack(
           children: [
@@ -118,17 +123,33 @@ class _WebLandingPageState extends State<WebLandingPage>
             // RepaintBoundary isolates the 60fps aurora repaints from the
             // rest of the Stack (content, dot grid, grain) so they don't
             // re-rasterize on every animation tick. Excluded from semantics.
+            //
+            // The painter runs at HALF resolution (a 4× reduction in fragment
+            // work for the radial gradients) and the layer is upscaled by the
+            // compositor — for a soft, blurred glow this is visually identical
+            // but dramatically cheaper on weak GPUs. Rasterized once per
+            // animation tick into a half-size RepaintBoundary layer.
             Positioned.fill(
               child: ExcludeSemantics(
-                child: RepaintBoundary(
-                  child: AnimatedBuilder(
-                    animation: Listenable.merge([_aurora, _pointer]),
-                    builder: (context, _) => CustomPaint(
-                      painter: _AuroraPainter(
-                        progress: _aurora.value,
-                        isDark: isDark,
-                        bg: t.bg,
-                        pointer: _pointer.value,
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Transform.scale(
+                    scale: 2,
+                    child: SizedBox(
+                      width: size.width / 2,
+                      height: size.height / 2,
+                      child: RepaintBoundary(
+                        child: AnimatedBuilder(
+                          animation: Listenable.merge([_aurora, _pointer]),
+                          builder: (context, _) => CustomPaint(
+                            painter: _AuroraPainter(
+                              progress: _aurora.value,
+                              isDark: isDark,
+                              bg: t.bg,
+                              pointer: _pointer.value,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -260,27 +281,43 @@ class _WebLandingPageState extends State<WebLandingPage>
               ),
             ),
             // ── Scroll progress bar (top) ─────────────────────────────────
+            // Listens to the scroll notifier directly so it never rebuilds the
+            // page — only this 3px strip.
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: IgnorePointer(
-                child: SizedBox(
-                  height: 3,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor: progress == 0 ? 0.0001 : progress,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          gradient: PulsColors.pulseGradient,
-                          boxShadow: [
-                            BoxShadow(color: Color(0x66F65FA9), blurRadius: 8),
-                          ],
+                child: ValueListenableBuilder<double>(
+                  valueListenable: _scrollOffset,
+                  builder: (context, scrollOffset, _) {
+                    final maxExtent = _scrollCtrl.hasClients &&
+                            _scrollCtrl.position.hasContentDimensions
+                        ? _scrollCtrl.position.maxScrollExtent
+                        : 0.0;
+                    final progress = maxExtent > 0
+                        ? (scrollOffset / maxExtent).clamp(0.0, 1.0)
+                        : 0.0;
+                    return SizedBox(
+                      height: 3,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: progress == 0 ? 0.0001 : progress,
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              gradient: PulsColors.pulseGradient,
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Color(0x66F65FA9),
+                                    blurRadius: 8),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -300,46 +337,58 @@ class _WebLandingPageState extends State<WebLandingPage>
               right: 1,
               child: IgnorePointer(
                 child: ExcludeSemantics(
-                  child: SizedBox(
-                    width: 3,
-                    child: Stack(
-                      alignment: Alignment.topCenter,
-                      children: [
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: t.border.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                          ),
-                        ),
-                        FractionallySizedBox(
+                  child: ValueListenableBuilder<double>(
+                    valueListenable: _scrollOffset,
+                    builder: (context, scrollOffset, _) {
+                      final maxExtent = _scrollCtrl.hasClients &&
+                              _scrollCtrl.position.hasContentDimensions
+                          ? _scrollCtrl.position.maxScrollExtent
+                          : 0.0;
+                      final progress = maxExtent > 0
+                          ? (scrollOffset / maxExtent).clamp(0.0, 1.0)
+                          : 0.0;
+                      return SizedBox(
+                        width: 3,
+                        child: Stack(
                           alignment: Alignment.topCenter,
-                          heightFactor: progress == 0 ? 0.0001 : progress,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Color(0xFF34E5C0),
-                                  Color(0xFFF65FA9),
-                                ],
-                              ),
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(100)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: PulsColors.brandPink
-                                      .withValues(alpha: 0.5),
-                                  blurRadius: 6,
+                          children: [
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: t.border.withValues(alpha: 0.4),
+                                  borderRadius: BorderRadius.circular(100),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                            FractionallySizedBox(
+                              alignment: Alignment.topCenter,
+                              heightFactor: progress == 0 ? 0.0001 : progress,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Color(0xFF34E5C0),
+                                      Color(0xFFF65FA9),
+                                    ],
+                                  ),
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(100)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: PulsColors.brandPink
+                                          .withValues(alpha: 0.5),
+                                      blurRadius: 6,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -468,6 +517,22 @@ class _InlineNavbar extends StatelessWidget {
 /// (logo + CTA only) so it never competes with the content below.
 class _StickyNavbar extends StatelessWidget {
   const _StickyNavbar({required this.scrollOffset});
+  final ValueNotifier<double> scrollOffset;
+
+  @override
+  Widget build(BuildContext context) {
+    // Local listener: scrolling rebuilds only the navbar, never the page.
+    return ValueListenableBuilder<double>(
+      valueListenable: scrollOffset,
+      builder: (context, scrollOffset, _) => _StickyNavbarContent(
+        scrollOffset: scrollOffset,
+      ),
+    );
+  }
+}
+
+class _StickyNavbarContent extends StatelessWidget {
+  const _StickyNavbarContent({required this.scrollOffset});
   final double scrollOffset;
 
   @override
@@ -916,7 +981,7 @@ const String kAndroidApkUrl = 'https://github.com/rdmbtc/Puls/releases/latest';
 
 class _HeroSection extends StatefulWidget {
   const _HeroSection({required this.scrollOffset});
-  final double scrollOffset;
+  final ValueNotifier<double> scrollOffset;
 
   @override
   State<_HeroSection> createState() => _HeroSectionState();
@@ -955,17 +1020,42 @@ class _HeroSectionState extends State<_HeroSection> {
     final h = MediaQuery.sizeOf(context).height;
     final w = MediaQuery.sizeOf(context).width;
     final isMobile = w < 1000;
-    // Reduce-motion: drop the scroll parallax (keep the gentle fade so the hero
-    // still clears the content scrolling up beneath it).
-    final parallaxY = context.reduceMotion
-        ? 0.0
-        : -(widget.scrollOffset * 0.18).clamp(0.0, h * 0.25);
-    final heroOpacity = (1 - widget.scrollOffset / (h * 0.55)).clamp(0.0, 1.0);
+    // Local listener: scrolling rebuilds only the hero (parallax + crossfade),
+    // never the rest of the page.
+    return ValueListenableBuilder<double>(
+      valueListenable: widget.scrollOffset,
+      builder: (context, scrollOffset, _) {
+        // Reduce-motion: drop the scroll parallax (keep the gentle fade so the
+        // hero still clears the content scrolling up beneath it).
+        final parallaxY = context.reduceMotion
+            ? 0.0
+            : -(scrollOffset * 0.18).clamp(0.0, h * 0.25);
+        final heroOpacity = (1 - scrollOffset / (h * 0.55)).clamp(0.0, 1.0);
 
-    // Navbar crossfade: the inline (hero) navbar fades out as the sticky one
-    // fades in, giving a seamless handoff around 80–200px.
-    final inlineNavOpacity = (1 - widget.scrollOffset / 140).clamp(0.0, 1.0);
+        // Navbar crossfade: the inline (hero) navbar fades out as the sticky
+        // one fades in, giving a seamless handoff around 80–200px.
+        final inlineNavOpacity = (1 - scrollOffset / 140).clamp(0.0, 1.0);
 
+        return _buildHero(
+          h: h,
+          isMobile: isMobile,
+          scrollOffset: scrollOffset,
+          parallaxY: parallaxY,
+          heroOpacity: heroOpacity,
+          inlineNavOpacity: inlineNavOpacity,
+        );
+      },
+    );
+  }
+
+  Widget _buildHero({
+    required double h,
+    required bool isMobile,
+    required double scrollOffset,
+    required double parallaxY,
+    required double heroOpacity,
+    required double inlineNavOpacity,
+  }) {
     return ConstrainedBox(
       constraints: BoxConstraints(minHeight: h),
       child: Stack(
@@ -976,7 +1066,7 @@ class _HeroSectionState extends State<_HeroSection> {
             left: 0,
             right: 0,
             child: IgnorePointer(
-              ignoring: widget.scrollOffset > 100,
+              ignoring: scrollOffset > 100,
               child: Opacity(
                 opacity: inlineNavOpacity,
                 child: const _InlineNavbar(),
@@ -1521,7 +1611,7 @@ class _TrustStrip extends StatelessWidget {
 // RepaintBoundary so the buttery lenis scroll never pays for it.
 class _FeaturesSection extends StatelessWidget {
   const _FeaturesSection({required this.scrollOffset});
-  final double scrollOffset;
+  final ValueNotifier<double> scrollOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -1844,7 +1934,7 @@ class _HowStepState extends State<_HowStep> {
 // ── Bento layout ───────────────────────────────────────────────────────────────
 class _Bento extends StatefulWidget {
   const _Bento({required this.scrollOffset});
-  final double scrollOffset;
+  final ValueNotifier<double> scrollOffset;
 
   @override
   State<_Bento> createState() => _BentoState();
@@ -1857,13 +1947,17 @@ class _BentoState extends State<_Bento> {
   @override
   void initState() {
     super.initState();
+    // Scroll listener: the reveal check runs on scroll ticks WITHOUT a page
+    // rebuild — and once revealed (or _top measured) the checks are pure
+    // arithmetic, so scrolling never relayouts the bento.
+    widget.scrollOffset.addListener(_maybeReveal);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeReveal());
   }
 
   @override
-  void didUpdateWidget(covariant _Bento old) {
-    super.didUpdateWidget(old);
-    if (!_revealed) _maybeReveal();
+  void dispose() {
+    widget.scrollOffset.removeListener(_maybeReveal);
+    super.dispose();
   }
 
   void _maybeReveal() {
@@ -1874,12 +1968,16 @@ class _BentoState extends State<_Bento> {
     }
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.attached || !box.hasSize) return;
-    _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset;
+    // Re-measure every tick: lazy sections above grow when they build, so the
+    // content-space position shifts — a cached _top would go stale and fire
+    // the reveal thousands of px early. (localToGlobal here is a cheap
+    // transform walk, not a relayout.)
+    _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset.value;
     final h = MediaQuery.sizeOf(context).height;
-    if (widget.scrollOffset + h * 0.9 > _top!) {
+    if (widget.scrollOffset.value + h * 0.9 > _top!) {
+      // Only setState on the actual flip — the parent no longer rebuilds on
+      // scroll, so this single rebuild is the only one the bento ever does.
       setState(() => _revealed = true);
-    } else {
-      setState(() {}); // keep the measured position for the next scroll tick
     }
   }
 
@@ -4647,7 +4745,7 @@ class _SecondaryButtonState extends State<_SecondaryButton> {
 /// Fades + slides its child in the first time it scrolls into view.
 class _Reveal extends StatefulWidget {
   const _Reveal({required this.scrollOffset, required this.child});
-  final double scrollOffset;
+  final ValueNotifier<double> scrollOffset;
   final Widget child;
 
   @override
@@ -4661,36 +4759,35 @@ class _RevealState extends State<_Reveal> {
   @override
   void initState() {
     super.initState();
+    // Scroll listener: the reveal check runs on scroll ticks WITHOUT a page
+    // rebuild — setState only fires once, on the reveal flip itself.
+    widget.scrollOffset.addListener(_maybeReveal);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _shown) return;
-      _measure();
-      final h = MediaQuery.sizeOf(context).height;
-      final top = _top;
-      if (top != null && widget.scrollOffset + h * 0.88 > top) {
-        setState(() => _shown = true);
-      } else {
-        setState(() {}); // re-render with measured position
-      }
+      _maybeReveal();
     });
   }
 
   @override
-  void didUpdateWidget(covariant _Reveal old) {
-    super.didUpdateWidget(old);
-    if (_shown) return;
-    _measure();
-    final h = MediaQuery.sizeOf(context).height;
-    final top = _top;
-    if (top != null && widget.scrollOffset + h * 0.88 > top) {
-      setState(() => _shown = true);
-    }
+  void dispose() {
+    widget.scrollOffset.removeListener(_maybeReveal);
+    super.dispose();
   }
 
-  void _measure() {
+  void _maybeReveal() {
+    if (!mounted || _shown) return;
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.attached || !box.hasSize) return;
-    // Global position + current scroll offset = position in scroll content.
-    _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset;
+    // Re-measure every tick: lazy sections above grow when they build, so the
+    // content-space position shifts — a cached _top would go stale and fire
+    // reveals thousands of px early. (localToGlobal is a cheap transform
+    // walk, not a relayout; the original code paid for it every tick too.)
+    _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset.value;
+    final h = MediaQuery.sizeOf(context).height;
+    if (widget.scrollOffset.value + h * 0.88 > _top!) {
+      // Only setState on the actual flip — no redundant rebuilds on scroll.
+      setState(() => _shown = true);
+    }
   }
 
   @override
@@ -4747,7 +4844,7 @@ class _SectionDivider extends StatelessWidget {
 /// built immediately, live sections build as you scroll to them.
 class _LazySection extends StatefulWidget {
   const _LazySection({required this.scrollOffset, required this.builder});
-  final double scrollOffset;
+  final ValueNotifier<double> scrollOffset;
   final WidgetBuilder builder;
 
   @override
@@ -4758,30 +4855,43 @@ class _LazySectionState extends State<_LazySection> {
   bool _built = false;
   double? _top;
 
+  @override
+  void initState() {
+    super.initState();
+    // Scroll listener: the build check runs on scroll ticks WITHOUT a page
+    // rebuild — and once built it never fires again. The heavy child (and any
+    // HTTP it triggers) is constructed exactly once, when scrolled near.
+    widget.scrollOffset.addListener(_maybeBuild);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeBuild());
+  }
+
+  @override
+  void dispose() {
+    widget.scrollOffset.removeListener(_maybeBuild);
+    super.dispose();
+  }
+
   void _maybeBuild() {
     if (_built || !mounted) return;
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.attached || !box.hasSize) return;
-    _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset;
+    // Re-measure every tick: lazy sections above grow when they build, so the
+    // content-space position shifts — a cached _top would go stale and build
+    // sections thousands of px early, defeating lazy loading. (localToGlobal
+    // is a cheap transform walk, not a relayout.)
+    _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset.value;
     final h = MediaQuery.sizeOf(context).height;
-    if (widget.scrollOffset + h * 1.2 >= _top!) {
+    if (widget.scrollOffset.value + h * 1.2 >= _top!) {
+      // Only setState on the actual flip — no redundant rebuilds on scroll.
       setState(() => _built = true);
-    } else {
-      setState(() {}); // keep the measured position for the next scroll tick
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _LazySection old) {
-    super.didUpdateWidget(old);
-    if (!_built) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeBuild());
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_built) return widget.builder(context);
+    // Re-check after any rebuild (window resize, content shifting above) —
+    // _maybeBuild short-circuits immediately once built, so no rebuild loops.
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeBuild());
     return const SizedBox.shrink();
   }
