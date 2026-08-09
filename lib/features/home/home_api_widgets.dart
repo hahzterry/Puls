@@ -129,6 +129,24 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
+    // The ticker strip is rebuilt only when prices/theme change; the scroll
+    // controller drives just the translate offset, so the static pair row is
+    // built once as AnimatedBuilder's child instead of on every scroll tick.
+    final pairs = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildPair('BTC', 'BTCUSDT', t),
+        Container(width: 4, height: 4, decoration: BoxDecoration(color: t.border, shape: BoxShape.circle)),
+        _buildPair('ETH', 'ETHUSDT', t),
+        Container(width: 4, height: 4, decoration: BoxDecoration(color: t.border, shape: BoxShape.circle)),
+        _buildPair('SOL', 'SOLUSDT', t),
+        Container(width: 4, height: 4, decoration: BoxDecoration(color: t.border, shape: BoxShape.circle)),
+      ],
+    );
+    final tape = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [pairs, pairs, pairs, pairs, pairs, pairs],
+    );
     return Container(
       height: 32,
       width: double.infinity,
@@ -140,34 +158,23 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
       child: RepaintBoundary(
         child: AnimatedBuilder(
           animation: _scrollController,
-        builder: (context, child) {
-          final pairs = Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildPair('BTC', 'BTCUSDT', t),
-              Container(width: 4, height: 4, decoration: BoxDecoration(color: t.border, shape: BoxShape.circle)),
-              _buildPair('ETH', 'ETHUSDT', t),
-              Container(width: 4, height: 4, decoration: BoxDecoration(color: t.border, shape: BoxShape.circle)),
-              _buildPair('SOL', 'SOLUSDT', t),
-              Container(width: 4, height: 4, decoration: BoxDecoration(color: t.border, shape: BoxShape.circle)),
-            ],
-          );
+          child: tape,
+          builder: (context, child) {
+            final elapsed = _scrollController.value * 100000;
+            final dx = -((elapsed * 42) % 372);
 
-          final elapsed = _scrollController.value * 100000;
-          final dx = -((elapsed * 42) % 372);
-
-          return OverflowBox(
-            minWidth: 0,
-            maxWidth: double.infinity,
-            alignment: Alignment.centerLeft,
-            child: Transform.translate(
-              offset: Offset(dx, 0),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [pairs, pairs, pairs, pairs, pairs, pairs]),
-            ),
-          );
-        },
+            return OverflowBox(
+              minWidth: 0,
+              maxWidth: double.infinity,
+              alignment: Alignment.centerLeft,
+              child: Transform.translate(
+                offset: Offset(dx, 0),
+                child: child,
+              ),
+            );
+          },
+        ),
       ),
-    ),
     );
   }
 }

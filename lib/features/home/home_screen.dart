@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/puls_app.dart';
 import '../../app/puls_app_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/gradient_text.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/widgets/puls_page_route.dart';
 import '../../core/widgets/skeleton.dart';
@@ -339,9 +340,9 @@ class _FeaturedHeroBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              ShaderMask(
-                shaderCallback: (r) => PulsColors.pulseGradient.createShader(r),
-                child: const Icon(Icons.auto_awesome_rounded,
+              const CachedGradientMask(
+                gradient: PulsColors.pulseGradient,
+                child: Icon(Icons.auto_awesome_rounded,
                     size: 15, color: Colors.white),
               ),
               const SizedBox(width: 7),

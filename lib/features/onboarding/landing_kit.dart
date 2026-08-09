@@ -43,8 +43,8 @@ class LandingEyebrow extends StatelessWidget {
           if (live)
             const PulseDot(size: 6, color: Color(0xFF22C55E), period: Duration(milliseconds: 1400))
           else
-            ShaderMask(
-              shaderCallback: (r) => PulsColors.pulseGradient.createShader(r),
+            CachedGradientMask(
+              gradient: PulsColors.pulseGradient,
               child: Icon(icon, size: 14, color: Colors.white),
             ),
           SizedBox(width: live ? 4 : 8),

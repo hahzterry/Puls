@@ -106,7 +106,10 @@ class _FlashArbitrageScreenState extends State<FlashArbitrageScreen>
   void initState() {
     super.initState();
     _queue.addAll([_spawn(), _spawn(), _spawn()]);
-    _tick = Timer.periodic(const Duration(milliseconds: 100), (_) {
+    // 250ms repaint cadence: remaining is derived from expiresAt, so a slower
+    // tick costs 2.5x fewer whole-screen rebuilds with no visible difference
+    // on an 18-36s countdown (the bar moves ~1% per tick).
+    _tick = Timer.periodic(const Duration(milliseconds: 250), (_) {
       if (!mounted) return;
       // Expire timed-out cards
       final expired =

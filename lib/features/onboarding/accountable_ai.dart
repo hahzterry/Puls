@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/gradient_text.dart';
 import 'landing_kit.dart';
 
 /// "Accountability, by design" — the section that explains *why* Puls is
@@ -437,9 +438,9 @@ class _DecidesStrip extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ShaderMask(
-              shaderCallback: (r) => PulsColors.pulseGradient.createShader(r),
-              child: const Icon(Icons.psychology_rounded,
+            const CachedGradientMask(
+              gradient: PulsColors.pulseGradient,
+              child: Icon(Icons.psychology_rounded,
                   size: 16, color: Colors.white),
             ),
             const SizedBox(width: 8),

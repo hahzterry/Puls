@@ -830,9 +830,9 @@ class _FeaturedLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        ShaderMask(
-          shaderCallback: (r) => PulsColors.pulseGradient.createShader(r),
-          child: const Icon(Icons.auto_awesome_rounded,
+        const CachedGradientMask(
+          gradient: PulsColors.pulseGradient,
+          child: Icon(Icons.auto_awesome_rounded,
               size: 16, color: Colors.white),
         ),
         const SizedBox(width: 8),

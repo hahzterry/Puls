@@ -202,21 +202,10 @@ class SwarmPainter extends CustomPainter {
       cache.nodeInnerPaint.color = Colors.white.withValues(alpha: 0.4);
       canvas.drawCircle(Offset(x - r * 0.3, y - r * 0.3), r * 0.35, cache.nodeInnerPaint);
 
-      // Label (only if there's room — keep canvas fast on web).
+      // Label (only if there's room — keep canvas fast on web). The laid-out
+      // TextPainter is cached per label; only the paint offset changes per frame.
       if (size.width > 280) {
-        final tp = TextPainter(
-          text: TextSpan(
-            text: n.label,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.85),
-              fontSize: 9.5,
-              fontWeight: FontWeight.w700,
-              fontFamily: 'DM Sans',
-              letterSpacing: 0.3,
-            ),
-          ),
-          textDirection: ui.TextDirection.ltr,
-        )..layout();
+        final tp = cache.labelPainter(n.label);
         tp.paint(canvas, Offset(x - tp.width / 2, y + r + 4));
       }
     }
@@ -247,6 +236,32 @@ class SwarmRenderCache {
   Size _size = Size.zero;
   int _nodeCount = -1;
   double lastT = 0; // for delta-time pulse advancement
+
+  // Node labels are static per node (only their paint offset moves every
+  // frame). TextPainter.layout() — glyph shaping — is expensive, so cache one
+  // laid-out painter per label instead of rebuilding it on every animation
+  // frame. Label strings are bounded (agent names), so this map stays tiny.
+  final Map<String, TextPainter> _labelPainters = {};
+
+  TextPainter labelPainter(String label) {
+    final cached = _labelPainters[label];
+    if (cached != null) return cached;
+    final tp = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.85),
+          fontSize: 9.5,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'DM Sans',
+          letterSpacing: 0.3,
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+    )..layout();
+    _labelPainters[label] = tp;
+    return tp;
+  }
 
   /// Position nodes in an orbital layout: creators on an inner ring,
   /// traders on an outer ring. Stable across frames (no jittering).

@@ -14,7 +14,6 @@ import 'live_ticker.dart';
 import 'meet_the_agents.dart';
 import 'live_traction.dart';
 import 'landing_faq.dart';
-import 'landing_kit.dart';
 import 'accountable_ai.dart';
 import 'phone_demo.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -1699,9 +1698,9 @@ class _SectionEyebrow extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CachedGradientMask(
+          const CachedGradientMask(
             gradient: PulsColors.pulseGradient,
-            child: const Icon(Icons.auto_awesome_rounded,
+            child: Icon(Icons.auto_awesome_rounded,
                 size: 14, color: Colors.white),
           ),
           const SizedBox(width: 8),
