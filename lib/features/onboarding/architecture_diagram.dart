@@ -13,8 +13,8 @@ class ArchitectureSection extends StatelessWidget {
   static const _nodes = [
     _NodeData('📱', 'Flutter app', 'Android + Web · swipe to trade',
         Color(0xFFEC4899)),
-    _NodeData('🟢', 'Node API + WebSocket', 'Google sign-in · live trade stream',
-        Color(0xFF16A34A)),
+    _NodeData('🟢', 'Node API + WebSocket',
+        'Google sign-in · live trade stream', Color(0xFF16A34A)),
     _NodeData('💳', 'Circle MPC wallet', 'Created instantly · no seed phrase',
         Color(0xFF0EA5E9)),
     _NodeData('🏭', 'LMSR market factory', 'Deploys each PulsMarket on-chain',
@@ -23,7 +23,12 @@ class ArchitectureSection extends StatelessWidget {
         Color(0xFF2DD4BF)),
   ];
 
-  static const _labels = ['Google OAuth', 'userId → wallet', 'USDC gas · buyYes()', 'settled < 1s'];
+  static const _labels = [
+    'Google OAuth',
+    'userId → wallet',
+    'USDC gas · buyYes()',
+    'settled < 1s'
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +43,8 @@ class ArchitectureSection extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 560),
           child: Column(
             children: [
-              const LandingEyebrow(label: 'UNDER THE HOOD', icon: Icons.account_tree_rounded),
+              const LandingEyebrow(
+                  label: 'UNDER THE HOOD', icon: Icons.account_tree_rounded),
               const SizedBox(height: 20),
               LandingHeadline(
                 lead: 'Real rails,',
@@ -58,7 +64,8 @@ class ArchitectureSection extends StatelessWidget {
               SizedBox(height: isMobile ? 32 : 48),
               for (var i = 0; i < _nodes.length; i++) ...[
                 _Node(data: _nodes[i], index: i),
-                if (i < _nodes.length - 1) _Connector(label: _labels[i], delay: i * 0.2),
+                if (i < _nodes.length - 1)
+                  _Connector(label: _labels[i], delay: i * 0.2),
               ],
               const SizedBox(height: 28),
               _KeyChip(),
@@ -121,10 +128,13 @@ class _Node extends StatelessWidget {
               children: [
                 Text(data.title,
                     style: TextStyle(
-                        color: t.text, fontSize: 15.5, fontWeight: FontWeight.w800)),
+                        color: t.text,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800)),
                 const SizedBox(height: 2),
                 Text(data.subtitle,
-                    style: TextStyle(color: t.textMuted, fontSize: 12.5, height: 1.4)),
+                    style: TextStyle(
+                        color: t.textMuted, fontSize: 12.5, height: 1.4)),
               ],
             ),
           ),
@@ -139,7 +149,9 @@ class _Node extends StatelessWidget {
             ),
             child: Text('${index + 1}',
                 style: TextStyle(
-                    color: t.textSubtle, fontSize: 12, fontWeight: FontWeight.w800)),
+                    color: t.textSubtle,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -156,13 +168,15 @@ class _Connector extends StatefulWidget {
   State<_Connector> createState() => _ConnectorState();
 }
 
-class _ConnectorState extends State<_Connector> with SingleTickerProviderStateMixin {
+class _ConnectorState extends State<_Connector>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _c;
 
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800));
+    _c = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1800));
   }
 
   @override
@@ -184,44 +198,67 @@ class _ConnectorState extends State<_Connector> with SingleTickerProviderStateMi
 
     return SizedBox(
       height: h,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // The line.
-          Container(width: 2, height: h, color: t.border),
-          // Flowing USDC impulses.
-          if (!reduce)
-            AnimatedBuilder(
-              animation: _c,
-              builder: (context, _) {
-                final p1 = (_c.value + widget.delay) % 1.0;
-                final p2 = (_c.value + widget.delay + 0.5) % 1.0;
-                return Stack(
-                  children: [
-                    _impulse(p1, h),
-                    _impulse(p2, h),
-                  ],
-                );
-              },
-            )
-          else
-            _staticDot(h),
-          // Label chip riding the line.
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: t.bg,
-              borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: t.border),
-            ),
-            child: Text(widget.label,
-                style: TextStyle(
-                    color: t.textMuted,
-                    fontSize: 10.5,
-                    fontFamily: 'monospace',
-                    fontWeight: FontWeight.w600)),
-          ),
-        ],
+      // RepaintBoundary keeps each connector's impulses contained: 4 connectors
+      // animate forever, and each must only repaint itself.
+      child: RepaintBoundary(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // The line.
+            Container(width: 2, height: h, color: t.border),
+            // Flowing USDC impulses — static parts (line + label) are the
+            // AnimatedBuilder's child so they're built once, not per frame.
+            if (!reduce)
+              AnimatedBuilder(
+                animation: _c,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: t.bg,
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(color: t.border),
+                  ),
+                  child: Text(widget.label,
+                      style: TextStyle(
+                          color: t.textMuted,
+                          fontSize: 10.5,
+                          fontFamily: 'monospace',
+                          fontWeight: FontWeight.w600)),
+                ),
+                builder: (context, child) {
+                  final p1 = (_c.value + widget.delay) % 1.0;
+                  final p2 = (_c.value + widget.delay + 0.5) % 1.0;
+                  return Stack(
+                    children: [
+                      child!,
+                      _impulse(p1, h),
+                      _impulse(p2, h),
+                    ],
+                  );
+                },
+              )
+            else
+              _staticDot(h),
+            // Label chip riding the line (static path).
+            if (reduce)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: t.bg,
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(color: t.border),
+                ),
+                child: Text(widget.label,
+                    style: TextStyle(
+                        color: t.textMuted,
+                        fontSize: 10.5,
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.w600)),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -283,7 +320,8 @@ class _KeyChip extends StatelessWidget {
           Icon(Icons.key_rounded, size: 14, color: t.brand),
           const SizedBox(width: 7),
           Flexible(
-            child: Text('USDC is the ONLY token. No ETH needed. Sub-second finality.',
+            child: Text(
+                'USDC is the ONLY token. No ETH needed. Sub-second finality.',
                 style: TextStyle(
                     color: t.text, fontSize: 12, fontWeight: FontWeight.w600)),
           ),

@@ -35,15 +35,33 @@ class _PnlChartState extends State<PnlChart> {
         final data = jsonDecode(res.body);
         final agents =
             (data['agents'] as List? ?? []).cast<Map<String, dynamic>>();
-        if (mounted)
+        if (mounted) {
+          final next = agents.take(6).toList();
+          if (_sameAgents(_agents, next)) return;
           setState(() {
-            _agents = agents.take(6).toList();
+            _agents = next;
             _loading = false;
           });
+        }
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  // Skips a rebuild when the polled payload is unchanged — the terminal's
+  // ticker strip below repaints on every trade, so we never want to add a
+  // whole-chart repaint on top for identical data.
+  bool _sameAgents(List<Map<String, dynamic>> a, List<Map<String, dynamic>> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if ((a[i]['agent'] ?? '') != (b[i]['agent'] ?? '')) return false;
+      if ((a[i]['net'] as num?)?.toDouble() !=
+          (b[i]['net'] as num?)?.toDouble()) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @override

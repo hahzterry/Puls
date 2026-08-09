@@ -71,34 +71,36 @@ class _PulseDotState extends State<PulseDot>
         ),
       );
     }
-    return SizedBox(
-      width: s * 3,
-      height: s * 3,
-      child: Center(
-        child: AnimatedBuilder(
-          animation: _ctrl,
-          builder: (context, child) {
-            final t = _ctrl.value; // 0..1
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                // Expanding halo that fades out.
-                Container(
-                  width: s + (s * 2 * t),
-                  height: s + (s * 2 * t),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: color.withValues(alpha: (1 - t) * 0.35),
+    return RepaintBoundary(
+      child: SizedBox(
+        width: s * 3,
+        height: s * 3,
+        child: Center(
+          child: AnimatedBuilder(
+            animation: _ctrl,
+            builder: (context, child) {
+              final t = _ctrl.value; // 0..1
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Expanding halo that fades out.
+                  Container(
+                    width: s + (s * 2 * t),
+                    height: s + (s * 2 * t),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: color.withValues(alpha: (1 - t) * 0.35),
+                    ),
                   ),
-                ),
-                child!,
-              ],
-            );
-          },
-          child: Container(
-            width: s,
-            height: s,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+                  child!,
+                ],
+              );
+            },
+            child: Container(
+              width: s,
+              height: s,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+            ),
           ),
         ),
       ),

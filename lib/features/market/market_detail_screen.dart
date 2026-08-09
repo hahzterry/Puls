@@ -48,6 +48,10 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
   // market. We only push history.replaceState once per market load — without
   // this guard, every rebuild would re-push the URL and spam the back stack.
   bool _metaSynced = false;
+  // Price history + market lookup run exactly once per market (didChangeDependencies
+  // fires on every dependency change — theme, MediaQuery, etc.). Without this
+  // guard each of those would re-fetch the full price history.
+  bool _historyRequested = false;
 
   @override
   void didChangeDependencies() {
@@ -58,6 +62,8 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
         if (mounted) setState(() {});
       });
     }
+    if (_historyRequested) return;
+    _historyRequested = true;
     final appState = PulsStateScope.of(context);
     final market = appState.marketById(widget.marketId);
     if (market != null) {

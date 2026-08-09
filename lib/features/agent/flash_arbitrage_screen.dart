@@ -106,10 +106,10 @@ class _FlashArbitrageScreenState extends State<FlashArbitrageScreen>
   void initState() {
     super.initState();
     _queue.addAll([_spawn(), _spawn(), _spawn()]);
-    // 250ms repaint cadence: remaining is derived from expiresAt, so a slower
-    // tick costs 2.5x fewer whole-screen rebuilds with no visible difference
-    // on an 18-36s countdown (the bar moves ~1% per tick).
-    _tick = Timer.periodic(const Duration(milliseconds: 250), (_) {
+    // 1s repaint cadence: remaining is derived from expiresAt, so a slower
+    // tick costs 4x fewer whole-screen rebuilds with no visible difference
+    // on an 18-36s countdown (the bar moves ~0.25% per tick).
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       // Expire timed-out cards
       final expired =
@@ -202,7 +202,9 @@ class _FlashArbitrageScreenState extends State<FlashArbitrageScreen>
     final t = context.puls;
     return Scaffold(
       backgroundColor: t.bg,
-      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text('Flash Arbitrage'),
         actions: [
           Padding(
@@ -320,8 +322,8 @@ class _FlashArbitrageScreenState extends State<FlashArbitrageScreen>
                   ),
                 ],
               ),
-              child:
-                  const Icon(Icons.radar_rounded, color: Colors.white, size: 38),
+              child: const Icon(Icons.radar_rounded,
+                  color: Colors.white, size: 38),
             ),
           ),
           const SizedBox(height: 18),
@@ -385,8 +387,7 @@ class _FlashArbitrageScreenState extends State<FlashArbitrageScreen>
                         _snapping = true;
                         _dragX = 0;
                       });
-                      Future<void>.delayed(
-                              const Duration(milliseconds: 220))
+                      Future<void>.delayed(const Duration(milliseconds: 220))
                           .then((_) {
                         if (mounted) setState(() => _snapping = false);
                       });
@@ -484,7 +485,8 @@ class _FlashArbitrageScreenState extends State<FlashArbitrageScreen>
                 decoration: BoxDecoration(
                   color: t.surface,
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: t.no.withValues(alpha: 0.5), width: 1.4),
+                  border: Border.all(
+                      color: t.no.withValues(alpha: 0.5), width: 1.4),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -522,8 +524,8 @@ class _FlashArbitrageScreenState extends State<FlashArbitrageScreen>
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
-                        color: PulsColors.brandMint.withValues(
-                            alpha: 0.3 + 0.2 * _pulse.value),
+                        color: PulsColors.brandMint
+                            .withValues(alpha: 0.3 + 0.2 * _pulse.value),
                         blurRadius: 20 + 8 * _pulse.value,
                         offset: const Offset(0, 6),
                       ),
@@ -697,8 +699,7 @@ class _FlashArbitrageScreenState extends State<FlashArbitrageScreen>
               tween: Tween(begin: 0, end: 1),
               duration: const Duration(milliseconds: 600),
               curve: Curves.elasticOut,
-              builder: (_, v, child) =>
-                  Transform.scale(scale: v, child: child),
+              builder: (_, v, child) => Transform.scale(scale: v, child: child),
               child: Container(
                 height: 96,
                 width: 96,
@@ -851,8 +852,7 @@ class _ArbCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: urgent ? t.noBg : t.surfaceRaised,
                   borderRadius: BorderRadius.circular(9),
-                  border: Border.all(
-                      color: timerColor.withValues(alpha: 0.5)),
+                  border: Border.all(color: timerColor.withValues(alpha: 0.5)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -912,11 +912,10 @@ class _ArbCard extends StatelessWidget {
           // Numbers row
           Row(
             children: [
-              _metric(t, 'CAPITAL', '\$${op.capital.toStringAsFixed(0)}',
-                  t.text),
+              _metric(
+                  t, 'CAPITAL', '\$${op.capital.toStringAsFixed(0)}', t.text),
               _metricDivider(t),
-              _metric(t, 'PROFIT', '+\$${op.profit.toStringAsFixed(2)}',
-                  t.yes),
+              _metric(t, 'PROFIT', '+\$${op.profit.toStringAsFixed(2)}', t.yes),
               _metricDivider(t),
               _metric(
                 t,
@@ -931,8 +930,7 @@ class _ArbCard extends StatelessWidget {
     );
   }
 
-  Widget _pathLeg(
-      PulsThemeColors t, IconData icon, Color color, String text) {
+  Widget _pathLeg(PulsThemeColors t, IconData icon, Color color, String text) {
     return Row(
       children: [
         Container(
@@ -969,8 +967,7 @@ class _ArbCard extends StatelessWidget {
         color: t.border,
       );
 
-  Widget _metric(
-      PulsThemeColors t, String label, String value, Color color) {
+  Widget _metric(PulsThemeColors t, String label, String value, Color color) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1027,8 +1024,8 @@ class _BurstPainter extends CustomPainter {
       final angle = rnd.nextDouble() * math.pi * 2;
       final speed = 90 + rnd.nextDouble() * 130;
       final radius = 2.0 + rnd.nextDouble() * 3.0;
-      final pos = center +
-          Offset(math.cos(angle), math.sin(angle)) * speed * eased;
+      final pos =
+          center + Offset(math.cos(angle), math.sin(angle)) * speed * eased;
       final c = i.isEven ? color : accent;
       canvas.drawCircle(
         pos,

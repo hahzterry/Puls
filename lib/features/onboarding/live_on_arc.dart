@@ -81,8 +81,12 @@ class _LiveOnArcSectionState extends State<LiveOnArcSection> {
   Future<void> _load() async {
     try {
       final res = await Future.wait([
-        http.get(Uri.parse('$backendUrl/api/stats')).timeout(const Duration(seconds: 8)),
-        http.get(Uri.parse('$backendUrl/api/agents/house')).timeout(const Duration(seconds: 10)),
+        http
+            .get(Uri.parse('$backendUrl/api/stats'))
+            .timeout(const Duration(seconds: 8)),
+        http
+            .get(Uri.parse('$backendUrl/api/agents/house'))
+            .timeout(const Duration(seconds: 10)),
       ]);
       if (!mounted) return;
       Map<String, dynamic>? stats;
@@ -123,7 +127,8 @@ class _LiveOnArcSectionState extends State<LiveOnArcSection> {
         alphaPaid: (d['alphaPaid'] as num?)?.toDouble() ?? 0,
         txHash: d['txHash'] as String?,
         alphaTx: d['alphaOnchainTx'] as String?,
-        at: DateTime.tryParse(d['at'] as String? ?? '')?.toLocal() ?? DateTime.now(),
+        at: DateTime.tryParse(d['at'] as String? ?? '')?.toLocal() ??
+            DateTime.now(),
       );
 
   @override
@@ -142,7 +147,8 @@ class _LiveOnArcSectionState extends State<LiveOnArcSection> {
     return Container(
       width: double.infinity,
       color: t.surface.withValues(alpha: 0.35),
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 48, vertical: isMobile ? 52 : 96),
+      padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 16 : 48, vertical: isMobile ? 52 : 96),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1120),
@@ -165,8 +171,10 @@ class _LiveOnArcSectionState extends State<LiveOnArcSection> {
                 SizedBox(height: isMobile ? 16 : 20),
                 _wideRow(
                   isMobile,
-                  left: _PulseNowCard(decision: _decisions.first, agent: _agent),
-                  right: _OracleVsCrowdCard(decision: firstGo ?? _decisions.first),
+                  left:
+                      _PulseNowCard(decision: _decisions.first, agent: _agent),
+                  right:
+                      _OracleVsCrowdCard(decision: firstGo ?? _decisions.first),
                 ),
               ],
               if (_sage != null) ...[
@@ -186,19 +194,21 @@ class _LiveOnArcSectionState extends State<LiveOnArcSection> {
     );
   }
 
-  Widget _wideRow(bool isMobile, {required Widget left, required Widget right}) {
+  Widget _wideRow(bool isMobile,
+      {required Widget left, required Widget right}) {
     if (isMobile) {
       return Column(children: [left, const SizedBox(height: 16), right]);
     }
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(flex: 6, child: left),
-          const SizedBox(width: 20),
-          Expanded(flex: 5, child: right),
-        ],
-      ),
+    // CrossAxisAlignment.stretch gives both cards equal height from the
+    // tallest child — same visual as IntrinsicHeight but without the extra
+    // intrinsic relayout pass on every rebuild.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(flex: 6, child: left),
+        const SizedBox(width: 20),
+        Expanded(flex: 5, child: right),
+      ],
     );
   }
 }
@@ -225,7 +235,8 @@ class _AgentsOnlineBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             '$count autonomous agents online',
-            style: TextStyle(color: t.textMuted, fontSize: 13, fontWeight: FontWeight.w700),
+            style: TextStyle(
+                color: t.textMuted, fontSize: 13, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -249,12 +260,19 @@ class _StatBand extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tiles = <_StatTileData>[
-      _StatTileData('Trades on Arc', _n('trades'), const Color(0xFFEC4899), Icons.swap_vert_rounded),
-      _StatTileData('USDC volume', _n('volumeUsdc'), const Color(0xFF2DD4BF), Icons.payments_rounded, money: true),
-      _StatTileData('Markets deployed', _n('marketsDeployed'), const Color(0xFF0EA5E9), Icons.hub_rounded),
-      _StatTileData('Autonomous agent trades', _n('agentTrades'), const Color(0xFF8B5CF6), Icons.smart_toy_rounded),
-      _StatTileData('x402 nanopayments', _nano(), const Color(0xFFF59E0B), Icons.bolt_rounded),
-      _StatTileData('Wallets onboarded', _n('users'), const Color(0xFF16A34A), Icons.account_balance_wallet_rounded),
+      _StatTileData('Trades on Arc', _n('trades'), const Color(0xFFEC4899),
+          Icons.swap_vert_rounded),
+      _StatTileData('USDC volume', _n('volumeUsdc'), const Color(0xFF2DD4BF),
+          Icons.payments_rounded,
+          money: true),
+      _StatTileData('Markets deployed', _n('marketsDeployed'),
+          const Color(0xFF0EA5E9), Icons.hub_rounded),
+      _StatTileData('Autonomous agent trades', _n('agentTrades'),
+          const Color(0xFF8B5CF6), Icons.smart_toy_rounded),
+      _StatTileData('x402 nanopayments', _nano(), const Color(0xFFF59E0B),
+          Icons.bolt_rounded),
+      _StatTileData('Wallets onboarded', _n('users'), const Color(0xFF16A34A),
+          Icons.account_balance_wallet_rounded),
     ];
     return LayoutBuilder(builder: (context, c) {
       final cols = c.maxWidth > 880 ? 3 : (c.maxWidth > 520 ? 2 : 2);
@@ -265,7 +283,8 @@ class _StatBand extends StatelessWidget {
         runSpacing: gap,
         children: [
           for (final d in tiles)
-            SizedBox(width: tileW, child: _StatTile(data: d, isMobile: isMobile)),
+            SizedBox(
+                width: tileW, child: _StatTile(data: d, isMobile: isMobile)),
         ],
       );
     });
@@ -273,7 +292,8 @@ class _StatBand extends StatelessWidget {
 }
 
 class _StatTileData {
-  const _StatTileData(this.label, this.value, this.color, this.icon, {this.money = false});
+  const _StatTileData(this.label, this.value, this.color, this.icon,
+      {this.money = false});
   final String label;
   final double value;
   final Color color;
@@ -295,7 +315,10 @@ class _StatTile extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [t.surface, Color.alphaBlend(data.color.withValues(alpha: 0.05), t.surface)],
+          colors: [
+            t.surface,
+            Color.alphaBlend(data.color.withValues(alpha: 0.05), t.surface)
+          ],
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: t.border),
@@ -323,7 +346,9 @@ class _StatTile extends StatelessWidget {
           CountUpText(
             data.value,
             builder: (context, v) => Text(
-              data.money ? '\$${withThousands(v.round())}' : withThousands(v.round()),
+              data.money
+                  ? '\$${withThousands(v.round())}'
+                  : withThousands(v.round()),
               style: TextStyle(
                 fontFamily: PulsColors.fontDisplay,
                 color: t.text,
@@ -335,7 +360,11 @@ class _StatTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(data.label, style: TextStyle(color: t.textMuted, fontSize: isMobile ? 12 : 13, fontWeight: FontWeight.w600)),
+          Text(data.label,
+              style: TextStyle(
+                  color: t.textMuted,
+                  fontSize: isMobile ? 12 : 13,
+                  fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -362,7 +391,10 @@ class _PulseNowCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color.alphaBlend(t.brand.withValues(alpha: 0.06), t.surface), t.surface],
+          colors: [
+            Color.alphaBlend(t.brand.withValues(alpha: 0.06), t.surface),
+            t.surface
+          ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: t.border),
@@ -376,7 +408,9 @@ class _PulseNowCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(gradient: PulsColors.pulseGradient, borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(
+                    gradient: PulsColors.pulseGradient,
+                    borderRadius: BorderRadius.circular(12)),
                 child: PulsEmoji.icon('🤖', size: 20),
               ),
               const SizedBox(width: 12),
@@ -385,14 +419,21 @@ class _PulseNowCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Pulse · house trader-agent',
-                        style: TextStyle(color: t.text, fontSize: 14, fontWeight: FontWeight.w800)),
+                        style: TextStyle(
+                            color: t.text,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800)),
                     const SizedBox(height: 2),
                     Row(
                       children: [
                         const PulseDot(size: 5, color: Color(0xFF22C55E)),
                         const SizedBox(width: 3),
                         Text('ACTING AUTONOMOUSLY · ${timeAgo(d.at)}',
-                            style: TextStyle(color: t.textSubtle, fontSize: 10.5, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+                            style: TextStyle(
+                                color: t.textSubtle,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.4)),
                       ],
                     ),
                   ],
@@ -400,18 +441,25 @@ class _PulseNowCard extends StatelessWidget {
               ),
               if (balance != null)
                 Text('${balance.toStringAsFixed(0)} USDC',
-                    style: TextStyle(color: t.textMuted, fontSize: 12, fontWeight: FontWeight.w700)),
+                    style: TextStyle(
+                        color: t.textMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: (isGo ? sideColor : PulsColors.amber).withValues(alpha: 0.14),
+                  color: (isGo ? sideColor : PulsColors.amber)
+                      .withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: (isGo ? sideColor : PulsColors.amber).withValues(alpha: 0.4)),
+                  border: Border.all(
+                      color: (isGo ? sideColor : PulsColors.amber)
+                          .withValues(alpha: 0.4)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -420,15 +468,20 @@ class _PulseNowCard extends StatelessWidget {
                         size: 14, color: isGo ? sideColor : PulsColors.amber),
                     const SizedBox(width: 5),
                     Text(isGo ? 'TRADED ${d.side}' : 'HOLD',
-                        style: TextStyle(color: isGo ? sideColor : PulsColors.amber, fontSize: 12, fontWeight: FontWeight.w800)),
+                        style: TextStyle(
+                            color: isGo ? sideColor : PulsColors.amber,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800)),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              _chip(t, d.brain == 'risk' ? '🛡 risk engine' : '🧠 LLM + sources'),
+              _chip(
+                  t, d.brain == 'risk' ? '🛡 risk engine' : '🧠 LLM + sources'),
               if (isGo && d.amount > 0) ...[
                 const SizedBox(width: 8),
-                _chip(t, '\$${d.amount.toStringAsFixed(d.amount == d.amount.roundToDouble() ? 0 : 2)}'),
+                _chip(t,
+                    '\$${d.amount.toStringAsFixed(d.amount == d.amount.roundToDouble() ? 0 : 2)}'),
               ],
             ],
           ),
@@ -437,13 +490,18 @@ class _PulseNowCard extends StatelessWidget {
             Text(d.question,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: t.text, fontSize: 15, fontWeight: FontWeight.w700, height: 1.3)),
+                style: TextStyle(
+                    color: t.text,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3)),
           if (d.reasoning.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(d.reasoning,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: t.textMuted, fontSize: 13, height: 1.5)),
+                style:
+                    TextStyle(color: t.textMuted, fontSize: 13, height: 1.5)),
           ],
           const Spacer(),
           const SizedBox(height: 12),
@@ -469,7 +527,8 @@ class _PulseNowCard extends StatelessWidget {
           border: Border.all(color: t.border),
         ),
         child: PulsEmojiText(label,
-            style: TextStyle(color: t.textMuted, fontSize: 11, fontWeight: FontWeight.w600)),
+            style: TextStyle(
+                color: t.textMuted, fontSize: 11, fontWeight: FontWeight.w600)),
       );
 }
 
@@ -501,7 +560,11 @@ class _OracleVsCrowdCard extends StatelessWidget {
               Icon(Icons.balance_rounded, size: 16, color: t.brand),
               const SizedBox(width: 7),
               Text('AI ORACLE vs THE CROWD',
-                  style: TextStyle(color: t.brand, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+                  style: TextStyle(
+                      color: t.brand,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2)),
             ],
           ),
           const SizedBox(height: 14),
@@ -509,11 +572,22 @@ class _OracleVsCrowdCard extends StatelessWidget {
             Text(d.question,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: t.text, fontSize: 14.5, fontWeight: FontWeight.w700, height: 1.3)),
+                style: TextStyle(
+                    color: t.text,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3)),
           const SizedBox(height: 16),
-          _row(t, '👥 Crowd (Polymarket)', '${crowd.toStringAsFixed(0)}%', crowd / 100, t.textMuted, false),
+          _row(t, '👥 Crowd (Polymarket)', '${crowd.toStringAsFixed(0)}%',
+              crowd / 100, t.textMuted, false),
           const SizedBox(height: 12),
-          _row(t, '🧠 Pulse · buy ${d.side}', '${edgePct.toStringAsFixed(0)}¢ edge', (edgePct / 100).toDouble(), sideColor, true),
+          _row(
+              t,
+              '🧠 Pulse · buy ${d.side}',
+              '${edgePct.toStringAsFixed(0)}¢ edge',
+              (edgePct / 100).toDouble(),
+              sideColor,
+              true),
           const Spacer(),
           const SizedBox(height: 14),
           Text(
@@ -525,15 +599,22 @@ class _OracleVsCrowdCard extends StatelessWidget {
     );
   }
 
-  Widget _row(PulsThemeColors t, String label, String value, double frac, Color color, bool gradient) {
+  Widget _row(PulsThemeColors t, String label, String value, double frac,
+      Color color, bool gradient) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            PulsEmojiText(label, style: TextStyle(color: t.text, fontSize: 12.5, fontWeight: FontWeight.w700)),
+            PulsEmojiText(label,
+                style: TextStyle(
+                    color: t.text,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700)),
             const Spacer(),
-            Text(value, style: TextStyle(color: color, fontSize: 12.5, fontWeight: FontWeight.w800)),
+            Text(value,
+                style: TextStyle(
+                    color: color, fontSize: 12.5, fontWeight: FontWeight.w800)),
           ],
         ),
         const SizedBox(height: 6),
@@ -565,7 +646,8 @@ class _OracleVsCrowdCard extends StatelessWidget {
 
 // ── x402 agent-to-agent payment lane ──────────────────────────────────────────
 class _X402Lane extends StatefulWidget {
-  const _X402Lane({required this.sage, required this.stats, required this.isMobile});
+  const _X402Lane(
+      {required this.sage, required this.stats, required this.isMobile});
   final Map<String, dynamic> sage;
   final Map<String, dynamic>? stats;
   final bool isMobile;
@@ -574,13 +656,15 @@ class _X402Lane extends StatefulWidget {
   State<_X402Lane> createState() => _X402LaneState();
 }
 
-class _X402LaneState extends State<_X402Lane> with SingleTickerProviderStateMixin {
+class _X402LaneState extends State<_X402Lane>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _c;
 
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400));
+    _c = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 2400));
   }
 
   @override
@@ -618,14 +702,23 @@ class _X402LaneState extends State<_X402Lane> with SingleTickerProviderStateMixi
         children: [
           Row(
             children: [
-              const Icon(Icons.bolt_rounded, size: 16, color: Color(0xFFEC4899)),
+              const Icon(Icons.bolt_rounded,
+                  size: 16, color: Color(0xFFEC4899)),
               const SizedBox(width: 7),
               const Expanded(
                 child: Text('x402 · ONE AI PAYS ANOTHER FOR ALPHA',
-                    style: TextStyle(color: Color(0xFFEC4899), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+                    style: TextStyle(
+                        color: Color(0xFFEC4899),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0)),
               ),
               if (npCount > 0)
-                Text('$npCount settled', style: TextStyle(color: t.textMuted, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                Text('$npCount settled',
+                    style: TextStyle(
+                        color: t.textMuted,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 18),
@@ -635,13 +728,15 @@ class _X402LaneState extends State<_X402Lane> with SingleTickerProviderStateMixi
               animation: _c,
               builder: (context, _) {
                 final v = reduce ? 0.5 : _c.value;
-                final travel = Curves.easeInOut.transform(((v - 0.05) / 0.7).clamp(0.0, 1.0));
+                final travel = Curves.easeInOut
+                    .transform(((v - 0.05) / 0.7).clamp(0.0, 1.0));
                 return Stack(
                   children: [
                     Center(
                       child: Row(
                         children: [
-                          _node(t, const Color(0xFF2DD4BF), '🤖', 'Pulse', 'buyer'),
+                          _node(t, const Color(0xFF2DD4BF), '🤖', 'Pulse',
+                              'buyer'),
                           Expanded(
                             child: Container(
                               height: 2,
@@ -649,7 +744,8 @@ class _X402LaneState extends State<_X402Lane> with SingleTickerProviderStateMixi
                               color: t.border,
                             ),
                           ),
-                          _node(t, const Color(0xFFEC4899), '✍️', 'Sage', 'creator'),
+                          _node(t, const Color(0xFFEC4899), '✍️', 'Sage',
+                              'creator'),
                         ],
                       ),
                     ),
@@ -659,14 +755,23 @@ class _X402LaneState extends State<_X402Lane> with SingleTickerProviderStateMixi
                         child: Align(
                           alignment: Alignment(travel * 2 - 1, -0.55),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               gradient: PulsColors.pulseGradient,
                               borderRadius: BorderRadius.circular(100),
-                              boxShadow: [BoxShadow(color: const Color(0xFFF65FA9).withValues(alpha: 0.5), blurRadius: 10)],
+                              boxShadow: [
+                                BoxShadow(
+                                    color: const Color(0xFFF65FA9)
+                                        .withValues(alpha: 0.5),
+                                    blurRadius: 10)
+                              ],
                             ),
                             child: const Text('0.001 USDC',
-                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800)),
                           ),
                         ),
                       ),
@@ -693,14 +798,19 @@ class _X402LaneState extends State<_X402Lane> with SingleTickerProviderStateMixi
                       Text('“$title”',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: t.text, fontSize: 13, fontWeight: FontWeight.w700)),
+                          style: TextStyle(
+                              color: t.text,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700)),
                       const SizedBox(height: 2),
-                      Text('Sage earned \$${revenue.toStringAsFixed(2)} from $unlocks unlocks',
+                      Text(
+                          'Sage earned \$${revenue.toStringAsFixed(2)} from $unlocks unlocks',
                           style: TextStyle(color: t.textMuted, fontSize: 11.5)),
                     ],
                   ),
                 ),
-                if (onchainTx != null && onchainTx.isNotEmpty) _TxLink(label: 'attested ↗', tx: onchainTx),
+                if (onchainTx != null && onchainTx.isNotEmpty)
+                  _TxLink(label: 'attested ↗', tx: onchainTx),
               ],
             ),
           ),
@@ -709,7 +819,9 @@ class _X402LaneState extends State<_X402Lane> with SingleTickerProviderStateMixi
     );
   }
 
-  Widget _node(PulsThemeColors t, Color c, String glyph, String name, String role) => Column(
+  Widget _node(
+          PulsThemeColors t, Color c, String glyph, String name, String role) =>
+      Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
@@ -717,14 +829,24 @@ class _X402LaneState extends State<_X402Lane> with SingleTickerProviderStateMixi
             height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [c, Color.alphaBlend(Colors.white.withValues(alpha: 0.4), c)]),
+              gradient: LinearGradient(colors: [
+                c,
+                Color.alphaBlend(Colors.white.withValues(alpha: 0.4), c)
+              ]),
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: c.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 5))],
+              boxShadow: [
+                BoxShadow(
+                    color: c.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5))
+              ],
             ),
             child: PulsEmoji.icon(glyph, size: 19),
           ),
           const SizedBox(height: 5),
-          Text(name, style: TextStyle(color: t.text, fontSize: 11, fontWeight: FontWeight.w800)),
+          Text(name,
+              style: TextStyle(
+                  color: t.text, fontSize: 11, fontWeight: FontWeight.w800)),
           Text(role, style: TextStyle(color: t.textSubtle, fontSize: 9.5)),
         ],
       );
@@ -754,10 +876,15 @@ class _ProofStrip extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.verified_rounded, size: 15, color: Color(0xFF16A34A)),
+            const Icon(Icons.verified_rounded,
+                size: 15, color: Color(0xFF16A34A)),
             const SizedBox(width: 7),
             Text('EVERY MOVE IS ON-CHAIN — VERIFY ANY OF IT',
-                style: TextStyle(color: t.textSubtle, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 1.4)),
+                style: TextStyle(
+                    color: t.textSubtle,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.4)),
           ],
         ),
         const SizedBox(height: 16),
@@ -786,13 +913,15 @@ class _TxChipState extends State<_TxChip> {
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
-    final short = '${widget.tx.substring(0, 8)}…${widget.tx.substring(widget.tx.length - 6)}';
+    final short =
+        '${widget.tx.substring(0, 8)}…${widget.tx.substring(widget.tx.length - 6)}';
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
-        onTap: () => launchUrl(Uri.parse('https://testnet.arcscan.app/tx/${widget.tx}'),
+        onTap: () => launchUrl(
+            Uri.parse('https://testnet.arcscan.app/tx/${widget.tx}'),
             mode: LaunchMode.externalApplication),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
@@ -800,12 +929,14 @@ class _TxChipState extends State<_TxChip> {
           decoration: BoxDecoration(
             color: _hover ? t.brand.withValues(alpha: 0.08) : t.surface,
             borderRadius: BorderRadius.circular(100),
-            border: Border.all(color: _hover ? t.brand.withValues(alpha: 0.4) : t.border),
+            border: Border.all(
+                color: _hover ? t.brand.withValues(alpha: 0.4) : t.border),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF16A34A)),
+              const Icon(Icons.check_circle_rounded,
+                  size: 12, color: Color(0xFF16A34A)),
               const SizedBox(width: 6),
               Text(short,
                   style: TextStyle(
@@ -814,7 +945,8 @@ class _TxChipState extends State<_TxChip> {
                       fontFamily: 'monospace',
                       fontWeight: FontWeight.w600)),
               const SizedBox(width: 4),
-              Icon(Icons.open_in_new_rounded, size: 11, color: _hover ? t.brand : t.textSubtle),
+              Icon(Icons.open_in_new_rounded,
+                  size: 11, color: _hover ? t.brand : t.textSubtle),
             ],
           ),
         ),
@@ -837,7 +969,8 @@ class _TxLink extends StatelessWidget {
         onTap: () => launchUrl(Uri.parse('https://testnet.arcscan.app/tx/$tx'),
             mode: LaunchMode.externalApplication),
         child: Text(label,
-            style: TextStyle(color: t.brand, fontSize: 11.5, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+                color: t.brand, fontSize: 11.5, fontWeight: FontWeight.w700)),
       ),
     );
   }
@@ -852,7 +985,8 @@ class _MarketPulse extends StatefulWidget {
 }
 
 class _PulseTrade {
-  _PulseTrade(this.question, this.side, this.amount);
+  _PulseTrade(this.id, this.question, this.side, this.amount);
+  final int id;
   final String question;
   final String side;
   final double amount;
@@ -865,6 +999,7 @@ class _MarketPulseState extends State<_MarketPulse> {
   Timer? _poll;
   Timer? _reconnect;
   int _backoff = 2;
+  int _nextId = 0;
 
   @override
   void initState() {
@@ -898,7 +1033,10 @@ class _MarketPulseState extends State<_MarketPulse> {
         if (pt != null) seed.add(pt);
         if (seed.length >= 5) break;
       }
-      if (seed.isNotEmpty && mounted) setState(() => _trades..clear()..addAll(seed));
+      if (seed.isNotEmpty && mounted)
+        setState(() => _trades
+          ..clear()
+          ..addAll(seed));
     } catch (_) {/* ignore */}
   }
 
@@ -910,14 +1048,15 @@ class _MarketPulseState extends State<_MarketPulse> {
         (j['amount'] as num?)?.toDouble() ??
         (j['usdcAmount'] as num?)?.toDouble() ??
         0;
-    return _PulseTrade(q, side, amount);
+    return _PulseTrade(_nextId++, q, side, amount);
   }
 
   void _connect() {
     _reconnect?.cancel();
     try {
-      final wsUri = Uri.parse(
-          backendUrl.replaceAll('http://', 'ws://').replaceAll('https://', 'wss://'));
+      final wsUri = Uri.parse(backendUrl
+          .replaceAll('http://', 'ws://')
+          .replaceAll('https://', 'wss://'));
       _channel = WebSocketChannel.connect(wsUri);
       _channel!.ready.then((_) {
         if (!mounted) return;
@@ -991,9 +1130,14 @@ class _MarketPulseState extends State<_MarketPulse> {
               const PulseDot(size: 6, color: Color(0xFF22C55E)),
               const SizedBox(width: 4),
               Text(_connected ? 'TRADES STREAMING LIVE' : 'RECENT TRADES',
-                  style: TextStyle(color: t.textMuted, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+                  style: TextStyle(
+                      color: t.textMuted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2)),
               const Spacer(),
-              Text('via WebSocket', style: TextStyle(color: t.textSubtle, fontSize: 10.5)),
+              Text('via WebSocket',
+                  style: TextStyle(color: t.textSubtle, fontSize: 10.5)),
             ],
           ),
           const SizedBox(height: 12),
@@ -1028,41 +1172,53 @@ class _PulseRow extends StatelessWidget {
     final isYes = trade.side == 'YES';
     final c = isYes ? t.yes : t.no;
     return TweenAnimationBuilder<double>(
-      key: ValueKey(identityHashCode(trade)),
+      key: ValueKey(trade.id),
       tween: Tween(begin: fresh ? 0.0 : 1.0, end: 1.0),
       duration: context.motionDuration(const Duration(milliseconds: 420)),
       curve: Curves.easeOut,
       builder: (context, v, child) => Opacity(
         opacity: v,
-        child: Transform.translate(offset: Offset(0, (1 - v) * -8), child: child),
+        child:
+            Transform.translate(offset: Offset(0, (1 - v) * -8), child: child),
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: fresh ? c.withValues(alpha: 0.06) : t.bg,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: fresh ? c.withValues(alpha: 0.25) : t.border),
+          border:
+              Border.all(color: fresh ? c.withValues(alpha: 0.25) : t.border),
         ),
         child: Row(
           children: [
             Container(
               width: 42,
               padding: const EdgeInsets.symmetric(vertical: 3),
-              decoration: BoxDecoration(color: c.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(7)),
+              decoration: BoxDecoration(
+                  color: c.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(7)),
               child: Text(trade.side,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: c, fontSize: 10.5, fontWeight: FontWeight.w800)),
+                  style: TextStyle(
+                      color: c, fontSize: 10.5, fontWeight: FontWeight.w800)),
             ),
             const SizedBox(width: 11),
             Expanded(
               child: Text(trade.question,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: t.text, fontSize: 13, fontWeight: FontWeight.w500)),
+                  style: TextStyle(
+                      color: t.text,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500)),
             ),
             const SizedBox(width: 10),
-            Text('\$${trade.amount.toStringAsFixed(trade.amount == trade.amount.roundToDouble() ? 0 : 2)}',
-                style: TextStyle(color: t.text, fontSize: 12.5, fontWeight: FontWeight.w700)),
+            Text(
+                '\$${trade.amount.toStringAsFixed(trade.amount == trade.amount.roundToDouble() ? 0 : 2)}',
+                style: TextStyle(
+                    color: t.text,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700)),
           ],
         ),
       ),

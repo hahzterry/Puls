@@ -54,16 +54,17 @@ class _AlphaScreenState extends State<AlphaScreen> {
   Future<void> _load() async {
     if (mounted) {
       setState(() {
-      _loading = true;
-      _error = null;
-    });
+        _loading = true;
+        _error = null;
+      });
     }
     try {
       final data = await WalletServiceScope.of(context).getAlphaList();
       if (!mounted) return;
       setState(() {
         _live = data['live'] == true;
-        _signals = ((data['signals'] as List?) ?? []).cast<Map<String, dynamic>>();
+        _signals =
+            ((data['signals'] as List?) ?? []).cast<Map<String, dynamic>>();
         _loading = false;
       });
     } catch (e) {
@@ -105,7 +106,8 @@ class _AlphaScreenState extends State<AlphaScreen> {
     final price = (sig['priceUsdc'] as num?)?.toDouble() ?? 0;
     // Tiered friction: confirm once per device, then unlocks are one-tap.
     if (AlphaFriction.unlockNeedsConfirm) {
-      final confirmed = await _confirmUnlock(context.puls, sig['title']?.toString() ?? 'this analysis', price);
+      final confirmed = await _confirmUnlock(
+          context.puls, sig['title']?.toString() ?? 'this analysis', price);
       if (confirmed != true) return;
       AlphaFriction.markUnlockConfirmed();
     }
@@ -137,7 +139,8 @@ class _AlphaScreenState extends State<AlphaScreen> {
         }
       } else {
         // Gated (live:false) — honest "coming at launch".
-        _snack(res['message']?.toString() ?? 'Paid analysis activates at launch.');
+        _snack(
+            res['message']?.toString() ?? 'Paid analysis activates at launch.');
       }
     } catch (e) {
       _snack(e.toString().replaceAll('Exception:', '').trim());
@@ -163,13 +166,16 @@ class _AlphaScreenState extends State<AlphaScreen> {
     final tip = DeferredTip(
       delay: const Duration(seconds: 5),
       onFire: () async {
-        messenger.hideCurrentSnackBar(); // clear the "Tipping…" bar before the receipt
+        messenger
+            .hideCurrentSnackBar(); // clear the "Tipping…" bar before the receipt
         try {
-          final res = await wallet.tipCreator(amountUsdc: _kTipAmount, context: 'alpha:$id');
+          final res = await wallet.tipCreator(
+              amountUsdc: _kTipAmount, context: 'alpha:$id');
           if (!mounted) return;
           await PaymentReceiptSheet.show(
             context,
-            PaymentReceipt.fromResponse(res, amountUsd: _kTipAmount, creatorHandle: handle),
+            PaymentReceipt.fromResponse(res,
+                amountUsd: _kTipAmount, creatorHandle: handle),
           );
         } catch (e) {
           _snack(e.toString().replaceAll('Exception:', '').trim());
@@ -194,7 +200,8 @@ class _AlphaScreenState extends State<AlphaScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Unlock analysis',
-                style: TextStyle(color: t.text, fontSize: 18, fontWeight: FontWeight.w900)),
+                style: TextStyle(
+                    color: t.text, fontSize: 18, fontWeight: FontWeight.w900)),
             const SizedBox(height: 6),
             Text(
               'Unlock the full thesis for "$title". A one-time \$${price.toStringAsFixed(price < 0.01 ? 4 : 2)} USDC '
@@ -204,13 +211,18 @@ class _AlphaScreenState extends State<AlphaScreen> {
             if (!_live) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(
                   color: t.brandSubtle,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Text('Paid unlocks activate at launch — no charge right now.',
-                    style: TextStyle(color: t.brand, fontSize: 12, fontWeight: FontWeight.w700)),
+                child: Text(
+                    'Paid unlocks activate at launch — no charge right now.',
+                    style: TextStyle(
+                        color: t.brand,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700)),
               ),
             ],
             const SizedBox(height: 20),
@@ -221,10 +233,15 @@ class _AlphaScreenState extends State<AlphaScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: t.brand,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
-                child: Text('Unlock for \$${price.toStringAsFixed(price < 0.01 ? 4 : 2)}',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
+                child: Text(
+                    'Unlock for \$${price.toStringAsFixed(price < 0.01 ? 4 : 2)}',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15)),
               ),
             ),
           ],
@@ -257,7 +274,11 @@ class _AlphaScreenState extends State<AlphaScreen> {
               Icon(Icons.workspace_premium_rounded, color: t.brand, size: 20),
               const SizedBox(width: 8),
               Text('Premium analysis',
-                  style: TextStyle(color: t.text, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                  style: TextStyle(
+                      color: t.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5)),
             ],
           ),
           const SizedBox(height: 6),
@@ -323,7 +344,10 @@ class _AlphaCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(signal['title']?.toString() ?? 'Premium forecast',
-                    style: TextStyle(color: t.text, fontSize: 15, fontWeight: FontWeight.w900)),
+                    style: TextStyle(
+                        color: t.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900)),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -332,7 +356,10 @@ class _AlphaCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(stance,
-                    style: TextStyle(color: isYes ? t.yes : t.no, fontSize: 11, fontWeight: FontWeight.w900)),
+                    style: TextStyle(
+                        color: isYes ? t.yes : t.no,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900)),
               ),
             ],
           ),
@@ -343,7 +370,8 @@ class _AlphaCard extends StatelessWidget {
               const SizedBox(width: 12),
               _meta(Icons.trending_up_rounded, '+$edge bps'),
               const SizedBox(width: 12),
-              _meta(Icons.schedule_rounded, signal['horizon']?.toString() ?? '—'),
+              _meta(
+                  Icons.schedule_rounded, signal['horizon']?.toString() ?? '—'),
             ],
           ),
           const SizedBox(height: 12),
@@ -356,23 +384,35 @@ class _AlphaCard extends StatelessWidget {
             ),
           const SizedBox(height: 6),
           Text('by @${signal['creatorHandle'] ?? 'puls'}',
-              style: TextStyle(color: t.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
+              style: TextStyle(
+                  color: t.textMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           if (unlocked && thesis != null)
             Row(
               children: [
                 Icon(Icons.lock_open_rounded, size: 16, color: t.yes),
                 const SizedBox(width: 6),
-                Text('Unlocked', style: TextStyle(color: t.yes, fontSize: 12, fontWeight: FontWeight.w800)),
+                Text('Unlocked',
+                    style: TextStyle(
+                        color: t.yes,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800)),
                 const Spacer(),
                 // One-tap tip: thank the forecaster with a small USDC nanopayment.
                 TextButton.icon(
                   onPressed: busy ? null : onTip,
-                  icon: Icon(Icons.volunteer_activism_rounded, size: 16, color: t.brand),
+                  icon: Icon(Icons.volunteer_activism_rounded,
+                      size: 16, color: t.brand),
                   label: Text('Tip \$${tipAmount.toStringAsFixed(2)}',
-                      style: TextStyle(color: t.brand, fontSize: 12, fontWeight: FontWeight.w800)),
+                      style: TextStyle(
+                          color: t.brand,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800)),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -398,7 +438,9 @@ class _AlphaCard extends StatelessWidget {
       children: [
         Icon(icon, size: 13, color: t.textMuted),
         const SizedBox(width: 3),
-        Text(text, style: TextStyle(color: t.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
+        Text(text,
+            style: TextStyle(
+                color: t.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
       ],
     );
   }
@@ -471,19 +513,50 @@ class _ShimmerUnlockButtonState extends State<_ShimmerUnlockButton>
         width: double.infinity,
         child: ElevatedButton.icon(
           onPressed: widget.onPressed,
-          icon: const Icon(Icons.menu_book_rounded, size: 18, color: Colors.white),
-          label: const Text('View analysis', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+          icon: const Icon(Icons.menu_book_rounded,
+              size: 18, color: Colors.white),
+          label: const Text('View analysis',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
           style: ElevatedButton.styleFrom(
             backgroundColor: t.brand,
             padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
       );
     }
 
+    // The button itself is the AnimatedBuilder's child — only the shimmer
+    // gradient container is rebuilt per frame, not the whole button subtree.
     return AnimatedBuilder(
       animation: _ctrl,
+      child: ElevatedButton.icon(
+        onPressed: widget.onPressed,
+        icon: busy
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white))
+            : const Icon(Icons.lock_outline_rounded,
+                size: 18, color: Colors.white),
+        label: Text(
+          busy
+              ? 'Unlocking…'
+              : 'Unlock for \$${widget.price.toStringAsFixed(widget.price < 0.01 ? 4 : 2)}',
+          style:
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
       builder: (context, child) {
         final x = _ctrl.value;
         return Container(
@@ -510,22 +583,7 @@ class _ShimmerUnlockButtonState extends State<_ShimmerUnlockButton>
               ),
             ],
           ),
-          child: ElevatedButton.icon(
-            onPressed: widget.onPressed,
-            icon: busy
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.lock_outline_rounded, size: 18, color: Colors.white),
-            label: Text(
-              busy ? 'Unlocking…' : 'Unlock for \$${widget.price.toStringAsFixed(widget.price < 0.01 ? 4 : 2)}',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-          ),
+          child: child,
         );
       },
     );

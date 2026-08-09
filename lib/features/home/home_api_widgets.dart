@@ -14,11 +14,18 @@ class CryptoTickerStrip extends StatefulWidget {
   State<CryptoTickerStrip> createState() => _CryptoTickerStripState();
 }
 
-class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTickerProviderStateMixin {
+class _CryptoTickerStripState extends State<CryptoTickerStrip>
+    with SingleTickerProviderStateMixin {
   WebSocketChannel? _channel;
   final Map<String, double> _prices = {};
   final Map<String, double> _oldPrices = {};
-  
+  // Binance @trade streams can fire many times per second; buffer the latest
+  // price per symbol and flush to the UI once per second instead of a setState
+  // per trade.
+  final Map<String, double> _pending = {};
+  Timer? _flushTimer;
+  static const _flushEvery = Duration(seconds: 1);
+
   late final AnimationController _scrollController = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 100000),
@@ -60,8 +67,12 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
       }
       if (next.isEmpty) return;
       setState(() {
-        _prices..clear()..addAll(next);
-        _oldPrices..clear()..addAll(next);
+        _prices
+          ..clear()
+          ..addAll(next);
+        _oldPrices
+          ..clear()
+          ..addAll(next);
       });
     } catch (_) {}
   }
@@ -69,7 +80,8 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
   void _connectWebSocket() {
     try {
       _channel = WebSocketChannel.connect(
-        Uri.parse('wss://stream.binance.com:9443/ws/btcusdt@trade/ethusdt@trade/solusdt@trade'),
+        Uri.parse(
+            'wss://stream.binance.com:9443/ws/btcusdt@trade/ethusdt@trade/solusdt@trade'),
       );
       _channel!.stream.listen((message) {
         final data = jsonDecode(message);
@@ -77,19 +89,30 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
         final priceStr = data['p'] as String?;
         if (symbol != null && priceStr != null) {
           final price = double.tryParse(priceStr);
-          if (price != null && mounted) {
-            setState(() {
-              _oldPrices[symbol] = _prices[symbol] ?? price;
-              _prices[symbol] = price;
-            });
+          if (price != null) {
+            _pending[symbol] = price;
+            _flushTimer ??= Timer(_flushEvery, _flushPrices);
           }
         }
       }, onError: (_) {});
     } catch (_) {}
   }
 
+  void _flushPrices() {
+    _flushTimer = null;
+    if (!mounted || _pending.isEmpty) return;
+    setState(() {
+      _pending.forEach((symbol, price) {
+        _oldPrices[symbol] = _prices[symbol] ?? price;
+        _prices[symbol] = price;
+      });
+      _pending.clear();
+    });
+  }
+
   @override
   void dispose() {
+    _flushTimer?.cancel();
     _channel?.sink.close();
     _scrollController.dispose();
     super.dispose();
@@ -110,14 +133,19 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
         children: [
           Text(
             label,
-            style: TextStyle(color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w700),
+            style: TextStyle(
+                color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w700),
           ),
           const SizedBox(width: 6),
           Text(
             price == null
                 ? '—'
                 : '\$${price.toStringAsFixed(price > 1000 ? 0 : 2)}',
-            style: TextStyle(color: t.text, fontSize: 12, fontWeight: FontWeight.w800, fontFeatures: PulsColors.tabularFigures),
+            style: TextStyle(
+                color: t.text,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                fontFeatures: PulsColors.tabularFigures),
           ),
           const SizedBox(width: 4),
           if (price != null) Icon(icon, color: color, size: 10),
@@ -136,11 +164,20 @@ class _CryptoTickerStripState extends State<CryptoTickerStrip> with SingleTicker
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildPair('BTC', 'BTCUSDT', t),
-        Container(width: 4, height: 4, decoration: BoxDecoration(color: t.border, shape: BoxShape.circle)),
+        Container(
+            width: 4,
+            height: 4,
+            decoration: BoxDecoration(color: t.border, shape: BoxShape.circle)),
         _buildPair('ETH', 'ETHUSDT', t),
-        Container(width: 4, height: 4, decoration: BoxDecoration(color: t.border, shape: BoxShape.circle)),
+        Container(
+            width: 4,
+            height: 4,
+            decoration: BoxDecoration(color: t.border, shape: BoxShape.circle)),
         _buildPair('SOL', 'SOLUSDT', t),
-        Container(width: 4, height: 4, decoration: BoxDecoration(color: t.border, shape: BoxShape.circle)),
+        Container(
+            width: 4,
+            height: 4,
+            decoration: BoxDecoration(color: t.border, shape: BoxShape.circle)),
       ],
     );
     final tape = Row(
@@ -221,7 +258,7 @@ class _FearAndGreedWidgetState extends State<FearAndGreedWidget> {
     final color = value == null
         ? t.textSubtle
         : (value < 40 ? t.no : (value > 60 ? t.yes : Colors.orange));
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(

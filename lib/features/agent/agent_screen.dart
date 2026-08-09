@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ui';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -23,7 +22,8 @@ import '../../core/widgets/shimmer_text.dart';
 import '../../core/widgets/puls_page_route.dart';
 import '../shell/web_layout.dart';
 import '../shell/shell_nav.dart';
-import '../onboarding/help_button.dart';import 'agent_sponsorship_screen.dart';
+import '../onboarding/help_button.dart';
+import 'agent_sponsorship_screen.dart';
 import 'flash_arbitrage_screen.dart' deferred as flash_arb;
 import 'gladiator_arena_screen.dart' deferred as gladiator;
 import 'live_swarm_view.dart';
@@ -545,7 +545,8 @@ class _AgentScreenState extends State<AgentScreen>
               await gladiator.loadLibrary();
               if (!context.mounted) return;
               Navigator.of(context).push(
-                pulsRoute(context, builder: (_) => gladiator.GladiatorArenaScreen()),
+                pulsRoute(context,
+                    builder: (_) => gladiator.GladiatorArenaScreen()),
               );
             },
           ),
@@ -556,7 +557,8 @@ class _AgentScreenState extends State<AgentScreen>
               await flash_arb.loadLibrary();
               if (!context.mounted) return;
               Navigator.of(context).push(
-                pulsRoute(context, builder: (_) => flash_arb.FlashArbitrageScreen()),
+                pulsRoute(context,
+                    builder: (_) => flash_arb.FlashArbitrageScreen()),
               );
             },
           ),
@@ -985,8 +987,7 @@ class _AgentScreenState extends State<AgentScreen>
                         letterSpacing: 1.3)),
                 const Spacer(),
                 Text('agent picks & executes',
-                    style: TextStyle(
-                        color: t.textSubtle, fontSize: 9.5)),
+                    style: TextStyle(color: t.textSubtle, fontSize: 9.5)),
               ],
             ),
           ),
@@ -1041,14 +1042,14 @@ class _AgentScreenState extends State<AgentScreen>
         height: 50,
         decoration: BoxDecoration(
           gradient: gradient ? PulsColors.pulseGradient : null,
-          color: gradient ? null : (disabled ? t.surface : accent.withValues(alpha: 0.10)),
+          color: gradient
+              ? null
+              : (disabled ? t.surface : accent.withValues(alpha: 0.10)),
           borderRadius: BorderRadius.circular(14),
           border: gradient
               ? null
               : Border.all(
-                  color: disabled
-                      ? t.border
-                      : accent.withValues(alpha: 0.40)),
+                  color: disabled ? t.border : accent.withValues(alpha: 0.40)),
           boxShadow: gradient && !disabled
               ? PulsColors.neonGlow(color: PulsColors.brandPink)
               : null,
@@ -1070,8 +1071,7 @@ class _AgentScreenState extends State<AgentScreen>
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon,
-                    size: 15,
-                    color: gradient ? Colors.white : accent),
+                    size: 15, color: gradient ? Colors.white : accent),
               ),
               const SizedBox(width: 9),
               Column(
@@ -1095,9 +1095,8 @@ class _AgentScreenState extends State<AgentScreen>
               const SizedBox(width: 6),
               Icon(Icons.flash_on_rounded,
                   size: 13,
-                  color: gradient
-                      ? Colors.white.withValues(alpha: 0.85)
-                      : accent),
+                  color:
+                      gradient ? Colors.white.withValues(alpha: 0.85) : accent),
             ],
           ),
         ),
@@ -1169,64 +1168,30 @@ class _AgentScreenState extends State<AgentScreen>
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: t.surfaceRaised.withValues(alpha: 0.65),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: t.border.withValues(alpha: 0.5)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                            color: t.brandSubtle, shape: BoxShape.circle),
-                        child: Icon(Icons.smart_toy_rounded,
-                            color: t.brand, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                GestureDetector(
-                                  onTap: addr.isEmpty
-                                      ? null
-                                      : () => launchUrl(
-                                          Uri.parse(
-                                              'https://testnet.arcscan.app/address/$addr'),
-                                          mode: LaunchMode.externalApplication),
-                                  child: Text(short,
-                                      style: TextStyle(
-                                          color: t.brand,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w700)),
-                                ),
-                                if (_registered) ...[
-                                  const SizedBox(width: 6),
-                                  Icon(Icons.verified_rounded,
-                                      size: 13, color: t.yes),
-                                  Text(' ERC-8004',
-                                      style: TextStyle(
-                                          color: t.yes,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700)),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                                'Budget \$${remaining.toStringAsFixed(2)} / \$${_budgetVal.toStringAsFixed(2)} USDC',
-                                style: TextStyle(
-                                    color: t.textMuted, fontSize: 11)),
-                            if (_registered) ...[
-                              const SizedBox(height: 3),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: t.surfaceRaised.withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: t.border.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                          color: t.brandSubtle, shape: BoxShape.circle),
+                      child: Icon(Icons.smart_toy_rounded,
+                          color: t.brand, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
                               GestureDetector(
                                 onTap: addr.isEmpty
                                     ? null
@@ -1234,97 +1199,126 @@ class _AgentScreenState extends State<AgentScreen>
                                         Uri.parse(
                                             'https://testnet.arcscan.app/address/$addr'),
                                         mode: LaunchMode.externalApplication),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.workspace_premium_rounded,
-                                        size: 12, color: PulsColors.amber),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      _reputation > 0
-                                          ? 'Reputation: $_reputation on-chain attestation${_reputation == 1 ? '' : 's'}'
-                                          : 'Reputation: builds as it trades',
-                                      style: TextStyle(
-                                          color: t.textSubtle,
-                                          fontSize: 10.5,
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                    if (_agentId != null) ...[
-                                      const SizedBox(width: 5),
-                                      Text('· Agent #$_agentId',
-                                          style: TextStyle(
-                                              color: t.textSubtle,
-                                              fontSize: 10.5)),
-                                    ],
-                                    const SizedBox(width: 3),
-                                    Icon(Icons.open_in_new_rounded,
-                                        size: 10, color: t.textSubtle),
-                                  ],
-                                ),
+                                child: Text(short,
+                                    style: TextStyle(
+                                        color: t.brand,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700)),
                               ),
+                              if (_registered) ...[
+                                const SizedBox(width: 6),
+                                Icon(Icons.verified_rounded,
+                                    size: 13, color: t.yes),
+                                Text(' ERC-8004',
+                                    style: TextStyle(
+                                        color: t.yes,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700)),
+                              ],
                             ],
-                          ],
-                        ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            tooltip:
-                                'Agent tools — strategy & Finance Director',
-                            visualDensity: VisualDensity.compact,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                                minWidth: 32, minHeight: 28),
-                            icon: Icon(
-                                _showTools
-                                    ? Icons.close_rounded
-                                    : Icons.tune_rounded,
-                                size: 18,
-                                color: _showTools ? t.brand : t.textMuted),
-                            onPressed: () =>
-                                setState(() => _showTools = !_showTools),
                           ),
                           const SizedBox(height: 2),
-                          TextButton(
-                            onPressed: _busy ? null : _deposit,
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                              backgroundColor: t.brand,
-                              minimumSize: const Size(84, 28),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: const Text('Deposit',
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white)),
-                          ),
-                          if (remaining > 0.01) ...[
-                            const SizedBox(height: 6),
-                            TextButton(
-                              onPressed: _busy ? null : _withdraw,
-                              style: TextButton.styleFrom(
-                                foregroundColor: t.brand,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 6),
-                                backgroundColor: t.brandSubtle,
-                                minimumSize: const Size(84, 28),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8)),
+                          Text(
+                              'Budget \$${remaining.toStringAsFixed(2)} / \$${_budgetVal.toStringAsFixed(2)} USDC',
+                              style:
+                                  TextStyle(color: t.textMuted, fontSize: 11)),
+                          if (_registered) ...[
+                            const SizedBox(height: 3),
+                            GestureDetector(
+                              onTap: addr.isEmpty
+                                  ? null
+                                  : () => launchUrl(
+                                      Uri.parse(
+                                          'https://testnet.arcscan.app/address/$addr'),
+                                      mode: LaunchMode.externalApplication),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.workspace_premium_rounded,
+                                      size: 12, color: PulsColors.amber),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    _reputation > 0
+                                        ? 'Reputation: $_reputation on-chain attestation${_reputation == 1 ? '' : 's'}'
+                                        : 'Reputation: builds as it trades',
+                                    style: TextStyle(
+                                        color: t.textSubtle,
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                  if (_agentId != null) ...[
+                                    const SizedBox(width: 5),
+                                    Text('· Agent #$_agentId',
+                                        style: TextStyle(
+                                            color: t.textSubtle,
+                                            fontSize: 10.5)),
+                                  ],
+                                  const SizedBox(width: 3),
+                                  Icon(Icons.open_in_new_rounded,
+                                      size: 10, color: t.textSubtle),
+                                ],
                               ),
-                              child: const Text('Withdraw',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700)),
                             ),
                           ],
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Agent tools — strategy & Finance Director',
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints:
+                              const BoxConstraints(minWidth: 32, minHeight: 28),
+                          icon: Icon(
+                              _showTools
+                                  ? Icons.close_rounded
+                                  : Icons.tune_rounded,
+                              size: 18,
+                              color: _showTools ? t.brand : t.textMuted),
+                          onPressed: () =>
+                              setState(() => _showTools = !_showTools),
+                        ),
+                        const SizedBox(height: 2),
+                        TextButton(
+                          onPressed: _busy ? null : _deposit,
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            backgroundColor: t.brand,
+                            minimumSize: const Size(84, 28),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('Deposit',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white)),
+                        ),
+                        if (remaining > 0.01) ...[
+                          const SizedBox(height: 6),
+                          TextButton(
+                            onPressed: _busy ? null : _withdraw,
+                            style: TextButton.styleFrom(
+                              foregroundColor: t.brand,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                              backgroundColor: t.brandSubtle,
+                              minimumSize: const Size(84, 28),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: const Text('Withdraw',
+                                style: TextStyle(
+                                    fontSize: 11, fontWeight: FontWeight.w700)),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ))

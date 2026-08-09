@@ -63,7 +63,6 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
   TxStatus _status = TxStatus.pending;
   String? _txHash;
   Timer? _timer;
-  int _dots = 0;
   late final DateTime _startTime;
   double? _elapsedSeconds;
 
@@ -72,12 +71,6 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
     super.initState();
     _startTime = DateTime.now();
     _poll();
-    // Animate dots while pending
-    _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-      if (_status == TxStatus.pending && mounted) {
-        setState(() => _dots = (_dots + 1) % 4);
-      }
-    });
   }
 
   @override
@@ -90,7 +83,9 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
     // Poll fast (200ms) for the first 15 attempts (~3s) to capture Arc's sub-second finality
     // and avoid artificially inflating measured latency due to client-side poll cadence.
     for (int i = 0; i < 60; i++) {
-      final delay = i < 15 ? const Duration(milliseconds: 200) : const Duration(seconds: 2);
+      final delay = i < 15
+          ? const Duration(milliseconds: 200)
+          : const Duration(seconds: 2);
       await Future.delayed(delay);
       if (!mounted) return;
       try {
@@ -102,7 +97,8 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
         final txHash = data['txHash'] as String?;
 
         if (state == 'COMPLETE') {
-          final elapsed = DateTime.now().difference(_startTime).inMilliseconds / 1000.0;
+          final elapsed =
+              DateTime.now().difference(_startTime).inMilliseconds / 1000.0;
           if (mounted) {
             setState(() {
               _status = TxStatus.complete;
@@ -121,7 +117,9 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
             }
           }
           return;
-        } else if (state == 'FAILED' || state == 'DENIED' || state == 'CANCELLED') {
+        } else if (state == 'FAILED' ||
+            state == 'DENIED' ||
+            state == 'CANCELLED') {
           if (mounted) setState(() => _status = TxStatus.failed);
           hapticError();
           _timer?.cancel();
@@ -175,179 +173,240 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
     final sideBg = isYes ? t.yesBg : t.noBg;
 
     return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle
-          const PulsDragHandle(),
-          const SizedBox(height: 24),
-          // Status icon
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _status == TxStatus.pending
-                ? SizedBox(
-                    key: const ValueKey('loading'),
-                    width: 56, height: 56,
-                    child: CircularProgressIndicator(color: t.brand, strokeWidth: 3),
-                  )
-                : Image.network(proxifyImageUrl(_status == TxStatus.complete
-                        ? 'https://img.icons8.com/?id=hJniet82Bq1U&format=png&size=256'
-                        : 'https://img.icons8.com/?id=DXECg4JU1n2x&format=png&size=256'),
-                    key: ValueKey(_status),
-                    width: 56, height: 56,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      width: 56, height: 56,
-                      decoration: BoxDecoration(
-                        color: _status == TxStatus.complete ? t.yesBg : t.noBg,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _status == TxStatus.complete
-                            ? Icons.check_rounded
-                            : Icons.close_rounded,
-                        color: _status == TxStatus.complete ? t.yes : t.no,
-                        size: 28,
-                      ),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Handle
+        const PulsDragHandle(),
+        const SizedBox(height: 24),
+        // Status icon
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _status == TxStatus.pending
+              ? SizedBox(
+                  key: const ValueKey('loading'),
+                  width: 56,
+                  height: 56,
+                  child:
+                      CircularProgressIndicator(color: t.brand, strokeWidth: 3),
+                )
+              : Image.network(
+                  proxifyImageUrl(_status == TxStatus.complete
+                      ? 'https://img.icons8.com/?id=hJniet82Bq1U&format=png&size=256'
+                      : 'https://img.icons8.com/?id=DXECg4JU1n2x&format=png&size=256'),
+                  key: ValueKey(_status),
+                  width: 56,
+                  height: 56,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: _status == TxStatus.complete ? t.yesBg : t.noBg,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _status == TxStatus.complete
+                          ? Icons.check_rounded
+                          : Icons.close_rounded,
+                      color: _status == TxStatus.complete ? t.yes : t.no,
+                      size: 28,
                     ),
                   ),
-          ),
-          const SizedBox(height: 20),
-          // Title
-          Text(
-            _status == TxStatus.pending
-                ? 'Processing${'.' * (_dots + 1)}'
-                : _status == TxStatus.complete
+                ),
+        ),
+        const SizedBox(height: 20),
+        // Title — the pending "Processing…" dots pulse via their own tiny
+        // AnimationController so the rest of the sheet never rebuilds at the
+        // dot cadence.
+        _status == TxStatus.pending
+            ? const _PendingLabel()
+            : Text(
+                _status == TxStatus.complete
                     ? 'Trade Confirmed!'
                     : 'Trade Failed',
-            style: Theme.of(context).textTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+        const SizedBox(height: 8),
+        // Subtitle
+        Text(
+          _status == TxStatus.pending
+              ? (widget.isBuy
+                  ? 'Your USDC is being sent to Arc'
+                  : 'Selling your ${widget.side} shares on Arc')
+              : _status == TxStatus.complete
+                  ? (widget.isBuy
+                      ? 'You bought \$${widget.amount.toStringAsFixed(2)} ${widget.side} on Arc'
+                      : 'You sold ${_formatShares(widget.amount)} ${widget.side} shares on Arc')
+                  : 'Transaction was not completed',
+          style: Theme.of(context).textTheme.bodyMedium,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 20),
+        // Side badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+              color: sideBg, borderRadius: BorderRadius.circular(10)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(widget.side,
+                  style: TextStyle(
+                      color: sideColor,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15)),
+              const SizedBox(width: 8),
+              Text(
+                  widget.isBuy
+                      ? '\$${widget.amount.toStringAsFixed(2)} USDC'
+                      : '${_formatShares(widget.amount)} shares',
+                  style: TextStyle(color: sideColor, fontSize: 14)),
+            ],
+          ),
+        ),
+        if (_txHash != null && _status == TxStatus.complete) ...[
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () => launchUrl(
+              Uri.parse('https://testnet.arcscan.app/tx/$_txHash'),
+              mode: LaunchMode.externalApplication,
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: t.brandSubtle,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: t.brand.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.open_in_new_rounded, size: 13, color: t.brand),
+                  const SizedBox(width: 6),
+                  Text(
+                    'View on Arcscan',
+                    style: TextStyle(
+                        color: t.brand,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${_txHash!.substring(0, 8)}…${_txHash!.substring(_txHash!.length - 6)}',
+                    style: TextStyle(color: t.textSubtle, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 8),
-          // Subtitle
+          // Arc differentiator — the "USDC paid the gas" money-shot
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.bolt_rounded, size: 13, color: t.yes),
+              const SizedBox(width: 4),
+              Text(
+                'Confirmed in ${_elapsedSeconds != null ? _elapsedSeconds!.toStringAsFixed(2) : "0.45"}s · gas paid in USDC, no ETH',
+                style: TextStyle(
+                    color: t.textSubtle,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ] else if (_txHash != null) ...[
+          const SizedBox(height: 12),
           Text(
-            _status == TxStatus.pending
-                ? (widget.isBuy
-                    ? 'Your USDC is being sent to Arc'
-                    : 'Selling your ${widget.side} shares on Arc')
-                : _status == TxStatus.complete
-                    ? (widget.isBuy
-                        ? 'You bought \$${widget.amount.toStringAsFixed(2)} ${widget.side} on Arc'
-                        : 'You sold ${_formatShares(widget.amount)} ${widget.side} shares on Arc')
-                    : 'Transaction was not completed',
-            style: Theme.of(context).textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          // Side badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(color: sideBg, borderRadius: BorderRadius.circular(10)),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(widget.side,
-                    style: TextStyle(color: sideColor, fontWeight: FontWeight.w800, fontSize: 15)),
-                const SizedBox(width: 8),
-                Text(
-                    widget.isBuy
-                        ? '\$${widget.amount.toStringAsFixed(2)} USDC'
-                        : '${_formatShares(widget.amount)} shares',
-                    style: TextStyle(color: sideColor, fontSize: 14)),
-              ],
-            ),
-          ),
-          if (_txHash != null && _status == TxStatus.complete) ...[
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () => launchUrl(
-                Uri.parse('https://testnet.arcscan.app/tx/$_txHash'),
-                mode: LaunchMode.externalApplication,
-              ),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: t.brandSubtle,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: t.brand.withValues(alpha: 0.2)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.open_in_new_rounded, size: 13, color: t.brand),
-                    const SizedBox(width: 6),
-                    Text(
-                      'View on Arcscan',
-                      style: TextStyle(color: t.brand, fontSize: 12, fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_txHash!.substring(0, 8)}…${_txHash!.substring(_txHash!.length - 6)}',
-                      style: TextStyle(color: t.textSubtle, fontSize: 11),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Arc differentiator — the "USDC paid the gas" money-shot
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.bolt_rounded, size: 13, color: t.yes),
-                const SizedBox(width: 4),
-                Text(
-                  'Confirmed in ${_elapsedSeconds != null ? _elapsedSeconds!.toStringAsFixed(2) : "0.45"}s · gas paid in USDC, no ETH',
-                  style: TextStyle(color: t.textSubtle, fontSize: 11, fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
-          ] else if (_txHash != null) ...[
-            const SizedBox(height: 12),
-            Text('TX: ${_txHash!.substring(0, 10)}...${_txHash!.substring(_txHash!.length - 6)}',
-                style: TextStyle(color: t.textSubtle, fontSize: 11)),
-          ],
-          const SizedBox(height: 24),
-          if (_status == TxStatus.complete && widget.isBuy) ...[
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: TextButton.icon(
-                onPressed: _shareOnX,
-                style: TextButton.styleFrom(
-                  backgroundColor: t.brandSubtle,
-                  foregroundColor: t.brand,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: t.brand.withValues(alpha: 0.3)),
-                  ),
-                ),
-                icon: const Text('𝕏',
-                    style:
-                        TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-                label: const Text('Share on X',
-                    style: TextStyle(fontWeight: FontWeight.w800)),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
+              'TX: ${_txHash!.substring(0, 10)}...${_txHash!.substring(_txHash!.length - 6)}',
+              style: TextStyle(color: t.textSubtle, fontSize: 11)),
+        ],
+        const SizedBox(height: 24),
+        if (_status == TxStatus.complete && widget.isBuy) ...[
           SizedBox(
             width: double.infinity,
-            height: 50,
-            child: TextButton(
-              onPressed: _status != TxStatus.pending
-                  ? () => Navigator.of(context).pop()
-                  : null,
+            height: 48,
+            child: TextButton.icon(
+              onPressed: _shareOnX,
               style: TextButton.styleFrom(
-                backgroundColor: _status != TxStatus.pending ? t.brand : t.border,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                backgroundColor: t.brandSubtle,
+                foregroundColor: t.brand,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: t.brand.withValues(alpha: 0.3)),
+                ),
               ),
-              child: Text(
-                _status == TxStatus.pending ? 'Please wait…' : 'Done',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-              ),
+              icon: const Text('𝕏',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+              label: const Text('Share on X',
+                  style: TextStyle(fontWeight: FontWeight.w800)),
             ),
           ),
+          const SizedBox(height: 10),
         ],
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: TextButton(
+            onPressed: _status != TxStatus.pending
+                ? () => Navigator.of(context).pop()
+                : null,
+            style: TextButton.styleFrom(
+              backgroundColor: _status != TxStatus.pending ? t.brand : t.border,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(
+              _status == TxStatus.pending ? 'Please wait…' : 'Done',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// "Processing" + animated dots. Self-contained ticker so the whole sheet body
+/// doesn't rebuild twice per second while a tx is pending.
+class _PendingLabel extends StatefulWidget {
+  const _PendingLabel();
+
+  @override
+  State<_PendingLabel> createState() => _PendingLabelState();
+}
+
+class _PendingLabelState extends State<_PendingLabel>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2))
+          ..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, _) {
+        final dots = 1 + (_ctrl.value * 4).floor() % 4;
+        return Text(
+          'Processing${'.' * dots}',
+          style: Theme.of(context).textTheme.titleLarge,
+        );
+      },
     );
   }
 }

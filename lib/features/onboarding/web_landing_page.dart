@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../../core/widgets/glass_card.dart';
@@ -35,7 +35,7 @@ class WebLandingPage extends StatefulWidget {
 }
 
 class _WebLandingPageState extends State<WebLandingPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final _scrollCtrl = ScrollController();
   // Scroll offset as a ValueNotifier so scroll-driven UI (hero parallax,
   // progress bars, sticky navbar, reveal/lazy triggers) rebuilds locally via
@@ -45,6 +45,9 @@ class _WebLandingPageState extends State<WebLandingPage>
   int _lastScrollNotified = 0;
   static const _scrollThrottleMs = 50; // ~20 updates/s max for scroll effects
   late final AnimationController _aurora;
+  // Hoisted merge of the aurora + cursor listenables — built once instead of
+  // allocating a new Listenable on every build().
+  late final Listenable _auroraListenable;
   // Normalized cursor position (-0.5..0.5 on each axis) for the reactive aurora.
   // A ValueNotifier so mouse moves repaint only the aurora, not the whole page.
   final _pointer = ValueNotifier<Offset>(Offset.zero);
@@ -53,10 +56,14 @@ class _WebLandingPageState extends State<WebLandingPage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // The aurora loops continuously; its start/stop is gated on reduce-motion
-    // in build() so motion-sensitive users get a single still frame.
+    // in build() so motion-sensitive users get a single still frame. It runs at
+    // ~30fps (not 60) — the glow is so soft that 30 is visually identical, and
+    // it halves the per-frame fragment work on weak GPUs.
     _aurora =
         AnimationController(vsync: this, duration: const Duration(seconds: 18));
+    _auroraListenable = Listenable.merge([_aurora, _pointer]);
     // Throttled scroll listener: the notifier fires at most ~20×/s instead of
     // once per scroll pixel. Only the scroll-driven leaf widgets (progress bar,
     // hero parallax, sticky navbar, reveal/lazy triggers) listen to it, so a
@@ -71,11 +78,26 @@ class _WebLandingPageState extends State<WebLandingPage>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _aurora.dispose();
     _scrollCtrl.dispose();
     _scrollOffset.dispose();
     _pointer.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // On web, hidden/paused fires when the tab loses visibility. Stop the
+    // aurora (the only always-running animation) so a background tab burns
+    // zero frames; resume when the tab comes back.
+    final visible = state == AppLifecycleState.resumed ||
+        state == AppLifecycleState.inactive;
+    if (!visible) {
+      if (_aurora.isAnimating) _aurora.stop();
+    } else if (!_aurora.isAnimating && !context.reduceMotion) {
+      _aurora.repeat(period: const Duration(milliseconds: 33));
+    }
   }
 
   @override
@@ -90,7 +112,8 @@ class _WebLandingPageState extends State<WebLandingPage>
     if (context.reduceMotion) {
       if (_aurora.isAnimating) _aurora.stop();
     } else if (!_aurora.isAnimating) {
-      _aurora.repeat();
+      // ~30fps — see initState.
+      _aurora.repeat(period: const Duration(milliseconds: 33));
     }
 
     final dotColor = isDark
@@ -140,7 +163,7 @@ class _WebLandingPageState extends State<WebLandingPage>
                       height: size.height / 2,
                       child: RepaintBoundary(
                         child: AnimatedBuilder(
-                          animation: Listenable.merge([_aurora, _pointer]),
+                          animation: _auroraListenable,
                           builder: (context, _) => CustomPaint(
                             painter: _AuroraPainter(
                               progress: _aurora.value,
@@ -432,7 +455,8 @@ class _InlineNavbar extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             clipBehavior: Clip.antiAlias,
-            child: Image.asset('assets/logo.png', fit: BoxFit.cover),
+            child: Image.asset('assets/logo.png',
+                fit: BoxFit.cover, cacheWidth: 128),
           ),
           const SizedBox(width: 12),
           Text(
@@ -550,15 +574,15 @@ class _StickyNavbarContent extends StatelessWidget {
     final isMobile = w < 800;
 
     // Reveal animation: fades + slides in over the first 120px of scroll.
+    // Computed directly (paint-only Transform + Opacity) — no implicit
+    // animation controllers on every scroll tick.
     final reveal = Curves.easeOut.transform(
       ((scrollOffset - 80) / 120).clamp(0.0, 1.0),
     );
 
-    return AnimatedSlide(
-      duration: Duration.zero,
+    return Transform.translate(
       offset: Offset(0, -1 + reveal),
-      child: AnimatedOpacity(
-        duration: Duration.zero,
+      child: Opacity(
         opacity: reveal,
         child: Align(
           alignment: Alignment.topCenter,
@@ -567,7 +591,7 @@ class _StickyNavbarContent extends StatelessWidget {
             child: Container(
               constraints: const BoxConstraints(maxWidth: 1240),
               decoration: BoxDecoration(
-                color: t.bg.withValues(alpha: 0.72),
+                color: t.bg.withValues(alpha: 0.78),
                 borderRadius: BorderRadius.circular(isMobile ? 20 : 999),
                 border: Border.all(
                   color: t.border.withValues(alpha: 0.6),
@@ -586,112 +610,109 @@ class _StickyNavbarContent extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(isMobile ? 20 : 999),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 16 : 48,
-                      vertical: isMobile ? 10 : 14,
-                    ),
-                    child: Row(
-                      children: [
-                        // Logo + wordmark
-                        Container(
-                          width: isMobile ? 26 : 28,
-                          height: isMobile ? 26 : 28,
-                          decoration: BoxDecoration(
-                            color: t.brandSubtle,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child:
-                              Image.asset('assets/logo.png', fit: BoxFit.cover),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 16 : 48,
+                    vertical: isMobile ? 10 : 14,
+                  ),
+                  child: Row(
+                    children: [
+                      // Logo + wordmark
+                      Container(
+                        width: isMobile ? 26 : 28,
+                        height: isMobile ? 26 : 28,
+                        decoration: BoxDecoration(
+                          color: t.brandSubtle,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        SizedBox(width: isMobile ? 8 : 10),
-                        if (!isMobile)
-                          Text(
-                            'Puls',
-                            style: TextStyle(
-                              fontFamily: PulsColors.fontDisplay,
-                              color: t.text,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.4,
-                            ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.asset('assets/logo.png',
+                            fit: BoxFit.cover, cacheWidth: 112),
+                      ),
+                      SizedBox(width: isMobile ? 8 : 10),
+                      if (!isMobile)
+                        Text(
+                          'Puls',
+                          style: TextStyle(
+                            fontFamily: PulsColors.fontDisplay,
+                            color: t.text,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.4,
                           ),
-                        const Spacer(),
-                        // Full nav links — always visible on desktop
-                        if (!isMobile) ...[
-                          _NavDropdown(
-                            label: 'Product',
-                            items: [
-                              ('Pulse', _pageUrl('/pulse')),
-                              ('Agent', _pageUrl('/agent')),
-                              ('Versus', _pageUrl('/versus')),
-                              ('Explorer', _pageUrl('/explorer')),
-                            ],
-                          ),
-                          const SizedBox(width: 4),
-                          _NavDropdown(
-                            label: 'Developers',
-                            items: [
-                              ('Docs', 'https://docs.pulsmarket.tech'),
-                              ('CLI', _pageUrl('/cli')),
-                              ('Build', _pageUrl('/build')),
-                              ('GitHub', 'https://github.com/rdmbtc/Puls'),
-                            ],
-                          ),
-                          const SizedBox(width: 4),
-                          const _NavDropdown(
-                            label: 'Mainnet',
-                            items: [
-                              ('Countdown', 'https://mainnet.pulsmarket.tech'),
-                            ],
-                          ),
-                          const SizedBox(width: 4),
-                          const _NavItemButton(
-                            label: 'Invest',
-                            url: 'https://invest.pulsmarket.tech',
-                          ),
-                          const SizedBox(width: 8),
-                          _NavIcon(
-                            icon: Icons.android_rounded,
-                            url: _pageUrl('/mobile-download'),
-                            tooltip: 'Download for Android',
-                          ),
-                          const SizedBox(width: 12),
-                          _SecondaryButton(
-                            label: 'Terminal',
-                            onTap: () => launchUrl(
-                              Uri.parse('https://terminal.pulsmarket.tech'),
-                              mode: LaunchMode.externalApplication,
-                            ),
-                            small: true,
-                          ),
-                          const SizedBox(width: 8),
-                        ] else
-                          const _MobileNavMenu(),
-                        // Always-visible controls
-                        IconButton(
-                          onPressed: appState.toggleThemeMode,
-                          icon: Icon(
-                            isDark
-                                ? Icons.light_mode_rounded
-                                : Icons.dark_mode_rounded,
-                            size: 18,
-                            color: t.textMuted,
-                          ),
-                          tooltip: isDark ? 'Light mode' : 'Dark mode',
                         ),
-                        SizedBox(width: isMobile ? 4 : 8),
-                        _PrimaryButton(
-                          label: isMobile ? 'Launch' : 'Launch App',
-                          onTap: () =>
-                              appState.dismissWebLanding(terminal: false),
+                      const Spacer(),
+                      // Full nav links — always visible on desktop
+                      if (!isMobile) ...[
+                        _NavDropdown(
+                          label: 'Product',
+                          items: [
+                            ('Pulse', _pageUrl('/pulse')),
+                            ('Agent', _pageUrl('/agent')),
+                            ('Versus', _pageUrl('/versus')),
+                            ('Explorer', _pageUrl('/explorer')),
+                          ],
+                        ),
+                        const SizedBox(width: 4),
+                        _NavDropdown(
+                          label: 'Developers',
+                          items: [
+                            ('Docs', 'https://docs.pulsmarket.tech'),
+                            ('CLI', _pageUrl('/cli')),
+                            ('Build', _pageUrl('/build')),
+                            ('GitHub', 'https://github.com/rdmbtc/Puls'),
+                          ],
+                        ),
+                        const SizedBox(width: 4),
+                        const _NavDropdown(
+                          label: 'Mainnet',
+                          items: [
+                            ('Countdown', 'https://mainnet.pulsmarket.tech'),
+                          ],
+                        ),
+                        const SizedBox(width: 4),
+                        const _NavItemButton(
+                          label: 'Invest',
+                          url: 'https://invest.pulsmarket.tech',
+                        ),
+                        const SizedBox(width: 8),
+                        _NavIcon(
+                          icon: Icons.android_rounded,
+                          url: _pageUrl('/mobile-download'),
+                          tooltip: 'Download for Android',
+                        ),
+                        const SizedBox(width: 12),
+                        _SecondaryButton(
+                          label: 'Terminal',
+                          onTap: () => launchUrl(
+                            Uri.parse('https://terminal.pulsmarket.tech'),
+                            mode: LaunchMode.externalApplication,
+                          ),
                           small: true,
                         ),
-                      ],
-                    ),
+                        const SizedBox(width: 8),
+                      ] else
+                        const _MobileNavMenu(),
+                      // Always-visible controls
+                      IconButton(
+                        onPressed: appState.toggleThemeMode,
+                        icon: Icon(
+                          isDark
+                              ? Icons.light_mode_rounded
+                              : Icons.dark_mode_rounded,
+                          size: 18,
+                          color: t.textMuted,
+                        ),
+                        tooltip: isDark ? 'Light mode' : 'Dark mode',
+                      ),
+                      SizedBox(width: isMobile ? 4 : 8),
+                      _PrimaryButton(
+                        label: isMobile ? 'Launch' : 'Launch App',
+                        onTap: () =>
+                            appState.dismissWebLanding(terminal: false),
+                        small: true,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1700,8 +1721,8 @@ class _SectionEyebrow extends StatelessWidget {
         children: [
           const CachedGradientMask(
             gradient: PulsColors.pulseGradient,
-            child: Icon(Icons.auto_awesome_rounded,
-                size: 14, color: Colors.white),
+            child:
+                Icon(Icons.auto_awesome_rounded, size: 14, color: Colors.white),
           ),
           const SizedBox(width: 8),
           Text(
@@ -2166,7 +2187,16 @@ class _BentoCell extends StatefulWidget {
 
 class _BentoCellState extends State<_BentoCell> {
   bool _hovered = false;
-  Offset _cursor = Offset.zero;
+  // Cursor position as a ValueNotifier: mouse moves repaint only the spotlight
+  // layer (via the painter's repaint listenable) instead of rebuilding the
+  // whole card on every pointer event.
+  final _cursor = ValueNotifier<Offset>(Offset.zero);
+
+  @override
+  void dispose() {
+    _cursor.dispose();
+    super.dispose();
+  }
 
   Widget _wrapVisual(Widget v) =>
       ClipRect(child: SizedBox.expand(child: RepaintBoundary(child: v)));
@@ -2242,7 +2272,7 @@ class _BentoCellState extends State<_BentoCell> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       onHover: (e) {
-        if (_hovered) setState(() => _cursor = e.localPosition);
+        if (_hovered) _cursor.value = e.localPosition;
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
@@ -2281,21 +2311,22 @@ class _BentoCellState extends State<_BentoCell> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Stack(
-              children: [
-                if (_hovered)
-                  Positioned.fill(
-                    child: IgnorePointer(
+          child: Stack(
+            children: [
+              if (_hovered)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    // Repaints in place via the cursor ValueNotifier — no
+                    // rebuild on mouse move.
+                    child: RepaintBoundary(
                       child: CustomPaint(
                         painter: _SpotlightPainter(center: _cursor, color: a),
                       ),
                     ),
                   ),
-                Padding(padding: EdgeInsets.all(pad), child: content),
-              ],
-            ),
+                ),
+              Padding(padding: EdgeInsets.all(pad), child: content),
+            ],
           ),
         ),
       ),
@@ -2304,13 +2335,18 @@ class _BentoCellState extends State<_BentoCell> {
 }
 
 // Soft accent glow that tracks the cursor — the signature "spotlight card" feel.
+// Repaints via the [center] ValueNotifier (no widget rebuild per mouse move).
 class _SpotlightPainter extends CustomPainter {
-  const _SpotlightPainter({required this.center, required this.color});
-  final Offset center;
+  _SpotlightPainter(
+      {required ValueListenable<Offset> center, required this.color})
+      : _center = center,
+        super(repaint: center);
+  final ValueListenable<Offset> _center;
   final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
+    final center = _center.value;
     final r = size.longestSide * 0.7;
     final paint = Paint()
       ..shader = RadialGradient(
@@ -2321,7 +2357,7 @@ class _SpotlightPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_SpotlightPainter old) =>
-      old.center != center || old.color != color;
+      old.color != color || old._center != _center;
 }
 
 // ── Visual · Puls Streams pay-per-second meter ─────────────────────────────────
@@ -3677,7 +3713,7 @@ class _StatsSection extends StatelessWidget {
               // Contract address widget
               GlassCard(
                 radius: 16,
-                blur: 10,
+                blur: 0,
                 fillAlpha: 0.05,
                 borderAlpha: 0.12,
                 padding: EdgeInsets.all(isMobile ? 14 : 22),
@@ -4025,88 +4061,84 @@ class _FinalCtaSection extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(32),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                    child: Column(
-                      children: [
-                        // Decorative gradient rule above the headline
-                        Container(
-                          width: 48,
-                          height: 3,
-                          decoration: const BoxDecoration(
-                            gradient: PulsColors.pulseGradient,
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(100)),
+                  child: Column(
+                    children: [
+                      // Decorative gradient rule above the headline
+                      Container(
+                        width: 48,
+                        height: 3,
+                        decoration: const BoxDecoration(
+                          gradient: PulsColors.pulseGradient,
+                          borderRadius: BorderRadius.all(Radius.circular(100)),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      Text(
+                        'Don\'t trust predictions.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: PulsColors.fontDisplay,
+                          color: t.text,
+                          fontSize: titleSize,
+                          fontWeight: FontWeight.w600,
+                          height: 1.08,
+                          letterSpacing: -1.5,
+                        ),
+                      ),
+                      Text(
+                        'Verify them on-chain.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: PulsColors.fontDisplay,
+                          color: t.brand,
+                          fontSize: titleSize,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
+                          height: 1.12,
+                          letterSpacing: -1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Trade alongside AI agents that stake real USDC on every call. '
+                        'One-tap wallet — you\'re trading in under a minute.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: t.textMuted,
+                            fontSize: isMobile ? 14 : 16,
+                            height: 1.6),
+                      ),
+                      SizedBox(height: isMobile ? 32 : 40),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          Builder(builder: (context) {
+                            final wallet = WalletServiceScope.of(context);
+                            return _PrimaryButton(
+                              label: wallet.state.isLoading
+                                  ? 'Connecting…'
+                                  : 'Launch Puls',
+                              onTap: wallet.state.isLoading
+                                  ? null
+                                  : () {
+                                      if (wallet.state.userId != null) {
+                                        appState.dismissWebLanding();
+                                      } else {
+                                        wallet.signInWithGoogle();
+                                      }
+                                    },
+                            );
+                          }),
+                          _SecondaryButton(
+                            label: '⤓  Android APK',
+                            onTap: () => launchUrl(Uri.parse(kAndroidApkUrl),
+                                mode: LaunchMode.externalApplication),
                           ),
-                        ),
-                        const SizedBox(height: 28),
-                        Text(
-                          'Don\'t trust predictions.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: PulsColors.fontDisplay,
-                            color: t.text,
-                            fontSize: titleSize,
-                            fontWeight: FontWeight.w600,
-                            height: 1.08,
-                            letterSpacing: -1.5,
-                          ),
-                        ),
-                        Text(
-                          'Verify them on-chain.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: PulsColors.fontDisplay,
-                            color: t.brand,
-                            fontSize: titleSize,
-                            fontWeight: FontWeight.w600,
-                            fontStyle: FontStyle.italic,
-                            height: 1.12,
-                            letterSpacing: -1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Trade alongside AI agents that stake real USDC on every call. '
-                          'One-tap wallet — you\'re trading in under a minute.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: t.textMuted,
-                              fontSize: isMobile ? 14 : 16,
-                              height: 1.6),
-                        ),
-                        SizedBox(height: isMobile ? 32 : 40),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          alignment: WrapAlignment.center,
-                          children: [
-                            Builder(builder: (context) {
-                              final wallet = WalletServiceScope.of(context);
-                              return _PrimaryButton(
-                                label: wallet.state.isLoading
-                                    ? 'Connecting…'
-                                    : 'Launch Puls',
-                                onTap: wallet.state.isLoading
-                                    ? null
-                                    : () {
-                                        if (wallet.state.userId != null) {
-                                          appState.dismissWebLanding();
-                                        } else {
-                                          wallet.signInWithGoogle();
-                                        }
-                                      },
-                              );
-                            }),
-                            _SecondaryButton(
-                              label: '⤓  Android APK',
-                              onTap: () => launchUrl(Uri.parse(kAndroidApkUrl),
-                                  mode: LaunchMode.externalApplication),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -4154,6 +4186,35 @@ class _AuroraPainter extends CustomPainter {
   final Color bg;
   final Offset pointer;
 
+  // Static cache of quantized blob shaders: blob centers/radii move smoothly
+  // but are snapped to an 8px grid, so the ~dozen distinct positions that
+  // actually occur reuse an existing Paint instead of allocating a new
+  // RadialGradient + shader on every frame.
+  static final Map<int, Paint> _blobPaints = {};
+  static const int _blobCacheCap = 24;
+
+  static Paint _blobPaint(
+      Color c, double alpha, double cx, double cy, double r) {
+    final kx = (cx / 8).round();
+    final ky = (cy / 8).round();
+    final kr = (r / 8).round();
+    final key = Object.hash(kx, ky, kr, c.toARGB32(), alpha);
+    final hit = _blobPaints[key];
+    if (hit != null) return hit;
+    if (_blobPaints.length >= _blobCacheCap) {
+      _blobPaints.remove(_blobPaints.keys.first);
+    }
+    final paint = Paint()
+      ..shader = RadialGradient(
+        colors: [c.withValues(alpha: alpha), c.withValues(alpha: 0.0)],
+      ).createShader(Rect.fromCircle(
+        center: Offset(kx * 8.0, ky * 8.0),
+        radius: kr * 8.0,
+      ));
+    _blobPaints[key] = paint;
+    return paint;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final t = progress * 2 * math.pi;
@@ -4173,10 +4234,7 @@ class _AuroraPainter extends CustomPainter {
     canvas.drawRect(Offset.zero & size, Paint()..color = bg);
 
     void blob(Color c, double cx, double cy, double r) {
-      final paint = Paint()
-        ..shader = RadialGradient(
-          colors: [c.withValues(alpha: alpha), c.withValues(alpha: 0.0)],
-        ).createShader(Rect.fromCircle(center: Offset(cx, cy), radius: r));
+      final paint = _blobPaint(c, alpha, cx, cy, r);
       canvas.drawCircle(Offset(cx, cy), r, paint);
     }
 
@@ -4262,7 +4320,7 @@ class _FooterSection extends StatelessWidget {
                               ),
                               clipBehavior: Clip.antiAlias,
                               child: Image.asset('assets/logo.png',
-                                  fit: BoxFit.cover),
+                                  fit: BoxFit.cover, cacheWidth: 112),
                             ),
                             const SizedBox(width: 10),
                             Text(
@@ -4337,7 +4395,7 @@ class _FooterSection extends StatelessWidget {
                               ),
                               clipBehavior: Clip.antiAlias,
                               child: Image.asset('assets/logo.png',
-                                  fit: BoxFit.cover),
+                                  fit: BoxFit.cover, cacheWidth: 112),
                             ),
                             const SizedBox(width: 10),
                             Text(

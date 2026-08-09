@@ -20,6 +20,10 @@ class LiveTradeTape extends StatefulWidget {
 
 class _LiveTradeTapeState extends State<LiveTradeTape> {
   List<Map<String, dynamic>> _trades = [];
+  // Canonical keys of trades already shown — new WS/poll payloads are diffed
+  // against this so unchanged lists never trigger a rebuild (and repeats never
+  // get re-inserted).
+  final Set<String> _seen = {};
   Timer? _timer;
 
   @override
@@ -32,10 +36,22 @@ class _LiveTradeTapeState extends State<LiveTradeTape> {
   @override
   void didUpdateWidget(LiveTradeTape old) {
     super.didUpdateWidget(old);
-    if (widget.liveTrades.isNotEmpty && widget.liveTrades != old.liveTrades) {
-      _trades = [...widget.liveTrades, ..._trades].take(100).toList();
+    if (widget.liveTrades.isEmpty ||
+        identical(widget.liveTrades, old.liveTrades)) {
+      return;
+    }
+    var changed = false;
+    for (final trade in widget.liveTrades) {
+      if (_seen.add(_key(trade))) changed = true;
+    }
+    if (changed && mounted) {
+      setState(() =>
+          _trades = [...widget.liveTrades, ..._trades].take(100).toList());
     }
   }
+
+  static String _key(Map<String, dynamic> t) =>
+      '${t['created_at']}|${t['user_id']}|${t['usdc_amount']}|${t['question']}';
 
   void _fetchTrades() async {
     try {
@@ -48,7 +64,21 @@ class _LiveTradeTapeState extends State<LiveTradeTape> {
       final list = (data['trades'] as List? ?? [])
           .map((t) => t as Map<String, dynamic>)
           .toList();
-      if (mounted) setState(() => _trades = list.take(100).toList());
+      if (list.isEmpty) return;
+      // Skip the rebuild when the payload matches what's already on screen.
+      final known = _seen.contains(_key(list.first));
+      if (known && list.length == _trades.length) return;
+      for (final t in list) {
+        _seen.add(_key(t));
+      }
+      if (mounted) {
+        setState(() {
+          _trades = list.take(100).toList();
+          if (_seen.length > 200) {
+            _seen.removeWhere((k) => !_trades.any((t) => _key(t) == k));
+          }
+        });
+      }
     } catch (_) {}
   }
 
@@ -147,19 +177,16 @@ class _TradeRow extends StatelessWidget {
     final userId = (trade['user_id'] as String? ?? 'unknown');
     final isAgent = userId.startsWith('agent_');
     final amount = (trade['usdc_amount'] as num?)?.toDouble() ?? 0;
-    final question = (trade['question'] as String? ?? '')
-        .replaceAll('🤖 Agent:', '')
-        .trim();
-    final q =
-        question.length > 30 ? '${question.substring(0, 29)}…' : question;
+    final question =
+        (trade['question'] as String? ?? '').replaceAll('🤖 Agent:', '').trim();
+    final q = question.length > 30 ? '${question.substring(0, 29)}…' : question;
     final ts = trade['created_at'] as String? ?? '';
     final time = ts.length >= 8 ? ts.substring(11, 19) : '--:--:--';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        border:
-            Border(bottom: BorderSide(color: t.border, width: 0.5)),
+        border: Border(bottom: BorderSide(color: t.border, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -175,9 +202,7 @@ class _TradeRow extends StatelessWidget {
             width: 70,
             child: Text(isAgent ? 'AGENT' : 'HUMAN',
                 style: TextStyle(
-                    color: isAgent
-                        ? const Color(0xFFF59E0B)
-                        : t.textMuted,
+                    color: isAgent ? const Color(0xFFF59E0B) : t.textMuted,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     fontFamily: PulsColors.fontMono)),

@@ -38,7 +38,9 @@ class PromoCarousel extends StatefulWidget {
 class _PromoCarouselState extends State<PromoCarousel> {
   late final PageController _ctrl;
   Timer? _timer;
-  int _current = 0;
+  // Page index as a ValueNotifier: only the dots row listens to it, so page
+  // changes never rebuild (or repaint) the PageView itself.
+  final ValueNotifier<int> _current = ValueNotifier(0);
 
   @override
   void initState() {
@@ -51,7 +53,7 @@ class _PromoCarouselState extends State<PromoCarousel> {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted || !_ctrl.hasClients) return;
-      final next = (_current + 1) % widget.slides.length;
+      final next = (_current.value + 1) % widget.slides.length;
       _ctrl.animateToPage(
         next,
         duration: const Duration(milliseconds: 400),
@@ -64,6 +66,7 @@ class _PromoCarouselState extends State<PromoCarousel> {
   void dispose() {
     _timer?.cancel();
     _ctrl.dispose();
+    _current.dispose();
     super.dispose();
   }
 
@@ -80,7 +83,7 @@ class _PromoCarouselState extends State<PromoCarousel> {
               controller: _ctrl,
               itemCount: widget.slides.length,
               onPageChanged: (i) {
-                setState(() => _current = i);
+                _current.value = i;
                 _startAutoPlay();
               },
               itemBuilder: (context, i) => _PromoCard(
@@ -90,24 +93,26 @@ class _PromoCarouselState extends State<PromoCarousel> {
             ),
           ),
           const SizedBox(height: 10),
-          // Dots indicator — wrap in RepaintBoundary so the dot animations
-          // don't trigger repaints of the PageView above.
+          // Dots indicator — only this row listens to page changes.
           RepaintBoundary(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(widget.slides.length, (i) {
-                final active = i == _current;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  width: active ? 20 : 6,
-                  height: 6,
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: BoxDecoration(
-                    color: active ? t.brand : t.border,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                );
-              }),
+            child: ValueListenableBuilder<int>(
+              valueListenable: _current,
+              builder: (context, current, _) => Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(widget.slides.length, (i) {
+                  final active = i == current;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    width: active ? 20 : 6,
+                    height: 6,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    decoration: BoxDecoration(
+                      color: active ? t.brand : t.border,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  );
+                }),
+              ),
             ),
           ),
         ],

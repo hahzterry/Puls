@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/motion.dart';
-import '../feed/feed_screen.dart';
 import '../home/web_iframe.dart';
 import '../market/screens/market_terminal_screen.dart';
 import 'mac_window_frame.dart';
@@ -25,11 +24,24 @@ class _HeroMarketStackState extends State<HeroMarketStack>
     with SingleTickerProviderStateMixin {
   Offset _tilt = Offset.zero;
   late final AnimationController _float;
+  // The preview (a real <iframe> on web) is static — build it ONCE instead of
+  // rebuilding it inside the per-frame AnimatedBuilder, where every float tick
+  // would rebuild the iframe widget and force the platform view to recomposite.
+  late final Widget _preview;
 
   @override
   void initState() {
     super.initState();
-    _float = AnimationController(vsync: this, duration: const Duration(seconds: 6));
+    _float =
+        AnimationController(vsync: this, duration: const Duration(seconds: 6));
+    _preview = liveAppPreview(
+      // On web show the LIVE external terminal (terminal.pulsmarket.tech)
+      // in a real iframe; on native fall back to the in-app preview.
+      screen: buildWebIframe('https://terminal.pulsmarket.tech') ??
+          const MarketTerminalScreen(),
+      width: 1024,
+      height: 700,
+    );
   }
 
   @override
@@ -60,37 +72,35 @@ class _HeroMarketStackState extends State<HeroMarketStack>
     final Widget stack = SizedBox(
       width: totalW,
       height: h,
-      child: AnimatedBuilder(
-        animation: _float,
-        builder: (context, _) {
-          final t = _float.value * 2 * math.pi;
-          return Transform.rotate(
-            angle: -0.018,
-            child: Transform.translate(
-              offset: Offset(0, 8 * math.sin(t)),
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.topCenter,
-                children: [
-                  liveAppPreview(
-                    // On web show the LIVE external terminal (terminal.pulsmarket.tech)
-                    // in a real iframe; on native fall back to the in-app preview.
-                    screen: buildWebIframe('https://terminal.pulsmarket.tech') ??
-                        const MarketTerminalScreen(),
-                    width: 1024,
-                    height: 700,
-                  ),
-                  // Floating "LIVE" badge — signals this is the real terminal.
-                  Positioned(
-                    top: -14,
-                    right: 4,
-                    child: _LiveBadge(),
-                  ),
-                ],
+      // RepaintBoundary promotes the floating stack to its own layer: the
+      // float/tilt tick then re-composites that layer at compositor speed
+      // instead of repainting (and re-uploading) the whole subtree below.
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _float,
+          builder: (context, _) {
+            final t = _float.value * 2 * math.pi;
+            return Transform.rotate(
+              angle: -0.018,
+              child: Transform.translate(
+                offset: Offset(0, 8 * math.sin(t)),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.topCenter,
+                  children: [
+                    _preview,
+                    // Floating "LIVE" badge — signals this is the real terminal.
+                    const Positioned(
+                      top: -14,
+                      right: 4,
+                      child: _LiveBadge(),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
 

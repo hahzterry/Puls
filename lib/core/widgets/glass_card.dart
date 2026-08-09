@@ -56,46 +56,50 @@ class GlassCard extends StatelessWidget {
     // scaling its baked-in alpha by the caller's fillAlpha.
     final baseGlass = t.surfaceGlass;
     final baseAlpha = baseGlass.a;
-    final fill =
-        baseGlass.withValues(alpha: (baseAlpha * (fillAlpha / 0.05)).clamp(0.0, 1.0));
+    final fill = baseGlass.withValues(
+        alpha: (baseAlpha * (fillAlpha / 0.05)).clamp(0.0, 1.0));
     final border = isDark
         ? PulsColors.brandMint.withValues(alpha: borderAlpha)
         : Colors.white.withValues(alpha: borderAlpha * 1.6);
 
+    final coreContent = Container(
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: border, width: 0.6),
+        // Inner top highlight — the "glass edge" catch-light.
+        boxShadow: [
+          BoxShadow(
+            color: Colors.white.withValues(alpha: isDark ? 0.06 : 0.35),
+            blurRadius: 0,
+            spreadRadius: -1,
+            offset: const Offset(0, 1),
+          ),
+        ],
+        gradient: elevation > 0
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  fill,
+                  t.surface.withValues(alpha: fillAlpha * 0.6),
+                ],
+              )
+            : null,
+      ),
+      child: padding != null ? Padding(padding: padding!, child: child) : child,
+    );
+
+    // blur == 0 skips the BackdropFilter entirely (no saveLayer on web) and
+    // keeps the translucent fill — visually equivalent for most usages.
     final core = ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: Container(
-          decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: border, width: 0.6),
-            // Inner top highlight — the "glass edge" catch-light.
-            boxShadow: [
-              BoxShadow(
-                color: Colors.white.withValues(alpha: isDark ? 0.06 : 0.35),
-                blurRadius: 0,
-                spreadRadius: -1,
-                offset: const Offset(0, 1),
-              ),
-            ],
-            gradient: elevation > 0
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      fill,
-                      t.surface.withValues(alpha: fillAlpha * 0.6),
-                    ],
-                  )
-                : null,
-          ),
-          child: padding != null
-              ? Padding(padding: padding!, child: child)
-              : child,
-        ),
-      ),
+      child: blur > 0
+          ? BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+              child: coreContent,
+            )
+          : coreContent,
     );
 
     final body = bezelled
@@ -119,7 +123,8 @@ class GlassCard extends StatelessWidget {
         : core;
 
     if (onTap != null) {
-      return GestureDetector(onTap: onTap, child: Container(margin: margin, child: body));
+      return GestureDetector(
+          onTap: onTap, child: Container(margin: margin, child: body));
     }
     return Container(margin: margin, child: body);
   }
