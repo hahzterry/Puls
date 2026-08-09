@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/config.dart';
 import '../../core/motion.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/gradient_text.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/haptics.dart';
 import '../../core/utils/trade_math.dart';
@@ -511,8 +512,8 @@ class FeedFilterPills extends StatelessWidget {
     // scrolling" instead of a clipped mistake.
     return SizedBox(
       height: 36,
-      child: ShaderMask(
-        shaderCallback: (rect) => const LinearGradient(
+      child: CachedGradientMask(
+        gradient: const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
           colors: [
@@ -522,7 +523,7 @@ class FeedFilterPills extends StatelessWidget {
             Colors.transparent,
           ],
           stops: [0, 0.02, 0.96, 1],
-        ).createShader(rect),
+        ),
         blendMode: BlendMode.dstIn,
         child: ListView(
           scrollDirection: Axis.horizontal,

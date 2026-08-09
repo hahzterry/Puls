@@ -1382,9 +1382,8 @@ class _InvestSheetState extends State<_InvestSheet> {
                   tween: Tween(end: _amount),
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeOutCubic,
-                  builder: (_, v, __) => ShaderMask(
-                    shaderCallback: (r) =>
-                        PulsColors.pulseGradient.createShader(r),
+                  builder: (_, v, __) => CachedGradientMask(
+                    gradient: PulsColors.pulseGradient,
                     child: Text(
                       '\$${v.toStringAsFixed(0)}',
                       style: const TextStyle(

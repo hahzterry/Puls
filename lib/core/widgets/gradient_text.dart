@@ -116,3 +116,50 @@ class _AnimatedGradientTextState extends State<AnimatedGradientText>
     );
   }
 }
+
+/// A [ShaderMask] whose shader is derived from a FIXED [LinearGradient] and
+/// cached per bounds + gradient identity. The gradient never changes, so the
+/// shader is built once instead of on every paint — the win matters inside
+/// animated builders (count-ups, tweens) and scrolling lists, where the
+/// surrounding widget repaints every frame but the mask itself is static.
+class CachedGradientMask extends StatefulWidget {
+  const CachedGradientMask({
+    super.key,
+    required this.gradient,
+    required this.child,
+    this.blendMode = BlendMode.srcIn,
+  });
+
+  final LinearGradient gradient;
+  final Widget child;
+  final BlendMode blendMode;
+
+  @override
+  State<CachedGradientMask> createState() => _CachedGradientMaskState();
+}
+
+class _CachedGradientMaskState extends State<CachedGradientMask> {
+  Rect? _lastRect;
+  LinearGradient? _lastGradient;
+  Shader? _shader;
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      blendMode: widget.blendMode,
+      shaderCallback: (r) {
+        final cached = _shader;
+        if (cached != null &&
+            _lastRect == r &&
+            identical(_lastGradient, widget.gradient)) {
+          return cached;
+        }
+        _shader = widget.gradient.createShader(r);
+        _lastRect = r;
+        _lastGradient = widget.gradient;
+        return _shader!;
+      },
+      child: widget.child,
+    );
+  }
+}

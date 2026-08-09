@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/gradient_text.dart';
 import '../../core/widgets/puls_button.dart';
 import '../../core/widgets/tactile.dart';
 
@@ -304,9 +305,9 @@ class _GladiatorArenaScreenState extends State<GladiatorArenaScreen>
       ),
       child: Column(
         children: [
-          ShaderMask(
-            shaderCallback: (r) => PulsColors.pulseGradient.createShader(r),
-            child: const Text(
+          const CachedGradientMask(
+            gradient: PulsColors.pulseGradient,
+            child: Text(
               'AI GLADIATOR ARENA',
               style: TextStyle(
                 color: Colors.white,

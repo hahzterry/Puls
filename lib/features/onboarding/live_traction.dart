@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/config.dart' show backendUrl;
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/gradient_text.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/count_up_text.dart';
 import 'landing_kit.dart';
@@ -188,8 +189,8 @@ class _TractionCard extends StatelessWidget {
         children: [
           CountUpText(
             value.toDouble(),
-            builder: (context, v) => ShaderMask(
-              shaderCallback: (r) => PulsColors.pulseGradient.createShader(r),
+            builder: (context, v) => CachedGradientMask(
+              gradient: PulsColors.pulseGradient,
               child: Text(
                 withThousands(v.round()),
                 style: const TextStyle(
