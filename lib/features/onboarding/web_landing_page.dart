@@ -1060,6 +1060,12 @@ class _HeroSectionState extends State<_HeroSection> {
     return ValueListenableBuilder<double>(
       valueListenable: widget.scrollOffset,
       builder: (context, scrollOffset, _) {
+        if (scrollOffset > h * 0.65) {
+          // Offscreen culling: When scrolled past the hero, render a simple empty
+          // box to preserve scroll extent, skipping expensive hero subtree rebuilds.
+          final heroH = math.max(680.0, h - 80.0);
+          return SizedBox(height: isMobile ? heroH * 0.9 : heroH);
+        }
         // Reduce-motion: drop the scroll parallax (keep the gentle fade so the
         // hero still clears the content scrolling up beneath it).
         final parallaxY = context.reduceMotion
@@ -2341,15 +2347,32 @@ class _SpotlightPainter extends CustomPainter {
   final ValueListenable<Offset> _center;
   final Color color;
 
+  static final Map<int, Paint> _unitPaints = {};
+
+  static Paint _unitPaint(Color c) {
+    final key = c.toARGB32();
+    return _unitPaints.putIfAbsent(key, () {
+      return Paint()
+        ..shader = RadialGradient(
+          colors: [c.withValues(alpha: 0.15), c.withValues(alpha: 0.0)],
+        ).createShader(const Rect.fromLTRB(-1.0, -1.0, 1.0, 1.0));
+    });
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = _center.value;
     final r = size.longestSide * 0.7;
-    final paint = Paint()
-      ..shader = RadialGradient(
-        colors: [color.withValues(alpha: 0.15), color.withValues(alpha: 0.0)],
-      ).createShader(Rect.fromCircle(center: center, radius: r));
-    canvas.drawRect(Offset.zero & size, paint);
+    if (r <= 0) return;
+    final paint = _unitPaint(color);
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.scale(r, r);
+    canvas.drawRect(
+      Rect.fromLTRB(-center.dx / r, -center.dy / r, (size.width - center.dx) / r, (size.height - center.dy) / r),
+      paint,
+    );
+    canvas.restore();
   }
 
   @override
@@ -4183,33 +4206,19 @@ class _AuroraPainter extends CustomPainter {
   final Color bg;
   final Offset pointer;
 
-  // Static cache of quantized blob shaders: blob centers/radii move smoothly
-  // but are snapped to an 8px grid, so the ~dozen distinct positions that
-  // actually occur reuse an existing Paint instead of allocating a new
-  // RadialGradient + shader on every frame.
-  static final Map<int, Paint> _blobPaints = {};
-  static const int _blobCacheCap = 24;
+  // Cached unit paints centered at (0,0) with radius 1.0. Matrix transforms
+  // translate and scale them hardware-accelerated on GPU without allocating
+  // new RadialGradient shaders on every frame.
+  static final Map<int, Paint> _unitPaints = {};
 
-  static Paint _blobPaint(
-      Color c, double alpha, double cx, double cy, double r) {
-    final kx = (cx / 8).round();
-    final ky = (cy / 8).round();
-    final kr = (r / 8).round();
-    final key = Object.hash(kx, ky, kr, c.toARGB32(), alpha);
-    final hit = _blobPaints[key];
-    if (hit != null) return hit;
-    if (_blobPaints.length >= _blobCacheCap) {
-      _blobPaints.remove(_blobPaints.keys.first);
-    }
-    final paint = Paint()
-      ..shader = RadialGradient(
-        colors: [c.withValues(alpha: alpha), c.withValues(alpha: 0.0)],
-      ).createShader(Rect.fromCircle(
-        center: Offset(kx * 8.0, ky * 8.0),
-        radius: kr * 8.0,
-      ));
-    _blobPaints[key] = paint;
-    return paint;
+  static Paint _unitPaint(Color c, double alpha) {
+    final key = Object.hash(c.toARGB32(), (alpha * 1000).round());
+    return _unitPaints.putIfAbsent(key, () {
+      return Paint()
+        ..shader = RadialGradient(
+          colors: [c.withValues(alpha: alpha), c.withValues(alpha: 0.0)],
+        ).createShader(const Rect.fromLTRB(-1.0, -1.0, 1.0, 1.0));
+    });
   }
 
   @override
@@ -4231,8 +4240,13 @@ class _AuroraPainter extends CustomPainter {
     canvas.drawRect(Offset.zero & size, Paint()..color = bg);
 
     void blob(Color c, double cx, double cy, double r) {
-      final paint = _blobPaint(c, alpha, cx, cy, r);
-      canvas.drawCircle(Offset(cx, cy), r, paint);
+      if (r <= 0) return;
+      final paint = _unitPaint(c, alpha);
+      canvas.save();
+      canvas.translate(cx, cy);
+      canvas.scale(r, r);
+      canvas.drawCircle(Offset.zero, 1.0, paint);
+      canvas.restore();
     }
 
     final w = size.width, h = size.height;
@@ -4262,15 +4276,25 @@ class _GrainPainter extends CustomPainter {
   const _GrainPainter({required this.color});
   final Color color;
 
+  static List<Offset>? _cachedPoints;
+
   @override
   void paint(Canvas canvas, Size size) {
-    final rnd = math.Random(42); // deterministic — never shimmers
     final paint = Paint()..color = color;
-    final count = (size.width * size.height / 900).clamp(0, 1400).toInt();
-    for (var i = 0; i < count; i++) {
-      final dx = rnd.nextDouble() * size.width;
-      final dy = rnd.nextDouble() * size.height;
-      canvas.drawCircle(Offset(dx, dy), 0.6, paint);
+    if (_cachedPoints == null) {
+      final rnd = math.Random(42);
+      final count = 1200;
+      _cachedPoints = List<Offset>.generate(
+        count,
+        (_) => Offset(rnd.nextDouble(), rnd.nextDouble()),
+        growable: false,
+      );
+    }
+    final points = _cachedPoints!;
+    final w = size.width, h = size.height;
+    for (var i = 0; i < points.length; i++) {
+      final p = points[i];
+      canvas.drawCircle(Offset(p.dx * w, p.dy * h), 0.6, paint);
     }
   }
 
@@ -4865,7 +4889,8 @@ class _RevealState extends State<_Reveal> {
     _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset.value;
     final h = MediaQuery.sizeOf(context).height;
     if (widget.scrollOffset.value + h * 0.88 > _top!) {
-      // Only setState on the actual flip — no redundant rebuilds on scroll.
+      // Only setState on the actual flip — unlisten to stop unnecessary scroll ticks.
+      widget.scrollOffset.removeListener(_maybeReveal);
       setState(() => _shown = true);
     }
   }
@@ -4986,7 +5011,8 @@ class _LazySectionState extends State<_LazySection> {
     _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset.value;
     final h = MediaQuery.sizeOf(context).height;
     if (widget.scrollOffset.value + h * 1.2 >= _top!) {
-      // Only setState on the actual flip — no redundant rebuilds on scroll.
+      // Only setState on the actual flip — unlisten once built.
+      widget.scrollOffset.removeListener(_maybeBuild);
       setState(() => _built = true);
     }
   }
