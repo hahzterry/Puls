@@ -41,13 +41,13 @@ void main() {
     });
 
     test('formats prices as cents', () {
-      expect(TradeMath.formatPrice(0.61), '61c');
+      expect(TradeMath.formatPrice(0.61), '61¢');
     });
 
     test('formatPrice rounds to the nearest cent', () {
-      expect(TradeMath.formatPrice(0.615), '62c');
-      expect(TradeMath.formatPrice(0), '0c');
-      expect(TradeMath.formatPrice(1), '100c');
+      expect(TradeMath.formatPrice(0.615), '62¢');
+      expect(TradeMath.formatPrice(0), '0¢');
+      expect(TradeMath.formatPrice(1), '100¢');
     });
 
     test('formatPercent renders a rounded whole percentage', () {

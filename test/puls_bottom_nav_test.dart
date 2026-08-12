@@ -3,20 +3,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:puls/core/theme/app_theme.dart';
 import 'package:puls/features/shell/puls_bottom_nav.dart';
 
-Widget _host(Widget child, {bool disableAnimations = false}) => MaterialApp(
+import 'package:puls/app/puls_app_state.dart';
+import 'package:puls/data/mock/mock_market_repository.dart';
+
+Widget _host(Widget child, {bool disableAnimations = false}) {
+  final appState = PulsAppState(mockRepo: MockMarketRepository());
+  appState.reduceMotionOverride = disableAnimations;
+  return PulsStateScope(
+    notifier: appState,
+    child: MaterialApp(
       theme: PulsTheme.dark(),
-      home: Builder(
-        builder: (context) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            disableAnimations: disableAnimations,
-          ),
-          child: Scaffold(
-            backgroundColor: const Color(0xFF000000),
-            bottomNavigationBar: child,
-          ),
-        ),
+      home: Scaffold(
+        backgroundColor: const Color(0xFF000000),
+        bottomNavigationBar: child,
       ),
-    );
+    ),
+  );
+}
 
 // The 5 cells: a dynamic "Browse" cell (Feed/Discover/Home) + 4 fixed ones.
 const _browseLabel = 'Feed';

@@ -48,8 +48,8 @@ void main() {
       expect(withThousands(0), '0');
       expect(withThousands(999), '999');
       expect(withThousands(1234), '1,234');
-      expect(withThousands(1234567), '1,234,567');
-      expect(withThousands(-1234567), '-1,234,567');
+      expect(withThousands(1234567), '1.2M');
+      expect(withThousands(-1234567), '-1.2M');
     });
   });
 

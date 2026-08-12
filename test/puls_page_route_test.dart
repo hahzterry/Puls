@@ -3,25 +3,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:puls/core/theme/app_theme.dart';
 import 'package:puls/core/widgets/puls_page_route.dart';
 
+import 'package:puls/app/puls_app_state.dart';
+import 'package:puls/data/mock/mock_market_repository.dart';
+
 Widget _host(void Function(BuildContext) onContext,
-        {bool reduceMotion = false}) =>
-    MaterialApp(
+    {bool reduceMotion = false}) {
+  final appState = PulsAppState(mockRepo: MockMarketRepository());
+  appState.reduceMotionOverride = reduceMotion;
+  return PulsStateScope(
+    notifier: appState,
+    child: MaterialApp(
       theme: PulsTheme.dark(),
       home: Scaffold(
         body: Builder(
-          builder: (context) => MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(disableAnimations: reduceMotion),
-            child: Builder(
-              builder: (ctx) {
-                onContext(ctx);
-                return const Text('home');
-              },
-            ),
-          ),
+          builder: (ctx) {
+            onContext(ctx);
+            return const Text('home');
+          },
         ),
       ),
-    );
+    ),
+  );
+}
 
 void main() {
   group('pulsRoute', () {
