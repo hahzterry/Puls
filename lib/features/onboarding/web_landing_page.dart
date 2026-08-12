@@ -58,11 +58,9 @@ class _WebLandingPageState extends State<WebLandingPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // The aurora loops continuously; its start/stop is gated on reduce-motion
-    // in build() so motion-sensitive users get a single still frame. It runs at
-    // ~30fps (not 60) — the glow is so soft that 30 is visually identical, and
-    // it halves the per-frame fragment work on weak GPUs.
+    // in build() so motion-sensitive users get a single still frame.
     _aurora =
-        AnimationController(vsync: this, duration: const Duration(seconds: 18));
+        AnimationController(vsync: this, duration: const Duration(seconds: 24));
     _auroraListenable = Listenable.merge([_aurora, _pointer]);
     // Throttled scroll listener: the notifier fires at most ~20×/s instead of
     // once per scroll pixel. Only the scroll-driven leaf widgets (progress bar,
@@ -96,7 +94,7 @@ class _WebLandingPageState extends State<WebLandingPage>
     if (!visible) {
       if (_aurora.isAnimating) _aurora.stop();
     } else if (!_aurora.isAnimating && !context.reduceMotion) {
-      _aurora.repeat(period: const Duration(milliseconds: 33));
+      _aurora.repeat();
     }
   }
 
@@ -112,8 +110,7 @@ class _WebLandingPageState extends State<WebLandingPage>
     if (context.reduceMotion) {
       if (_aurora.isAnimating) _aurora.stop();
     } else if (!_aurora.isAnimating) {
-      // ~30fps — see initState.
-      _aurora.repeat(period: const Duration(milliseconds: 33));
+      _aurora.repeat();
     }
 
     final dotColor = isDark
