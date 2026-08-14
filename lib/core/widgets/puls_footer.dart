@@ -6,8 +6,10 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config.dart';
+import '../network/websocket_service.dart';
 import '../theme/app_theme.dart';
 import '../motion.dart';
+import 'tab_visibility.dart';
 
 /// Slim, premium footer bar for the desktop web app shell.
 ///
@@ -257,6 +259,8 @@ class _LiveStatus extends StatefulWidget {
 
 class _LiveStatusState extends State<_LiveStatus> {
   Timer? _timer;
+  StreamSubscription? _tradeSub;
+  StreamSubscription? _statusSub;
   int? _trades;
   bool _online = false;
   bool _hovered = false;
@@ -264,14 +268,33 @@ class _LiveStatusState extends State<_LiveStatus> {
   @override
   void initState() {
     super.initState();
+    TabVisibility.ensureListening();
     _poll();
-    // Footer is persistent; 4s keeps it "live" without hammering the backend.
-    _timer = Timer.periodic(const Duration(seconds: 4), (_) => _poll());
+    // Listen for live trades over WebSocket to increment trade count instantly
+    _tradeSub = WebSocketService.instance.on(PulsEventType.tradeComplete).listen((_) {
+      if (!mounted) return;
+      setState(() {
+        _trades = (_trades ?? 0) + 1;
+        _online = true;
+      });
+    });
+    _statusSub = WebSocketService.instance.status.listen((s) {
+      if (!mounted) return;
+      if (s == SocketConnectionStatus.connected) {
+        setState(() => _online = true);
+      }
+    });
+    // Relaxed polling fallback (25s) — skipped when tab is hidden
+    _timer = Timer.periodic(const Duration(seconds: 25), (_) {
+      if (TabVisibility.visible) _poll();
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _tradeSub?.cancel();
+    _statusSub?.cancel();
     super.dispose();
   }
 

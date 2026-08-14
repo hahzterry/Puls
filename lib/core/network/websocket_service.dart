@@ -114,7 +114,7 @@ class WebSocketService {
     _socket = sio.io(
       uri,
       sio.OptionBuilder()
-          .setTransports(['websocket']) // skip HTTP long-polling fallback
+          .setTransports(['websocket', 'polling']) // prefer websocket with graceful long-polling fallback
           .disableAutoConnect()
           .enableReconnection()
           .setReconnectionAttempts(1000)

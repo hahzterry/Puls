@@ -21,6 +21,7 @@ import '../../core/widgets/pulse_dot.dart';
 import '../../core/widgets/puls_emoji_text.dart';
 import '../../core/widgets/gradient_text.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/widgets/tab_visibility.dart';
 import '../../data/models/market.dart';
 import '../market/market_detail_screen.dart';
 import '../market/swipe_discovery_screen.dart';
@@ -41,7 +42,11 @@ import '../agent/agent_screen.dart' show agentSubTabRequest;
 Map<String, dynamic>? _decodeTradeJson(String raw) {
   try {
     final decoded = jsonDecode(raw);
-    if (decoded is Map<String, dynamic>) return decoded;
+    if (decoded is Map<String, dynamic>) {
+      // Ignore heartbeat/ping frames
+      if (decoded['type'] == 'ping' || decoded['__heartbeat'] == true) return null;
+      return decoded;
+    }
   } catch (_) {}
   return null;
 }
@@ -699,6 +704,7 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
   @override
   void initState() {
     super.initState();
+    TabVisibility.ensureListening();
     _fetchRecentTrades();
     _connectWebSocket();
     _startWatchdog();
@@ -802,14 +808,14 @@ class _WebFeedBodyState extends State<_WebFeedBody> {
     });
   }
 
-  // Always-on heartbeat: poll the recent-trades endpoint every 8s no matter
-  // what the socket is doing. This is what guarantees the ticker keeps moving
-  // even if the WS flaps or its frames are dropped by a CDN. The endpoint is
-  // CDN-cached ~5s and trades de-dupe by id, so it's cheap and never doubles up.
+  // Fallback watchdog: only poll recent trades if disconnected or when tab becomes visible
   void _startWatchdog() {
     _watchdogTimer?.cancel();
-    _watchdogTimer = Timer.periodic(const Duration(seconds: 8), (_) {
-      if (mounted) _fetchRecentTrades();
+    _watchdogTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (!mounted || !TabVisibility.visible) return;
+      if (!_isWebSocketConnected) {
+        _fetchRecentTrades();
+      }
     });
   }
 
