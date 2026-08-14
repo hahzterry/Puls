@@ -429,135 +429,17 @@ class _WebLandingPageState extends State<WebLandingPage>
 // previews and locally.
 String _pageUrl(String path) => Uri.base.resolve(path).toString();
 
-// ── Static (first-paint) Navbar ──────────────────────────────────────────────
-/// The full navbar shown at scroll position 0. Sits in the hero, no backdrop
-/// blur — just the logo, links and CTA on a transparent background. Once the
-/// user scrolls past ~80px the _StickyNavbar takes over.
-class _InlineNavbar extends StatelessWidget {
-  const _InlineNavbar();
-
-  @override
-  Widget build(BuildContext context) {
-    final appState = PulsStateScope.of(context);
-    final t = context.puls;
-    final isDark = context.isDark;
-    final w = MediaQuery.sizeOf(context).width;
-    final isMobile = w < 800;
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 16 : 48, vertical: isMobile ? 12 : 18),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: t.brandSubtle,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Image.asset('assets/logo.png',
-                fit: BoxFit.cover, cacheWidth: 128),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            'Puls',
-            style: TextStyle(
-              fontFamily: PulsColors.fontDisplay,
-              color: t.text,
-              fontSize: 21,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const Spacer(),
-          if (!isMobile) ...[
-            _NavDropdown(
-              label: 'Product',
-              items: [
-                ('Pulse', _pageUrl('/pulse')),
-                ('Agent', _pageUrl('/agent')),
-                ('Versus', _pageUrl('/versus')),
-                ('Explorer', _pageUrl('/explorer')),
-              ],
-            ),
-            const SizedBox(width: 4),
-            _NavDropdown(
-              label: 'Developers',
-              items: [
-                ('Docs', 'https://docs.pulsmarket.tech'),
-                ('CLI', _pageUrl('/cli')),
-                ('Build', _pageUrl('/build')),
-                ('GitHub', 'https://github.com/rdmbtc/Puls'),
-              ],
-            ),
-            const SizedBox(width: 4),
-            const _NavDropdown(
-              label: 'Mainnet',
-              items: [
-                ('Countdown', 'https://mainnet.pulsmarket.tech'),
-              ],
-            ),
-            const SizedBox(width: 4),
-            const _NavItemButton(
-              label: 'Invest',
-              url: 'https://invest.pulsmarket.tech',
-            ),
-            const SizedBox(width: 8),
-            _NavIcon(
-              icon: Icons.android_rounded,
-              url: _pageUrl('/mobile-download'),
-              tooltip: 'Download for Android',
-            ),
-            const SizedBox(width: 16),
-          ] else
-            const _MobileNavMenu(),
-          IconButton(
-            onPressed: appState.toggleThemeMode,
-            icon: Icon(
-              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-              size: 20,
-              color: t.textMuted,
-            ),
-            tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
-          ),
-          SizedBox(width: isMobile ? 8 : 16),
-          if (!isMobile) ...[
-            _SecondaryButton(
-              label: 'Terminal',
-              onTap: () => launchUrl(
-                  Uri.parse('https://terminal.pulsmarket.tech'),
-                  mode: LaunchMode.externalApplication),
-              small: true,
-            ),
-            const SizedBox(width: 8),
-          ],
-          _PrimaryButton(
-            label: isMobile ? 'Launch' : 'Launch App',
-            onTap: () => appState.dismissWebLanding(terminal: false),
-            small: true,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Sticky navbar that appears once the user scrolls past ~80px.
-/// Frosted glass background fills in as it slides in; condenses to a slim bar
-/// (logo + CTA only) so it never competes with the content below.
+// ── Top Navigation Bar (Header) ──────────────────────────────────────────────
 class _StickyNavbar extends StatelessWidget {
   const _StickyNavbar({required this.scrollOffset});
   final ValueNotifier<double> scrollOffset;
 
   @override
   Widget build(BuildContext context) {
-    // Local listener: scrolling rebuilds only the navbar, never the page.
     return ValueListenableBuilder<double>(
       valueListenable: scrollOffset,
-      builder: (context, scrollOffset, _) => _StickyNavbarContent(
-        scrollOffset: scrollOffset,
+      builder: (context, offset, _) => _StickyNavbarContent(
+        scrollOffset: offset,
       ),
     );
   }
@@ -573,151 +455,155 @@ class _StickyNavbarContent extends StatelessWidget {
     final t = context.puls;
     final isDark = context.isDark;
     final w = MediaQuery.sizeOf(context).width;
-    final isMobile = w < 800;
+    final isMobile = w < 880;
 
-    // Reveal animation: fades + slides in over the first 120px of scroll.
-    // Computed directly (paint-only Transform + Opacity) — no implicit
-    // animation controllers on every scroll tick.
-    final reveal = Curves.easeOut.transform(
-      ((scrollOffset - 80) / 120).clamp(0.0, 1.0),
-    );
+    final isScrolled = scrollOffset > 15;
 
-    return Transform.translate(
-      offset: Offset(0, -1 + reveal),
-      child: Opacity(
-        opacity: reveal,
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 1240),
-              decoration: BoxDecoration(
-                color: t.bg.withValues(alpha: 0.78),
-                borderRadius: BorderRadius.circular(isMobile ? 20 : 999),
-                border: Border.all(
-                  color: t.border.withValues(alpha: 0.6),
-                ),
-                boxShadow: reveal > 0.5
-                    ? [
-                        BoxShadow(
-                          color: isDark
-                              ? Colors.black.withValues(alpha: 0.35)
-                              : Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 28,
-                          offset: const Offset(0, 10),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(isMobile ? 20 : 999),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 16 : 48,
-                    vertical: isMobile ? 10 : 14,
+    return Align(
+      alignment: Alignment.topCenter,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        margin: EdgeInsets.fromLTRB(
+          isMobile ? 12 : 24,
+          isScrolled ? (isMobile ? 8 : 12) : (isMobile ? 12 : 16),
+          isMobile ? 12 : 24,
+          0,
+        ),
+        constraints: const BoxConstraints(maxWidth: 1240),
+        decoration: BoxDecoration(
+          color: isScrolled
+              ? t.bg.withValues(alpha: 0.88)
+              : (isDark
+                  ? Colors.black.withValues(alpha: 0.32)
+                  : Colors.white.withValues(alpha: 0.45)),
+          borderRadius: BorderRadius.circular(isMobile ? 18 : 999),
+          border: Border.all(
+            color: isScrolled
+                ? t.border.withValues(alpha: 0.65)
+                : t.border.withValues(alpha: 0.3),
+          ),
+          boxShadow: isScrolled
+              ? [
+                  BoxShadow(
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.45)
+                        : Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 28,
+                    offset: const Offset(0, 8),
                   ),
-                  child: Row(
-                    children: [
-                      // Logo + wordmark
-                      Container(
-                        width: isMobile ? 26 : 28,
-                        height: isMobile ? 26 : 28,
-                        decoration: BoxDecoration(
-                          color: t.brandSubtle,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Image.asset('assets/logo.png',
-                            fit: BoxFit.cover, cacheWidth: 112),
+                ]
+              : null,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(isMobile ? 18 : 999),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 14 : 24,
+              vertical: isMobile ? 8 : 10,
+            ),
+            child: Row(
+              children: [
+                // Logo + wordmark
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: isMobile ? 26 : 28,
+                      height: isMobile ? 26 : 28,
+                      decoration: BoxDecoration(
+                        color: t.brandSubtle,
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      SizedBox(width: isMobile ? 8 : 10),
-                      if (!isMobile)
-                        Text(
-                          'Puls',
-                          style: TextStyle(
-                            fontFamily: PulsColors.fontDisplay,
-                            color: t.text,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.4,
-                          ),
-                        ),
-                      const Spacer(),
-                      // Full nav links — always visible on desktop
-                      if (!isMobile) ...[
-                        _NavDropdown(
-                          label: 'Product',
-                          items: [
-                            ('Pulse', _pageUrl('/pulse')),
-                            ('Agent', _pageUrl('/agent')),
-                            ('Versus', _pageUrl('/versus')),
-                            ('Explorer', _pageUrl('/explorer')),
-                          ],
-                        ),
-                        const SizedBox(width: 4),
-                        _NavDropdown(
-                          label: 'Developers',
-                          items: [
-                            ('Docs', 'https://docs.pulsmarket.tech'),
-                            ('CLI', _pageUrl('/cli')),
-                            ('Build', _pageUrl('/build')),
-                            ('GitHub', 'https://github.com/rdmbtc/Puls'),
-                          ],
-                        ),
-                        const SizedBox(width: 4),
-                        const _NavDropdown(
-                          label: 'Mainnet',
-                          items: [
-                            ('Countdown', 'https://mainnet.pulsmarket.tech'),
-                          ],
-                        ),
-                        const SizedBox(width: 4),
-                        const _NavItemButton(
-                          label: 'Invest',
-                          url: 'https://invest.pulsmarket.tech',
-                        ),
-                        const SizedBox(width: 8),
-                        _NavIcon(
-                          icon: Icons.android_rounded,
-                          url: _pageUrl('/mobile-download'),
-                          tooltip: 'Download for Android',
-                        ),
-                        const SizedBox(width: 12),
-                        _SecondaryButton(
-                          label: 'Terminal',
-                          onTap: () => launchUrl(
-                            Uri.parse('https://terminal.pulsmarket.tech'),
-                            mode: LaunchMode.externalApplication,
-                          ),
-                          small: true,
-                        ),
-                        const SizedBox(width: 8),
-                      ] else
-                        const _MobileNavMenu(),
-                      // Always-visible controls
-                      IconButton(
-                        onPressed: appState.toggleThemeMode,
-                        icon: Icon(
-                          isDark
-                              ? Icons.light_mode_rounded
-                              : Icons.dark_mode_rounded,
-                          size: 18,
-                          color: t.textMuted,
-                        ),
-                        tooltip: isDark ? 'Light mode' : 'Dark mode',
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.asset('assets/logo.png',
+                          fit: BoxFit.cover, cacheWidth: 112),
+                    ),
+                    SizedBox(width: isMobile ? 8 : 10),
+                    Text(
+                      'Puls',
+                      style: TextStyle(
+                        fontFamily: PulsColors.fontDisplay,
+                        color: t.text,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.4,
                       ),
-                      SizedBox(width: isMobile ? 4 : 8),
-                      _PrimaryButton(
-                        label: isMobile ? 'Launch' : 'Launch App',
-                        onTap: () =>
-                            appState.dismissWebLanding(terminal: false),
-                        small: true,
-                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                // Full nav links — visible on desktop
+                if (!isMobile) ...[
+                  _NavDropdown(
+                    label: 'Product',
+                    items: [
+                      ('Pulse', _pageUrl('/pulse')),
+                      ('Agent', _pageUrl('/agent')),
+                      ('Versus', _pageUrl('/versus')),
+                      ('Explorer', _pageUrl('/explorer')),
                     ],
                   ),
+                  const SizedBox(width: 4),
+                  _NavDropdown(
+                    label: 'Developers',
+                    items: [
+                      ('Docs', 'https://docs.pulsmarket.tech'),
+                      ('CLI', _pageUrl('/cli')),
+                      ('Build', _pageUrl('/build')),
+                      ('GitHub', 'https://github.com/rdmbtc/Puls'),
+                    ],
+                  ),
+                  const SizedBox(width: 4),
+                  const _NavDropdown(
+                    label: 'Mainnet',
+                    items: [
+                      ('Countdown', 'https://mainnet.pulsmarket.tech'),
+                    ],
+                  ),
+                  const SizedBox(width: 4),
+                  const _NavItemButton(
+                    label: 'Invest',
+                    url: 'https://invest.pulsmarket.tech',
+                  ),
+                  const SizedBox(width: 4),
+                  _NavIcon(
+                    icon: Icons.android_rounded,
+                    url: _pageUrl('/mobile-download'),
+                    tooltip: 'Download for Android',
+                  ),
+                  const SizedBox(width: 10),
+                  _SecondaryButton(
+                    label: 'Terminal',
+                    onTap: () => launchUrl(
+                      Uri.parse('https://terminal.pulsmarket.tech'),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                    small: true,
+                  ),
+                  const SizedBox(width: 8),
+                ] else
+                  const _MobileNavMenu(),
+                // Always-visible controls
+                IconButton(
+                  onPressed: appState.toggleThemeMode,
+                  icon: Icon(
+                    isDark
+                        ? Icons.light_mode_rounded
+                        : Icons.dark_mode_rounded,
+                    size: 18,
+                    color: t.textMuted,
+                  ),
+                  tooltip: isDark ? 'Light mode' : 'Dark mode',
                 ),
-              ),
+                SizedBox(width: isMobile ? 4 : 8),
+                _PrimaryButton(
+                  label: isMobile ? 'Launch' : 'Launch App',
+                  onTap: () =>
+                      appState.dismissWebLanding(terminal: false),
+                  small: true,
+                ),
+              ],
             ),
           ),
         ),
@@ -743,14 +629,17 @@ class _NavDropdownState extends State<_NavDropdown> {
 
   void _handleEnter() {
     _closeTimer?.cancel();
-    setState(() => _hovered = true);
+    if (!_hovered) setState(() => _hovered = true);
     if (!_controller.isOpen) _controller.open();
   }
 
   void _handleExit() {
-    setState(() => _hovered = false);
-    _closeTimer = Timer(const Duration(milliseconds: 200), () {
-      if (_controller.isOpen) _controller.close();
+    _closeTimer?.cancel();
+    _closeTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() => _hovered = false);
+        if (_controller.isOpen) _controller.close();
+      }
     });
   }
 
@@ -769,30 +658,38 @@ class _NavDropdownState extends State<_NavDropdown> {
       onExit: (_) => _handleExit(),
       child: MenuAnchor(
         controller: _controller,
+        alignmentOffset: const Offset(0, 6),
         style: MenuStyle(
           backgroundColor: WidgetStatePropertyAll(t.surface),
-          elevation: const WidgetStatePropertyAll(12),
+          elevation: const WidgetStatePropertyAll(16),
+          shadowColor:
+              WidgetStatePropertyAll(Colors.black.withValues(alpha: 0.35)),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: t.border.withValues(alpha: 0.5)),
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(color: t.border.withValues(alpha: 0.7)),
             ),
           ),
           padding:
-              const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 8)),
+              const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 6)),
         ),
         menuChildren: widget.items.map((item) {
           return MouseRegion(
             onEnter: (_) => _handleEnter(),
             onExit: (_) => _handleExit(),
             child: MenuItemButton(
-              onPressed: () => launchUrl(Uri.parse(item.$2),
-                  mode: LaunchMode.externalApplication),
+              onPressed: () {
+                _controller.close();
+                launchUrl(Uri.parse(item.$2),
+                    mode: LaunchMode.externalApplication);
+              },
               style: ButtonStyle(
                 padding: const WidgetStatePropertyAll(
-                    EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+                  EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                ),
                 overlayColor: WidgetStatePropertyAll(
-                    t.brandSubtle.withValues(alpha: 0.5)),
+                  t.brandSubtle.withValues(alpha: 0.5),
+                ),
               ),
               child: Text(
                 item.$1,
@@ -807,10 +704,16 @@ class _NavDropdownState extends State<_NavDropdown> {
         }).toList(),
         builder: (context, controller, child) {
           return GestureDetector(
-            onTap: () =>
-                controller.isOpen ? controller.close() : controller.open(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            onTap: () {
+              if (controller.isOpen) {
+                controller.close();
+              } else {
+                controller.open();
+              }
+            },
+            child: Container(
+              color: Colors.transparent,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -819,14 +722,14 @@ class _NavDropdownState extends State<_NavDropdown> {
                     style: TextStyle(
                       color:
                           _hovered || controller.isOpen ? t.brand : t.textMuted,
-                      fontSize: 15,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 3),
                   Icon(
                     Icons.keyboard_arrow_down_rounded,
-                    size: 18,
+                    size: 17,
                     color:
                         _hovered || controller.isOpen ? t.brand : t.textMuted,
                   ),
@@ -1078,17 +981,12 @@ class _HeroSectionState extends State<_HeroSection> {
             : -(scrollOffset * 0.18).clamp(0.0, h * 0.25);
         final heroOpacity = (1 - scrollOffset / (h * 0.55)).clamp(0.0, 1.0);
 
-        // Navbar crossfade: the inline (hero) navbar fades out as the sticky
-        // one fades in, giving a seamless handoff around 80–200px.
-        final inlineNavOpacity = (1 - scrollOffset / 140).clamp(0.0, 1.0);
-
         return _buildHero(
           h: h,
           isMobile: isMobile,
           scrollOffset: scrollOffset,
           parallaxY: parallaxY,
           heroOpacity: heroOpacity,
-          inlineNavOpacity: inlineNavOpacity,
         );
       },
     );
@@ -1100,25 +998,11 @@ class _HeroSectionState extends State<_HeroSection> {
     required double scrollOffset,
     required double parallaxY,
     required double heroOpacity,
-    required double inlineNavOpacity,
   }) {
     return ConstrainedBox(
       constraints: BoxConstraints(minHeight: h),
       child: Stack(
         children: [
-          // ── Inline navbar (first paint, transparent bg) ────────────────
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: IgnorePointer(
-              ignoring: scrollOffset > 100,
-              child: Opacity(
-                opacity: inlineNavOpacity,
-                child: const _InlineNavbar(),
-              ),
-            ),
-          ),
           // Hero content with parallax
           Padding(
             padding: EdgeInsets.only(top: isMobile ? 110 : 90),
