@@ -117,6 +117,7 @@ class _WebLandingPageState extends State<WebLandingPage>
         ? PulsColors.brandMint.withValues(alpha: 0.045)
         : PulsColors.brandPink.withValues(alpha: 0.04);
     final size = MediaQuery.sizeOf(context);
+    final w = size.width;
 
     return Scaffold(
       backgroundColor: t.bg,
@@ -202,6 +203,9 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ),
               ),
             ),
+            // ── Atmospheric Parallax Layer ─────────────────────────────────
+            // Floating ambient gradient orbs with hardware-accelerated transforms
+            _ParallaxAtmosphereLayer(scrollOffset: _scrollOffset),
             // ── Content ───────────────────────────────────────────────────
             SingleChildScrollView(
               controller: _scrollCtrl,
@@ -352,71 +356,83 @@ class _WebLandingPageState extends State<WebLandingPage>
               right: 0,
               child: _StickyNavbar(scrollOffset: _scrollOffset),
             ),
-            // ── Vertical scroll progress rail (right edge) ─────────────────
-            // A slim gradient rail that fills as you scroll — a quiet, tactile
-            // reading-depth cue that mirrors the top progress bar.
-            Positioned(
-              top: 64,
-              bottom: 64,
-              right: 1,
-              child: IgnorePointer(
-                child: ExcludeSemantics(
-                  child: ValueListenableBuilder<double>(
-                    valueListenable: _scrollOffset,
-                    builder: (context, scrollOffset, _) {
-                      final maxExtent = _scrollCtrl.hasClients &&
-                              _scrollCtrl.position.hasContentDimensions
-                          ? _scrollCtrl.position.maxScrollExtent
-                          : 0.0;
-                      final progress = maxExtent > 0
-                          ? (scrollOffset / maxExtent).clamp(0.0, 1.0)
-                          : 0.0;
-                      return SizedBox(
-                        width: 3,
-                        child: Stack(
-                          alignment: Alignment.topCenter,
-                          children: [
-                            Positioned.fill(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: t.border.withValues(alpha: 0.4),
-                                  borderRadius: BorderRadius.circular(100),
+            // ── Scrollytelling 2.0 Chapter Navigator (Desktop >= 1180) ────
+            if (w >= 1180)
+              Positioned(
+                right: 22,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _ScrollyChapterHUD(
+                    scrollOffset: _scrollOffset,
+                    scrollCtrl: _scrollCtrl,
+                  ),
+                ),
+              )
+            else
+              // ── Vertical scroll progress rail (mobile/tablet right edge) ──
+              Positioned(
+                top: 64,
+                bottom: 64,
+                right: 1,
+                child: IgnorePointer(
+                  child: ExcludeSemantics(
+                    child: ValueListenableBuilder<double>(
+                      valueListenable: _scrollOffset,
+                      builder: (context, scrollOffset, _) {
+                        final maxExtent = _scrollCtrl.hasClients &&
+                                _scrollCtrl.position.hasContentDimensions
+                            ? _scrollCtrl.position.maxScrollExtent
+                            : 0.0;
+                        final progress = maxExtent > 0
+                            ? (scrollOffset / maxExtent).clamp(0.0, 1.0)
+                            : 0.0;
+                        return SizedBox(
+                          width: 3,
+                          child: Stack(
+                            alignment: Alignment.topCenter,
+                            children: [
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: t.border.withValues(alpha: 0.4),
+                                    borderRadius: BorderRadius.circular(100),
+                                  ),
                                 ),
                               ),
-                            ),
-                            FractionallySizedBox(
-                              alignment: Alignment.topCenter,
-                              heightFactor: progress == 0 ? 0.0001 : progress,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Color(0xFF34E5C0),
-                                      Color(0xFFF65FA9),
+                              FractionallySizedBox(
+                                alignment: Alignment.topCenter,
+                                heightFactor: progress == 0 ? 0.0001 : progress,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Color(0xFF34E5C0),
+                                        Color(0xFFF65FA9),
+                                      ],
+                                    ),
+                                    borderRadius: const BorderRadius.all(
+                                        Radius.circular(100)),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: PulsColors.brandPink
+                                            .withValues(alpha: 0.5),
+                                        blurRadius: 6,
+                                      ),
                                     ],
                                   ),
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(100)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: PulsColors.brandPink
-                                          .withValues(alpha: 0.5),
-                                      blurRadius: 6,
-                                    ),
-                                  ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -428,6 +444,363 @@ class _WebLandingPageState extends State<WebLandingPage>
 // resolved against the current origin so the links work in prod, on Vercel
 // previews and locally.
 String _pageUrl(String path) => Uri.base.resolve(path).toString();
+
+// ── Scrollytelling 2.0: Atmospheric Parallax Layer ───────────────────────────
+class _ParallaxAtmosphereLayer extends StatelessWidget {
+  const _ParallaxAtmosphereLayer({required this.scrollOffset});
+  final ValueNotifier<double> scrollOffset;
+
+  @override
+  Widget build(BuildContext context) {
+    if (context.reduceMotion) return const SizedBox.shrink();
+    final t = context.puls;
+    final isDark = context.isDark;
+    return IgnorePointer(
+      child: ExcludeSemantics(
+        child: ValueListenableBuilder<double>(
+          valueListenable: scrollOffset,
+          builder: (context, offset, _) {
+            final dy1 = -(offset * 0.08);
+            final dy2 = -(offset * 0.14);
+            return Stack(
+              children: [
+                Positioned(
+                  top: 260,
+                  right: -80,
+                  child: RepaintBoundary(
+                    child: Transform.translate(
+                      offset: Offset(0, dy1),
+                      child: Container(
+                        width: 480,
+                        height: 480,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              t.brand.withValues(alpha: isDark ? 0.065 : 0.035),
+                              t.brand.withValues(alpha: 0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 1350,
+                  left: -120,
+                  child: RepaintBoundary(
+                    child: Transform.translate(
+                      offset: Offset(0, dy2),
+                      child: Container(
+                        width: 520,
+                        height: 520,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              const Color(0xFF34E5C0)
+                                  .withValues(alpha: isDark ? 0.055 : 0.03),
+                              const Color(0xFF34E5C0).withValues(alpha: 0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 2700,
+                  right: -100,
+                  child: RepaintBoundary(
+                    child: Transform.translate(
+                      offset: Offset(0, dy1 * 0.75),
+                      child: Container(
+                        width: 500,
+                        height: 500,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              const Color(0xFF8B5CF6)
+                                  .withValues(alpha: isDark ? 0.05 : 0.025),
+                              const Color(0xFF8B5CF6).withValues(alpha: 0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// ── Scrollytelling 2.0: Chapter Navigation HUD ──────────────────────────────
+class _ScrollyChapterHUD extends StatefulWidget {
+  const _ScrollyChapterHUD({
+    required this.scrollOffset,
+    required this.scrollCtrl,
+  });
+
+  final ValueNotifier<double> scrollOffset;
+  final ScrollController scrollCtrl;
+
+  @override
+  State<_ScrollyChapterHUD> createState() => _ScrollyChapterHUDState();
+}
+
+class _ScrollyChapterHUDState extends State<_ScrollyChapterHUD> {
+  int? _hoveredIndex;
+
+  static const _chapters = [
+    (
+      id: '01',
+      title: 'Genesis',
+      subtitle: 'First Autonomous Prediction Market',
+      offset: 0.0,
+    ),
+    (
+      id: '02',
+      title: 'Live Stream',
+      subtitle: 'Realtime AI Spreads & Odds on Arc',
+      offset: 720.0,
+    ),
+    (
+      id: '03',
+      title: 'Architecture',
+      subtitle: 'AgentBond & 3-Step Instant Flow',
+      offset: 1320.0,
+    ),
+    (
+      id: '04',
+      title: 'AI Roster',
+      subtitle: 'Meet Pulse, Sage, Nexus & Astra',
+      offset: 2450.0,
+    ),
+    (
+      id: '05',
+      title: 'Settlement',
+      subtitle: 'Sub-Second Arc Engine & Proof',
+      offset: 3350.0,
+    ),
+    (
+      id: '06',
+      title: 'Mainnet',
+      subtitle: 'Terminal, FAQ & Launch App',
+      offset: 4300.0,
+    ),
+  ];
+
+  int _getActiveChapter(double scroll) {
+    if (scroll < 500) return 0;
+    if (scroll < 1050) return 1;
+    if (scroll < 2000) return 2;
+    if (scroll < 2900) return 3;
+    if (scroll < 3900) return 4;
+    return 5;
+  }
+
+  void _scrollTo(double offset) {
+    widget.scrollCtrl.animateTo(
+      offset,
+      duration: const Duration(milliseconds: 650),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.puls;
+    final isDark = context.isDark;
+
+    return ValueListenableBuilder<double>(
+      valueListenable: widget.scrollOffset,
+      builder: (context, offset, _) {
+        final activeIdx = _getActiveChapter(offset);
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+          decoration: BoxDecoration(
+            color:
+                (isDark ? Colors.black : Colors.white).withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: t.border.withValues(alpha: 0.35),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 0; i < _chapters.length; i++) ...[
+                if (i > 0)
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    width: 2,
+                    height: 18,
+                    color: i <= activeIdx
+                        ? t.brand.withValues(alpha: 0.7)
+                        : t.border.withValues(alpha: 0.35),
+                  ),
+                _buildNode(
+                  index: i,
+                  isActive: i == activeIdx,
+                  chapter: _chapters[i],
+                  t: t,
+                  isDark: isDark,
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNode({
+    required int index,
+    required bool isActive,
+    required ({String id, String title, String subtitle, double offset})
+        chapter,
+    required PulsThemeColors t,
+    required bool isDark,
+  }) {
+    final isHovered = _hoveredIndex == index;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hoveredIndex = index),
+      onExit: (_) => setState(() => _hoveredIndex = null),
+      child: GestureDetector(
+        onTap: () => _scrollTo(chapter.offset),
+        child: Stack(
+          alignment: Alignment.centerRight,
+          clipBehavior: Clip.none,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              width: isActive ? 22 : 14,
+              height: isActive ? 22 : 14,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isActive
+                    ? t.brand
+                    : (isHovered
+                        ? t.brand.withValues(alpha: 0.6)
+                        : t.border.withValues(alpha: 0.6)),
+                border: Border.all(
+                  color: isActive ? Colors.white : Colors.transparent,
+                  width: isActive ? 2.5 : 0,
+                ),
+                boxShadow: isActive || isHovered
+                    ? [
+                        BoxShadow(
+                          color: t.brand.withValues(alpha: 0.5),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: isActive
+                  ? Center(
+                      child: Container(
+                        width: 4,
+                        height: 4,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            if (isHovered)
+              Positioned(
+                right: 32,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 150),
+                  opacity: isHovered ? 1.0 : 0.0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 9,
+                    ),
+                    constraints: const BoxConstraints(maxWidth: 220),
+                    decoration: BoxDecoration(
+                      color: t.surface.withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: t.brand.withValues(alpha: 0.4),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              chapter.id,
+                              style: TextStyle(
+                                color: t.brand,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              chapter.title,
+                              style: TextStyle(
+                                color: t.text,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          chapter.subtitle,
+                          style: TextStyle(
+                            color: t.textMuted,
+                            fontSize: 11,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 // ── Top Navigation Bar (Header) ──────────────────────────────────────────────
 class _StickyNavbar extends StatelessWidget {
@@ -1687,18 +2060,21 @@ class _HowItWorksSection extends StatelessWidget {
         '1',
         'Sign in with Google',
         'A Circle MPC wallet is created on Arc instantly — no seed phrase, no extension, no ETH.',
+        '0.18s MPC KEYGEN',
       ),
       (
         Icons.water_drop_rounded,
         '2',
         'Fund with USDC',
         'Claim free USDC. On Arc, USDC is the gas token — one token pays for everything.',
+        'USDC NATIVE GAS',
       ),
       (
         Icons.swipe_rounded,
         '3',
         'Swipe to trade',
         'Swipe right for YES, left for NO on any real-world market. Confirms on-chain in under a second.',
+        '<500ms ARC FINALITY',
       ),
     ];
 
@@ -1724,10 +2100,12 @@ class _HowItWorksSection extends StatelessWidget {
                     for (var i = 0; i < steps.length; i++) ...[
                       if (i > 0) const SizedBox(height: 14),
                       _HowStep(
-                          icon: steps[i].$1,
-                          step: steps[i].$2,
-                          title: steps[i].$3,
-                          body: steps[i].$4),
+                        icon: steps[i].$1,
+                        step: steps[i].$2,
+                        title: steps[i].$3,
+                        body: steps[i].$4,
+                        badge: steps[i].$5,
+                      ),
                     ],
                   ],
                 )
@@ -1739,21 +2117,40 @@ class _HowItWorksSection extends StatelessWidget {
                       if (i > 0) ...[
                         const SizedBox(width: 10),
                         Padding(
-                          padding: const EdgeInsets.only(top: 46),
-                          child: Icon(
-                            Icons.arrow_forward_rounded,
-                            size: 18,
-                            color: t.brand.withValues(alpha: 0.5),
+                          padding: const EdgeInsets.only(top: 50),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 22,
+                                height: 2,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      t.brand.withValues(alpha: 0.2),
+                                      t.brand,
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 16,
+                                color: t.brand,
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(width: 10),
                       ],
                       Expanded(
                         child: _HowStep(
-                            icon: steps[i].$1,
-                            step: steps[i].$2,
-                            title: steps[i].$3,
-                            body: steps[i].$4),
+                          icon: steps[i].$1,
+                          step: steps[i].$2,
+                          title: steps[i].$3,
+                          body: steps[i].$4,
+                          badge: steps[i].$5,
+                        ),
                       ),
                     ],
                   ],
@@ -1767,15 +2164,18 @@ class _HowItWorksSection extends StatelessWidget {
 }
 
 class _HowStep extends StatefulWidget {
-  const _HowStep(
-      {required this.icon,
-      required this.step,
-      required this.title,
-      required this.body});
+  const _HowStep({
+    required this.icon,
+    required this.step,
+    required this.title,
+    required this.body,
+    required this.badge,
+  });
   final IconData icon;
   final String step;
   final String title;
   final String body;
+  final String badge;
 
   @override
   State<_HowStep> createState() => _HowStepState();
@@ -1791,27 +2191,34 @@ class _HowStepState extends State<_HowStep> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
         transform: _hovered
-            ? Matrix4.translationValues(0.0, -4.0, 0.0)
+            ? Matrix4.translationValues(0.0, -6.0, 0.0)
             : Matrix4.identity(),
-        padding: const EdgeInsets.all(22),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: t.surface,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: _hovered ? t.brand.withValues(alpha: 0.45) : t.border,
+            color: _hovered ? t.brand.withValues(alpha: 0.55) : t.border,
+            width: _hovered ? 1.5 : 1.0,
           ),
           boxShadow: _hovered
               ? [
                   BoxShadow(
-                    color: t.brand.withValues(alpha: 0.15),
-                    blurRadius: 28,
-                    offset: const Offset(0, 12),
+                    color: t.brand.withValues(alpha: 0.2),
+                    blurRadius: 32,
+                    offset: const Offset(0, 14),
                   ),
                 ]
-              : null,
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1819,44 +2226,64 @@ class _HowStepState extends State<_HowStep> {
             Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 46,
+                  height: 46,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     gradient: PulsColors.pulseGradient,
-                    borderRadius: BorderRadius.circular(13),
+                    borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                          color: t.brand.withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 5)),
+                        color: t.brand.withValues(alpha: 0.35),
+                        blurRadius: 14,
+                        offset: const Offset(0, 5),
+                      ),
                     ],
                   ),
-                  child: Icon(widget.icon, color: Colors.white, size: 23),
+                  child: Icon(widget.icon, color: Colors.white, size: 24),
                 ),
                 const Spacer(),
-                Text(widget.step,
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: t.brandSubtle.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: t.brand.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    widget.badge,
                     style: TextStyle(
-                        fontFamily: PulsColors.fontDisplay,
-                        color: _hovered
-                            ? t.brand.withValues(alpha: 0.7)
-                            : t.border,
-                        fontSize: 42,
-                        fontWeight: FontWeight.w800,
-                        height: 1.0)),
+                      color: t.brand,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 16),
-            Text(widget.title,
-                style: TextStyle(
-                    color: t.text,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3)),
-            const SizedBox(height: 7),
-            Text(widget.body,
-                style: TextStyle(
-                    color: t.textMuted, fontSize: 13.5, height: 1.55)),
+            const SizedBox(height: 20),
+            Text(
+              widget.title,
+              style: TextStyle(
+                color: t.text,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.body,
+              style: TextStyle(
+                color: t.textMuted,
+                fontSize: 13.5,
+                height: 1.55,
+              ),
+            ),
           ],
         ),
       ),
