@@ -26,7 +26,14 @@ class _TickerItem {
 
 class _LiveMarketTickerState extends State<LiveMarketTicker>
     with TickerProviderStateMixin {
-  List<_TickerItem> _items = const [];
+  List<_TickerItem> _items = const [
+    _TickerItem('Federal Reserve benchmark rate cut in Sep 2026?', 0.68, 0.04, ''),
+    _TickerItem('Bitcoin surpasses \$120,000 before Q4?', 0.74, 0.06, ''),
+    _TickerItem('Arc Network daily txs exceed 2.5M?', 0.81, 0.02, ''),
+    _TickerItem('Anthropic Claude achieves frontier ARC-AGI?', 0.54, -0.03, ''),
+    _TickerItem('US Core CPI deceleration below 2.4%?', 0.41, -0.05, ''),
+    _TickerItem('Autonomous AI agent volume reaches \$50M?', 0.62, 0.08, ''),
+  ];
   Widget? _tape;          // the [row,row] tape, built ONCE per data load
   double _total = 0;      // width of a single row (px)
   double _chipW = 330;

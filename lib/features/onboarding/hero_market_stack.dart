@@ -22,7 +22,7 @@ class HeroMarketStack extends StatefulWidget {
 
 class _HeroMarketStackState extends State<HeroMarketStack>
     with SingleTickerProviderStateMixin {
-  Offset _tilt = Offset.zero;
+  final _tilt = ValueNotifier<Offset>(Offset.zero);
   late final AnimationController _float;
   // The preview (a real <iframe> on web) is static — build it ONCE instead of
   // rebuilding it inside the per-frame AnimatedBuilder, where every float tick
@@ -58,6 +58,7 @@ class _HeroMarketStackState extends State<HeroMarketStack>
   @override
   void dispose() {
     _float.dispose();
+    _tilt.dispose();
     super.dispose();
   }
 
@@ -106,21 +107,29 @@ class _HeroMarketStackState extends State<HeroMarketStack>
 
     if (reduce) return stack;
 
-    // Subtle 3D tilt toward the cursor for a tactile, premium feel.
+    // Subtle 3D tilt toward the cursor for a tactile, premium feel without widget rebuilds.
     return MouseRegion(
-      onHover: (e) => setState(() => _tilt = Offset(
-            (e.localPosition.dx / totalW - 0.5) * 2,
-            (e.localPosition.dy / h - 0.5) * 2,
-          )),
-      onExit: (_) => setState(() => _tilt = Offset.zero),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
-        transformAlignment: Alignment.center,
-        transform: Matrix4.identity()
-          ..setEntry(3, 2, 0.0012)
-          ..rotateX(-_tilt.dy * 0.10)
-          ..rotateY(_tilt.dx * 0.10),
+      onHover: (e) {
+        _tilt.value = Offset(
+          (e.localPosition.dx / totalW - 0.5) * 2,
+          (e.localPosition.dy / h - 0.5) * 2,
+        );
+      },
+      onExit: (_) => _tilt.value = Offset.zero,
+      child: ValueListenableBuilder<Offset>(
+        valueListenable: _tilt,
+        builder: (context, tilt, child) {
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            curve: Curves.easeOut,
+            transformAlignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.0012)
+              ..rotateX(-tilt.dy * 0.10)
+              ..rotateY(tilt.dx * 0.10),
+            child: child,
+          );
+        },
         child: stack,
       ),
     );

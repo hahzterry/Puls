@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -7,7 +8,6 @@ import 'package:flutter/material.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/copy_button.dart';
 import '../../core/widgets/dot_grid_painter.dart';
-import 'package:flutter_web_scroll/flutter_web_scroll.dart';
 
 import 'live_activity.dart';
 import 'live_ticker.dart';
@@ -203,101 +203,106 @@ class _WebLandingPageState extends State<WebLandingPage>
               ),
             ),
             // ── Content ───────────────────────────────────────────────────
-            SmoothScrollWeb(
+            SingleChildScrollView(
               controller: _scrollCtrl,
-              config: SmoothScrollConfig.lenis(
-                scrollSpeed: 1.1,
-                damping: 0.09,
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
               ),
-              child: SingleChildScrollView(
-                controller: _scrollCtrl,
-                child: Column(
-                  children: [
-                    RepaintBoundary(
-                        child: _HeroSection(scrollOffset: _scrollOffset)),
-                    _LazySection(
+              child: Column(
+                children: [
+                  RepaintBoundary(
+                      child: _HeroSection(scrollOffset: _scrollOffset)),
+                  _LazySection(
+                    scrollOffset: _scrollOffset,
+                    estimatedHeight: 140,
+                    builder: (_) => _Reveal(
                       scrollOffset: _scrollOffset,
-                      builder: (_) => _Reveal(
-                        scrollOffset: _scrollOffset,
-                        child: const RepaintBoundary(child: LiveMarketTicker()),
-                      ),
+                      child: const RepaintBoundary(child: LiveMarketTicker()),
                     ),
-                    const _SectionDivider(),
-                    _Reveal(
-                        scrollOffset: _scrollOffset,
-                        child:
-                            const RepaintBoundary(child: _HowItWorksSection())),
-                    _Reveal(
-                        scrollOffset: _scrollOffset,
-                        child: RepaintBoundary(
-                            child:
-                                _FeaturesSection(scrollOffset: _scrollOffset))),
-                    const _SectionDivider(),
-                    _Reveal(
-                        scrollOffset: _scrollOffset,
-                        child: const RepaintBoundary(
-                            child: AccountableAiSection())),
-                    _LazySection(
+                  ),
+                  const _SectionDivider(),
+                  _Reveal(
                       scrollOffset: _scrollOffset,
-                      builder: (_) => _Reveal(
-                        scrollOffset: _scrollOffset,
-                        child: const RepaintBoundary(child: PhoneDemoSection()),
-                      ),
-                    ),
-                    _LazySection(
+                      child:
+                          const RepaintBoundary(child: _HowItWorksSection())),
+                  _Reveal(
                       scrollOffset: _scrollOffset,
-                      builder: (_) => _Reveal(
-                        scrollOffset: _scrollOffset,
-                        child: const RepaintBoundary(
-                            child: MeetTheAgentsSection()),
-                      ),
-                    ),
-                    const _SectionDivider(),
-                    _LazySection(
+                      child: RepaintBoundary(
+                          child:
+                              _FeaturesSection(scrollOffset: _scrollOffset))),
+                  const _SectionDivider(),
+                  _Reveal(
                       scrollOffset: _scrollOffset,
-                      builder: (_) => _Reveal(
-                        scrollOffset: _scrollOffset,
-                        child:
-                            const RepaintBoundary(child: LiveTractionSection()),
-                      ),
-                    ),
-                    _LazySection(
+                      child: const RepaintBoundary(
+                          child: AccountableAiSection())),
+                  _LazySection(
+                    scrollOffset: _scrollOffset,
+                    estimatedHeight: 640,
+                    builder: (_) => _Reveal(
                       scrollOffset: _scrollOffset,
-                      builder: (_) => _Reveal(
-                        scrollOffset: _scrollOffset,
-                        child:
-                            const RepaintBoundary(child: LiveActivitySection()),
-                      ),
+                      child: const RepaintBoundary(child: PhoneDemoSection()),
                     ),
-                    _LazySection(
+                  ),
+                  _LazySection(
+                    scrollOffset: _scrollOffset,
+                    estimatedHeight: 560,
+                    builder: (_) => _Reveal(
                       scrollOffset: _scrollOffset,
-                      builder: (_) => _Reveal(
-                        scrollOffset: _scrollOffset,
-                        child: const RepaintBoundary(child: _StatsSection()),
-                      ),
+                      child: const RepaintBoundary(
+                          child: MeetTheAgentsSection()),
                     ),
-                    const _SectionDivider(),
-                    _LazySection(
+                  ),
+                  const _SectionDivider(),
+                  _LazySection(
+                    scrollOffset: _scrollOffset,
+                    estimatedHeight: 480,
+                    builder: (_) => _Reveal(
                       scrollOffset: _scrollOffset,
-                      builder: (_) => _Reveal(
-                        scrollOffset: _scrollOffset,
-                        child: const RepaintBoundary(child: FaqSection()),
-                      ),
+                      child:
+                          const RepaintBoundary(child: LiveTractionSection()),
                     ),
-                    _LazySection(
+                  ),
+                  _LazySection(
+                    scrollOffset: _scrollOffset,
+                    estimatedHeight: 420,
+                    builder: (_) => _Reveal(
                       scrollOffset: _scrollOffset,
-                      builder: (_) => _Reveal(
-                        scrollOffset: _scrollOffset,
-                        child: const RepaintBoundary(child: _FinalCtaSection()),
-                      ),
+                      child:
+                          const RepaintBoundary(child: LiveActivitySection()),
                     ),
-                    _LazySection(
+                  ),
+                  _LazySection(
+                    scrollOffset: _scrollOffset,
+                    estimatedHeight: 380,
+                    builder: (_) => _Reveal(
                       scrollOffset: _scrollOffset,
-                      builder: (_) => RepaintBoundary(
-                          child: _FooterSection(scrollCtrl: _scrollCtrl)),
+                      child: const RepaintBoundary(child: _StatsSection()),
                     ),
-                  ],
-                ),
+                  ),
+                  const _SectionDivider(),
+                  _LazySection(
+                    scrollOffset: _scrollOffset,
+                    estimatedHeight: 520,
+                    builder: (_) => _Reveal(
+                      scrollOffset: _scrollOffset,
+                      child: const RepaintBoundary(child: FaqSection()),
+                    ),
+                  ),
+                  _LazySection(
+                    scrollOffset: _scrollOffset,
+                    estimatedHeight: 360,
+                    builder: (_) => _Reveal(
+                      scrollOffset: _scrollOffset,
+                      child: const RepaintBoundary(child: _FinalCtaSection()),
+                    ),
+                  ),
+                  _LazySection(
+                    scrollOffset: _scrollOffset,
+                    estimatedHeight: 280,
+                    builder: (_) => RepaintBoundary(
+                        child: _FooterSection(scrollCtrl: _scrollCtrl)),
+                  ),
+                ],
               ),
             ),
             // ── Scroll progress bar (top) ─────────────────────────────────
@@ -1134,15 +1139,15 @@ class _HeroSectionState extends State<_HeroSection> {
                           key: const ValueKey('hero-entrance'),
                         )
                         .fadeIn(
-                          duration: 1100.ms,
-                          delay: 150.ms,
+                          duration: 750.ms,
+                          delay: 100.ms,
                           curve: PulsCurves.easeOutMagical,
                         )
-                        .blur(
-                          begin: const Offset(0, 28),
-                          end: Offset.zero,
-                          duration: 900.ms,
-                          delay: 150.ms,
+                        .slideY(
+                          begin: 0.06,
+                          end: 0,
+                          duration: 750.ms,
+                          delay: 100.ms,
                           curve: PulsCurves.easeOutMagical,
                         ),
               ),
@@ -4280,10 +4285,13 @@ class _GrainPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0
+      ..strokeCap = StrokeCap.round;
     if (_cachedPoints == null) {
       final rnd = math.Random(42);
-      final count = 1200;
+      const count = 300;
       _cachedPoints = List<Offset>.generate(
         count,
         (_) => Offset(rnd.nextDouble(), rnd.nextDouble()),
@@ -4292,10 +4300,12 @@ class _GrainPainter extends CustomPainter {
     }
     final points = _cachedPoints!;
     final w = size.width, h = size.height;
-    for (var i = 0; i < points.length; i++) {
-      final p = points[i];
-      canvas.drawCircle(Offset(p.dx * w, p.dy * h), 0.6, paint);
-    }
+    final offsets = List<Offset>.generate(
+      points.length,
+      (i) => Offset(points[i].dx * w, points[i].dy * h),
+      growable: false,
+    );
+    canvas.drawPoints(ui.PointMode.points, offsets, paint);
   }
 
   @override
@@ -4626,7 +4636,7 @@ class _PrimaryButtonState extends State<_PrimaryButton>
     with SingleTickerProviderStateMixin {
   bool _hovered = false;
   bool _pressed = false;
-  Offset _magnet = Offset.zero;
+  final _magnet = ValueNotifier<Offset>(Offset.zero);
 
   late final AnimationController _glow;
 
@@ -4635,13 +4645,14 @@ class _PrimaryButtonState extends State<_PrimaryButton>
     super.initState();
     _glow = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 400),
     );
   }
 
   @override
   void dispose() {
     _glow.dispose();
+    _magnet.dispose();
     super.dispose();
   }
 
@@ -4652,8 +4663,7 @@ class _PrimaryButtonState extends State<_PrimaryButton>
     final s = box.size;
     final dx = (e.localPosition.dx - s.width / 2) / (s.width / 2);
     final dy = (e.localPosition.dy - s.height / 2) / (s.height / 2);
-    setState(() =>
-        _magnet = Offset(dx.clamp(-1.0, 1.0) * 4, dy.clamp(-1.0, 1.0) * 3));
+    _magnet.value = Offset(dx.clamp(-1.0, 1.0) * 4, dy.clamp(-1.0, 1.0) * 3);
   }
 
   void _onEnter() {
@@ -4665,8 +4675,8 @@ class _PrimaryButtonState extends State<_PrimaryButton>
     setState(() {
       _pressed = false;
       _hovered = false;
-      _magnet = Offset.zero;
     });
+    _magnet.value = Offset.zero;
     _glow.reverse();
   }
 
@@ -4697,17 +4707,23 @@ class _PrimaryButtonState extends State<_PrimaryButton>
           onTapCancel: widget.onTap != null
               ? () => setState(() => _pressed = false)
               : null,
-          child: AnimatedContainer(
-            duration: _pressed
-                ? const Duration(milliseconds: 70)
-                : const Duration(milliseconds: 180),
-            curve: _pressed ? Curves.easeOut : Curves.easeOutCubic,
-            transformAlignment: Alignment.center,
-            transform: Matrix4.translationValues(
-              _pressed ? 0 : _magnet.dx,
-              _pressed ? 0 : _magnet.dy,
-              0,
-            )..scaleByDouble(scale, scale, scale, 1),
+          child: ValueListenableBuilder<Offset>(
+            valueListenable: _magnet,
+            builder: (context, magnet, child) {
+              return AnimatedContainer(
+                duration: _pressed
+                    ? const Duration(milliseconds: 70)
+                    : const Duration(milliseconds: 180),
+                curve: _pressed ? Curves.easeOut : Curves.easeOutCubic,
+                transformAlignment: Alignment.center,
+                transform: Matrix4.translationValues(
+                  _pressed ? 0 : magnet.dx,
+                  _pressed ? 0 : magnet.dy,
+                  0,
+                )..scaleByDouble(scale, scale, scale, 1),
+                child: child,
+              );
+            },
             child: AnimatedBuilder(
               animation: _glow,
               builder: (context, child) => Container(
@@ -4730,7 +4746,7 @@ class _PrimaryButtonState extends State<_PrimaryButton>
                       BoxShadow(
                         color: PulsColors.brandPink.withValues(
                             alpha:
-                                _glow.value * (context.isDark ? 0.25 : 0.18)),
+                                _glow.value * (context.isDark ? 0.28 : 0.20)),
                         blurRadius: 24 + 16 * _glow.value,
                         spreadRadius: -2 * _glow.value,
                       ),
@@ -4972,9 +4988,14 @@ class _SectionDivider extends StatelessWidget {
 /// This keeps the initial page load light — only the hero + first sections are
 /// built immediately, live sections build as you scroll to them.
 class _LazySection extends StatefulWidget {
-  const _LazySection({required this.scrollOffset, required this.builder});
+  const _LazySection({
+    required this.scrollOffset,
+    required this.builder,
+    this.estimatedHeight = 520.0,
+  });
   final ValueNotifier<double> scrollOffset;
   final WidgetBuilder builder;
+  final double estimatedHeight;
 
   @override
   State<_LazySection> createState() => _LazySectionState();
@@ -4987,9 +5008,6 @@ class _LazySectionState extends State<_LazySection> {
   @override
   void initState() {
     super.initState();
-    // Scroll listener: the build check runs on scroll ticks WITHOUT a page
-    // rebuild — and once built it never fires again. The heavy child (and any
-    // HTTP it triggers) is constructed exactly once, when scrolled near.
     widget.scrollOffset.addListener(_maybeBuild);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeBuild());
   }
@@ -5004,14 +5022,9 @@ class _LazySectionState extends State<_LazySection> {
     if (_built || !mounted) return;
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.attached || !box.hasSize) return;
-    // Re-measure every tick: lazy sections above grow when they build, so the
-    // content-space position shifts — a cached _top would go stale and build
-    // sections thousands of px early, defeating lazy loading. (localToGlobal
-    // is a cheap transform walk, not a relayout.)
     _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset.value;
     final h = MediaQuery.sizeOf(context).height;
-    if (widget.scrollOffset.value + h * 1.2 >= _top!) {
-      // Only setState on the actual flip — unlisten once built.
+    if (widget.scrollOffset.value + h * 1.5 >= _top!) {
       widget.scrollOffset.removeListener(_maybeBuild);
       setState(() => _built = true);
     }
@@ -5020,10 +5033,8 @@ class _LazySectionState extends State<_LazySection> {
   @override
   Widget build(BuildContext context) {
     if (_built) return widget.builder(context);
-    // Re-check after any rebuild (window resize, content shifting above) —
-    // _maybeBuild short-circuits immediately once built, so no rebuild loops.
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeBuild());
-    return const SizedBox.shrink();
+    return SizedBox(height: widget.estimatedHeight);
   }
 }
 

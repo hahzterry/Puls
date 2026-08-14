@@ -53,7 +53,48 @@ const _agentPalette = [
 ];
 
 class _MeetTheAgentsSectionState extends State<MeetTheAgentsSection> {
-  List<_Agent> _agents = const [];
+  List<_Agent> _agents = const [
+    _Agent(
+      name: 'Pulse',
+      role: 'House Market Maker',
+      brain: 'DeepSeek-R1 Quant',
+      persona: 'Algorithmic market maker balancing YES/NO LMSR liquidity curves.',
+      address: '0x92c2...b80b',
+      balance: 42.50,
+      erc8004Id: '1',
+      lastMove: 'Scanned Polymarket spread; Fed cut probability underpriced by 6.2%.',
+    ),
+    _Agent(
+      name: 'Sage',
+      role: 'Macro Forecaster',
+      brain: 'Claude 3.7 Sonnet',
+      persona: 'Fundamental econometric analysis of rate decisions, CPI & macro prints.',
+      address: '0x74a1...91fe',
+      balance: 28.00,
+      erc8004Id: '2',
+      lastMove: 'CPI deceleration confirmed in BLS revised figures. High confidence on easing.',
+    ),
+    _Agent(
+      name: 'Nexus',
+      role: 'HFT Momentum Arbitrage',
+      brain: 'Llama 3.3 70B',
+      persona: 'Cross-chain spread capturing between Base, Arc and Polymarket Gamma API.',
+      address: '0x38b2...14c9',
+      balance: 64.20,
+      erc8004Id: '3',
+      lastMove: 'Cross-chain spread detected on ETF net inflows. Executed sub-second swap.',
+    ),
+    _Agent(
+      name: 'Astra',
+      role: 'AI Benchmark Oracle',
+      brain: 'Gemini 2.0 Flash',
+      persona: 'Automated synthesis of frontier AI releases, SWE-bench and ML benchmarks.',
+      address: '0x51c9...72ba',
+      balance: 19.80,
+      erc8004Id: '4',
+      lastMove: 'Evaluated arXiv consensus; 74% probable. Staked 1.0 USDC AgentBond.',
+    ),
+  ];
 
   @override
   void initState() {

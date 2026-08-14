@@ -1033,10 +1033,11 @@ class _MarketPulseState extends State<_MarketPulse> {
         if (pt != null) seed.add(pt);
         if (seed.length >= 5) break;
       }
-      if (seed.isNotEmpty && mounted)
+      if (seed.isNotEmpty && mounted) {
         setState(() => _trades
           ..clear()
           ..addAll(seed));
+      }
     } catch (_) {/* ignore */}
   }
 

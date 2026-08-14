@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../feed/feed_screen.dart';
 import 'landing_kit.dart';
-import 'mac_window_frame.dart';
 
 /// "Your first trade in a swipe" — an auto-playing phone mockup that swipes
 /// markets YES/NO and shows the sub-second on-chain settle. Fully self-contained

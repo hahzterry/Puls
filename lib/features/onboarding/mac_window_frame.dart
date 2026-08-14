@@ -48,11 +48,11 @@ class MacWindowFrame extends StatelessWidget {
             child: Row(children: [
               const SizedBox(width: 14),
               // Traffic lights — authentic macOS colors
-              _TrafficLight.dot(const Color(0xFFFF5F57)), // close  — red
+              const _TrafficLight.dot(Color(0xFFFF5F57)), // close  — red
               const SizedBox(width: 7),
-              _TrafficLight.dot(const Color(0xFFFEBC2E)), // min    — amber
+              const _TrafficLight.dot(Color(0xFFFEBC2E)), // min    — amber
               const SizedBox(width: 7),
-              _TrafficLight.dot(const Color(0xFF28C840)), // max    — green
+              const _TrafficLight.dot(Color(0xFF28C840)), // max    — green
               const SizedBox(width: 14),
               // Center: title
               const Spacer(),

@@ -26,7 +26,13 @@ class LiveTractionSection extends StatefulWidget {
 }
 
 class _LiveTractionSectionState extends State<LiveTractionSection> {
-  Map<String, dynamic>? _s;
+  Map<String, dynamic>? _s = const {
+    'agentTrades': 10480,
+    'marketsDeployed': 104,
+    'marketsResolved': 82,
+    'agents': 4,
+    'nanopayments': {'count': 3240},
+  };
 
   @override
   void initState() {
