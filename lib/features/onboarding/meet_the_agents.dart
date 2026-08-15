@@ -77,7 +77,7 @@ class _MeetTheAgentsSectionState extends State<MeetTheAgentsSection> {
     _Agent(
       name: 'Nexus',
       role: 'HFT Momentum Arbitrage',
-      brain: 'Llama 3.3 70B',
+      brain: 'GPT OSS 120B',
       persona: 'Cross-chain spread capturing between Base, Arc and Polymarket Gamma API.',
       address: '0x38b2...14c9',
       balance: 64.20,
