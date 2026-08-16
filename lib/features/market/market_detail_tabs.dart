@@ -46,6 +46,10 @@ class _MarketDetailTabsState extends State<MarketDetailTabs>
     super.dispose();
   }
 
+  String _norm(String s) {
+    return s.toLowerCase().replaceFirst(RegExp(r'^agent:\s*'), '').replaceAll(RegExp(r'[^a-z0-9]'), ' ').trim();
+  }
+
   /// True when a trade row belongs to this market. Trades store `market_id` as
   /// the on-chain contract address (0x…), the market slug, or the Polymarket id.
   bool _belongsToMarket(Map<String, dynamic> t) {
@@ -55,10 +59,10 @@ class _MarketDetailTabsState extends State<MarketDetailTabs>
     if (tid == widget.marketId.toLowerCase()) return true;
     final slg = widget.slug?.toLowerCase();
     if (slg != null && slg.isNotEmpty && tid == slg) return true;
-    // Fallback: same question (covers rows saved before a contract was linked).
-    final q = (t['question'] as String? ?? '').trim().toLowerCase();
-    final myQ = widget.question.trim().toLowerCase();
-    if (q.isNotEmpty && (q == myQ || myQ.contains(q) || q.contains(myQ))) return true;
+    // Fallback: normalized question match (handles "Agent: " prefix, punctuation differences)
+    final q = _norm(t['question'] as String? ?? '');
+    final myQ = _norm(widget.question);
+    if (q.isNotEmpty && myQ.isNotEmpty && (q == myQ || myQ.contains(q) || q.contains(myQ))) return true;
     return false;
   }
 
@@ -69,8 +73,9 @@ class _MarketDetailTabsState extends State<MarketDetailTabs>
         if (widget.slug?.isNotEmpty == true) widget.slug!,
         widget.marketId,
       ].join(',');
+      final qParam = Uri.encodeQueryComponent(widget.question);
       final res = await http.get(
-        Uri.parse('$backendUrl/api/trade/recent?limit=100&marketId=$ids'),
+        Uri.parse('$backendUrl/api/trade/recent?limit=100&marketId=$ids&question=$qParam'),
       );
       if (res.statusCode != 200) throw Exception('Failed');
       final list = (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
