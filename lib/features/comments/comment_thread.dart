@@ -63,10 +63,12 @@ class CommentThread extends StatefulWidget {
     super.key,
     required this.targetType,
     required this.targetId,
+    this.targetIds,
   });
 
   final String targetType;
   final String targetId;
+  final List<String>? targetIds;
 
   @override
   State<CommentThread> createState() => _CommentThreadState();
@@ -110,8 +112,12 @@ class _CommentThreadState extends State<CommentThread> {
 
   Future<void> _fetch() async {
     try {
+      final idsList = (widget.targetIds != null && widget.targetIds!.isNotEmpty)
+          ? widget.targetIds!
+          : [widget.targetId];
+      final idsParam = Uri.encodeQueryComponent(idsList.join(','));
       final res = await http.get(
-        Uri.parse('$backendUrl/api/comments?target_type=${widget.targetType}&target_id=${widget.targetId}&limit=50'),
+        Uri.parse('$backendUrl/api/comments?target_type=${widget.targetType}&target_id=$idsParam&limit=50'),
         headers: _authHeaders,
       );
       if (res.statusCode != 200) throw Exception('Couldn\'t load comments');

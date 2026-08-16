@@ -264,6 +264,7 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
         const SizedBox(height: 24),
         MarketDetailTabs(
           marketId: market.id,
+          slug: market.slug,
           contractAddress: market.contractAddress,
           question: market.question,
         ),

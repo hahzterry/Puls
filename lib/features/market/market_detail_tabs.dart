@@ -15,9 +15,11 @@ class MarketDetailTabs extends StatefulWidget {
     super.key,
     required this.marketId,
     required this.question,
+    this.slug,
     this.contractAddress,
   });
   final String marketId;
+  final String? slug;
   final String question;
   final String? contractAddress;
 
@@ -45,25 +47,30 @@ class _MarketDetailTabsState extends State<MarketDetailTabs>
   }
 
   /// True when a trade row belongs to this market. Trades store `market_id` as
-  /// the on-chain contract address (0x…), NOT the Polymarket id used by the
-  /// Market model — so match on the contract address first, then fall back to
-  /// the (less reliable) question text or raw id.
+  /// the on-chain contract address (0x…), the market slug, or the Polymarket id.
   bool _belongsToMarket(Map<String, dynamic> t) {
     final tid = (t['market_id'] as String? ?? '').toLowerCase();
     final addr = widget.contractAddress?.toLowerCase();
     if (addr != null && addr.isNotEmpty && tid == addr) return true;
     if (tid == widget.marketId.toLowerCase()) return true;
+    final slg = widget.slug?.toLowerCase();
+    if (slg != null && slg.isNotEmpty && tid == slg) return true;
     // Fallback: same question (covers rows saved before a contract was linked).
-    final q = (t['question'] as String? ?? '').trim();
-    if (q.isNotEmpty && q == widget.question.trim()) return true;
+    final q = (t['question'] as String? ?? '').trim().toLowerCase();
+    final myQ = widget.question.trim().toLowerCase();
+    if (q.isNotEmpty && (q == myQ || myQ.contains(q) || q.contains(myQ))) return true;
     return false;
   }
 
   Future<void> _fetchActivity() async {
     try {
-      final mId = (widget.contractAddress?.isNotEmpty == true) ? widget.contractAddress! : widget.marketId;
+      final ids = [
+        if (widget.contractAddress?.isNotEmpty == true) widget.contractAddress!,
+        if (widget.slug?.isNotEmpty == true) widget.slug!,
+        widget.marketId,
+      ].join(',');
       final res = await http.get(
-        Uri.parse('$backendUrl/api/trade/recent?limit=100&marketId=$mId'),
+        Uri.parse('$backendUrl/api/trade/recent?limit=100&marketId=$ids'),
       );
       if (res.statusCode != 200) throw Exception('Failed');
       final list = (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
@@ -77,6 +84,11 @@ class _MarketDetailTabsState extends State<MarketDetailTabs>
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
+    final targetIds = [
+      if (widget.slug?.isNotEmpty == true) widget.slug!,
+      if (widget.contractAddress?.isNotEmpty == true) widget.contractAddress!,
+      widget.marketId,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -123,7 +135,11 @@ class _MarketDetailTabsState extends State<MarketDetailTabs>
               _ActivityTab(trades: _activity, loading: _activityLoading, t: t),
               _HoldersTab(trades: _activity, loading: _activityLoading, t: t),
               _PositionsTab(trades: _activity, loading: _activityLoading, t: t),
-              CommentThread(targetType: 'market', targetId: widget.marketId),
+              CommentThread(
+                targetType: 'market',
+                targetId: (widget.slug?.isNotEmpty == true) ? widget.slug! : widget.marketId,
+                targetIds: targetIds,
+              ),
             ],
           ),
         ),
