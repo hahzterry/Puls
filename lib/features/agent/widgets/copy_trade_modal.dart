@@ -155,7 +155,7 @@ class _CopyTradeModalState extends State<CopyTradeModal> {
         bottom: MediaQuery.of(context).viewInsets.bottom + 30,
       ),
       decoration: BoxDecoration(
-        color: t.card,
+        color: t.surfaceRaised,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border.all(color: t.border),
       ),
@@ -219,7 +219,7 @@ class _CopyTradeModalState extends State<CopyTradeModal> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: t.background.withOpacity(0.6),
+                color: t.bg.withOpacity(0.6),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: t.border.withOpacity(0.5)),
               ),
@@ -244,7 +244,7 @@ class _CopyTradeModalState extends State<CopyTradeModal> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: sel ? t.brand : t.background,
+                    color: sel ? t.brand : t.bg,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: sel ? t.brand : t.border),
                   ),
