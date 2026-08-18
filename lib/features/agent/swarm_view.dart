@@ -19,6 +19,8 @@ import 'agent_brain_visualizer.dart' deferred as brain;
 import '../analytics/swarm_analytics_dashboard.dart' deferred as analytics;
 import '../market/market_detail_screen.dart';
 import 'colony_feed.dart';
+import 'widgets/copy_trade_modal.dart';
+import 'agent_sponsorship_screen.dart';
 
 /// "Swarm" — the in-app home of the autonomous AI agent colony.
 ///
@@ -598,6 +600,52 @@ class AgentDetailSheet extends StatelessWidget {
                                 height: 1.3)),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            final key = (agent['key'] as String? ?? name.toLowerCase().split(' ').first).replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
+                            CopyTradeModal.show(
+                              context,
+                              leaderId: 'agent_swarm_$key',
+                              leaderName: name,
+                              role: role,
+                              strategy: persona,
+                            );
+                          },
+                          icon: const Icon(Icons.copy_all_rounded, size: 16),
+                          label: const Text('Copy Trades', style: TextStyle(fontWeight: FontWeight.w700)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: t.brand,
+                            side: BorderSide(color: t.brand),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(pulsRoute(context, builder: (_) => const AgentSponsorshipScreen()));
+                          },
+                          icon: const Icon(Icons.savings_rounded, size: 16),
+                          label: const Text('Sponsor', style: TextStyle(fontWeight: FontWeight.w700)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: t.brand,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

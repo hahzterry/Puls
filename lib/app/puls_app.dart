@@ -12,6 +12,7 @@ import '../features/market/screens/market_terminal_screen.dart'
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/shell/puls_shell.dart';
 import '../features/wallet/wallet_service.dart';
+import '../core/services/live_stream_service.dart';
 import 'deep_link.dart';
 import 'puls_app_state.dart';
 
@@ -58,6 +59,7 @@ class _PulsAppState extends State<PulsApp> {
     _state.addListener(_onStateChanged);
     _walletService.addListener(_onWalletChanged);
     _registerPopStateListener();
+    LiveStreamService.instance.start();
     // Fix: on a cold load where _shellVisible is already correct on the very
     // first frame (e.g. already-authenticated user on app.pulsmarket.tech/m/<slug>),
     // there's no false→true flip for the change listeners to detect, so the

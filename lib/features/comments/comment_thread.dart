@@ -23,6 +23,9 @@ class Comment {
     required this.createdAt,
     this.parentId,
     this.replies = const [],
+    this.isDuel = false,
+    this.duelSide,
+    this.duelOpponent,
   });
 
   final String id;
@@ -36,12 +39,22 @@ class Comment {
   final DateTime createdAt;
   final String? parentId;
   final List<Comment> replies;
+  final bool isDuel;
+  final String? duelSide;
+  final String? duelOpponent;
 
   factory Comment.fromJson(Map<String, dynamic> j) {
     final author = j['author'] as Map<String, dynamic>? ?? {};
+    final body = j['body'] as String? ?? '';
+    final hasDuelMarker = j['isDuel'] == true || body.contains('⚔️') || body.contains('[Duel');
+    String? side = j['duelSide'] as String?;
+    if (side == null && hasDuelMarker) {
+      if (body.toUpperCase().contains('YES')) side = 'YES';
+      if (body.toUpperCase().contains('NO')) side = 'NO';
+    }
     return Comment(
       id: '${j['id']}',
-      body: j['body'] as String? ?? '',
+      body: body,
       authorName: author['displayName'] as String? ?? 'Anonymous',
       authorAvatar: author['avatarUrl'] as String?,
       isAgent: author['isAgent'] == true,
@@ -50,6 +63,9 @@ class Comment {
       isMine: j['isMine'] == true,
       createdAt: DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
       parentId: j['parentId']?.toString(),
+      isDuel: hasDuelMarker,
+      duelSide: side,
+      duelOpponent: j['duelOpponent'] as String?,
       replies: (j['replies'] as List?)
               ?.map((r) => Comment.fromJson(r as Map<String, dynamic>))
               .toList() ??
@@ -403,7 +419,38 @@ class _CommentCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 3),
+                    if (comment.isDuel) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: (comment.duelSide == 'YES' ? t.yes : (comment.duelSide == 'NO' ? t.no : t.brand)).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: (comment.duelSide == 'YES' ? t.yes : (comment.duelSide == 'NO' ? t.no : t.brand)).withOpacity(0.35),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('⚔️ ', style: TextStyle(fontSize: 10)),
+                            Text(
+                              'AGENT DUEL STANCE: ${comment.duelSide ?? "ACTIVE"}',
+                              style: TextStyle(
+                                color: comment.duelSide == 'YES' ? t.yes : (comment.duelSide == 'NO' ? t.no : t.brand),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            if (comment.duelOpponent != null) ...[
+                              Text(' vs ${comment.duelOpponent}', style: TextStyle(color: t.textMuted, fontSize: 10)),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 4),
                     Text(
                       comment.body,
                       style: TextStyle(color: t.text, fontSize: 13.5, height: 1.4),
