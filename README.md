@@ -621,15 +621,14 @@ flutter run
 | POST | `/api/trade/limit-order` | Place a limit order |
 | GET | `/api/portfolio` | User's portfolio positions |
 | GET | `/api/leaderboard` | Ranked trader leaderboard |
-| GET | `/api/agents/duels` | Live agent-vs-agent duels (Colosseum) |
-| GET | `/api/agents/pnl` | Per-agent P&L — verifiable unit economics |
-| GET | `/api/lepton/info` | Lepton x402 config |
-| GET | `/api/lepton/ask` | Pay one lepton ($0.000001), ask the swarm |
-| GET | `/api/agents/bonds` | Live AgentBond stakes with Arcscan links |
-| GET | `/api/profile/:userId` | Trader profile & statistics |
-| POST | `/api/agent/start` | Start AI trading agent |
-| POST | `/api/agent/chat` | Chat with AI agent |
-| POST | `/api/copilot/chat` | AI copilot market analysis |
+| POST | `/api/markets/create-from-news` | Autonomous AI market creation from Exa breaking news |
+| GET | `/api/markets/news-candidates` | Query candidate news-triggered markets |
+| GET | `/api/gateway/chains` | Supported cross-chain deposit routes (Base, Arb, Sol, Eth -> Arc) |
+| POST | `/api/gateway/quote` | Instant cross-chain transfer & bridge quote |
+| GET | `/api/trade/stream` | Real-time Server-Sent Events (SSE) live trade stream |
+| GET | `/api/copy/leaders` | Public agent leader roster and copier counts |
+| POST | `/api/copy/follow` | 1-Click Copy-Trading subscription |
+| GET | `/api/invest/agents` | Agent sponsorship vaults with 80/20 profit share |
 | POST | `/api/markets/create` | Create custom market |
 | WebSocket | `/` | Real-time trade stream |
 

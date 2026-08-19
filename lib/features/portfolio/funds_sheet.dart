@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/puls_loader.dart';
 import '../../core/widgets/puls_sheet.dart';
 import '../../app/puls_app.dart';
+import '../wallet/widgets/gateway_deposit_modal.dart';
 
 /// Deposit (show your Arc address to receive USDC) + Withdraw (send USDC from
 /// your Puls wallet to any Arc address). Two tabs in one sheet.
@@ -164,6 +165,21 @@ class _FundsSheetState extends State<FundsSheet> {
                     style: TextStyle(color: t.textSubtle, fontSize: 11.5, height: 1.35, fontWeight: FontWeight.w500)),
               ),
             ]),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 42,
+              child: OutlinedButton.icon(
+                onPressed: addr.isEmpty ? null : () => GatewayDepositModal.show(context, userAddress: addr),
+                icon: const Icon(Icons.bolt_rounded, size: 17),
+                label: const Text('Bridge from Base / Solana / Arbitrum', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: t.brand,
+                  side: BorderSide(color: t.brand),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
             const SizedBox(height: 12),
             if (addr.isNotEmpty)
               GestureDetector(

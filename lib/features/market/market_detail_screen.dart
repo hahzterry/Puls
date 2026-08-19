@@ -29,6 +29,8 @@ import 'ai_insight_card.dart';
 import 'resolution_panel.dart';
 import 'market_detail_tabs.dart';
 import 'ai_oracle_panel.dart';
+import 'widgets/pnl_calculator_card.dart';
+import 'widgets/social_share_modal.dart';
 
 class MarketDetailScreen extends StatefulWidget {
   const MarketDetailScreen({required this.marketId, super.key});
@@ -232,6 +234,13 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
         AiInsightCard(market: market),
         const SizedBox(height: 14),
 
+        // ── Interactive P&L Calculator ───────────────────────────────────
+        PnlCalculatorCard(
+          marketQuestion: market.question,
+          yesProbability: market.yesPrice,
+        ),
+        const SizedBox(height: 14),
+
         // ── Stats grid ───────────────────────────────────────────────────
         _StatsGrid(market: market, t: t),
         const SizedBox(height: 14),
@@ -286,6 +295,17 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
             icon: Icon(Icons.ios_share_rounded, size: 20, color: t.text),
             tooltip: 'Share market',
             onPressed: () => ShareMarketSheet.show(context, market),
+          ),
+          IconButton(
+            icon: Icon(Icons.style_rounded, size: 20, color: t.brand),
+            tooltip: 'Generate Social Share Card',
+            onPressed: () => SocialShareModal.show(
+              context,
+              marketQuestion: market.question,
+              side: 'YES',
+              amountUsdc: 10,
+              marketSlug: market.slug.isNotEmpty ? market.slug : market.id,
+            ),
           ),
           IconButton(
             icon: Icon(Icons.auto_awesome_rounded, size: 20, color: t.brand),
