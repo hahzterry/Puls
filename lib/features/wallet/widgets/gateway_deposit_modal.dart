@@ -74,133 +74,140 @@ class _GatewayDepositModalState extends State<GatewayDepositModal> {
   @override
   Widget build(BuildContext context) {
     final t = context.puls;
-    return Container(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 30,
-      ),
-      decoration: BoxDecoration(
-        color: t.surfaceRaised,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(color: t.border),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: t.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: Container(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 30,
           ),
-          const SizedBox(height: 16),
-          Row(
+          decoration: BoxDecoration(
+            color: t.surfaceRaised,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: t.border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.bolt_rounded, color: t.brand, size: 22),
-              const SizedBox(width: 8),
-              Text(
-                'Instant Circle Gateway Bridge',
-                style: TextStyle(
-                  color: t.text,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: t.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Deposit USDC to Arc Network with sub-second finality',
-            style: TextStyle(color: t.textMuted, fontSize: 12),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Source Blockchain',
-            style: TextStyle(color: t.text, fontSize: 13, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: _chains.map((chain) {
-              final sel = _selectedChain == chain['id'];
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() => _selectedChain = chain['id']!);
-                    _fetchQuote();
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: sel ? t.brand.withOpacity(0.15) : t.bg,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: sel ? t.brand : t.border,
-                        width: sel ? 1.5 : 1,
-                      ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.bolt_rounded, color: t.brand, size: 22),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Instant Circle Gateway Bridge',
+                    style: TextStyle(
+                      color: t.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
                     ),
-                    child: Column(
-                      children: [
-                        Text(chain['icon']!, style: const TextStyle(fontSize: 16)),
-                        const SizedBox(height: 2),
-                        Text(
-                          chain['name']!,
-                          style: TextStyle(
-                            color: sel ? t.brand : t.text,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Deposit USDC to Arc Network with sub-second finality',
+                style: TextStyle(color: t.textMuted, fontSize: 12),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Source Blockchain',
+                style: TextStyle(color: t.text, fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: _chains.map((chain) {
+                  final sel = _selectedChain == chain['id'];
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() => _selectedChain = chain['id']!);
+                        _fetchQuote();
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: sel ? t.brand.withOpacity(0.15) : t.bg,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: sel ? t.brand : t.border,
+                            width: sel ? 1.5 : 1,
                           ),
                         ),
-                      ],
+                        child: Column(
+                          children: [
+                            Text(chain['icon']!, style: const TextStyle(fontSize: 16)),
+                            const SizedBox(height: 2),
+                            Text(
+                              chain['name']!,
+                              style: TextStyle(
+                                color: sel ? t.brand : t.text,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Amount to Bridge (USDC)',
-            style: TextStyle(color: t.text, fontSize: 13, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [5.0, 10.0, 25.0, 50.0, 100.0].map((val) {
-              final sel = _amount == val;
-              return GestureDetector(
-                onTap: () {
-                  setState(() => _amount = val);
-                  _fetchQuote();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: sel ? t.brand : t.bg,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: sel ? t.brand : t.border),
-                  ),
-                  child: Text(
-                    '\$${val.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      color: sel ? Colors.white : t.text,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Amount to Bridge (USDC)',
+                style: TextStyle(color: t.text, fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [5.0, 10.0, 25.0, 50.0, 100.0].map((val) {
+                  final sel = _amount == val;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() => _amount = val);
+                        _fetchQuote();
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: sel ? t.brand : t.bg,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: sel ? t.brand : t.border),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '\$${val.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              color: sel ? Colors.white : t.text,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
+                  );
+                }).toList(),
+              ),
           const SizedBox(height: 16),
           if (_loading)
             const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2)))
@@ -268,6 +275,8 @@ class _GatewayDepositModalState extends State<GatewayDepositModal> {
           ),
         ],
       ),
-    );
+    ),
+  ),
+);
   }
 }

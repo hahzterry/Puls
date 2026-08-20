@@ -291,20 +291,23 @@ class _Footer extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         child: Row(
           children: [
-            GestureDetector(
-              onTap: () => Navigator.of(context).maybePop(),
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Text('Explore first',
-                    style: TextStyle(
-                        color: t.textMuted,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700)),
+            Flexible(
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).maybePop(),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  child: Text('Explore first',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: t.textMuted,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700)),
+                ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 8),
             GestureDetector(
               onTap: () {
                 Navigator.of(context).maybePop();
@@ -313,21 +316,24 @@ class _Footer extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                     color: t.brand,
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: PulsColors.brandGlow(intensity: 0.3)),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.south_west_rounded, color: Colors.white, size: 16),
-                  SizedBox(width: 7),
-                  Text('Fund my wallet',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.2)),
-                ]),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.south_west_rounded, color: Colors.white, size: 15),
+                    SizedBox(width: 6),
+                    Text('Fund my wallet',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2)),
+                  ],
+                ),
               ),
             ),
           ],

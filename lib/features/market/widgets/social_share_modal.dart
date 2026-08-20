@@ -72,170 +72,147 @@ class SocialShareModal extends StatelessWidget {
     final t = context.puls;
     final sideColor = side == 'YES' ? t.yes : t.no;
 
-    return Container(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 28,
-      ),
-      decoration: BoxDecoration(
-        color: t.surfaceRaised,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(color: t.border),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: t.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: Container(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 28,
           ),
-          const SizedBox(height: 16),
-          Row(
+          decoration: BoxDecoration(
+            color: t.surfaceRaised,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: t.border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.share_rounded, color: t.brand, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Share Your Prediction',
-                style: TextStyle(
-                  color: t.text,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: t.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Preview Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  sideColor.withOpacity(0.15),
-                  t.surface,
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.share_rounded, color: t.brand, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Share Your Prediction',
+                    style: TextStyle(
+                      color: t.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
                 ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: sideColor.withOpacity(0.4)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              const SizedBox(height: 16),
+              // Preview Card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: t.bg,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: t.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'PULSMARKET.TECH',
-                      style: TextStyle(
-                        color: t.brand,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: sideColor,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'POSITION: $side',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: sideColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            side,
+                            style: TextStyle(
+                              color: sideColor,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '\$$amountUsdc USDC Staked',
+                          style: TextStyle(color: t.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  marketQuestion,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: t.text,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(Icons.bolt_rounded, size: 14, color: t.brand),
-                    const SizedBox(width: 4),
+                    const SizedBox(height: 10),
                     Text(
-                      'Settled on Arc Testnet · 0x Gas USDC',
-                      style: TextStyle(color: t.textMuted, fontSize: 11),
+                      marketQuestion,
+                      style: TextStyle(color: t.text, fontSize: 14, fontWeight: FontWeight.w700),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _shareToTwitter(context),
-                  icon: const Icon(Icons.send_rounded, size: 16),
-                  label: const Text('Post to X', style: TextStyle(fontWeight: FontWeight.w700)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: t.brand,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
-                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _shareToTelegram(context),
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
-                  label: const Text('Telegram', style: TextStyle(fontWeight: FontWeight.w700)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: t.text,
-                    side: BorderSide(color: t.border),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _shareToTwitter(context),
+                      icon: const Icon(Icons.send_rounded, size: 16),
+                      label: const Text('Twitter / X', style: TextStyle(fontWeight: FontWeight.w700)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: t.brand,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _shareToTelegram(context),
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                      label: const Text('Telegram', style: TextStyle(fontWeight: FontWeight.w700)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: t.text,
+                        side: BorderSide(color: t.border),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: _shareUrl));
+                    Navigator.of(context).pop();
+                    PulsSnack.of(context).show('Market link copied to clipboard! 📋');
+                  },
+                  icon: const Icon(Icons.copy_rounded, size: 15),
+                  label: const Text('Copy Market Link', style: TextStyle(fontSize: 13)),
+                  style: TextButton.styleFrom(foregroundColor: t.textMuted),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton.icon(
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: _shareUrl));
-                Navigator.of(context).pop();
-                PulsSnack.of(context).show('Market link copied to clipboard! 📋');
-              },
-              icon: const Icon(Icons.copy_rounded, size: 15),
-              label: const Text('Copy Market Link', style: TextStyle(fontSize: 13)),
-              style: TextButton.styleFrom(foregroundColor: t.textMuted),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

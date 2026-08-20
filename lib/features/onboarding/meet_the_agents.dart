@@ -453,12 +453,15 @@ class _AgentCardState extends State<_AgentCard> {
                               fontSize: 11,
                               fontWeight: FontWeight.w800)),
                     ),
-                  const SizedBox(width: 9),
-                  Text('${a.balance.toStringAsFixed(a.balance < 10 ? 1 : 0)} USDC',
-                      style: TextStyle(
-                          color: t.textMuted,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text('${a.balance.toStringAsFixed(a.balance < 10 ? 1 : 0)} USDC',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: t.textMuted,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600)),
+                  ),
                   const Spacer(),
                   if (a.address.isNotEmpty)
                     MouseRegion(

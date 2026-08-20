@@ -70,37 +70,40 @@ class _HeroMarketStackState extends State<HeroMarketStack>
     final totalW = w + 70;
     final reduce = context.reduceMotion;
 
-    final Widget stack = SizedBox(
-      width: totalW,
-      height: h,
-      // RepaintBoundary promotes the floating stack to its own layer: the
-      // float/tilt tick then re-composites that layer at compositor speed
-      // instead of repainting (and re-uploading) the whole subtree below.
-      child: RepaintBoundary(
-        child: AnimatedBuilder(
-          animation: _float,
-          builder: (context, _) {
-            final t = _float.value * 2 * math.pi;
-            return Transform.rotate(
-              angle: -0.018,
-              child: Transform.translate(
-                offset: Offset(0, 8 * math.sin(t)),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.topCenter,
-                  children: [
-                    _preview,
-                    // Floating "LIVE" badge — signals this is the real terminal.
-                    const Positioned(
-                      top: -14,
-                      right: 4,
-                      child: _LiveBadge(),
-                    ),
-                  ],
+    final Widget stack = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: SizedBox(
+        width: totalW,
+        height: h,
+        // RepaintBoundary promotes the floating stack to its own layer: the
+        // float/tilt tick then re-composites that layer at compositor speed
+        // instead of repainting (and re-uploading) the whole subtree below.
+        child: RepaintBoundary(
+          child: AnimatedBuilder(
+            animation: _float,
+            builder: (context, _) {
+              final t = _float.value * 2 * math.pi;
+              return Transform.rotate(
+                angle: -0.018,
+                child: Transform.translate(
+                  offset: Offset(0, 8 * math.sin(t)),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.topCenter,
+                    children: [
+                      _preview,
+                      // Floating "LIVE" badge — signals this is the real terminal.
+                      const Positioned(
+                        top: -14,
+                        right: 4,
+                        child: _LiveBadge(),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
