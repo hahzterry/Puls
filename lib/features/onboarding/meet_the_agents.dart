@@ -50,51 +50,15 @@ const _agentPalette = [
   Color(0xFF16A34A),
   Color(0xFFD97706),
   Color(0xFF14B8A6),
+  Color(0xFFF43F5E),
+  Color(0xFF6366F1),
 ];
 
 class _MeetTheAgentsSectionState extends State<MeetTheAgentsSection> {
-  List<_Agent> _agents = const [
-    _Agent(
-      name: 'Pulse',
-      role: 'House Market Maker',
-      brain: 'DeepSeek-R1 Quant',
-      persona: 'Algorithmic market maker balancing YES/NO LMSR liquidity curves.',
-      address: '0x92c2...b80b',
-      balance: 42.50,
-      erc8004Id: '1',
-      lastMove: 'Scanned Polymarket spread; Fed cut probability underpriced by 6.2%.',
-    ),
-    _Agent(
-      name: 'Sage',
-      role: 'Macro Forecaster',
-      brain: 'Claude 3.7 Sonnet',
-      persona: 'Fundamental econometric analysis of rate decisions, CPI & macro prints.',
-      address: '0x74a1...91fe',
-      balance: 28.00,
-      erc8004Id: '2',
-      lastMove: 'CPI deceleration confirmed in BLS revised figures. High confidence on easing.',
-    ),
-    _Agent(
-      name: 'Nexus',
-      role: 'HFT Momentum Arbitrage',
-      brain: 'GPT OSS 120B',
-      persona: 'Cross-chain spread capturing between Base, Arc and Polymarket Gamma API.',
-      address: '0x38b2...14c9',
-      balance: 64.20,
-      erc8004Id: '3',
-      lastMove: 'Cross-chain spread detected on ETF net inflows. Executed sub-second swap.',
-    ),
-    _Agent(
-      name: 'Astra',
-      role: 'AI Benchmark Oracle',
-      brain: 'Gemini 2.0 Flash',
-      persona: 'Automated synthesis of frontier AI releases, SWE-bench and ML benchmarks.',
-      address: '0x51c9...72ba',
-      balance: 19.80,
-      erc8004Id: '4',
-      lastMove: 'Evaluated arXiv consensus; 74% probable. Staked 1.0 USDC AgentBond.',
-    ),
-  ];
+  // Real roster only: starts empty and fills from /api/agents/roster. The old
+  // hardcoded demo agents showed whenever the fetch failed silently (the
+  // endpoint can take >8s to respond), which looked like fake data on prod.
+  List<_Agent> _agents = const [];
 
   @override
   void initState() {
@@ -106,7 +70,7 @@ class _MeetTheAgentsSectionState extends State<MeetTheAgentsSection> {
     try {
       final res = await http
           .get(Uri.parse('$backendUrl/api/agents/roster'))
-          .timeout(const Duration(seconds: 8));
+          .timeout(const Duration(seconds: 20));
       if (!mounted || res.statusCode != 200) return;
       final body = json.decode(res.body) as Map<String, dynamic>;
       if (body['enabled'] == false) return;
@@ -131,8 +95,8 @@ class _MeetTheAgentsSectionState extends State<MeetTheAgentsSection> {
           lastMove: lastMove,
         ));
       }
-      // Cap the showcase to the 4 strongest — too many agents dilutes the focus.
-      setState(() => _agents = agents.toList());
+      // Showcase up to 8 real agents — the grid adapts (3/2/1 columns).
+      setState(() => _agents = agents.take(8).toList());
     } catch (_) {
       // Section simply doesn't render — landing must never break.
     }
