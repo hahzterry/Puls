@@ -69,19 +69,24 @@ class _SkeletonState extends State<Skeleton>
         final x = _ctrl.value * 2 - 1; // -1 .. 1
         // Sweep a brand-tinted shimmer (mint→pink) over a muted base so every
         // loading state carries the signature gradient instead of flat gray.
-        return Container(
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(widget.radius),
-            gradient: LinearGradient(
-              begin: Alignment(x - 1, 0),
-              end: Alignment(x + 1, 0),
-              colors: [
-                PulsColors.brandMint.withValues(alpha: 0.28),
-                PulsColors.brandPink.withValues(alpha: 0.42),
-                PulsColors.brandMint.withValues(alpha: 0.28),
-              ],
+        // RepaintBoundary: a screen can show dozens of these at once (list
+        // loading states); isolating each sweep keeps the per-tick repaint
+        // contained to its own tiny layer instead of dirtying ancestors.
+        return RepaintBoundary(
+          child: Container(
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(widget.radius),
+              gradient: LinearGradient(
+                begin: Alignment(x - 1, 0),
+                end: Alignment(x + 1, 0),
+                colors: [
+                  PulsColors.brandMint.withValues(alpha: 0.28),
+                  PulsColors.brandPink.withValues(alpha: 0.42),
+                  PulsColors.brandMint.withValues(alpha: 0.28),
+                ],
+              ),
             ),
           ),
         );

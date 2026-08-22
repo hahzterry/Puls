@@ -435,6 +435,9 @@ class _MarketCard extends StatelessWidget {
             Image.network(
               proxifyImageUrl(market.imageUrl),
               fit: BoxFit.cover,
+              // Full-screen card cover: cap the decode at ~2× DPR of a
+              // phone-height image instead of the upload's full resolution.
+              cacheHeight: 1600,
               errorBuilder: (_, __, ___) => _fallbackBg(t),
             )
           else

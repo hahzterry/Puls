@@ -19,6 +19,14 @@ Widget networkImage(String url, {
     height: height,
     width: width,
     fit: fit,
+    // Cap the decode to the render size (longest known edge only, so aspect
+    // is preserved by the codec) — see FPS spec §2.
+    memCacheWidth: width == null
+        ? null
+        : (width * 2).round().clamp(64, 1600),
+    memCacheHeight: height == null
+        ? null
+        : (height * 2).round().clamp(64, 1600),
     errorWidget: (_, __, ___) => const SizedBox.shrink(),
   );
 }

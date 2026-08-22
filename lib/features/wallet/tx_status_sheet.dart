@@ -197,6 +197,7 @@ class _TxStatusSheetState extends State<TxStatusSheet> {
                   width: 56,
                   height: 56,
                   fit: BoxFit.contain,
+                  cacheWidth: 112, // rendered at 56px; skip the extra decode
                   errorBuilder: (context, error, stackTrace) => Container(
                     width: 56,
                     height: 56,

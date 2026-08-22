@@ -19,6 +19,8 @@ import 'phone_demo.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/anim/pulse_governor.dart';
+
 import '../../app/puls_app_state.dart';
 import '../../app/puls_app.dart';
 import 'hero_market_stack.dart';
@@ -303,8 +305,11 @@ class _WebLandingPageState extends State<WebLandingPage>
                   _LazySection(
                     scrollOffset: _scrollOffset,
                     estimatedHeight: 280,
-                    builder: (_) => RepaintBoundary(
-                        child: _FooterSection(scrollCtrl: _scrollCtrl)),
+                    builder: (_) => PulseVisibilityGate(
+                      scrollOffset: _scrollOffset,
+                      child: RepaintBoundary(
+                          child: _FooterSection(scrollCtrl: _scrollCtrl)),
+                    ),
                   ),
                 ],
               ),
@@ -5239,7 +5244,15 @@ class _RevealState extends State<_Reveal> {
         duration: revealDuration,
         curve: Curves.easeOutCubic,
         offset: _shown || visibleNow ? Offset.zero : const Offset(0, 0.06),
-        child: widget.child,
+        // Animation governor (FPS spec §1): the section's always-running loops
+        // (marquees, live activity, painters) are muted while the section is
+        // scrolled out of the viewport band and resume seamlessly on approach.
+        // The gate sits INSIDE the reveal animations so the reveal ramp itself
+        // plays exactly as before.
+        child: PulseVisibilityGate(
+          scrollOffset: widget.scrollOffset,
+          child: widget.child,
+        ),
       ),
     );
   }

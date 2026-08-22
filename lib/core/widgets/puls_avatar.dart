@@ -75,6 +75,12 @@ class PulsAvatar extends StatelessWidget {
         width: size,
         height: size,
         fit: BoxFit.cover,
+        // Avatars render at ≤48 logical px almost everywhere; decoding the
+        // full-res upload for each of dozens of feed rows is pure waste
+        // (FPS spec §2).
+        memCacheWidth: (size * (MediaQuery.maybeDevicePixelRatioOf(context) ?? 1.0))
+            .round()
+            .clamp(64, 256),
         errorWidget: (_, __, ___) => fallback,
       );
     } else {

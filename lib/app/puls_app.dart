@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
+import '../core/anim/pulse_governor.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/analytics.dart';
 import '../core/utils/puls_emoji.dart';
 import '../core/utils/web_url.dart';
 import '../core/widgets/puls_page_route.dart';
+import '../core/widgets/tab_visibility.dart';
 import '../data/mock/mock_market_repository.dart';
 import '../features/market/screens/market_terminal_screen.dart'
     deferred as terminal;
@@ -60,6 +62,7 @@ class _PulsAppState extends State<PulsApp> {
     _walletService.addListener(_onWalletChanged);
     _registerPopStateListener();
     LiveStreamService.instance.start();
+    _configureImageCache();
     // Fix: on a cold load where _shellVisible is already correct on the very
     // first frame (e.g. already-authenticated user on app.pulsmarket.tech/m/<slug>),
     // there's no false→true flip for the change listeners to detect, so the
@@ -69,6 +72,25 @@ class _PulsAppState extends State<PulsApp> {
       _maybeOpenDeepLink(_shellVisible.value);
       _maybeOpenTerminal(_shellVisible.value);
     });
+  }
+
+  // ── Image memory diet (FPS spec §2) ──────────────────────────────────────
+  // The default cache (1000 entries / 100MB of decoded bitmaps) is oversized
+  // for low-RAM machines: full-cache + live decodes push browser tab memory
+  // into paging territory on 8GB PCs, and GC pauses show up as scroll jank.
+  // While hidden, decoded bitmaps are released entirely — they re-decode
+  // transparently (through FadeNetImage's fade-in) when the tab returns.
+  void _configureImageCache() {
+    final cache = PaintingBinding.instance.imageCache;
+    cache.maximumSizeBytes = 64 << 20; // 64 MB of decoded bitmaps
+    cache.maximumSize = 400;
+    TabVisibility.ensureListening();
+    TabVisibility.listenable.addListener(_onTabVisibilityChanged);
+  }
+
+  void _onTabVisibilityChanged() {
+    if (TabVisibility.visible) return;
+    PaintingBinding.instance.imageCache.clearLiveImages();
   }
 
   void _onStateChanged() {
@@ -211,6 +233,7 @@ class _PulsAppState extends State<PulsApp> {
   void dispose() {
     _state.removeListener(_onStateChanged);
     _walletService.removeListener(_onWalletChanged);
+    TabVisibility.listenable.removeListener(_onTabVisibilityChanged);
     _shellVisible.dispose();
     _themeMode.dispose();
     _walletService.dispose();
@@ -270,6 +293,12 @@ class _PulsAppState extends State<PulsApp> {
                   theme: PulsTheme.light(),
                   darkTheme: PulsTheme.dark(),
                   themeMode: themeMode,
+                  // Global animation governor (FPS spec §1): mutes every
+                  // ticker under the Navigator while the browser tab is
+                  // hidden, so a background tab burns zero animation frames.
+                  builder: (context, child) => TabPulseGate(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                   home: _resolveHome(shellVisible),
                 ),
               ),
