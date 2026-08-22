@@ -3994,7 +3994,9 @@ class _StatsSection extends StatelessWidget {
           horizontal: isMobile ? 16 : 48, vertical: isMobile ? 48 : 88),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 960),
+          // 1180 — aligns with the neighboring card bands so section edges
+          // don't jump while scrolling.
+          constraints: const BoxConstraints(maxWidth: 1180),
           child: Column(
             children: [
               const _SectionEyebrow(label: 'LIVE PROTOCOL STATS'),
@@ -4648,7 +4650,8 @@ class _FooterSection extends StatelessWidget {
           horizontal: isMobile ? 16 : 48, vertical: isMobile ? 48 : 80),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 960),
+          // 1180 — footer columns align with the content column above.
+          constraints: const BoxConstraints(maxWidth: 1180),
           child: Column(
             children: [
               isMobile

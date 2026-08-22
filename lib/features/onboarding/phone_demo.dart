@@ -17,25 +17,33 @@ class PhoneDemoSection extends StatelessWidget {
     final isMobile = w < 880;
 
     final copy = _Copy(isMobile: isMobile);
+    // Phone mockup scales to the available width: a fixed 390px frame plus
+    // section padding overflowed every common phone viewport (360–412px).
+    // Width shrinks to fit; height keeps the 390×800 aspect ratio.
     final phone = Center(
-      child: Container(
-        width: 390,
-        height: 800,
-        decoration: BoxDecoration(
-          color: t.bg,
-          borderRadius: BorderRadius.circular(40),
-          border: Border.all(color: t.border.withValues(alpha: 0.5), width: 8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 40,
-              offset: const Offset(0, 20),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: const FeedScreen(isDemoMode: true),
-      ),
+      child: LayoutBuilder(builder: (context, c) {
+        final maxW = c.maxWidth.isFinite ? c.maxWidth : 390.0;
+        final pw = maxW < 390 ? maxW : 390.0;
+        final ph = pw * (800 / 390);
+        return Container(
+          width: pw,
+          height: ph,
+          decoration: BoxDecoration(
+            color: t.bg,
+            borderRadius: BorderRadius.circular(40),
+            border: Border.all(color: t.border.withValues(alpha: 0.5), width: 8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 40,
+                offset: const Offset(0, 20),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: const FeedScreen(isDemoMode: true),
+        );
+      }),
     );
 
     return Container(

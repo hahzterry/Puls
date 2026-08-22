@@ -95,7 +95,9 @@ class _LiveActivitySectionState extends State<LiveActivitySection> {
           horizontal: isMobile ? 16 : 48, vertical: isMobile ? 48 : 80),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 880),
+          // 1180 aligns this band with the other card sections (traction,
+          // meet-the-agents) so content edges don't jump between neighbors.
+          constraints: const BoxConstraints(maxWidth: 1180),
           child: Column(
             children: [
               Text(
