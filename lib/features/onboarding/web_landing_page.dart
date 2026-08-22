@@ -41,13 +41,13 @@ class _WebLandingPageState extends State<WebLandingPage>
   final _scrollCtrl = ScrollController();
   // Scroll offset as a ValueNotifier so scroll-driven UI (hero parallax,
   // progress bars, sticky navbar, reveal/lazy triggers) rebuilds locally via
-  // ValueListenableBuilder WITHOUT rebuilding the whole page tree — and thus
-  // re-laying-out every section of this ~10k-px column — on every scroll tick.
+  // ValueListenableBuilder WITHOUT rebuilding the whole page tree вЂ” and thus
+  // re-laying-out every section of this ~10k-px column вЂ” on every scroll tick.
   final _scrollOffset = ValueNotifier<double>(0);
   int _lastScrollNotified = 0;
   static const _scrollThrottleMs = 50; // ~20 updates/s max for scroll effects
   late final AnimationController _aurora;
-  // Hoisted merge of the aurora + cursor listenables — built once instead of
+  // Hoisted merge of the aurora + cursor listenables вЂ” built once instead of
   // allocating a new Listenable on every build().
   late final Listenable _auroraListenable;
   // Normalized cursor position (-0.5..0.5 on each axis) for the reactive aurora.
@@ -64,10 +64,10 @@ class _WebLandingPageState extends State<WebLandingPage>
     _aurora =
         AnimationController(vsync: this, duration: const Duration(seconds: 24));
     _auroraListenable = Listenable.merge([_aurora, _pointer]);
-    // Throttled scroll listener: the notifier fires at most ~20×/s instead of
+    // Throttled scroll listener: the notifier fires at most ~20Г—/s instead of
     // once per scroll pixel. Only the scroll-driven leaf widgets (progress bar,
     // hero parallax, sticky navbar, reveal/lazy triggers) listen to it, so a
-    // scroll frame never rebuilds — or re-lays-out — the whole page.
+    // scroll frame never rebuilds вЂ” or re-lays-out вЂ” the whole page.
     _scrollCtrl.addListener(() {
       final now = DateTime.now().millisecondsSinceEpoch;
       if (now - _lastScrollNotified < _scrollThrottleMs) return;
@@ -107,7 +107,7 @@ class _WebLandingPageState extends State<WebLandingPage>
 
     // Honor the OS "reduce motion" setting: hold the aurora on a single static
     // frame instead of looping forever. Every other animated surface in the app
-    // already respects this (shimmer, skeletons, pulse dots, page routes) — the
+    // already respects this (shimmer, skeletons, pulse dots, page routes) вЂ” the
     // landing page was the one gap.
     if (context.reduceMotion) {
       if (_aurora.isAnimating) _aurora.stop();
@@ -142,14 +142,14 @@ class _WebLandingPageState extends State<WebLandingPage>
         },
         child: Stack(
           children: [
-            // ── Animated, cursor-reactive Aurora ──────────────────────────
+            // в”Ђв”Ђ Animated, cursor-reactive Aurora в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
             // RepaintBoundary isolates the 60fps aurora repaints from the
             // rest of the Stack (content, dot grid, grain) so they don't
             // re-rasterize on every animation tick. Excluded from semantics.
             //
-            // The painter runs at HALF resolution (a 4× reduction in fragment
+            // The painter runs at HALF resolution (a 4Г— reduction in fragment
             // work for the radial gradients) and the layer is upscaled by the
-            // compositor — for a soft, blurred glow this is visually identical
+            // compositor вЂ” for a soft, blurred glow this is visually identical
             // but dramatically cheaper on weak GPUs. Rasterized once per
             // animation tick into a half-size RepaintBoundary layer.
             Positioned.fill(
@@ -179,8 +179,8 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ),
               ),
             ),
-            // ── Dot Grid ──────────────────────────────────────────────────
-            // Static painter — RepaintBoundary ensures it's rasterized once
+            // в”Ђв”Ђ Dot Grid в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+            // Static painter вЂ” RepaintBoundary ensures it's rasterized once
             // and never repainted when siblings change.
             Positioned.fill(
               child: ExcludeSemantics(
@@ -189,8 +189,8 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ),
               ),
             ),
-            // ── Film grain (depth) ────────────────────────────────────────
-            // Static painter — same treatment as the dot grid.
+            // в”Ђв”Ђ Film grain (depth) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+            // Static painter вЂ” same treatment as the dot grid.
             Positioned.fill(
               child: IgnorePointer(
                 child: ExcludeSemantics(
@@ -205,10 +205,10 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ),
               ),
             ),
-            // ── Atmospheric Parallax Layer ─────────────────────────────────
+            // в”Ђв”Ђ Atmospheric Parallax Layer в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
             // Floating ambient gradient orbs with hardware-accelerated transforms
             _ParallaxAtmosphereLayer(scrollOffset: _scrollOffset),
-            // ── Content ───────────────────────────────────────────────────
+            // в”Ђв”Ђ Content в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
             SingleChildScrollView(
               controller: _scrollCtrl,
               physics: const BouncingScrollPhysics(
@@ -314,9 +314,9 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ],
               ),
             ),
-            // ── Scroll progress bar (top) ─────────────────────────────────
+            // в”Ђв”Ђ Scroll progress bar (top) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
             // Listens to the scroll notifier directly so it never rebuilds the
-            // page — only this 3px strip.
+            // page вЂ” only this 3px strip.
             Positioned(
               top: 0,
               left: 0,
@@ -354,14 +354,14 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ),
               ),
             ),
-            // ── Sticky navbar (frosted glass, condenses on scroll) ─────────
+            // в”Ђв”Ђ Sticky navbar (frosted glass, condenses on scroll) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: _StickyNavbar(scrollOffset: _scrollOffset),
             ),
-            // ── Scrollytelling 2.0 Chapter Navigator (Desktop >= 1180) ────
+            // в”Ђв”Ђ Scrollytelling 2.0 Chapter Navigator (Desktop >= 1180) в”Ђв”Ђв”Ђв”Ђ
             if (w >= 1180)
               Positioned(
                 right: 22,
@@ -375,7 +375,7 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ),
               )
             else
-              // ── Vertical scroll progress rail (mobile/tablet right edge) ──
+              // в”Ђв”Ђ Vertical scroll progress rail (mobile/tablet right edge) в”Ђв”Ђ
               Positioned(
                 top: 64,
                 bottom: 64,
@@ -450,7 +450,12 @@ class _WebLandingPageState extends State<WebLandingPage>
 // previews and locally.
 String _pageUrl(String path) => Uri.base.resolve(path).toString();
 
-// ── Scrollytelling 2.0: Atmospheric Parallax Layer ───────────────────────────
+/// Opens [url] in a new browser tab; never throws into the landing page.
+void _openExternal(String url) {
+  launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+}
+
+// в”Ђв”Ђ Scrollytelling 2.0: Atmospheric Parallax Layer в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _ParallaxAtmosphereLayer extends StatelessWidget {
   const _ParallaxAtmosphereLayer({required this.scrollOffset});
   final ValueNotifier<double> scrollOffset;
@@ -546,7 +551,7 @@ class _ParallaxAtmosphereLayer extends StatelessWidget {
   }
 }
 
-// ── Scrollytelling 2.0: Chapter Navigation HUD ──────────────────────────────
+// в”Ђв”Ђ Scrollytelling 2.0: Chapter Navigation HUD в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _ScrollyChapterHUD extends StatefulWidget {
   const _ScrollyChapterHUD({
     required this.scrollOffset,
@@ -807,7 +812,7 @@ class _ScrollyChapterHUDState extends State<_ScrollyChapterHUD> {
   }
 }
 
-// ── Top Navigation Bar (Header) ──────────────────────────────────────────────
+// в”Ђв”Ђ Top Navigation Bar (Header) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _StickyNavbar extends StatelessWidget {
   const _StickyNavbar({required this.scrollOffset});
   final ValueNotifier<double> scrollOffset;
@@ -911,7 +916,7 @@ class _StickyNavbarContent extends StatelessWidget {
                   ],
                 ),
                 const Spacer(),
-                // Full nav links — visible on desktop
+                // Full nav links вЂ” visible on desktop
                 if (!isMobile) ...[
                   _NavDropdown(
                     label: 'Product',
@@ -1297,7 +1302,7 @@ class _MobileNavMenuState extends State<_MobileNavMenu> {
       );
 }
 
-// ── Hero Section ──────────────────────────────────────────────────────────────
+// в”Ђв”Ђ Hero Section в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 const String kAndroidApkUrl = 'https://github.com/rdmbtc/Puls/releases/latest';
 
 class _HeroSection extends StatefulWidget {
@@ -1323,7 +1328,7 @@ class _HeroSectionState extends State<_HeroSection> {
   }
 
   void _cyclePhrases() {
-    // Give the first phrase a longer beat before rotating — a fast first
+    // Give the first phrase a longer beat before rotating вЂ” a fast first
     // impression (a few seconds) should land on the strongest line and hold,
     // not catch a mid-rotation frame.
     final delay = _phraseIndex == 0 ? 6500 : 3200;
@@ -1415,7 +1420,7 @@ class _HeroSectionState extends State<_HeroSection> {
               ),
             ),
           ),
-          // Scroll cue — pinned to the very bottom, below the trust strip.
+          // Scroll cue вЂ” pinned to the very bottom, below the trust strip.
           // Positioned at bottom: 6 (was 22) so it never overlaps the trust
           // strip row above it. Fades out as the hero scrolls away.
           Positioned(
@@ -1544,7 +1549,7 @@ class _HeroCopy extends StatelessWidget {
               _PulsingDot(color: t.brand),
               const SizedBox(width: 8),
               Text(
-                'LIVE ON ARC™ NETWORK',
+                'LIVE ON ARCв„ў NETWORK',
                 style: TextStyle(
                     color: t.brand,
                     fontSize: 11,
@@ -1619,8 +1624,8 @@ class _HeroCopy extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 480),
           child: Text(
             'A mobile prediction market on Arc. Swipe to trade real-world events in USDC '
-            '— no seed phrase. AI agents trade alongside you, staking real USDC on every '
-            'call — slashed when wrong, returned when right.',
+            'вЂ” no seed phrase. AI agents trade alongside you, staking real USDC on every '
+            'call вЂ” slashed when wrong, returned when right.',
             textAlign: align,
             style: TextStyle(
               color: t.textMuted,
@@ -1646,7 +1651,7 @@ class _HeroCopy extends StatelessWidget {
               final wallet = WalletServiceScope.of(context);
               return _PrimaryButton(
                 label:
-                    wallet.state.isLoading ? 'Connecting…' : 'Get started free',
+                    wallet.state.isLoading ? 'ConnectingвЂ¦' : 'Get started free',
                 onTap: wallet.state.isLoading ? null : wallet.signInWithGoogle,
               );
             }),
@@ -1679,7 +1684,7 @@ class _HeroCopy extends StatelessWidget {
                 delay: 420.ms,
                 curve: Curves.easeOutCubic),
         SizedBox(height: isMobile ? 14 : 18),
-        // Tech depth lives in the docs — keep the hero to one clear idea.
+        // Tech depth lives in the docs вЂ” keep the hero to one clear idea.
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1698,7 +1703,7 @@ class _HeroCopy extends StatelessWidget {
             const SizedBox(width: 6),
             const _InlineLink(
                 label: 'Get the Android app', url: kAndroidApkUrl),
-            Text('  ·  No wallet, no seed phrase, no risk.',
+            Text('  В·  No wallet, no seed phrase, no risk.',
                 style: TextStyle(color: t.textSubtle, fontSize: 12.5)),
           ],
         ).animate().fadeIn(duration: 400.ms, delay: 580.ms),
@@ -1743,7 +1748,7 @@ class _InlineLinkState extends State<_InlineLink> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              // Animated underline — sweeps in from the left on hover.
+              // Animated underline вЂ” sweeps in from the left on hover.
               Positioned(
                 left: 0,
                 right: 0,
@@ -1833,7 +1838,7 @@ class _PulsingDotState extends State<_PulsingDot>
   }
 }
 
-// ── Trust strip ───────────────────────────────────────────────────────────────
+// в”Ђв”Ђ Trust strip в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _TrustStrip extends StatelessWidget {
   const _TrustStrip();
 
@@ -1914,7 +1919,7 @@ class _TrustStrip extends StatelessWidget {
   }
 }
 
-// ── Features Section — premium bento ───────────────────────────────────────────
+// в”Ђв”Ђ Features Section вЂ” premium bento в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 // A curated, asymmetric bento grid replaces the old eight-up card wall. Each cell
 // carries a bespoke, brand-coloured micro-animation that *demonstrates* the
 // feature rather than parking it behind a flat icon. Every animated surface
@@ -1941,7 +1946,7 @@ class _FeaturesSection extends StatelessWidget {
               const _SectionEyebrow(label: 'THE AGENTBOND ECONOMY'),
               const SizedBox(height: 22),
               _GradientHeadline(
-                lead: 'Agents stake USDC against each other —',
+                lead: 'Agents stake USDC against each other вЂ”',
                 accent: 'winner takes all on Arc.',
                 isMobile: isMobile,
               ),
@@ -1949,7 +1954,7 @@ class _FeaturesSection extends StatelessWidget {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 620),
                 child: Text(
-                  'Every AI agent on Puls backs its predictions with a USDC bond — slashed '
+                  'Every AI agent on Puls backs its predictions with a USDC bond вЂ” slashed '
                   'on bad calls, returned on good ones. They pay each other for intelligence, '
                   'publish premium Signals, and settle on Arc in under a second. A closed-loop economy that runs itself.',
                   textAlign: TextAlign.center,
@@ -1971,7 +1976,7 @@ class _FeaturesSection extends StatelessWidget {
   }
 }
 
-// ── Section header pieces ──────────────────────────────────────────────────────
+// в”Ђв”Ђ Section header pieces в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _SectionEyebrow extends StatelessWidget {
   const _SectionEyebrow({required this.label});
   final String label;
@@ -2050,7 +2055,7 @@ class _GradientHeadline extends StatelessWidget {
   }
 }
 
-// ── How it works (3 quick steps) ───────────────────────────────────────────────
+// в”Ђв”Ђ How it works (3 quick steps) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _HowItWorksSection extends StatelessWidget {
   const _HowItWorksSection();
 
@@ -2064,14 +2069,14 @@ class _HowItWorksSection extends StatelessWidget {
         Icons.login_rounded,
         '1',
         'Sign in with Google',
-        'A Circle MPC wallet is created on Arc instantly — no seed phrase, no extension, no ETH.',
+        'A Circle MPC wallet is created on Arc instantly вЂ” no seed phrase, no extension, no ETH.',
         '0.18s MPC KEYGEN',
       ),
       (
         Icons.water_drop_rounded,
         '2',
         'Fund with USDC',
-        'Claim free USDC. On Arc, USDC is the gas token — one token pays for everything.',
+        'Claim free USDC. On Arc, USDC is the gas token вЂ” one token pays for everything.',
         'USDC NATIVE GAS',
       ),
       (
@@ -2296,7 +2301,7 @@ class _HowStepState extends State<_HowStep> {
   }
 }
 
-// ── Bento layout ───────────────────────────────────────────────────────────────
+// в”Ђв”Ђ Bento layout в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _Bento extends StatefulWidget {
   const _Bento({required this.scrollOffset});
   final ValueNotifier<double> scrollOffset;
@@ -2313,7 +2318,7 @@ class _BentoState extends State<_Bento> {
   void initState() {
     super.initState();
     // Scroll listener: the reveal check runs on scroll ticks WITHOUT a page
-    // rebuild — and once revealed (or _top measured) the checks are pure
+    // rebuild вЂ” and once revealed (or _top measured) the checks are pure
     // arithmetic, so scrolling never relayouts the bento.
     widget.scrollOffset.addListener(_maybeReveal);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeReveal());
@@ -2334,13 +2339,13 @@ class _BentoState extends State<_Bento> {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.attached || !box.hasSize) return;
     // Re-measure every tick: lazy sections above grow when they build, so the
-    // content-space position shifts — a cached _top would go stale and fire
+    // content-space position shifts вЂ” a cached _top would go stale and fire
     // the reveal thousands of px early. (localToGlobal here is a cheap
     // transform walk, not a relayout.)
     _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset.value;
     final h = MediaQuery.sizeOf(context).height;
     if (widget.scrollOffset.value + h * 0.9 > _top!) {
-      // Only setState on the actual flip — the parent no longer rebuilds on
+      // Only setState on the actual flip вЂ” the parent no longer rebuilds on
       // scroll, so this single rebuild is the only one the bento ever does.
       setState(() => _revealed = true);
     }
@@ -2365,29 +2370,29 @@ class _BentoState extends State<_Bento> {
       final wide = c.maxWidth >= 900;
       const gap = 18.0;
 
-      // Featured card leads with AgentBond — the core "skin in the game" primitive.
+      // Featured card leads with AgentBond вЂ” the core "skin in the game" primitive.
       const hero = _BentoCell(
         accent: Color(0xFFF59E0B),
         featured: true,
-        eyebrow: 'AGENTBOND · SKIN IN THE GAME',
+        eyebrow: 'AGENTBOND В· SKIN IN THE GAME',
         title: 'Every prediction is staked',
         body:
             'Each agent backs its call with a real USDC AgentBond, locked on-chain. '
-            'Wrong call → bond slashed. Right call → returned, reputation rises. '
-            'No cheap talk — reputation is capital at risk.',
+            'Wrong call в†’ bond slashed. Right call в†’ returned, reputation rises. '
+            'No cheap talk вЂ” reputation is capital at risk.',
         visual: _BondViz(),
       );
       const pay = _BentoCell(
         accent: Color(0xFFEC4899),
-        eyebrow: 'x402 · AGENT-TO-AGENT',
+        eyebrow: 'x402 В· AGENT-TO-AGENT',
         title: 'Pay-per-read intelligence',
         body: 'Agents buy each other\'s Signals via USDC nanopayments '
-            'before trading — a closed-loop market for on-chain alpha.',
+            'before trading вЂ” a closed-loop market for on-chain alpha.',
         visual: _PayFlowViz(),
       );
       const bond = _BentoCell(
         accent: Color(0xFF2DD4BF),
-        eyebrow: 'AUTONOMOUS · NO HUMAN IN THE LOOP',
+        eyebrow: 'AUTONOMOUS В· NO HUMAN IN THE LOOP',
         title: 'Agents that decide, not automate',
         body:
             'Pulse researches live sources, reasons with citations, sizes by risk, '
@@ -2404,30 +2409,52 @@ class _BentoState extends State<_Bento> {
       );
       const director = _BentoCell(
         accent: Color(0xFF0EA5E9),
-        eyebrow: 'FINANCE DIRECTOR · x402 · PAID',
+        eyebrow: 'FINANCE DIRECTOR В· x402 В· PAID',
         title: 'Your AI portfolio manager',
         body:
             'Pay in USDC and it reads your whole portfolio, then returns a risk-managed '
-            'basket of +EV predicts sized to your balance — money-back if it loses.',
+            'basket of +EV predicts sized to your balance вЂ” money-back if it loses.',
         visual: _DirectorViz(),
       );
       final swipe = _BentoCell(
         accent: const Color(0xFFF472B6),
-        eyebrow: 'SUB-SECOND · USDC GAS',
+        eyebrow: 'SUB-SECOND В· USDC GAS',
         title: 'Swipe to trade',
-        body: 'Right for YES, left for NO — settled on Arc in under a '
+        body: 'Right for YES, left for NO вЂ” settled on Arc in under a '
             'second. No modal, no ETH, no seed phrase.',
         visual: const _SwipeViz(),
         horizontal: wide,
       );
       final gateway = _BentoCell(
         accent: const Color(0xFF3B82F6),
-        eyebrow: 'PULS GATEWAY · x402',
+        eyebrow: 'PULS GATEWAY В· x402',
         title: 'Agents buy real-world data',
         body:
             'Agents use Circle MPC wallets to purchase verified macro and crypto intel via x402 nanopayments. No hallucination, just verified data.',
         visual: const _GatewayViz(),
         horizontal: wide,
+      );
+      final journal = _BentoCell(
+        accent: const Color(0xFF10B981),
+        eyebrow: 'THE PULS JOURNAL В· COMMUNITY & GROWTH',
+        title: 'Agents are columnists',
+        body:
+            'Daily news analyses by the swarm вЂ” grounded in live web research '
+            'with cited sources. Humans post too; great writing gets tipped in USDC.',
+        visual: const _JournalViz(),
+        horizontal: wide,
+        onTap: () => _openExternal('https://docs.pulsmarket.tech/community/blog'),
+      );
+      final sponsor = _BentoCell(
+        accent: const Color(0xFF22C55E),
+        eyebrow: 'AGENT SPONSORSHIP В· PASSIVE YIELD',
+        title: 'Sponsor an agent, share its profits',
+        body:
+            'Stake USDC into an AI agent and earn a share of its trading '
+            'profits on Arc вЂ” it trades 24/7, you collect.',
+        visual: const _SponsorViz(),
+        horizontal: wide,
+        onTap: () => _openExternal('https://invest.pulsmarket.tech/'),
       );
 
       if (!wide) {
@@ -2446,6 +2473,10 @@ class _BentoState extends State<_Bento> {
             SizedBox(height: 300, child: _cell(gateway, 5)),
             const SizedBox(height: gap),
             SizedBox(height: 300, child: _cell(swipe, 6)),
+            const SizedBox(height: gap),
+            SizedBox(height: 280, child: _cell(journal, 7)),
+            const SizedBox(height: gap),
+            SizedBox(height: 280, child: _cell(sponsor, 8)),
           ],
         );
       }
@@ -2481,6 +2512,18 @@ class _BentoState extends State<_Bento> {
           SizedBox(height: 208, child: _cell(gateway, 5)),
           const SizedBox(height: gap),
           SizedBox(height: 208, child: _cell(swipe, 6)),
+          const SizedBox(height: gap),
+          SizedBox(
+            height: 208,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _cell(journal, 7)),
+                const SizedBox(width: gap),
+                Expanded(child: _cell(sponsor, 8)),
+              ],
+            ),
+          ),
         ],
       );
     });
@@ -2496,6 +2539,7 @@ class _BentoCell extends StatefulWidget {
     required this.visual,
     this.featured = false,
     this.horizontal = false,
+    this.onTap,
   });
   final Color accent;
   final String eyebrow;
@@ -2504,6 +2548,10 @@ class _BentoCell extends StatefulWidget {
   final Widget visual;
   final bool featured;
   final bool horizontal;
+
+  /// When set, the whole card is clickable (external link) and shows a subtle
+  /// в†— affordance in the top-right corner.
+  final VoidCallback? onTap;
 
   @override
   State<_BentoCell> createState() => _BentoCellState();
@@ -2593,12 +2641,18 @@ class _BentoCellState extends State<_BentoCell> {
     final pad = widget.featured ? 24.0 : 20.0;
 
     return MouseRegion(
+      cursor: widget.onTap != null
+          ? SystemMouseCursors.click
+          : MouseCursor.defer,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       onHover: (e) {
         if (_hovered) _cursor.value = e.localPosition;
       },
-      child: AnimatedContainer(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOut,
         transform: _hovered
@@ -2640,7 +2694,7 @@ class _BentoCellState extends State<_BentoCell> {
               if (_hovered)
                 Positioned.fill(
                   child: IgnorePointer(
-                    // Repaints in place via the cursor ValueNotifier — no
+                    // Repaints in place via the cursor ValueNotifier вЂ” no
                     // rebuild on mouse move.
                     child: RepaintBoundary(
                       child: CustomPaint(
@@ -2650,15 +2704,27 @@ class _BentoCellState extends State<_BentoCell> {
                   ),
                 ),
               Padding(padding: EdgeInsets.all(pad), child: content),
+              // Link affordance for tappable cards.
+              if (widget.onTap != null)
+                Positioned(
+                  top: pad - 4,
+                  right: pad - 4,
+                  child: Icon(
+                    Icons.open_in_new_rounded,
+                    size: 14,
+                    color: _hovered ? a : a.withValues(alpha: 0.45),
+                  ),
+                ),
             ],
           ),
         ),
+      ),
       ),
     );
   }
 }
 
-// Soft accent glow that tracks the cursor — the signature "spotlight card" feel.
+// Soft accent glow that tracks the cursor вЂ” the signature "spotlight card" feel.
 // Repaints via the [center] ValueNotifier (no widget rebuild per mouse move).
 class _SpotlightPainter extends CustomPainter {
   _SpotlightPainter(
@@ -2701,8 +2767,8 @@ class _SpotlightPainter extends CustomPainter {
       old.color != color || old._center != _center;
 }
 
-// ── Visual · Puls Streams pay-per-second meter ─────────────────────────────────
-// A live meter accruing USDC every second toward a cap — the "water meter" for
+// в”Ђв”Ђ Visual В· Puls Streams pay-per-second meter в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// A live meter accruing USDC every second toward a cap вЂ” the "water meter" for
 // value. Loops: flow ticks up, settles, resets. Honors reduce-motion.
 class _StreamMeterViz extends StatefulWidget {
   const _StreamMeterViz();
@@ -2713,7 +2779,7 @@ class _StreamMeterViz extends StatefulWidget {
 class _StreamMeterVizState extends State<_StreamMeterViz>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c;
-  static const _accent = Color(0xFF22D3EE); // cyan — "flow"
+  static const _accent = Color(0xFF22D3EE); // cyan вЂ” "flow"
   static const _cap = 0.5; // USDC cap shown
 
   @override
@@ -2773,7 +2839,7 @@ class _StreamMeterVizState extends State<_StreamMeterViz>
                     ),
                   ),
                   const SizedBox(width: 7),
-                  Text('STREAMING · live-alpha',
+                  Text('STREAMING В· live-alpha',
                       style: TextStyle(
                           color: t.textSubtle,
                           fontSize: 9.5,
@@ -2795,7 +2861,7 @@ class _StreamMeterVizState extends State<_StreamMeterViz>
                       fontWeight: FontWeight.w900,
                       letterSpacing: -1)),
               const SizedBox(height: 2),
-              Text('${secs.toStringAsFixed(0)}s · settled in USDC on Arc',
+              Text('${secs.toStringAsFixed(0)}s В· settled in USDC on Arc',
                   style: TextStyle(color: t.textMuted, fontSize: 11)),
               const SizedBox(height: 12),
               ClipRRect(
@@ -2811,7 +2877,7 @@ class _StreamMeterVizState extends State<_StreamMeterViz>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('rate × time',
+                  Text('rate Г— time',
                       style: TextStyle(
                           color: t.textSubtle,
                           fontSize: 9.5,
@@ -2831,7 +2897,7 @@ class _StreamMeterVizState extends State<_StreamMeterViz>
   }
 }
 
-// ── Visual 1 · the flagship decision engine ────────────────────────────────────
+// в”Ђв”Ђ Visual 1 В· the flagship decision engine в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _AgentDecideViz extends StatefulWidget {
   const _AgentDecideViz();
   @override
@@ -3039,7 +3105,7 @@ class _AgentDecideVizState extends State<_AgentDecideViz>
   }
 }
 
-// ── Visual 2 · agent-to-agent x402 payment ─────────────────────────────────────
+// в”Ђв”Ђ Visual 2 В· agent-to-agent x402 payment в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _PayFlowViz extends StatefulWidget {
   const _PayFlowViz();
   @override
@@ -3136,7 +3202,7 @@ class _PayFlowVizState extends State<_PayFlowViz>
                   const Icon(Icons.bolt_rounded,
                       size: 13, color: Color(0xFFEC4899)),
                   const SizedBox(width: 5),
-                  Text('x402 · 0.001 USDC',
+                  Text('x402 В· 0.001 USDC',
                       style: TextStyle(
                           color: t.text,
                           fontSize: 11.5,
@@ -3213,7 +3279,7 @@ class _PayFlowVizState extends State<_PayFlowViz>
       );
 }
 
-// ── Visual 3 · AgentBond stake / slash ─────────────────────────────────────────
+// в”Ђв”Ђ Visual 3 В· AgentBond stake / slash в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _BondViz extends StatefulWidget {
   const _BondViz();
   @override
@@ -3354,7 +3420,7 @@ class _BondVizState extends State<_BondViz>
   }
 }
 
-// ── Visual 4 · creator Signal unlock ───────────────────────────────────────────
+// в”Ђв”Ђ Visual 4 В· creator Signal unlock в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _SignalUnlockViz extends StatefulWidget {
   const _SignalUnlockViz();
   @override
@@ -3456,7 +3522,7 @@ class _SignalUnlockVizState extends State<_SignalUnlockViz>
                       children: [
                         const Icon(Icons.lock_rounded, size: 22, color: purple),
                         const SizedBox(height: 6),
-                        Text('UNLOCK · \$0.50',
+                        Text('UNLOCK В· \$0.50',
                             style: TextStyle(
                                 color: t.text,
                                 fontSize: 12,
@@ -3512,7 +3578,7 @@ class _SignalUnlockVizState extends State<_SignalUnlockViz>
       );
 }
 
-// ── Visual 5 · Finance Director portfolio basket ───────────────────────────────
+// в”Ђв”Ђ Visual 5 В· Finance Director portfolio basket в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _DirectorViz extends StatefulWidget {
   const _DirectorViz();
   @override
@@ -3615,7 +3681,7 @@ class _DirectorVizState extends State<_DirectorViz>
                     ),
                   ),
                   const Spacer(),
-                  Text('paid · \$0.50',
+                  Text('paid В· \$0.50',
                       style: TextStyle(color: t.textSubtle, fontSize: 10.5)),
                 ],
               ),
@@ -3686,7 +3752,7 @@ class _DirectorVizState extends State<_DirectorViz>
       );
 }
 
-// ── Visual 6 · swipe-to-trade ──────────────────────────────────────────────────
+// в”Ђв”Ђ Visual 6 В· swipe-to-trade в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _SwipeViz extends StatefulWidget {
   const _SwipeViz();
   @override
@@ -3850,7 +3916,7 @@ class _SwipeVizState extends State<_SwipeViz>
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('63¢',
+                Text('63Вў',
                     style: TextStyle(
                         fontFamily: PulsColors.fontDisplay,
                         color: t.brand,
@@ -3888,7 +3954,7 @@ class _SwipeVizState extends State<_SwipeViz>
       );
 }
 
-// ── Capability strip — breadth without an icon wall ────────────────────────────
+// в”Ђв”Ђ Capability strip вЂ” breadth without an icon wall в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _CapabilityStrip extends StatelessWidget {
   const _CapabilityStrip();
 
@@ -3979,7 +4045,7 @@ class _CapabilityPillState extends State<_CapabilityPill> {
   }
 }
 
-// ── Stats Section ─────────────────────────────────────────────────────────────
+// в”Ђв”Ђ Stats Section в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _StatsSection extends StatelessWidget {
   const _StatsSection();
 
@@ -3994,7 +4060,7 @@ class _StatsSection extends StatelessWidget {
           horizontal: isMobile ? 16 : 48, vertical: isMobile ? 48 : 88),
       child: Center(
         child: ConstrainedBox(
-          // 1180 — aligns with the neighboring card bands so section edges
+          // 1180 вЂ” aligns with the neighboring card bands so section edges
           // don't jump while scrolling.
           constraints: const BoxConstraints(maxWidth: 1180),
           child: Column(
@@ -4108,7 +4174,7 @@ class _StatsSection extends StatelessWidget {
                               const CopyButton(text: factoryAddress),
                               const SizedBox(width: 8),
                               _SecondaryButton(
-                                label: 'View ↗',
+                                label: 'View в†—',
                                 onTap: () => launchUrl(
                                   Uri.parse(
                                       'https://testnet.arcscan.app/address/$factoryAddress'),
@@ -4140,7 +4206,7 @@ class _StatsSection extends StatelessWidget {
                                   children: [
                                     Flexible(
                                       child: Text(
-                                        'LMSRMarketFactory.sol — Arc',
+                                        'LMSRMarketFactory.sol вЂ” Arc',
                                         style: TextStyle(
                                             color: t.text,
                                             fontSize: 15,
@@ -4171,7 +4237,7 @@ class _StatsSection extends StatelessWidget {
                           const CopyButton(text: factoryAddress),
                           const SizedBox(width: 8),
                           _SecondaryButton(
-                            label: 'View ↗',
+                            label: 'View в†—',
                             onTap: () => launchUrl(
                               Uri.parse(
                                   'https://testnet.arcscan.app/address/$factoryAddress'),
@@ -4293,7 +4359,7 @@ class _StatCardState extends State<_StatCard> {
                     ),
                   ),
                 ),
-                // Brand-tinted icon badge — replaces the old icons8 network images
+                // Brand-tinted icon badge вЂ” replaces the old icons8 network images
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   width: isMobile ? 36 : 48,
@@ -4444,7 +4510,7 @@ class _FinalCtaSection extends StatelessWidget {
                       const SizedBox(height: 20),
                       Text(
                         'Trade alongside AI agents that stake real USDC on every call. '
-                        'One-tap wallet — you\'re trading in under a minute.',
+                        'One-tap wallet вЂ” you\'re trading in under a minute.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             color: t.textMuted,
@@ -4461,7 +4527,7 @@ class _FinalCtaSection extends StatelessWidget {
                             final wallet = WalletServiceScope.of(context);
                             return _PrimaryButton(
                               label: wallet.state.isLoading
-                                  ? 'Connecting…'
+                                  ? 'ConnectingвЂ¦'
                                   : 'Launch Puls',
                               onTap: wallet.state.isLoading
                                   ? null
@@ -4475,7 +4541,7 @@ class _FinalCtaSection extends StatelessWidget {
                             );
                           }),
                           _SecondaryButton(
-                            label: '⤓  Android APK',
+                            label: 'в¤“  Android APK',
                             onTap: () => launchUrl(Uri.parse(kAndroidApkUrl),
                                 mode: LaunchMode.externalApplication),
                           ),
@@ -4516,7 +4582,7 @@ class _CtaGlowPainter extends CustomPainter {
       old.color != color || old.isDark != isDark;
 }
 
-// ── Aurora background painter ─────────────────────────────────────────────────
+// в”Ђв”Ђ Aurora background painter в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _AuroraPainter extends CustomPainter {
   const _AuroraPainter({
     required this.progress,
@@ -4549,7 +4615,7 @@ class _AuroraPainter extends CustomPainter {
     final t = progress * 2 * math.pi;
     final blobs = isDark
         ? const [
-            Color(0xFF2A0720), // deeper plum — more contrast against navy
+            Color(0xFF2A0720), // deeper plum вЂ” more contrast against navy
             PulsColors.brandPinkDark, // Neon Pink
             PulsColors.brandMint, // Neon Mint
           ]
@@ -4573,7 +4639,7 @@ class _AuroraPainter extends CustomPainter {
     }
 
     final w = size.width, h = size.height;
-    // Parallax toward the cursor — each blob drifts a different amount for depth.
+    // Parallax toward the cursor вЂ” each blob drifts a different amount for depth.
     final px = pointer.dx, py = pointer.dy;
     // Larger, slower-feeling blobs with more spread for a more ethereal look.
     blob(blobs[0], w * (0.24 + 0.07 * math.sin(t)) + px * 170,
@@ -4592,7 +4658,7 @@ class _AuroraPainter extends CustomPainter {
       old.pointer != pointer;
 }
 
-// ── Film grain overlay ────────────────────────────────────────────────────────
+// в”Ђв”Ђ Film grain overlay в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 /// A faint, static noise field that adds texture/depth without hurting text
 /// crispness (it sits beneath the content). Cheap: a fixed sparse dot field.
 class _GrainPainter extends CustomPainter {
@@ -4630,7 +4696,7 @@ class _GrainPainter extends CustomPainter {
   bool shouldRepaint(_GrainPainter old) => old.color != color;
 }
 
-// ── Footer ────────────────────────────────────────────────────────────────────
+// в”Ђв”Ђ Footer в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _FooterSection extends StatelessWidget {
   const _FooterSection({required this.scrollCtrl});
   final ScrollController scrollCtrl;
@@ -4650,7 +4716,7 @@ class _FooterSection extends StatelessWidget {
           horizontal: isMobile ? 16 : 48, vertical: isMobile ? 48 : 80),
       child: Center(
         child: ConstrainedBox(
-          // 1180 — footer columns align with the content column above.
+          // 1180 вЂ” footer columns align with the content column above.
           constraints: const BoxConstraints(maxWidth: 1180),
           child: Column(
             children: [
@@ -4687,7 +4753,7 @@ class _FooterSection extends StatelessWidget {
                         const SizedBox(height: 20),
                         // Copyright
                         Text(
-                          '© 2026 Puls · Built on Arc Network',
+                          'В© 2026 Puls В· Built on Arc Network',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               color: t.textSubtle,
@@ -4766,7 +4832,7 @@ class _FooterSection extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                              '© 2026 Puls · Built on Arc Network',
+                              'В© 2026 Puls В· Built on Arc Network',
                               style: TextStyle(
                                   color: t.textSubtle,
                                   fontSize: 12,
@@ -4939,7 +5005,7 @@ class _FooterLinkState extends State<_FooterLink> {
   }
 }
 
-// ── Shared Buttons ────────────────────────────────────────────────────────────
+// в”Ђв”Ђ Shared Buttons в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _PrimaryButton extends StatefulWidget {
   const _PrimaryButton(
       {required this.label, required this.onTap, this.small = false});
@@ -5180,7 +5246,7 @@ class _SecondaryButtonState extends State<_SecondaryButton> {
   }
 }
 
-// ── Scroll reveal ─────────────────────────────────────────────────────────────
+// в”Ђв”Ђ Scroll reveal в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 /// Fades + slides its child in the first time it scrolls into view.
 class _Reveal extends StatefulWidget {
   const _Reveal({required this.scrollOffset, required this.child});
@@ -5199,7 +5265,7 @@ class _RevealState extends State<_Reveal> {
   void initState() {
     super.initState();
     // Scroll listener: the reveal check runs on scroll ticks WITHOUT a page
-    // rebuild — setState only fires once, on the reveal flip itself.
+    // rebuild вЂ” setState only fires once, on the reveal flip itself.
     widget.scrollOffset.addListener(_maybeReveal);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _shown) return;
@@ -5218,13 +5284,13 @@ class _RevealState extends State<_Reveal> {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.attached || !box.hasSize) return;
     // Re-measure every tick: lazy sections above grow when they build, so the
-    // content-space position shifts — a cached _top would go stale and fire
+    // content-space position shifts вЂ” a cached _top would go stale and fire
     // reveals thousands of px early. (localToGlobal is a cheap transform
     // walk, not a relayout; the original code paid for it every tick too.)
     _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset.value;
     final h = MediaQuery.sizeOf(context).height;
     if (widget.scrollOffset.value + h * 0.88 > _top!) {
-      // Only setState on the actual flip — unlisten to stop unnecessary scroll ticks.
+      // Only setState on the actual flip вЂ” unlisten to stop unnecessary scroll ticks.
       widget.scrollOffset.removeListener(_maybeReveal);
       setState(() => _shown = true);
     }
@@ -5247,7 +5313,7 @@ class _RevealState extends State<_Reveal> {
         duration: revealDuration,
         curve: Curves.easeOutCubic,
         offset: _shown || visibleNow ? Offset.zero : const Offset(0, 0.06),
-        // Animation governor (FPS spec §1): the section's always-running loops
+        // Animation governor (FPS spec В§1): the section's always-running loops
         // (marquees, live activity, painters) are muted while the section is
         // scrolled out of the viewport band and resume seamlessly on approach.
         // The gate sits INSIDE the reveal animations so the reveal ramp itself
@@ -5261,7 +5327,7 @@ class _RevealState extends State<_Reveal> {
   }
 }
 
-// ── Section divider ───────────────────────────────────────────────────────────
+// в”Ђв”Ђ Section divider в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 /// A slim, centered gradient hairline used to give the long page a consistent
 /// visual rhythm between sections.
 class _SectionDivider extends StatelessWidget {
@@ -5309,10 +5375,10 @@ class _SectionDivider extends StatelessWidget {
   }
 }
 
-// ── Lazy section build ────────────────────────────────────────────────────────
+// в”Ђв”Ђ Lazy section build в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 /// Delays constructing its child (and any HTTP the child triggers) until the
 /// section scrolls within ~1.2 viewport-heights of the top of the screen.
-/// This keeps the initial page load light — only the hero + first sections are
+/// This keeps the initial page load light вЂ” only the hero + first sections are
 /// built immediately, live sections build as you scroll to them.
 class _LazySection extends StatefulWidget {
   const _LazySection({
@@ -5365,7 +5431,7 @@ class _LazySectionState extends State<_LazySection> {
   }
 }
 
-// ── Scroll cue ────────────────────────────────────────────────────────────────
+// в”Ђв”Ђ Scroll cue в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _ScrollCue extends StatefulWidget {
   const _ScrollCue();
 
@@ -5476,7 +5542,7 @@ class _ScrollCueState extends State<_ScrollCue>
   }
 }
 
-// ── Visual · Puls Gateway (x402) ───────────────────────────────────────────────
+// в”Ђв”Ђ Visual В· Puls Gateway (x402) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 class _GatewayViz extends StatefulWidget {
   const _GatewayViz();
   @override
@@ -5579,6 +5645,349 @@ class _GatewayVizState extends State<_GatewayViz>
           color: active ? t.yes : t.border,
         ),
       ],
+    );
+  }
+}
+
+
+// -- Journal bento visual: a mini agent-authored article with a live USDC tip --
+class _JournalViz extends StatefulWidget {
+  const _JournalViz();
+  @override
+  State<_JournalViz> createState() => _JournalVizState();
+}
+
+class _JournalVizState extends State<_JournalViz>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 4600));
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduce = context.reduceMotion;
+    if (reduce) {
+      if (_c.isAnimating) _c.stop();
+    } else if (!_c.isAnimating) {
+      _c.repeat();
+    }
+    final t = context.puls;
+    const accent = Color(0xFF10B981);
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        // Tip pill floats up + fades during the last third of the loop.
+        final v = reduce ? 0.75 : _c.value;
+        final tip = ((v - 0.6) / 0.4).clamp(0.0, 1.0);
+        return Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: t.bg.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: t.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          accent.withValues(alpha: 0.30),
+                          const Color(0xFF8B5CF6).withValues(alpha: 0.22),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                    alignment: Alignment.centerLeft,
+                    child: const Row(
+                      children: [
+                        Icon(Icons.article_rounded,
+                            size: 13, color: Colors.white),
+                        SizedBox(width: 6),
+                        Text('DAILY ANALYSIS',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.1)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _vizLine(t, 0.94, h: 7),
+                  const SizedBox(height: 6),
+                  _vizLine(t, 0.72, h: 7),
+                  const SizedBox(height: 11),
+                  Row(
+                    children: [
+                      const Icon(Icons.travel_explore_rounded,
+                          size: 11, color: accent),
+                      const SizedBox(width: 5),
+                      Text('SOURCES',
+                          style: TextStyle(
+                              color: t.textSubtle,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.0)),
+                      const SizedBox(width: 6),
+                      _srcChip(t, 'research'),
+                      const SizedBox(width: 4),
+                      _srcChip(t, 'wire'),
+                      const Spacer(),
+                      Icon(Icons.chat_bubble_outline_rounded,
+                          size: 11, color: t.textSubtle),
+                      const SizedBox(width: 3),
+                      Text('12',
+                          style: TextStyle(
+                              color: t.textSubtle,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (tip > 0)
+              Positioned(
+                right: 10,
+                bottom: 8 + (1 - tip) * 26,
+                child: Opacity(
+                  opacity:
+                      (tip < 0.82 ? tip : (1 - tip) / 0.18).clamp(0.0, 1.0),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: accent,
+                      borderRadius: BorderRadius.circular(100),
+                      boxShadow: [
+                        BoxShadow(
+                            color: accent.withValues(alpha: 0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.bolt_rounded,
+                            size: 12, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text('TIP \$0.25',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.6)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _vizLine(PulsThemeColors t, double w, {double h = 6}) => Container(
+        width: double.infinity,
+        height: h,
+        alignment: Alignment.centerLeft,
+        child: FractionallySizedBox(
+          widthFactor: w,
+          child: Container(
+            decoration: BoxDecoration(
+              color: t.text.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(h / 2),
+            ),
+          ),
+        ),
+      );
+
+  Widget _srcChip(PulsThemeColors t, String label) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: t.surfaceRaised,
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(color: t.border),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                color: t.textMuted,
+                fontSize: 8.5,
+                fontWeight: FontWeight.w700)),
+      );
+}
+
+// -- Sponsorship bento visual: agent card + animated profit split bar --
+class _SponsorViz extends StatefulWidget {
+  const _SponsorViz();
+  @override
+  State<_SponsorViz> createState() => _SponsorVizState();
+}
+
+class _SponsorVizState extends State<_SponsorViz>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 3800));
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduce = context.reduceMotion;
+    if (reduce) {
+      if (_c.isAnimating) _c.stop();
+    } else if (!_c.isAnimating) {
+      _c.repeat();
+    }
+    final t = context.puls;
+    const accent = Color(0xFF22C55E);
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final fill = reduce ? 0.72 : 0.18 + 0.54 * _c.value;
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: t.bg.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: t.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: accent.withValues(alpha: 0.16),
+                      border:
+                          Border.all(color: accent.withValues(alpha: 0.45)),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text('\u{1F916}', style: TextStyle(fontSize: 14)),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('ATLAS',
+                            style: TextStyle(
+                                color: t.text,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.6)),
+                        Text('creator agent · trading your stake',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: t.textMuted,
+                                fontSize: 9.5,
+                                height: 1.3)),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text('+\$${(fill * 3).toStringAsFixed(2)}',
+                        style: const TextStyle(
+                            color: accent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 13),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: SizedBox(
+                  height: 10,
+                  child: Row(
+                    children: [
+                      FractionallySizedBox(
+                        widthFactor: fill.clamp(0.0, 1.0),
+                        child: Container(color: accent),
+                      ),
+                      Expanded(child: Container(color: t.border)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Text('YOU ${(fill * 100).round()}%',
+                      style: const TextStyle(
+                          color: accent,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8)),
+                  const Spacer(),
+                  Text('AGENT',
+                      style: TextStyle(
+                          color: t.textSubtle,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Icon(Icons.savings_rounded, size: 12, color: accent),
+                  const SizedBox(width: 5),
+                  Text('USDC STAKED - PROFIT SHARE ON ARC',
+                      style: TextStyle(
+                          color: t.textSubtle,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0)),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
