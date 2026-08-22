@@ -4,6 +4,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/widgets/puls_snack.dart';
+import '../../core/widgets/puls_sheet.dart';
 import '../../core/widgets/tab_visibility.dart';
 import '../../core/widgets/tactile.dart';
 import 'package:http/http.dart' as http;
@@ -231,6 +232,20 @@ class _AgentScreenState extends State<AgentScreen>
   bool _showTools = false; // strategy + Finance Director collapsed by default
 
   String? get _userId => WalletServiceScope.of(context).state.userId;
+
+  /// Compact-density breakpoint: below 600px the My Agent tab switches to the
+  /// mobile layout (single-row header, sheet-tucked tools & quick buys, slimmer
+  /// composer, wider chat bubbles). Desktop keeps the roomy layout.
+  bool get _isMobile => MediaQuery.sizeOf(context).width < 600;
+
+  /// Max bubble/card width for chat content. Desktop keeps the fixed 340px
+  /// column; mobile uses ~84% of the viewport so messages use the screen.
+  double get _bubbleMax {
+    final w = MediaQuery.sizeOf(context).width;
+    if (w >= 600) return 340;
+    final avail = w.clamp(0.0, 720.0) - 24; // WebLayout gutter + list padding
+    return (avail * 0.84).clamp(220.0, 420.0);
+  }
 
   @override
   void initState() {
@@ -577,15 +592,17 @@ class _AgentScreenState extends State<AgentScreen>
           children: [
             // One-line framing so anyone landing here — judges included —
             // instantly gets what this tab is: a live economy of real agents.
+            // Tighter on mobile: every pixel of chat height matters there.
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+              padding:
+                  EdgeInsets.fromLTRB(20, 0, 20, _isMobile ? 6 : 10),
               child: Text(
                 'Autonomous AI agents with their own wallets — they trade, pay each other in USDC, and build on-chain reputation. Live on Arc.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     color: t.textMuted,
-                    fontSize: 12.5,
-                    height: 1.35,
+                    fontSize: _isMobile ? 11 : 12.5,
+                    height: 1.3,
                     fontWeight: FontWeight.w500),
               ),
             ),
@@ -596,8 +613,9 @@ class _AgentScreenState extends State<AgentScreen>
               labelColor: t.brand,
               unselectedLabelColor: t.textMuted,
               indicatorColor: t.brand,
-              labelStyle:
-                  const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+              labelStyle: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: _isMobile ? 12.5 : 13.5),
               tabs: const [
                 Tab(text: 'Live Swarm'),
                 Tab(text: 'My Agent'),
@@ -815,7 +833,9 @@ class _AgentScreenState extends State<AgentScreen>
     }
   }
 
-  Widget _strategySelector(PulsThemeColors t) {
+  Widget _strategySelector(PulsThemeColors t, {VoidCallback? onChanged}) {
+    // [onChanged] fires after a strategy tap alongside the screen-level
+    // setState — lets embedded hosts (e.g. the mobile ⋮ sheet) rebuild too.
     return Container(
       margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
       padding: const EdgeInsets.all(12),
@@ -863,11 +883,12 @@ class _AgentScreenState extends State<AgentScreen>
             children: [
               Expanded(
                   child: _strategyOption(
-                      t, 'NONE', 'Manual', Icons.chat_bubble_outline_rounded)),
+                      t, 'NONE', 'Manual', Icons.chat_bubble_outline_rounded,
+                      onChanged: onChanged)),
               const SizedBox(width: 8),
               Expanded(
-                  child:
-                      _strategyOption(t, 'DCA', 'DCA', Icons.schedule_rounded)),
+                  child: _strategyOption(t, 'DCA', 'DCA', Icons.schedule_rounded,
+                      onChanged: onChanged)),
             ],
           ),
         ],
@@ -876,7 +897,8 @@ class _AgentScreenState extends State<AgentScreen>
   }
 
   Widget _strategyOption(
-      PulsThemeColors t, String value, String label, IconData icon) {
+      PulsThemeColors t, String value, String label, IconData icon,
+      {VoidCallback? onChanged}) {
     final isSelected = _strategy == value;
     final isPremium = value == 'DCA';
 
@@ -931,22 +953,28 @@ class _AgentScreenState extends State<AgentScreen>
 
     return Tactile(
       behavior: HitTestBehavior.opaque,
-      onTap: () => _updateStrategy(value),
+      onTap: () {
+        _updateStrategy(value);
+        onChanged?.call();
+      },
       child: content,
     );
   }
 
   Widget _chat(PulsThemeColors t) {
+    final mobile = _isMobile;
     return Column(
       children: [
         _header(t),
-        if (_showTools) _toolsPanel(t),
+        // Tools stay inline on desktop; on mobile they live in the ⋮ sheet.
+        if (!mobile && _showTools) _toolsPanel(t),
         Expanded(
           child: CustomScrollView(
             controller: _scroll,
             slivers: [
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                padding:
+                    EdgeInsets.fromLTRB(mobile ? 12 : 16, 8, mobile ? 12 : 16, 16),
                 sliver: SliverList.builder(
                   itemCount: _msgs.length,
                   itemBuilder: (_, mi) => RepaintBoundary(
@@ -959,8 +987,10 @@ class _AgentScreenState extends State<AgentScreen>
           ),
         ),
         if (_busy) _thinking(t),
-        _quickBuyBar(t),
-        _composer(t),
+        // Quick buys are tucked behind the composer's «+» on mobile — the
+        // permanent bar cost ~100px of chat height for a rarely-used action.
+        if (!mobile) _quickBuyBar(t),
+        _composer(t, mobile: mobile),
       ],
     );
   }
@@ -1029,6 +1059,7 @@ class _AgentScreenState extends State<AgentScreen>
     String label,
     String sublabel, {
     Color? accent,
+    double height = 50,
     required VoidCallback onTap,
   }) {
     final disabled = _busy;
@@ -1039,7 +1070,7 @@ class _AgentScreenState extends State<AgentScreen>
       onTap: onTap, // _quickBuy guards _busy internally
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        height: 50,
+        height: height,
         decoration: BoxDecoration(
           gradient: gradient ? PulsColors.pulseGradient : null,
           color: gradient
@@ -1163,7 +1194,12 @@ class _AgentScreenState extends State<AgentScreen>
     final short = addr.length > 10
         ? '${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}'
         : addr;
-    final remaining = (_budgetVal - _spent).clamp(0, double.infinity);
+    final remaining =
+        (_budgetVal - _spent).clamp(0, double.infinity).toDouble();
+    // Mobile: one ~46px row instead of the ~100px desktop card. Deposit,
+    // Withdraw, tools and reputation move into the ⋮ sheet — nothing is lost,
+    // but the chat reclaims the vertical space.
+    if (_isMobile) return _mobileHeader(t, short, remaining);
     return Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: ClipRRect(
@@ -1327,19 +1363,297 @@ class _AgentScreenState extends State<AgentScreen>
         .slideY(begin: -0.1, duration: 400.ms, curve: Curves.easeOut);
   }
 
+  // ── Mobile header — single 46px row ──────────────────────────────────────────
+  Widget _mobileHeader(PulsThemeColors t, String short, double remaining) {
+    final addr = _agentAddress ?? '';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+      child: Container(
+        height: 46,
+        padding: const EdgeInsets.fromLTRB(8, 0, 4, 0),
+        decoration: BoxDecoration(
+          color: t.surfaceRaised.withValues(alpha: 0.65),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: t.border.withValues(alpha: 0.5)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration:
+                  BoxDecoration(color: t.brandSubtle, shape: BoxShape.circle),
+              child: Icon(Icons.smart_toy_rounded, color: t.brand, size: 15),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: addr.isEmpty
+                    ? null
+                    : () => launchUrl(
+                        Uri.parse('https://testnet.arcscan.app/address/$addr'),
+                        mode: LaunchMode.externalApplication),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(short,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: t.brand,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                    if (_registered) ...[
+                      const SizedBox(width: 4),
+                      Icon(Icons.verified_rounded, size: 12, color: t.yes),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: t.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: t.border.withValues(alpha: 0.6)),
+              ),
+              child: Text('\$${remaining.toStringAsFixed(2)}',
+                  style: TextStyle(
+                      color: t.textMuted,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800)),
+            ),
+            SizedBox(
+              width: 34,
+              height: 34,
+              child: IconButton(
+                tooltip: 'Agent controls',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                icon: Icon(Icons.more_horiz_rounded,
+                    size: 19, color: t.textMuted),
+                onPressed: _showAgentMenu,
+              ),
+            ),
+          ],
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 300.ms)
+        .slideY(begin: -0.08, duration: 300.ms, curve: Curves.easeOut);
+  }
+
+  // ── Agent controls sheet (mobile ⋮) ──────────────────────────────────────────
+  void _showAgentMenu() {
+    final t = context.puls;
+    final addr = _agentAddress ?? '';
+    final remaining = (_budgetVal - _spent).clamp(0, double.infinity);
+    var showTools = false; // lives across sheet rebuilds (outside the builder)
+    PulsSheet.show(
+      context,
+      builder: (sheetCtx) => PulsSheetSurface(
+        raised: true,
+        scrollable: true,
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: StatefulBuilder(builder: (sheetCtx, setSheetState) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.smart_toy_rounded, color: t.brand, size: 18),
+                  const SizedBox(width: 8),
+                  Text('My agent',
+                      style: TextStyle(
+                          color: t.text,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800)),
+                  if (_registered) ...[
+                    const SizedBox(width: 8),
+                    Icon(Icons.verified_rounded, size: 14, color: t.yes),
+                    Text(' ERC-8004',
+                        style: TextStyle(
+                            color: t.yes,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 12),
+              _menuRow(t, Icons.account_balance_wallet_rounded, 'Deposit',
+                  'add USDC to the agent budget',
+                  iconColor: t.brand, onTap: () {
+                Navigator.pop(sheetCtx);
+                _deposit();
+              }),
+              if (remaining > 0.01)
+                _menuRow(t, Icons.savings_rounded, 'Withdraw',
+                    'return \$${remaining.toStringAsFixed(2)} to your wallet',
+                    iconColor: PulsColors.amber, onTap: () {
+                  Navigator.pop(sheetCtx);
+                  _withdraw();
+                }),
+              _menuRow(t, Icons.tune_rounded, 'Agent tools',
+                  'strategy & Finance Director', iconColor: t.brand,
+                  onTap: () => setSheetState(() => showTools = !showTools)),
+              if (showTools) ...[
+                Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: _strategySelector(t,
+                      onChanged: () => setSheetState(() {})),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(left: 12),
+                  child: FinanceDirectorCard(),
+                ),
+              ],
+              _menuRow(t, Icons.workspace_premium_rounded,
+                  _reputation > 0
+                      ? 'Reputation: $_reputation attestation${_reputation == 1 ? '' : 's'}'
+                      : 'Reputation: builds as it trades',
+                  addr.isEmpty ? null : 'view on Arcscan',
+                  iconColor: t.yes,
+                  enabled: addr.isNotEmpty, onTap: () {
+                Navigator.pop(sheetCtx);
+                launchUrl(
+                    Uri.parse('https://testnet.arcscan.app/address/$addr'),
+                    mode: LaunchMode.externalApplication);
+              }),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _menuRow(PulsThemeColors t, IconData icon, String title,
+      String? subtitle,
+      {required Color iconColor, VoidCallback? onTap, bool enabled = true}) {
+    final row = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, size: 15, color: iconColor),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: enabled ? t.text : t.textSubtle,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700)),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 1),
+                  Text(subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: t.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500)),
+                ],
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, size: 18, color: t.textSubtle),
+        ],
+      ),
+    );
+    if (!enabled || onTap == null) return row;
+    return Tactile(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: row,
+    );
+  }
+
+  // ── Quick buys sheet (mobile «+») ────────────────────────────────────────────
+  void _showQuickBuysSheet() {
+    final t = context.puls;
+    PulsSheet.show(
+      context,
+      builder: (sheetCtx) => PulsSheetSurface(
+        raised: true,
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('ONE-TAP BUYS',
+                style: TextStyle(
+                    color: t.textSubtle,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.3)),
+            const SizedBox(height: 2),
+            Text('agent picks & executes',
+                style: TextStyle(color: t.textSubtle, fontSize: 11)),
+            const SizedBox(height: 12),
+            _quickAction(
+              t,
+              Icons.trending_up_rounded,
+              'Top Market',
+              'hottest trending now',
+              accent: t.yes,
+              height: 54,
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _quickBuy(
+                    'Buy \$2 on the single hottest trending market right now — pick it yourself and execute immediately.');
+              },
+            ),
+            const SizedBox(height: 8),
+            _quickAction(
+              t,
+              Icons.bolt_rounded,
+              'Top Signal',
+              'top-rated creator alpha',
+              height: 54,
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _quickBuy(
+                    'Find the top-rated creator signal and buy \$2 into its market right now.');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _bubble(_Msg m, PulsThemeColors t) {
+    final mobile = _isMobile;
     final align =
         m.fromAgent ? CrossAxisAlignment.start : CrossAxisAlignment.end;
     final bg = m.fromAgent ? t.surfaceRaised : t.brand;
     final fg = m.fromAgent ? t.text : Colors.white;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: mobile ? 10 : 12),
       child: Column(
         crossAxisAlignment: align,
         children: [
           Container(
-            constraints: const BoxConstraints(maxWidth: 340),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            constraints: BoxConstraints(maxWidth: _bubbleMax),
+            padding: EdgeInsets.symmetric(
+                horizontal: mobile ? 12 : 16, vertical: mobile ? 9 : 12),
             decoration: BoxDecoration(
               color: bg,
               borderRadius: BorderRadius.only(
@@ -1366,12 +1680,15 @@ class _AgentScreenState extends State<AgentScreen>
                   : null,
             ),
             child: PulsEmojiText(m.text,
-                style: TextStyle(color: fg, fontSize: 14.5, height: 1.4)),
+                style: TextStyle(
+                    color: fg,
+                    fontSize: mobile ? 13.5 : 14.5,
+                    height: 1.38)),
           ),
           if (m.fromAgent && m.sources.isNotEmpty) ...[
             const SizedBox(height: 5),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320),
+              constraints: BoxConstraints(maxWidth: _bubbleMax),
               child: Wrap(
                 spacing: 6,
                 runSpacing: 6,
@@ -1467,8 +1784,9 @@ class _AgentScreenState extends State<AgentScreen>
     const accent = Color(0xFF8B5CF6);
     return Container(
       margin: const EdgeInsets.only(top: 8),
-      constraints: const BoxConstraints(maxWidth: 340),
-      padding: const EdgeInsets.all(12),
+      constraints: BoxConstraints(maxWidth: _bubbleMax),
+      padding:
+          EdgeInsets.all(_isMobile ? 10 : 12),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
@@ -1536,8 +1854,9 @@ class _AgentScreenState extends State<AgentScreen>
     final accent = side == 'NO' ? t.no : t.yes;
     return Container(
       margin: const EdgeInsets.only(top: 8),
-      constraints: const BoxConstraints(maxWidth: 340),
-      padding: const EdgeInsets.all(12),
+      constraints: BoxConstraints(maxWidth: _bubbleMax),
+      padding:
+          EdgeInsets.all(_isMobile ? 10 : 12),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(14),
@@ -1650,16 +1969,17 @@ class _AgentScreenState extends State<AgentScreen>
         ),
       );
 
-  Widget _composer(PulsThemeColors t) {
+  Widget _composer(PulsThemeColors t, {bool mobile = false}) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: EdgeInsets.fromLTRB(
+          mobile ? 10 : 16, mobile ? 8 : 12, mobile ? 10 : 16, mobile ? 10 : 24),
       decoration: BoxDecoration(
         color: t.bg,
       ),
       child: Container(
         decoration: BoxDecoration(
           color: t.surfaceRaised,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(mobile ? 20 : 24),
           border: Border.all(color: t.border.withValues(alpha: 0.6)),
           boxShadow: [
             BoxShadow(
@@ -1668,13 +1988,35 @@ class _AgentScreenState extends State<AgentScreen>
                 offset: const Offset(0, -4))
           ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding:
+            EdgeInsets.symmetric(horizontal: mobile ? 5 : 8, vertical: 5),
         child: Row(
           children: [
+            // Mobile: quick buys live behind «+» instead of a permanent bar.
+            if (mobile) ...[
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _showQuickBuysSheet,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: t.surface,
+                    shape: BoxShape.circle,
+                    border:
+                        Border.all(color: t.border.withValues(alpha: 0.7)),
+                  ),
+                  child: Icon(Icons.add_rounded,
+                      size: 19, color: t.textMuted),
+                ),
+              ),
+              const SizedBox(width: 4),
+            ],
             Expanded(
               child: TextField(
                 controller: _input,
-                style: TextStyle(color: t.text, fontSize: 15),
+                style:
+                    TextStyle(color: t.text, fontSize: mobile ? 14 : 15),
                 minLines: 1,
                 maxLines: 4,
                 onSubmitted: (_) => _send(),
@@ -1682,13 +2024,13 @@ class _AgentScreenState extends State<AgentScreen>
                   hintText: 'Ask the agent to trade…',
                   hintStyle: TextStyle(color: t.textSubtle),
                   filled: false,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12, vertical: mobile ? 9 : 10),
                   border: InputBorder.none,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: mobile ? 4 : 8),
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: _input,
               builder: (context, val, child) {
@@ -1698,8 +2040,8 @@ class _AgentScreenState extends State<AgentScreen>
                   onTap: disabled ? null : _send,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    width: 44,
-                    height: 44,
+                    width: mobile ? 36 : 44,
+                    height: mobile ? 36 : 44,
                     decoration: BoxDecoration(
                         color: disabled ? t.surface : t.brand,
                         shape: BoxShape.circle,
@@ -1713,7 +2055,7 @@ class _AgentScreenState extends State<AgentScreen>
                               ]),
                     child: Icon(Icons.arrow_upward_rounded,
                         color: disabled ? t.textSubtle : Colors.white,
-                        size: 20),
+                        size: mobile ? 18 : 20),
                   ),
                 );
               },
