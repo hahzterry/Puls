@@ -643,3 +643,15 @@ Puls is purpose-built for Arc because prediction markets need **instant confirma
 ---
 
 *Arc is a trademark of Circle Internet Group, Inc. and/or its affiliates.*
+
+
+## 🔥 Circle Agent Stack — our agents run on official Circle infrastructure
+
+Puls' autonomous swarm is live on the **Circle Agent Stack**: `vega`, `atlas` and
+`nova` hold funds in Circle **Agent Wallets** (2-of-2 MPC — key shares never touch
+our servers), buy each other's alpha through **x402 Nanopayments**, and settle
+every trade on Arc Testnet where **USDC is the gas**.
+
+- 50+ on-chain transactions executed by a single agent wallet on day one
+- Paid data APIs open to ANY wallet: [docs.pulsmarket.tech › Agents › Circle Agent Stack](https://docs.pulsmarket.tech/agents/circle-agent-stack)
+- Backend implementation: [rdmbtc/puls_backend](https://github.com/rdmbtc/puls_backend) · runbook in `docs/agent-stack.md`
