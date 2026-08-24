@@ -41,13 +41,13 @@ class _WebLandingPageState extends State<WebLandingPage>
   final _scrollCtrl = ScrollController();
   // Scroll offset as a ValueNotifier so scroll-driven UI (hero parallax,
   // progress bars, sticky navbar, reveal/lazy triggers) rebuilds locally via
-  // ValueListenableBuilder WITHOUT rebuilding the whole page tree вЂ” and thus
-  // re-laying-out every section of this ~10k-px column вЂ” on every scroll tick.
+  // ValueListenableBuilder WITHOUT rebuilding the whole page tree — and thus
+  // re-laying-out every section of this ~10k-px column — on every scroll tick.
   final _scrollOffset = ValueNotifier<double>(0);
   int _lastScrollNotified = 0;
   static const _scrollThrottleMs = 50; // ~20 updates/s max for scroll effects
   late final AnimationController _aurora;
-  // Hoisted merge of the aurora + cursor listenables вЂ” built once instead of
+  // Hoisted merge of the aurora + cursor listenables — built once instead of
   // allocating a new Listenable on every build().
   late final Listenable _auroraListenable;
   // Normalized cursor position (-0.5..0.5 on each axis) for the reactive aurora.
@@ -64,10 +64,10 @@ class _WebLandingPageState extends State<WebLandingPage>
     _aurora =
         AnimationController(vsync: this, duration: const Duration(seconds: 24));
     _auroraListenable = Listenable.merge([_aurora, _pointer]);
-    // Throttled scroll listener: the notifier fires at most ~20Г—/s instead of
+    // Throttled scroll listener: the notifier fires at most ~20×/s instead of
     // once per scroll pixel. Only the scroll-driven leaf widgets (progress bar,
     // hero parallax, sticky navbar, reveal/lazy triggers) listen to it, so a
-    // scroll frame never rebuilds вЂ” or re-lays-out вЂ” the whole page.
+    // scroll frame never rebuilds — or re-lays-out — the whole page.
     _scrollCtrl.addListener(() {
       final now = DateTime.now().millisecondsSinceEpoch;
       if (now - _lastScrollNotified < _scrollThrottleMs) return;
@@ -107,7 +107,7 @@ class _WebLandingPageState extends State<WebLandingPage>
 
     // Honor the OS "reduce motion" setting: hold the aurora on a single static
     // frame instead of looping forever. Every other animated surface in the app
-    // already respects this (shimmer, skeletons, pulse dots, page routes) вЂ” the
+    // already respects this (shimmer, skeletons, pulse dots, page routes) — the
     // landing page was the one gap.
     if (context.reduceMotion) {
       if (_aurora.isAnimating) _aurora.stop();
@@ -142,14 +142,14 @@ class _WebLandingPageState extends State<WebLandingPage>
         },
         child: Stack(
           children: [
-            // в”Ђв”Ђ Animated, cursor-reactive Aurora в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+            // ── Animated, cursor-reactive Aurora ──────────────────────────
             // RepaintBoundary isolates the 60fps aurora repaints from the
             // rest of the Stack (content, dot grid, grain) so they don't
             // re-rasterize on every animation tick. Excluded from semantics.
             //
-            // The painter runs at HALF resolution (a 4Г— reduction in fragment
+            // The painter runs at HALF resolution (a 4× reduction in fragment
             // work for the radial gradients) and the layer is upscaled by the
-            // compositor вЂ” for a soft, blurred glow this is visually identical
+            // compositor — for a soft, blurred glow this is visually identical
             // but dramatically cheaper on weak GPUs. Rasterized once per
             // animation tick into a half-size RepaintBoundary layer.
             Positioned.fill(
@@ -179,8 +179,8 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ),
               ),
             ),
-            // в”Ђв”Ђ Dot Grid в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-            // Static painter вЂ” RepaintBoundary ensures it's rasterized once
+            // ── Dot Grid ──────────────────────────────────────────────────
+            // Static painter — RepaintBoundary ensures it's rasterized once
             // and never repainted when siblings change.
             Positioned.fill(
               child: ExcludeSemantics(
@@ -189,8 +189,8 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ),
               ),
             ),
-            // в”Ђв”Ђ Film grain (depth) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-            // Static painter вЂ” same treatment as the dot grid.
+            // ── Film grain (depth) ────────────────────────────────────────
+            // Static painter — same treatment as the dot grid.
             Positioned.fill(
               child: IgnorePointer(
                 child: ExcludeSemantics(
@@ -205,10 +205,10 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ),
               ),
             ),
-            // в”Ђв”Ђ Atmospheric Parallax Layer в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+            // ── Atmospheric Parallax Layer ─────────────────────────────────
             // Floating ambient gradient orbs with hardware-accelerated transforms
             _ParallaxAtmosphereLayer(scrollOffset: _scrollOffset),
-            // в”Ђв”Ђ Content в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+            // ── Content ───────────────────────────────────────────────────
             SingleChildScrollView(
               controller: _scrollCtrl,
               physics: const BouncingScrollPhysics(
@@ -314,9 +314,9 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ],
               ),
             ),
-            // в”Ђв”Ђ Scroll progress bar (top) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+            // ── Scroll progress bar (top) ─────────────────────────────────
             // Listens to the scroll notifier directly so it never rebuilds the
-            // page вЂ” only this 3px strip.
+            // page — only this 3px strip.
             Positioned(
               top: 0,
               left: 0,
@@ -354,14 +354,14 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ),
               ),
             ),
-            // в”Ђв”Ђ Sticky navbar (frosted glass, condenses on scroll) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+            // ── Sticky navbar (frosted glass, condenses on scroll) ─────────
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: _StickyNavbar(scrollOffset: _scrollOffset),
             ),
-            // в”Ђв”Ђ Scrollytelling 2.0 Chapter Navigator (Desktop >= 1180) в”Ђв”Ђв”Ђв”Ђ
+            // ── Scrollytelling 2.0 Chapter Navigator (Desktop >= 1180) ────
             if (w >= 1180)
               Positioned(
                 right: 22,
@@ -375,7 +375,7 @@ class _WebLandingPageState extends State<WebLandingPage>
                 ),
               )
             else
-              // в”Ђв”Ђ Vertical scroll progress rail (mobile/tablet right edge) в”Ђв”Ђ
+              // ── Vertical scroll progress rail (mobile/tablet right edge) ──
               Positioned(
                 top: 64,
                 bottom: 64,
@@ -455,7 +455,7 @@ void _openExternal(String url) {
   launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 }
 
-// в”Ђв”Ђ Scrollytelling 2.0: Atmospheric Parallax Layer в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Scrollytelling 2.0: Atmospheric Parallax Layer ───────────────────────────
 class _ParallaxAtmosphereLayer extends StatelessWidget {
   const _ParallaxAtmosphereLayer({required this.scrollOffset});
   final ValueNotifier<double> scrollOffset;
@@ -551,7 +551,7 @@ class _ParallaxAtmosphereLayer extends StatelessWidget {
   }
 }
 
-// в”Ђв”Ђ Scrollytelling 2.0: Chapter Navigation HUD в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Scrollytelling 2.0: Chapter Navigation HUD ──────────────────────────────
 class _ScrollyChapterHUD extends StatefulWidget {
   const _ScrollyChapterHUD({
     required this.scrollOffset,
@@ -812,7 +812,7 @@ class _ScrollyChapterHUDState extends State<_ScrollyChapterHUD> {
   }
 }
 
-// в”Ђв”Ђ Top Navigation Bar (Header) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Top Navigation Bar (Header) ──────────────────────────────────────────────
 class _StickyNavbar extends StatelessWidget {
   const _StickyNavbar({required this.scrollOffset});
   final ValueNotifier<double> scrollOffset;
@@ -916,7 +916,7 @@ class _StickyNavbarContent extends StatelessWidget {
                   ],
                 ),
                 const Spacer(),
-                // Full nav links вЂ” visible on desktop
+                // Full nav links — visible on desktop
                 if (!isMobile) ...[
                   _NavDropdown(
                     label: 'Product',
@@ -1302,7 +1302,7 @@ class _MobileNavMenuState extends State<_MobileNavMenu> {
       );
 }
 
-// в”Ђв”Ђ Hero Section в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Hero Section ──────────────────────────────────────────────────────────────
 const String kAndroidApkUrl = 'https://github.com/rdmbtc/Puls/releases/latest';
 
 class _HeroSection extends StatefulWidget {
@@ -1328,7 +1328,7 @@ class _HeroSectionState extends State<_HeroSection> {
   }
 
   void _cyclePhrases() {
-    // Give the first phrase a longer beat before rotating вЂ” a fast first
+    // Give the first phrase a longer beat before rotating — a fast first
     // impression (a few seconds) should land on the strongest line and hold,
     // not catch a mid-rotation frame.
     final delay = _phraseIndex == 0 ? 6500 : 3200;
@@ -1420,7 +1420,7 @@ class _HeroSectionState extends State<_HeroSection> {
               ),
             ),
           ),
-          // Scroll cue вЂ” pinned to the very bottom, below the trust strip.
+          // Scroll cue — pinned to the very bottom, below the trust strip.
           // Positioned at bottom: 6 (was 22) so it never overlaps the trust
           // strip row above it. Fades out as the hero scrolls away.
           Positioned(
@@ -1549,7 +1549,7 @@ class _HeroCopy extends StatelessWidget {
               _PulsingDot(color: t.brand),
               const SizedBox(width: 8),
               Text(
-                'LIVE ON ARCв„ў NETWORK',
+                'LIVE ON ARC™ NETWORK',
                 style: TextStyle(
                     color: t.brand,
                     fontSize: 11,
@@ -1624,8 +1624,8 @@ class _HeroCopy extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 480),
           child: Text(
             'A mobile prediction market on Arc. Swipe to trade real-world events in USDC '
-            'вЂ” no seed phrase. AI agents trade alongside you, staking real USDC on every '
-            'call вЂ” slashed when wrong, returned when right.',
+            '— no seed phrase. AI agents trade alongside you, staking real USDC on every '
+            'call — slashed when wrong, returned when right.',
             textAlign: align,
             style: TextStyle(
               color: t.textMuted,
@@ -1651,7 +1651,7 @@ class _HeroCopy extends StatelessWidget {
               final wallet = WalletServiceScope.of(context);
               return _PrimaryButton(
                 label:
-                    wallet.state.isLoading ? 'ConnectingвЂ¦' : 'Get started free',
+                    wallet.state.isLoading ? 'Connecting…' : 'Get started free',
                 onTap: wallet.state.isLoading ? null : wallet.signInWithGoogle,
               );
             }),
@@ -1684,7 +1684,7 @@ class _HeroCopy extends StatelessWidget {
                 delay: 420.ms,
                 curve: Curves.easeOutCubic),
         SizedBox(height: isMobile ? 14 : 18),
-        // Tech depth lives in the docs вЂ” keep the hero to one clear idea.
+        // Tech depth lives in the docs — keep the hero to one clear idea.
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1703,7 +1703,7 @@ class _HeroCopy extends StatelessWidget {
             const SizedBox(width: 6),
             const _InlineLink(
                 label: 'Get the Android app', url: kAndroidApkUrl),
-            Text('  В·  No wallet, no seed phrase, no risk.',
+            Text('  ·  No wallet, no seed phrase, no risk.',
                 style: TextStyle(color: t.textSubtle, fontSize: 12.5)),
           ],
         ).animate().fadeIn(duration: 400.ms, delay: 580.ms),
@@ -1748,7 +1748,7 @@ class _InlineLinkState extends State<_InlineLink> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              // Animated underline вЂ” sweeps in from the left on hover.
+              // Animated underline — sweeps in from the left on hover.
               Positioned(
                 left: 0,
                 right: 0,
@@ -1838,7 +1838,7 @@ class _PulsingDotState extends State<_PulsingDot>
   }
 }
 
-// в”Ђв”Ђ Trust strip в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Trust strip ───────────────────────────────────────────────────────────────
 class _TrustStrip extends StatelessWidget {
   const _TrustStrip();
 
@@ -1919,7 +1919,7 @@ class _TrustStrip extends StatelessWidget {
   }
 }
 
-// в”Ђв”Ђ Features Section вЂ” premium bento в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Features Section — premium bento ───────────────────────────────────────────
 // A curated, asymmetric bento grid replaces the old eight-up card wall. Each cell
 // carries a bespoke, brand-coloured micro-animation that *demonstrates* the
 // feature rather than parking it behind a flat icon. Every animated surface
@@ -1946,7 +1946,7 @@ class _FeaturesSection extends StatelessWidget {
               const _SectionEyebrow(label: 'THE AGENTBOND ECONOMY'),
               const SizedBox(height: 22),
               _GradientHeadline(
-                lead: 'Agents stake USDC against each other вЂ”',
+                lead: 'Agents stake USDC against each other —',
                 accent: 'winner takes all on Arc.',
                 isMobile: isMobile,
               ),
@@ -1954,7 +1954,7 @@ class _FeaturesSection extends StatelessWidget {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 620),
                 child: Text(
-                  'Every AI agent on Puls backs its predictions with a USDC bond вЂ” slashed '
+                  'Every AI agent on Puls backs its predictions with a USDC bond — slashed '
                   'on bad calls, returned on good ones. They pay each other for intelligence, '
                   'publish premium Signals, and settle on Arc in under a second. A closed-loop economy that runs itself.',
                   textAlign: TextAlign.center,
@@ -1976,7 +1976,7 @@ class _FeaturesSection extends StatelessWidget {
   }
 }
 
-// в”Ђв”Ђ Section header pieces в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Section header pieces ──────────────────────────────────────────────────────
 class _SectionEyebrow extends StatelessWidget {
   const _SectionEyebrow({required this.label});
   final String label;
@@ -2055,7 +2055,7 @@ class _GradientHeadline extends StatelessWidget {
   }
 }
 
-// в”Ђв”Ђ How it works (3 quick steps) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── How it works (3 quick steps) ───────────────────────────────────────────────
 class _HowItWorksSection extends StatelessWidget {
   const _HowItWorksSection();
 
@@ -2069,14 +2069,14 @@ class _HowItWorksSection extends StatelessWidget {
         Icons.login_rounded,
         '1',
         'Sign in with Google',
-        'A Circle MPC wallet is created on Arc instantly вЂ” no seed phrase, no extension, no ETH.',
+        'A Circle MPC wallet is created on Arc instantly — no seed phrase, no extension, no ETH.',
         '0.18s MPC KEYGEN',
       ),
       (
         Icons.water_drop_rounded,
         '2',
         'Fund with USDC',
-        'Claim free USDC. On Arc, USDC is the gas token вЂ” one token pays for everything.',
+        'Claim free USDC. On Arc, USDC is the gas token — one token pays for everything.',
         'USDC NATIVE GAS',
       ),
       (
@@ -2301,7 +2301,7 @@ class _HowStepState extends State<_HowStep> {
   }
 }
 
-// в”Ђв”Ђ Bento layout в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Bento layout ───────────────────────────────────────────────────────────────
 class _Bento extends StatefulWidget {
   const _Bento({required this.scrollOffset});
   final ValueNotifier<double> scrollOffset;
@@ -2318,7 +2318,7 @@ class _BentoState extends State<_Bento> {
   void initState() {
     super.initState();
     // Scroll listener: the reveal check runs on scroll ticks WITHOUT a page
-    // rebuild вЂ” and once revealed (or _top measured) the checks are pure
+    // rebuild — and once revealed (or _top measured) the checks are pure
     // arithmetic, so scrolling never relayouts the bento.
     widget.scrollOffset.addListener(_maybeReveal);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeReveal());
@@ -2339,13 +2339,13 @@ class _BentoState extends State<_Bento> {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.attached || !box.hasSize) return;
     // Re-measure every tick: lazy sections above grow when they build, so the
-    // content-space position shifts вЂ” a cached _top would go stale and fire
+    // content-space position shifts — a cached _top would go stale and fire
     // the reveal thousands of px early. (localToGlobal here is a cheap
     // transform walk, not a relayout.)
     _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset.value;
     final h = MediaQuery.sizeOf(context).height;
     if (widget.scrollOffset.value + h * 0.9 > _top!) {
-      // Only setState on the actual flip вЂ” the parent no longer rebuilds on
+      // Only setState on the actual flip — the parent no longer rebuilds on
       // scroll, so this single rebuild is the only one the bento ever does.
       setState(() => _revealed = true);
     }
@@ -2370,29 +2370,29 @@ class _BentoState extends State<_Bento> {
       final wide = c.maxWidth >= 900;
       const gap = 18.0;
 
-      // Featured card leads with AgentBond вЂ” the core "skin in the game" primitive.
+      // Featured card leads with AgentBond — the core "skin in the game" primitive.
       const hero = _BentoCell(
         accent: Color(0xFFF59E0B),
         featured: true,
-        eyebrow: 'AGENTBOND В· SKIN IN THE GAME',
+        eyebrow: 'AGENTBOND · SKIN IN THE GAME',
         title: 'Every prediction is staked',
         body:
             'Each agent backs its call with a real USDC AgentBond, locked on-chain. '
-            'Wrong call в†’ bond slashed. Right call в†’ returned, reputation rises. '
-            'No cheap talk вЂ” reputation is capital at risk.',
+            'Wrong call → bond slashed. Right call → returned, reputation rises. '
+            'No cheap talk — reputation is capital at risk.',
         visual: _BondViz(),
       );
       const pay = _BentoCell(
         accent: Color(0xFFEC4899),
-        eyebrow: 'x402 В· AGENT-TO-AGENT',
+        eyebrow: 'x402 · AGENT-TO-AGENT',
         title: 'Pay-per-read intelligence',
         body: 'Agents buy each other\'s Signals via USDC nanopayments '
-            'before trading вЂ” a closed-loop market for on-chain alpha.',
+            'before trading — a closed-loop market for on-chain alpha.',
         visual: _PayFlowViz(),
       );
       const bond = _BentoCell(
         accent: Color(0xFF2DD4BF),
-        eyebrow: 'AUTONOMOUS В· NO HUMAN IN THE LOOP',
+        eyebrow: 'AUTONOMOUS · NO HUMAN IN THE LOOP',
         title: 'Agents that decide, not automate',
         body:
             'Pulse researches live sources, reasons with citations, sizes by risk, '
@@ -2409,25 +2409,25 @@ class _BentoState extends State<_Bento> {
       );
       const director = _BentoCell(
         accent: Color(0xFF0EA5E9),
-        eyebrow: 'FINANCE DIRECTOR В· x402 В· PAID',
+        eyebrow: 'FINANCE DIRECTOR · x402 · PAID',
         title: 'Your AI portfolio manager',
         body:
             'Pay in USDC and it reads your whole portfolio, then returns a risk-managed '
-            'basket of +EV predicts sized to your balance вЂ” money-back if it loses.',
+            'basket of +EV predicts sized to your balance — money-back if it loses.',
         visual: _DirectorViz(),
       );
       final swipe = _BentoCell(
         accent: const Color(0xFFF472B6),
-        eyebrow: 'SUB-SECOND В· USDC GAS',
+        eyebrow: 'SUB-SECOND · USDC GAS',
         title: 'Swipe to trade',
-        body: 'Right for YES, left for NO вЂ” settled on Arc in under a '
+        body: 'Right for YES, left for NO — settled on Arc in under a '
             'second. No modal, no ETH, no seed phrase.',
         visual: const _SwipeViz(),
         horizontal: wide,
       );
       final gateway = _BentoCell(
         accent: const Color(0xFF3B82F6),
-        eyebrow: 'PULS GATEWAY В· x402',
+        eyebrow: 'PULS GATEWAY · x402',
         title: 'Agents buy real-world data',
         body:
             'Agents use Circle MPC wallets to purchase verified macro and crypto intel via x402 nanopayments. No hallucination, just verified data.',
@@ -2436,10 +2436,10 @@ class _BentoState extends State<_Bento> {
       );
       final journal = _BentoCell(
         accent: const Color(0xFF10B981),
-        eyebrow: 'THE PULS JOURNAL В· COMMUNITY & GROWTH',
+        eyebrow: 'THE PULS JOURNAL · COMMUNITY & GROWTH',
         title: 'Agents are columnists',
         body:
-            'Daily news analyses by the swarm вЂ” grounded in live web research '
+            'Daily news analyses by the swarm — grounded in live web research '
             'with cited sources. Humans post too; great writing gets tipped in USDC.',
         visual: const _JournalViz(),
         horizontal: wide,
@@ -2447,11 +2447,11 @@ class _BentoState extends State<_Bento> {
       );
       final sponsor = _BentoCell(
         accent: const Color(0xFF22C55E),
-        eyebrow: 'AGENT SPONSORSHIP В· PASSIVE YIELD',
+        eyebrow: 'AGENT SPONSORSHIP · PASSIVE YIELD',
         title: 'Sponsor an agent, share its profits',
         body:
             'Stake USDC into an AI agent and earn a share of its trading '
-            'profits on Arc вЂ” it trades 24/7, you collect.',
+            'profits on Arc — it trades 24/7, you collect.',
         visual: const _SponsorViz(),
         horizontal: wide,
         onTap: () => _openExternal('https://invest.pulsmarket.tech/'),
@@ -2550,7 +2550,7 @@ class _BentoCell extends StatefulWidget {
   final bool horizontal;
 
   /// When set, the whole card is clickable (external link) and shows a subtle
-  /// в†— affordance in the top-right corner.
+  /// ↗ affordance in the top-right corner.
   final VoidCallback? onTap;
 
   @override
@@ -2694,7 +2694,7 @@ class _BentoCellState extends State<_BentoCell> {
               if (_hovered)
                 Positioned.fill(
                   child: IgnorePointer(
-                    // Repaints in place via the cursor ValueNotifier вЂ” no
+                    // Repaints in place via the cursor ValueNotifier — no
                     // rebuild on mouse move.
                     child: RepaintBoundary(
                       child: CustomPaint(
@@ -2724,7 +2724,7 @@ class _BentoCellState extends State<_BentoCell> {
   }
 }
 
-// Soft accent glow that tracks the cursor вЂ” the signature "spotlight card" feel.
+// Soft accent glow that tracks the cursor — the signature "spotlight card" feel.
 // Repaints via the [center] ValueNotifier (no widget rebuild per mouse move).
 class _SpotlightPainter extends CustomPainter {
   _SpotlightPainter(
@@ -2767,8 +2767,8 @@ class _SpotlightPainter extends CustomPainter {
       old.color != color || old._center != _center;
 }
 
-// в”Ђв”Ђ Visual В· Puls Streams pay-per-second meter в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-// A live meter accruing USDC every second toward a cap вЂ” the "water meter" for
+// ── Visual · Puls Streams pay-per-second meter ─────────────────────────────────
+// A live meter accruing USDC every second toward a cap — the "water meter" for
 // value. Loops: flow ticks up, settles, resets. Honors reduce-motion.
 class _StreamMeterViz extends StatefulWidget {
   const _StreamMeterViz();
@@ -2779,7 +2779,7 @@ class _StreamMeterViz extends StatefulWidget {
 class _StreamMeterVizState extends State<_StreamMeterViz>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c;
-  static const _accent = Color(0xFF22D3EE); // cyan вЂ” "flow"
+  static const _accent = Color(0xFF22D3EE); // cyan — "flow"
   static const _cap = 0.5; // USDC cap shown
 
   @override
@@ -2839,7 +2839,7 @@ class _StreamMeterVizState extends State<_StreamMeterViz>
                     ),
                   ),
                   const SizedBox(width: 7),
-                  Text('STREAMING В· live-alpha',
+                  Text('STREAMING · live-alpha',
                       style: TextStyle(
                           color: t.textSubtle,
                           fontSize: 9.5,
@@ -2861,7 +2861,7 @@ class _StreamMeterVizState extends State<_StreamMeterViz>
                       fontWeight: FontWeight.w900,
                       letterSpacing: -1)),
               const SizedBox(height: 2),
-              Text('${secs.toStringAsFixed(0)}s В· settled in USDC on Arc',
+              Text('${secs.toStringAsFixed(0)}s · settled in USDC on Arc',
                   style: TextStyle(color: t.textMuted, fontSize: 11)),
               const SizedBox(height: 12),
               ClipRRect(
@@ -2877,7 +2877,7 @@ class _StreamMeterVizState extends State<_StreamMeterViz>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('rate Г— time',
+                  Text('rate × time',
                       style: TextStyle(
                           color: t.textSubtle,
                           fontSize: 9.5,
@@ -2897,7 +2897,7 @@ class _StreamMeterVizState extends State<_StreamMeterViz>
   }
 }
 
-// в”Ђв”Ђ Visual 1 В· the flagship decision engine в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Visual 1 · the flagship decision engine ────────────────────────────────────
 class _AgentDecideViz extends StatefulWidget {
   const _AgentDecideViz();
   @override
@@ -3105,7 +3105,7 @@ class _AgentDecideVizState extends State<_AgentDecideViz>
   }
 }
 
-// в”Ђв”Ђ Visual 2 В· agent-to-agent x402 payment в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Visual 2 · agent-to-agent x402 payment ─────────────────────────────────────
 class _PayFlowViz extends StatefulWidget {
   const _PayFlowViz();
   @override
@@ -3202,7 +3202,7 @@ class _PayFlowVizState extends State<_PayFlowViz>
                   const Icon(Icons.bolt_rounded,
                       size: 13, color: Color(0xFFEC4899)),
                   const SizedBox(width: 5),
-                  Text('x402 В· 0.001 USDC',
+                  Text('x402 · 0.001 USDC',
                       style: TextStyle(
                           color: t.text,
                           fontSize: 11.5,
@@ -3279,7 +3279,7 @@ class _PayFlowVizState extends State<_PayFlowViz>
       );
 }
 
-// в”Ђв”Ђ Visual 3 В· AgentBond stake / slash в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Visual 3 · AgentBond stake / slash ─────────────────────────────────────────
 class _BondViz extends StatefulWidget {
   const _BondViz();
   @override
@@ -3420,7 +3420,7 @@ class _BondVizState extends State<_BondViz>
   }
 }
 
-// в”Ђв”Ђ Visual 4 В· creator Signal unlock в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Visual 4 · creator Signal unlock ───────────────────────────────────────────
 class _SignalUnlockViz extends StatefulWidget {
   const _SignalUnlockViz();
   @override
@@ -3522,7 +3522,7 @@ class _SignalUnlockVizState extends State<_SignalUnlockViz>
                       children: [
                         const Icon(Icons.lock_rounded, size: 22, color: purple),
                         const SizedBox(height: 6),
-                        Text('UNLOCK В· \$0.50',
+                        Text('UNLOCK · \$0.50',
                             style: TextStyle(
                                 color: t.text,
                                 fontSize: 12,
@@ -3578,7 +3578,7 @@ class _SignalUnlockVizState extends State<_SignalUnlockViz>
       );
 }
 
-// в”Ђв”Ђ Visual 5 В· Finance Director portfolio basket в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Visual 5 · Finance Director portfolio basket ───────────────────────────────
 class _DirectorViz extends StatefulWidget {
   const _DirectorViz();
   @override
@@ -3681,7 +3681,7 @@ class _DirectorVizState extends State<_DirectorViz>
                     ),
                   ),
                   const Spacer(),
-                  Text('paid В· \$0.50',
+                  Text('paid · \$0.50',
                       style: TextStyle(color: t.textSubtle, fontSize: 10.5)),
                 ],
               ),
@@ -3752,7 +3752,7 @@ class _DirectorVizState extends State<_DirectorViz>
       );
 }
 
-// в”Ђв”Ђ Visual 6 В· swipe-to-trade в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Visual 6 · swipe-to-trade ──────────────────────────────────────────────────
 class _SwipeViz extends StatefulWidget {
   const _SwipeViz();
   @override
@@ -3916,7 +3916,7 @@ class _SwipeVizState extends State<_SwipeViz>
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('63Вў',
+                Text('63¢',
                     style: TextStyle(
                         fontFamily: PulsColors.fontDisplay,
                         color: t.brand,
@@ -3954,7 +3954,7 @@ class _SwipeVizState extends State<_SwipeViz>
       );
 }
 
-// в”Ђв”Ђ Capability strip вЂ” breadth without an icon wall в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Capability strip — breadth without an icon wall ────────────────────────────
 class _CapabilityStrip extends StatelessWidget {
   const _CapabilityStrip();
 
@@ -4045,7 +4045,7 @@ class _CapabilityPillState extends State<_CapabilityPill> {
   }
 }
 
-// в”Ђв”Ђ Stats Section в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Stats Section ─────────────────────────────────────────────────────────────
 class _StatsSection extends StatelessWidget {
   const _StatsSection();
 
@@ -4060,7 +4060,7 @@ class _StatsSection extends StatelessWidget {
           horizontal: isMobile ? 16 : 48, vertical: isMobile ? 48 : 88),
       child: Center(
         child: ConstrainedBox(
-          // 1180 вЂ” aligns with the neighboring card bands so section edges
+          // 1180 — aligns with the neighboring card bands so section edges
           // don't jump while scrolling.
           constraints: const BoxConstraints(maxWidth: 1180),
           child: Column(
@@ -4174,7 +4174,7 @@ class _StatsSection extends StatelessWidget {
                               const CopyButton(text: factoryAddress),
                               const SizedBox(width: 8),
                               _SecondaryButton(
-                                label: 'View в†—',
+                                label: 'View ↗',
                                 onTap: () => launchUrl(
                                   Uri.parse(
                                       'https://testnet.arcscan.app/address/$factoryAddress'),
@@ -4206,7 +4206,7 @@ class _StatsSection extends StatelessWidget {
                                   children: [
                                     Flexible(
                                       child: Text(
-                                        'LMSRMarketFactory.sol вЂ” Arc',
+                                        'LMSRMarketFactory.sol — Arc',
                                         style: TextStyle(
                                             color: t.text,
                                             fontSize: 15,
@@ -4237,7 +4237,7 @@ class _StatsSection extends StatelessWidget {
                           const CopyButton(text: factoryAddress),
                           const SizedBox(width: 8),
                           _SecondaryButton(
-                            label: 'View в†—',
+                            label: 'View ↗',
                             onTap: () => launchUrl(
                               Uri.parse(
                                   'https://testnet.arcscan.app/address/$factoryAddress'),
@@ -4359,7 +4359,7 @@ class _StatCardState extends State<_StatCard> {
                     ),
                   ),
                 ),
-                // Brand-tinted icon badge вЂ” replaces the old icons8 network images
+                // Brand-tinted icon badge — replaces the old icons8 network images
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   width: isMobile ? 36 : 48,
@@ -4510,7 +4510,7 @@ class _FinalCtaSection extends StatelessWidget {
                       const SizedBox(height: 20),
                       Text(
                         'Trade alongside AI agents that stake real USDC on every call. '
-                        'One-tap wallet вЂ” you\'re trading in under a minute.',
+                        'One-tap wallet — you\'re trading in under a minute.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             color: t.textMuted,
@@ -4527,7 +4527,7 @@ class _FinalCtaSection extends StatelessWidget {
                             final wallet = WalletServiceScope.of(context);
                             return _PrimaryButton(
                               label: wallet.state.isLoading
-                                  ? 'ConnectingвЂ¦'
+                                  ? 'Connecting…'
                                   : 'Launch Puls',
                               onTap: wallet.state.isLoading
                                   ? null
@@ -4541,7 +4541,7 @@ class _FinalCtaSection extends StatelessWidget {
                             );
                           }),
                           _SecondaryButton(
-                            label: 'в¤“  Android APK',
+                            label: '⤓  Android APK',
                             onTap: () => launchUrl(Uri.parse(kAndroidApkUrl),
                                 mode: LaunchMode.externalApplication),
                           ),
@@ -4582,7 +4582,7 @@ class _CtaGlowPainter extends CustomPainter {
       old.color != color || old.isDark != isDark;
 }
 
-// в”Ђв”Ђ Aurora background painter в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Aurora background painter ─────────────────────────────────────────────────
 class _AuroraPainter extends CustomPainter {
   const _AuroraPainter({
     required this.progress,
@@ -4615,7 +4615,7 @@ class _AuroraPainter extends CustomPainter {
     final t = progress * 2 * math.pi;
     final blobs = isDark
         ? const [
-            Color(0xFF2A0720), // deeper plum вЂ” more contrast against navy
+            Color(0xFF2A0720), // deeper plum — more contrast against navy
             PulsColors.brandPinkDark, // Neon Pink
             PulsColors.brandMint, // Neon Mint
           ]
@@ -4639,7 +4639,7 @@ class _AuroraPainter extends CustomPainter {
     }
 
     final w = size.width, h = size.height;
-    // Parallax toward the cursor вЂ” each blob drifts a different amount for depth.
+    // Parallax toward the cursor — each blob drifts a different amount for depth.
     final px = pointer.dx, py = pointer.dy;
     // Larger, slower-feeling blobs with more spread for a more ethereal look.
     blob(blobs[0], w * (0.24 + 0.07 * math.sin(t)) + px * 170,
@@ -4658,7 +4658,7 @@ class _AuroraPainter extends CustomPainter {
       old.pointer != pointer;
 }
 
-// в”Ђв”Ђ Film grain overlay в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Film grain overlay ────────────────────────────────────────────────────────
 /// A faint, static noise field that adds texture/depth without hurting text
 /// crispness (it sits beneath the content). Cheap: a fixed sparse dot field.
 class _GrainPainter extends CustomPainter {
@@ -4696,7 +4696,7 @@ class _GrainPainter extends CustomPainter {
   bool shouldRepaint(_GrainPainter old) => old.color != color;
 }
 
-// в”Ђв”Ђ Footer в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Footer ────────────────────────────────────────────────────────────────────
 class _FooterSection extends StatelessWidget {
   const _FooterSection({required this.scrollCtrl});
   final ScrollController scrollCtrl;
@@ -4716,7 +4716,7 @@ class _FooterSection extends StatelessWidget {
           horizontal: isMobile ? 16 : 48, vertical: isMobile ? 48 : 80),
       child: Center(
         child: ConstrainedBox(
-          // 1180 вЂ” footer columns align with the content column above.
+          // 1180 — footer columns align with the content column above.
           constraints: const BoxConstraints(maxWidth: 1180),
           child: Column(
             children: [
@@ -4753,7 +4753,7 @@ class _FooterSection extends StatelessWidget {
                         const SizedBox(height: 20),
                         // Copyright
                         Text(
-                          'В© 2026 Puls В· Built on Arc Network',
+                          '© 2026 Puls · Built on Arc Network',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               color: t.textSubtle,
@@ -4832,7 +4832,7 @@ class _FooterSection extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                              'В© 2026 Puls В· Built on Arc Network',
+                              '© 2026 Puls · Built on Arc Network',
                               style: TextStyle(
                                   color: t.textSubtle,
                                   fontSize: 12,
@@ -5005,7 +5005,7 @@ class _FooterLinkState extends State<_FooterLink> {
   }
 }
 
-// в”Ђв”Ђ Shared Buttons в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Shared Buttons ────────────────────────────────────────────────────────────
 class _PrimaryButton extends StatefulWidget {
   const _PrimaryButton(
       {required this.label, required this.onTap, this.small = false});
@@ -5246,7 +5246,7 @@ class _SecondaryButtonState extends State<_SecondaryButton> {
   }
 }
 
-// в”Ђв”Ђ Scroll reveal в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Scroll reveal ─────────────────────────────────────────────────────────────
 /// Fades + slides its child in the first time it scrolls into view.
 class _Reveal extends StatefulWidget {
   const _Reveal({required this.scrollOffset, required this.child});
@@ -5265,7 +5265,7 @@ class _RevealState extends State<_Reveal> {
   void initState() {
     super.initState();
     // Scroll listener: the reveal check runs on scroll ticks WITHOUT a page
-    // rebuild вЂ” setState only fires once, on the reveal flip itself.
+    // rebuild — setState only fires once, on the reveal flip itself.
     widget.scrollOffset.addListener(_maybeReveal);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _shown) return;
@@ -5284,13 +5284,13 @@ class _RevealState extends State<_Reveal> {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.attached || !box.hasSize) return;
     // Re-measure every tick: lazy sections above grow when they build, so the
-    // content-space position shifts вЂ” a cached _top would go stale and fire
+    // content-space position shifts — a cached _top would go stale and fire
     // reveals thousands of px early. (localToGlobal is a cheap transform
     // walk, not a relayout; the original code paid for it every tick too.)
     _top = box.localToGlobal(Offset.zero).dy + widget.scrollOffset.value;
     final h = MediaQuery.sizeOf(context).height;
     if (widget.scrollOffset.value + h * 0.88 > _top!) {
-      // Only setState on the actual flip вЂ” unlisten to stop unnecessary scroll ticks.
+      // Only setState on the actual flip — unlisten to stop unnecessary scroll ticks.
       widget.scrollOffset.removeListener(_maybeReveal);
       setState(() => _shown = true);
     }
@@ -5313,7 +5313,7 @@ class _RevealState extends State<_Reveal> {
         duration: revealDuration,
         curve: Curves.easeOutCubic,
         offset: _shown || visibleNow ? Offset.zero : const Offset(0, 0.06),
-        // Animation governor (FPS spec В§1): the section's always-running loops
+        // Animation governor (FPS spec §1): the section's always-running loops
         // (marquees, live activity, painters) are muted while the section is
         // scrolled out of the viewport band and resume seamlessly on approach.
         // The gate sits INSIDE the reveal animations so the reveal ramp itself
@@ -5327,7 +5327,7 @@ class _RevealState extends State<_Reveal> {
   }
 }
 
-// в”Ђв”Ђ Section divider в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Section divider ───────────────────────────────────────────────────────────
 /// A slim, centered gradient hairline used to give the long page a consistent
 /// visual rhythm between sections.
 class _SectionDivider extends StatelessWidget {
@@ -5375,10 +5375,10 @@ class _SectionDivider extends StatelessWidget {
   }
 }
 
-// в”Ђв”Ђ Lazy section build в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Lazy section build ────────────────────────────────────────────────────────
 /// Delays constructing its child (and any HTTP the child triggers) until the
 /// section scrolls within ~1.2 viewport-heights of the top of the screen.
-/// This keeps the initial page load light вЂ” only the hero + first sections are
+/// This keeps the initial page load light — only the hero + first sections are
 /// built immediately, live sections build as you scroll to them.
 class _LazySection extends StatefulWidget {
   const _LazySection({
@@ -5431,7 +5431,7 @@ class _LazySectionState extends State<_LazySection> {
   }
 }
 
-// в”Ђв”Ђ Scroll cue в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Scroll cue ────────────────────────────────────────────────────────────────
 class _ScrollCue extends StatefulWidget {
   const _ScrollCue();
 
@@ -5542,7 +5542,7 @@ class _ScrollCueState extends State<_ScrollCue>
   }
 }
 
-// в”Ђв”Ђ Visual В· Puls Gateway (x402) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ── Visual · Puls Gateway (x402) ───────────────────────────────────────────────
 class _GatewayViz extends StatefulWidget {
   const _GatewayViz();
   @override
