@@ -10,7 +10,6 @@ import '../../core/utils/formatters.dart';
 import '../../core/utils/haptics.dart';
 import '../../core/utils/trade_math.dart';
 import '../../core/widgets/skeleton.dart';
-import '../../core/widgets/state_views.dart';
 import '../../core/widgets/tactile.dart';
 import '../../data/models/market.dart';
 
@@ -1396,20 +1395,70 @@ class FeedNoResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.puls;
+    // Deliberately small: a search miss is a transient state, not a landing
+    // page — a full PulsEmptyState card ate half the feed viewport.
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: PulsEmptyState(
-          icon: Icons.search_off_rounded,
-          title: query.hasText
-              ? 'Nothing matches "${query.text.trim()}"'
-              : 'No markets in this filter',
-          message: 'Try a different word, or clear the filters to see '
-              'everything again.',
-          actionLabel: 'Clear filters',
-          actionIcon: Icons.refresh_rounded,
-          onAction: onClear,
-          compact: true,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: t.brandSubtle,
+                shape: BoxShape.circle,
+              ),
+              child:
+                  Icon(Icons.search_off_rounded, size: 20, color: t.brand),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              query.hasText
+                  ? 'Nothing matches "${query.text.trim()}"'
+                  : 'No markets in this filter',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: t.text,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Tactile(
+              onTap: onClear,
+              pressedScale: 0.96,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  color: t.surfaceRaised,
+                  borderRadius: BorderRadius.circular(99),
+                  border: Border.all(color: t.border),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.refresh_rounded,
+                        size: 14, color: t.textMuted),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Clear filters',
+                      style: TextStyle(
+                        color: t.textMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
