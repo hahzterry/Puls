@@ -297,7 +297,7 @@
       var nano = d.nanopayments || { count: 0, volumeUsdc: 0 };
       if (!built) {
         document.getElementById('cards').innerHTML = [
-          card('vUsers', 'Users onboarded', 'Google sign-in → Circle wallet'),
+          card('vUsers', 'Users onboarded', 'Google & Web3 Wallets'),
           card('vTrades', 'Trades settled', '<span id="hTrades">' + usd(d.volumeUsdc) + '</span> volume'),
           card('vNano', 'Nanopayments', '<span id="hNano">' + usd(nano.volumeUsdc) + '</span> in USDC'),
           card('vMarkets', 'Markets live', '<span id="hMarkets">' + (d.marketsResolved || 0) + '</span> resolved')
@@ -343,9 +343,8 @@
         });
     }
     load();
-    setInterval(load, 30000);
+    setInterval(load, 5000);
   </script>
   <script defer src="/nav.js"></script>
 </body>
 </html>
-

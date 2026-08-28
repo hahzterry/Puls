@@ -77,13 +77,22 @@ class WalletService extends ChangeNotifier {
   }
 
   Future<void> _initAuth() async {
-    // 1. Process inbound Google OAuth redirect parameters: ?auth_token=...&user_id=...
+    // 1. Process inbound Google OAuth redirect parameters: ?auth_token=...&user_id=... OR #auth_token=...&user_id=...
     if (kIsWeb) {
       try {
         final href = currentHref();
         final uri = Uri.parse(href);
-        final authToken = uri.queryParameters['auth_token'];
-        final userId = uri.queryParameters['user_id'];
+        String? authToken = uri.queryParameters['auth_token'];
+        String? userId = uri.queryParameters['user_id'];
+
+        if ((userId == null || userId.isEmpty) && uri.fragment.isNotEmpty) {
+          try {
+            final fragParams = Uri.splitQueryString(uri.fragment);
+            authToken = fragParams['auth_token'] ?? authToken;
+            userId = fragParams['user_id'] ?? userId;
+          } catch (_) {}
+        }
+
         if (userId != null && userId.isNotEmpty) {
           final data = {
             'userId': userId,
@@ -93,11 +102,11 @@ class WalletService extends ChangeNotifier {
           _setState(_state.copyWith(userId: userId, isLoading: true));
           _getOrCreateWallet(userId);
           try {
-            replaceUrl(uri.path);
+            replaceUrl(uri.path.isEmpty ? '/' : uri.path);
           } catch (_) {}
           return;
         }
-        } catch (e) {
+      } catch (e) {
         debugPrint('[WalletService] OAuth URL parse error: $e');
       }
     }
@@ -239,6 +248,14 @@ class WalletService extends ChangeNotifier {
         isExternalWallet: true,
         isLoading: false,
       ));
+      // Notify backend to register external wallet & update user traction stats immediately
+      _post('/api/wallet/connect-external', {
+        'address': address,
+        'userId': userId,
+      }).catchError((e) {
+        debugPrint('[WalletService] connect-external non-critical error: $e');
+        return <String, dynamic>{};
+      });
       // Fetch balance from chain
       await _fetchBalanceFromChain(address);
       _startPeriodicRefresh();
